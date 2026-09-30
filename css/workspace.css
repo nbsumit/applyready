@@ -1,6 +1,9 @@
 /* ApplyReady workspaces. Document layout remains in style.css. */
 @font-face { font-family: Inter; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../assets/fonts/inter-latin.woff2') format('woff2'); }
+@font-face { font-family: 'ApplyReady Devanagari'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../assets/fonts/noto-devanagari.woff2') format('woff2'); unicode-range: U+0900-097F,U+1CD0-1CFF,U+200C-200D,U+20A8-20B9,U+A830-A839,U+A8E0-A8FF,U+11B00-11B09; }
 :root {
+  --font-sans: Inter, 'ApplyReady Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --accent-danger: #bc252d;
   --primary: #17634d; --primary-hover: #104a39; --primary-light: #edf5f1; --primary-focus: rgba(23,99,77,.18);
   --button-primary: #17634d; --button-hover: #104a39;
   --bg-page: #f6f7f8; --bg-card: #fff; --bg-card-subtle: #f4f6f7;
@@ -10,6 +13,7 @@
   --shadow-sm: 0 1px 2px rgba(24,33,38,.03); --shadow-md: 0 4px 16px rgba(24,33,38,.06);
 }
 [data-theme='dark'] {
+  --accent-danger: #fda4af;
   color-scheme: dark; --primary: #94d8b9; --primary-hover: #bcebd5; --primary-light: #1d352d; --primary-focus: rgba(148,216,185,.2);
   --button-primary: #246d54; --button-hover: #1b5843;
   --bg-page: #111619; --bg-card: #1a2227; --bg-card-subtle: #202a30;
@@ -205,12 +209,14 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 .ats-resume-sheet .resume-entry-header span { min-width: 0; overflow-wrap: anywhere; }
 .ats-resume-sheet .resume-contact-item { white-space: normal; overflow-wrap: anywhere; }
 .ats-resume-sheet .resume-section-title { font-size: calc(var(--document-size) + .5pt) !important; }
-.ats-resume-sheet.font-serif { font-family: 'Times New Roman', Times, serif !important; }
-.ats-resume-sheet.font-sans { font-family: Arial, Helvetica, sans-serif !important; }
+.ats-resume-sheet.font-serif { font-family: 'Times New Roman', Times, 'ApplyReady Devanagari', serif !important; }
+.ats-resume-sheet.font-sans { font-family: Arial, Helvetica, 'ApplyReady Devanagari', sans-serif !important; }
 .preview-empty-note { color: var(--text-muted); font-size: .78rem; line-height: 1.6; padding: .6rem .8rem; margin-bottom: .6rem; }
 #optionalSectionSelect { min-width: 0; max-width: 100%; }
 #optionalSectionsArea .form-row-3 > input { min-width: 0; }
 [data-theme='dark'] .btn-outline-danger, [data-theme='dark'] .field-error, [data-theme='dark'] .status-danger, [data-theme='dark'] .text-danger { color: #fda4af; }
+[data-theme='dark'] .btn-outline-danger:hover { color: #fff; background: #991b1b; border-color: #991b1b; }
+[data-theme='dark'] .status-ok { color: #a7f3d0; }
 @media screen and (max-width: 1100px) {
   .main-content, .nav-container { padding-inline: 1.25rem; }
   .nav-container { gap: 1.25rem; }
@@ -233,6 +239,9 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .preset-shortcut span { display: none; }
 }
 @media screen and (max-width: 760px) {
+  .btn, .btn-sm { min-height: 44px; }
+  .dynamic-item-actions .btn { min-width: 36px; }
+  .guide-content table { table-layout: fixed; overflow-wrap: anywhere; }
   .nav-container { padding: .65rem 1rem; gap: .5rem; }
   .nav-actions { margin-left: auto; gap: .4rem; }
   .nav-menu-toggle { display: inline-flex; }
