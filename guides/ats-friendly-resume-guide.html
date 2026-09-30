@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What Makes an ATS-Friendly Resume? | ApplyReady.in</title>
+  <meta name="description" content="Learn how Applicant Tracking Systems (ATS) parse resumes, why single-column layouts succeed, and how vector text PDFs beat rasterized templates.">
+  <link rel="canonical" href="https://applyready.in/guides/ats-friendly-resume-guide.html">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://applyready.in/guides/ats-friendly-resume-guide.html">
+  <meta property="og:title" content="What Makes an ATS-Friendly Resume? | ApplyReady.in">
+  <meta property="og:description" content="Demystifying ATS algorithms: why simple single-column formatting and true vector text outperform complex designs.">
+  <meta property="og:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="../assets/icon.svg">
+  <link rel="icon" type="image/x-icon" href="../favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon/apple-touch-icon.png">
+  <link rel="manifest" href="../favicon/site.webmanifest">
+  <meta name="theme-color" content="#2563EB">
+
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('applyready_theme');
+        var theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="../index.html" class="brand-logo" aria-label="ApplyReady Home">
+        <img src="../assets/icon.svg" alt="ApplyReady Logo" class="brand-img" width="32" height="32">
+        <span>ApplyReady</span>
+        <span class="brand-tag">.in</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="../index.html" class="nav-link">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Image Resizer</span>
+        </a>
+        <a href="../resume.html" class="nav-link">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Resume Builder</span>
+        </a>
+        <a href="../how-to-use.html" class="nav-link active" aria-current="page">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Guides</span>
+        </a>
+        <a href="../about.html" class="nav-link">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>About</span>
+        </a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+    <article class="guide-content">
+      <header style="margin-bottom: 2rem;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Career & Resume Guide</span>
+        <h1>What Makes a Resume ATS-Friendly? (The Truth About ATS Parsers)</h1>
+        <p class="hero-subtitle" style="text-align: left; margin: 0;">
+          Debunking common ATS myths, explaining why single-column layouts work, and the critical importance of selectable vector text.
+        </p>
+      </header>
+
+      <section class="app-card">
+        <h2>What Is an Applicant Tracking System (ATS)?</h2>
+        <p>
+          An Applicant Tracking System (ATS) is enterprise human resources software (such as Workday, Taleo, Greenhouse, or Lever) used by employers to intake, parse, and filter candidate resumes.
+        </p>
+        <p>
+          When you upload a PDF or DOCX file, the ATS does not "read" your resume visually like a human. Instead, it extracts the raw text stream and attempts to segment it into structured fields: Candidate Name, Contact Information, Work Experience, Education, and Skills.
+        </p>
+
+        <h2>The Myth of the "100% Guaranteed ATS Score"</h2>
+        <p>
+          Many online resume tools advertise misleading claims like <em>“ATS Verified: 100%”</em> or guarantee that their template will bypass automated screening. In reality:
+        </p>
+        <ul>
+          <li>There is no single universal ATS algorithm; different systems employ different parsers (e.g. Apache Tika, Sovren, Textkernel).</li>
+          <li>ATS systems do not score formatting alone; candidate ranking depends primarily on keyword relevancy matching the actual job description.</li>
+          <li>The real objective of an ATS-friendly template is <strong>frictionless readability</strong>: ensuring the parser never garbles your text or skips key sections.</li>
+        </ul>
+
+        <h2>Why Single-Column Layouts Outperform Multi-Column Designs</h2>
+        <p>
+          Many modern design templates feature split sidebars, multi-column tables, skill rating progress bars, and floating text boxes. While visually appealing to human eyes, these cause severe parser failures:
+        </p>
+        <ul>
+          <li><strong>Reading Order Scrambling:</strong> Parsers read left-to-right across the page. When columns lack rigid structural tags, text from the left sidebar mixes with sentences in the right column, rendering contact info or job duties unintelligible.</li>
+          <li><strong>Graphic Progress Bars:</strong> An image showing 4 out of 5 stars for "Project Management" is invisible to text parsers.</li>
+          <li><strong>Single-Column Superiority:</strong> A top-to-bottom, single-column document ensures that the chronological order of your career is parsed identically by every system.</li>
+        </ul>
+
+        <h2>Why True Vector Text Matters in PDFs</h2>
+        <p>
+          Some online builders render resumes as HTML and then convert the DOM into a raster canvas screenshot, embedding an image inside a PDF wrapper. This creates two fatal problems:
+        </p>
+        <ol>
+          <li>The PDF contains no native text characters—only a bitmap image. The ATS parser sees an empty page or must attempt error-prone OCR.</li>
+          <li>Zooming in on the PDF causes blurry pixelation, creating a poor impression when a human recruiter reviews it.</li>
+        </ol>
+        <p>
+          ApplyReady generates <strong>genuine vector text PDFs</strong> conforming to ISO 32000. Every word is a selectable, searchable text entity, and all hyperlinks (LinkedIn, portfolio, email) are interactive PDF annotations.
+        </p>
+
+        <p style="margin-top: 1.5rem;">
+          <a href="../resume.html" class="btn btn-primary" style="display: inline-flex; width: auto;">
+            <i class="fa-regular fa-file-lines"></i> Build Your Clean ATS Resume
+          </a>
+        </p>
+      </section>
+    </article>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="../assets/icon.svg" alt="ApplyReady" class="brand-img" width="24" height="24">
+        <span>ApplyReady.in</span>
+        <span style="font-weight: 400; color: var(--text-muted); font-size: 0.825rem;">— Free & Private In-Browser Document Tools</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer Links">
+        <a href="../index.html" class="footer-link">Image Resizer</a>
+        <a href="../resume.html" class="footer-link">Resume Builder</a>
+        <a href="../how-to-use.html" class="footer-link">How to Use</a>
+        <a href="../about.html" class="footer-link">About</a>
+        <a href="../privacy.html" class="footer-link">Privacy Policy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var themeToggle = document.getElementById('themeToggle');
+      function updateIcon(theme) {
+        if (!themeToggle) return;
+        var icon = themeToggle.querySelector('i');
+        if (!icon) return;
+        icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      }
+      updateIcon(document.documentElement.getAttribute('data-theme') || 'light');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+          var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', active);
+          try { localStorage.setItem('applyready_theme', active); } catch (e) {}
+          updateIcon(active);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

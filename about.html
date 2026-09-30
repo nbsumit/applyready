@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About ApplyReady | Free & Private Client-Side Tools</title>
+  <meta name="description" content="Learn about ApplyReady.in - our commitment to 100% client-side privacy, why we built in-browser image resizing and ATS resume generation, and how it works.">
+  <link rel="canonical" href="https://applyready.in/about.html">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://applyready.in/about.html">
+  <meta property="og:title" content="About ApplyReady | Free & Private Client-Side Tools">
+  <meta property="og:description" content="Learn how ApplyReady provides 100% private in-browser image resizing and single-column ATS resume creation without server uploads.">
+  <meta property="og:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#2563EB">
+
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('applyready_theme');
+        var theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo" aria-label="ApplyReady Home">
+        <img src="assets/icon.svg" alt="ApplyReady Logo" class="brand-img" width="32" height="32">
+        <span>ApplyReady</span>
+        <span class="brand-tag">.in</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Image Resizer</span>
+        </a>
+        <a href="resume.html" class="nav-link">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Resume Builder</span>
+        </a>
+        <a href="how-to-use.html" class="nav-link">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Guides</span>
+        </a>
+        <a href="about.html" class="nav-link active" aria-current="page">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>About</span>
+        </a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+    <article class="guide-content">
+      <header style="margin-bottom: 2rem;">
+        <h1>About ApplyReady</h1>
+        <p class="hero-subtitle" style="text-align: left; margin: 0;">
+          Free, lightning-fast document and image preparation tools that prioritize user privacy and zero server uploads.
+        </p>
+      </header>
+
+      <section class="app-card">
+        <h2>Our Mission</h2>
+        <p>
+          Preparing job applications, official submissions, and document uploads often requires tedious technical adjustments: strict pixel dimensions, stringent maximum file sizes (e.g. under 50KB or 20KB), and ATS-friendly resume formatting.
+        </p>
+        <p>
+          Most conventional web converters upload your sensitive personal documents, passport photos, signatures, and career resumes to remote cloud servers. ApplyReady was built on a different foundation: <strong>100% client-side execution</strong>. All image processing, cropping, compression, and PDF generation occur directly inside your browser on your device using standard HTML5 Canvas and modern JavaScript.
+        </p>
+
+        <h2>Why Client-Side Processing Matters</h2>
+        <p>When you use ApplyReady:</p>
+        <ul>
+          <li><strong>Zero Data Uploads:</strong> No photos, signatures, or resumes are transmitted over the network to our servers.</li>
+          <li><strong>Instant Execution:</strong> Without network upload/download latency, processing happens in milliseconds.</li>
+          <li><strong>Offline Friendly:</strong> Once loaded, the utilities function without active internet connectivity.</li>
+          <li><strong>Transparent Privacy:</strong> Your data remains strictly on your device. We do not store, catalog, or analyze user documents.</li>
+        </ul>
+
+        <h2>The Technologies Behind ApplyReady</h2>
+        <p>ApplyReady is built with lightweight, modern web standards:</p>
+        <ul>
+          <li><strong>HTML5 Canvas API:</strong> High-performance pixel manipulation, aspect-ratio scaling, and distortion-free rendering.</li>
+          <li><strong>Cropper.js:</strong> Touch-friendly, accessible image cropping with 90-degree rotation and fine-grained framing.</li>
+          <li><strong>Native Vector PDF Generation:</strong> Direct browser-side generation of searchable, selectable text PDFs conforming to ISO 32000 / PDF 1.4 standards with zero rasterization.</li>
+          <li><strong>CSS Custom Properties:</strong> Smooth light and dark themes adhering to system preferences and WCAG AA accessibility contrast ratios.</li>
+        </ul>
+
+        <h2>About the Creator & Support</h2>
+        <p>
+          ApplyReady is an independent open-source project created by <strong>Sumit</strong>. If this utility saved you time or cyber cafe fees, you can voluntarily support ongoing maintenance:
+        </p>
+        <p>
+          <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="display: inline-flex; width: auto;">
+            <i class="fa-solid fa-mug-hot"></i> Buy me a Chai via Razorpay
+          </a>
+        </p>
+      </section>
+    </article>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="assets/icon.svg" alt="ApplyReady" class="brand-img" width="24" height="24">
+        <span>ApplyReady.in</span>
+        <span style="font-weight: 400; color: var(--text-muted); font-size: 0.825rem;">— Free & Private In-Browser Document Tools</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer Links">
+        <a href="index.html" class="footer-link">Image Resizer</a>
+        <a href="resume.html" class="footer-link">Resume Builder</a>
+        <a href="how-to-use.html" class="footer-link">How to Use</a>
+        <a href="about.html" class="footer-link">About</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var themeToggle = document.getElementById('themeToggle');
+      function updateIcon(theme) {
+        if (!themeToggle) return;
+        var icon = themeToggle.querySelector('i');
+        if (!icon) return;
+        icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      }
+      updateIcon(document.documentElement.getAttribute('data-theme') || 'light');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+          var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', active);
+          try { localStorage.setItem('applyready_theme', active); } catch (e) {}
+          updateIcon(active);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

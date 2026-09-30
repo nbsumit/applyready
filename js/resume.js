@@ -1,83 +1,137 @@
 /**
  * ApplyReady.in - Single-Column ATS-Friendly Resume Builder
- * 100% Client-Side Real-Time Preview & html2pdf.js Export
+ * 100% Client-Side Real-Time Preview, Vector Text PDF Export, and Local Drafts
  */
 
 (function () {
   'use strict';
 
-  // Resume State
-  let resumeData = {
+  // State
+  let isDirty = false;
+  let autoSaveDraft = false;
+  let currentFont = 'serif';
+
+  // General-purpose professional sample data
+  const SAMPLE_DATA = {
     personal: {
-      fullName: 'RAHUL SHARMA',
-      targetTitle: 'Full Stack Developer | B.Tech Computer Science',
-      email: 'rahul.sharma@gmail.com',
-      phone: '+91 98765 43210',
-      location: 'Bengaluru, Karnataka, India',
-      linkedin: 'linkedin.com/in/rahulsharma',
-      github: 'github.com/rahulsharma'
+      fullName: 'ALEX R. MORGAN',
+      targetTitle: 'Operations & Project Manager | PMP Candidate',
+      email: 'alex.morgan@email.com',
+      phone: '+1 (555) 234-5678',
+      location: 'Chicago, IL',
+      linkedin: 'linkedin.com/in/alexmorgan',
+      github: '',
+      website: 'alexmorgan-portfolio.com'
     },
-    summary: 'Motivated software engineer with practical experience in full-stack web development, RESTful APIs, and database architecture. Proven track record of architecting scalable applications and collaborating in agile teams. Passionate about solving complex algorithmic challenges and optimizing application performance.',
-    education: [
-      {
-        id: 'edu-1',
-        degree: 'B.Tech in Computer Science & Engineering',
-        institution: 'National Institute of Technology (NIT)',
-        location: 'Surathkal, India',
-        duration: '2020 - 2024',
-        score: 'CGPA: 8.8 / 10'
-      },
-      {
-        id: 'edu-2',
-        degree: 'Senior Secondary (Class XII) - CBSE Science',
-        institution: 'Delhi Public School',
-        location: 'Delhi, India',
-        duration: '2018 - 2020',
-        score: 'Percentage: 94.4%'
-      }
-    ],
+    summaryTitle: 'Professional Summary',
+    summary: 'Results-driven operations professional with over 5 years of experience optimizing cross-functional workflows, managing enterprise project lifecycles, and driving operational efficiency. Demonstrated expertise in budget allocation, stakeholder coordination, and lean process improvements resulting in 18% cost reductions and enhanced team delivery timelines.',
+    experienceTitle: 'Work Experience',
     experience: [
       {
         id: 'exp-1',
-        role: 'Software Developer Intern',
-        company: 'TechCorp Solutions',
-        location: 'Bengaluru, India',
-        duration: 'Jan 2024 - Jun 2024',
-        bulletsText: 'Developed and deployed RESTful microservices in Node.js, reducing server response latency by 22% across 50,000+ active users.\nIntegrated Redis caching for hot database queries, decreasing PostgreSQL load by 35%.\nCollaborated with senior engineers in sprint reviews, CI/CD pipeline automation via GitHub Actions, and unit testing with Jest.'
+        role: 'Senior Operations Coordinator',
+        company: 'Apex Logistics Solutions',
+        location: 'Chicago, IL',
+        duration: 'Jan 2022 - Present',
+        bulletsText: 'Directed daily distribution workflows for 4 regional facilities, improving on-time delivery rate from 91% to 98.4%.\nSpearheaded adoption of automated inventory tracking software, eliminating manual dispatch errors and saving 14 hours weekly.\nManaged vendor contracts and procurement negotiations, reducing recurring supply chain costs by $120,000 annually.\nSupervised a team of 12 dispatchers and project coordinators, conducting quarterly performance evaluations and safety audits.'
+      },
+      {
+        id: 'exp-2',
+        role: 'Project Analyst',
+        company: 'Beacon Strategic Advisory',
+        location: 'Evanston, IL',
+        duration: 'Jun 2019 - Dec 2021',
+        bulletsText: 'Facilitated sprint planning and risk assessment reviews for 8 concurrent digital transformation client engagements.\nSynthesized operational KPI datasets into executive dashboards, providing actionable visibility to senior leadership.\nStandardized internal project documentation and handover templates adopted across all client-facing consulting divisions.'
       }
     ],
+    educationTitle: 'Education',
+    education: [
+      {
+        id: 'edu-1',
+        degree: 'Bachelor of Science in Business Administration',
+        institution: 'University of Illinois Urbana-Champaign',
+        location: 'Champaign, IL',
+        duration: '2015 - 2019',
+        score: 'GPA: 3.8 / 4.0'
+      }
+    ],
+    projectsTitle: 'Key Projects & Initiatives',
     projects: [
       {
         id: 'proj-1',
-        name: 'E-Commerce Platform with Microservices',
-        tech: 'React.js, Node.js, Express, MongoDB, Docker',
-        link: 'github.com/rahulsharma/ecommerce-platform',
-        bulletsText: 'Engineered an end-to-end shopping platform with JWT authentication, role-based access control, and Razorpay payment gateway integration.\nDesigned responsive product catalog with debounced live search, faceted filtering, and optimized MongoDB index queries.'
-      },
-      {
-        id: 'proj-2',
-        name: 'Job Application & ATS Keyword Analyzer',
-        tech: 'Python, Flask, SpaCy NLP, SQLite',
-        link: 'github.com/rahulsharma/ats-analyzer',
-        bulletsText: 'Built a natural language processing tool parsing PDF resumes to extract skill keywords and compute ATS relevancy score against job descriptions.\nAchieved 91% parsing accuracy on 500+ benchmark resumes with automated keyword highlighting.'
+        name: 'Enterprise Supply Chain Automation',
+        tech: 'Jira, Smartsheet, Tableau, SAP ERP',
+        link: 'beaconadvisory.com/case-studies/logistics',
+        bulletsText: 'Led end-to-end migration of legacy dispatch sheets to centralized cloud ERP for a fleet of 80 transport vehicles.\nOrganized user acceptance testing workshops and authored training manuals for 65 operations staff members.'
       }
     ],
+    skillsTitle: 'Skills & Competencies',
     skills: {
-      languages: 'JavaScript (ES6+), TypeScript, Python, C++, SQL',
-      frameworks: 'React.js, Next.js, Node.js, Express.js, Redux Toolkit, Tailwind CSS',
-      tools: 'MongoDB, PostgreSQL, Git, Docker, Postman, Linux',
-      other: 'Data Structures & Algorithms, Object-Oriented Design, System Design, REST APIs'
+      languages: 'Project Lifecycle Management, Agile / Scrum Framework, Risk Assessment, Budget Oversight, Lean Six Sigma',
+      frameworks: 'Jira, Asana, Microsoft Project, Smartsheet, Salesforce CRM, SAP ERP, Trello',
+      tools: 'Advanced Excel / Google Sheets, Tableau, Power BI, SQL Data Queries, Google Workspace',
+      other: 'Stakeholder Communication, Vendor Management, Team Leadership, Process Documentation, Bilingual (English/Spanish)'
     }
   };
+
+  // Blank template
+  const EMPTY_DATA = {
+    personal: {
+      fullName: '',
+      targetTitle: '',
+      email: '',
+      phone: '',
+      location: '',
+      linkedin: '',
+      github: '',
+      website: ''
+    },
+    summaryTitle: 'Professional Summary',
+    summary: '',
+    experienceTitle: 'Work Experience',
+    experience: [],
+    educationTitle: 'Education',
+    education: [],
+    projectsTitle: 'Key Projects',
+    projects: [],
+    skillsTitle: 'Skills & Competencies',
+    skills: {
+      languages: '',
+      frameworks: '',
+      tools: '',
+      other: ''
+    }
+  };
+
+  // Current Resume State
+  let resumeData = JSON.parse(JSON.stringify(SAMPLE_DATA));
 
   // DOM Elements
   const btnLoadSample = document.getElementById('btnLoadSample');
   const btnClearForm = document.getElementById('btnClearForm');
   const btnDownloadPDF = document.getElementById('btnDownloadPDF');
+  const btnPrintPDF = document.getElementById('btnPrintPDF');
+  const btnExportJSON = document.getElementById('btnExportJSON');
+  const btnImportJSON = document.getElementById('btnImportJSON');
+  const fileImportInput = document.getElementById('fileImportInput');
+
+  // Draft Elements
+  const chkSaveDraft = document.getElementById('chkSaveDraft');
+  const draftStatusText = document.getElementById('draftStatusText');
+  const btnDeleteDraft = document.getElementById('btnDeleteDraft');
+
+  // Mobile Tabs
+  const tabEdit = document.getElementById('tabEdit');
+  const tabPreview = document.getElementById('tabPreview');
+  const resumeAppLayout = document.getElementById('resumeAppLayout');
+
+  // Font Selection
   const fontSelect = document.getElementById('fontSelect');
   const resumeSheet = document.getElementById('resumeSheet');
+  const previewWrapper = document.getElementById('previewWrapper');
+  const resumePreviewOuter = document.getElementById('resumePreviewOuter');
 
-  // Input Fields
+  // Inputs
   const fullNameInp = document.getElementById('fullName');
   const targetTitleInp = document.getElementById('targetTitle');
   const emailInp = document.getElementById('email');
@@ -85,6 +139,7 @@
   const locationInp = document.getElementById('location');
   const linkedinInp = document.getElementById('linkedin');
   const githubInp = document.getElementById('github');
+  const websiteInp = document.getElementById('website');
   const summaryInp = document.getElementById('summaryText');
 
   const skillLanguagesInp = document.getElementById('skillLanguages');
@@ -92,64 +147,142 @@
   const skillToolsInp = document.getElementById('skillTools');
   const skillOtherInp = document.getElementById('skillOther');
 
-  // Dynamic Lists Containers
+  // Dynamic Lists
   const educationList = document.getElementById('educationList');
   const btnAddEducation = document.getElementById('btnAddEducation');
-
   const experienceList = document.getElementById('experienceList');
   const btnAddExperience = document.getElementById('btnAddExperience');
-
   const projectsList = document.getElementById('projectsList');
   const btnAddProject = document.getElementById('btnAddProject');
 
   // Preview Elements
   const prevFullName = document.getElementById('prevFullName');
   const prevTargetTitle = document.getElementById('prevTargetTitle');
-  const prevPhone = document.getElementById('prevPhone');
-  const prevEmail = document.getElementById('prevEmail');
-  const prevLocation = document.getElementById('prevLocation');
-  const prevLinkedIn = document.getElementById('prevLinkedIn');
-  const prevGitHub = document.getElementById('prevGitHub');
-  const prevSepLinkedIn = document.getElementById('prevSepLinkedIn');
-  const prevSepGitHub = document.getElementById('prevSepGitHub');
-
+  const prevContactLine = document.getElementById('prevContactLine');
   const prevSectionSummary = document.getElementById('prevSectionSummary');
+  const prevSummaryTitle = document.getElementById('prevSummaryTitle');
   const prevSummary = document.getElementById('prevSummary');
 
   const prevSectionEducation = document.getElementById('prevSectionEducation');
+  const prevEducationTitle = document.getElementById('prevEducationTitle');
   const prevEducationList = document.getElementById('prevEducationList');
 
   const prevSectionExperience = document.getElementById('prevSectionExperience');
+  const prevExperienceTitle = document.getElementById('prevExperienceTitle');
   const prevExperienceList = document.getElementById('prevExperienceList');
 
   const prevSectionProjects = document.getElementById('prevSectionProjects');
+  const prevProjectsTitle = document.getElementById('prevProjectsTitle');
   const prevProjectsList = document.getElementById('prevProjectsList');
 
   const prevSectionSkills = document.getElementById('prevSectionSkills');
-  const prevSkillsLanguages = document.getElementById('prevSkillsLanguages');
-  const prevSkillsFrameworks = document.getElementById('prevSkillsFrameworks');
-  const prevSkillsTools = document.getElementById('prevSkillsTools');
-  const prevSkillsOther = document.getElementById('prevSkillsOther');
-  const prevRowLanguages = document.getElementById('prevRowLanguages');
-  const prevRowFrameworks = document.getElementById('prevRowFrameworks');
-  const prevRowTools = document.getElementById('prevRowTools');
-  const prevRowOther = document.getElementById('prevRowOther');
+  const prevSkillsTitle = document.getElementById('prevSkillsTitle');
+  const prevSkillsList = document.getElementById('prevSkillsList');
 
-  // Monetization Modal
-  const monetizeModal = document.getElementById('monetizeModal');
-  const btnCloseModal = document.getElementById('btnCloseModal');
-  const linkDismissModal = document.getElementById('linkDismissModal');
-
-  // Initialization
+  /**
+   * Initialize Builder
+   */
   function init() {
+    loadDraftSettings();
     populateFormWithData();
     renderDynamicFormSections();
     renderResumePreview();
     attachEventListeners();
     setupAccordions();
+    updatePreviewScale();
+    window.addEventListener('resize', updatePreviewScale);
   }
 
-  // Populate inputs from state
+  /**
+   * Escape HTML safely to prevent XSS
+   */
+  function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  /**
+   * Sanitize URL for safe href
+   */
+  function sanitizeHref(url) {
+    if (!url) return '';
+    const clean = url.trim();
+    if (clean.toLowerCase().startsWith('javascript:') || clean.toLowerCase().startsWith('data:')) {
+      return '#';
+    }
+    if (!clean.startsWith('http://') && !clean.startsWith('https://') && !clean.startsWith('mailto:') && !clean.startsWith('tel:')) {
+      return 'https://' + clean;
+    }
+    return clean;
+  }
+
+  /**
+   * Check Local Draft Storage
+   */
+  function loadDraftSettings() {
+    try {
+      const enabled = localStorage.getItem('applyready_draft_enabled');
+      if (enabled === 'true') {
+        autoSaveDraft = true;
+        if (chkSaveDraft) chkSaveDraft.checked = true;
+        const saved = localStorage.getItem('applyready_resume_draft');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.data) {
+            resumeData = parsed.data;
+            if (draftStatusText && parsed.savedAt) {
+              const d = new Date(parsed.savedAt);
+              draftStatusText.textContent = `Draft saved locally: ${d.toLocaleDateString()} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            }
+          }
+        }
+      } else {
+        autoSaveDraft = false;
+        if (chkSaveDraft) chkSaveDraft.checked = false;
+        if (draftStatusText) draftStatusText.textContent = 'Local saving disabled';
+      }
+    } catch (e) {
+      console.warn('Storage unavailable:', e);
+      if (draftStatusText) draftStatusText.textContent = 'Storage unavailable in private mode';
+    }
+  }
+
+  function saveDraftToStorage() {
+    if (!autoSaveDraft) return;
+    try {
+      const payload = {
+        version: 1,
+        savedAt: new Date().toISOString(),
+        data: resumeData
+      };
+      localStorage.setItem('applyready_resume_draft', JSON.stringify(payload));
+      if (draftStatusText) {
+        const now = new Date();
+        draftStatusText.textContent = `Draft saved: Just now (${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
+      }
+    } catch (e) {
+      console.error('Failed to save draft:', e);
+      if (draftStatusText) draftStatusText.textContent = 'Error saving to local storage (quota exceeded)';
+    }
+  }
+
+  function deleteDraftFromStorage() {
+    try {
+      localStorage.removeItem('applyready_resume_draft');
+      if (draftStatusText) {
+        draftStatusText.textContent = autoSaveDraft ? 'No draft saved yet' : 'Local saving disabled';
+      }
+    } catch (e) {}
+  }
+
+  /**
+   * Populate Inputs from State
+   */
   function populateFormWithData() {
     fullNameInp.value = resumeData.personal.fullName || '';
     targetTitleInp.value = resumeData.personal.targetTitle || '';
@@ -158,348 +291,406 @@
     locationInp.value = resumeData.personal.location || '';
     linkedinInp.value = resumeData.personal.linkedin || '';
     githubInp.value = resumeData.personal.github || '';
-
+    if (websiteInp) websiteInp.value = resumeData.personal.website || '';
     summaryInp.value = resumeData.summary || '';
 
-    skillLanguagesInp.value = resumeData.skills.languages || '';
-    skillFrameworksInp.value = resumeData.skills.frameworks || '';
-    skillToolsInp.value = resumeData.skills.tools || '';
-    skillOtherInp.value = resumeData.skills.other || '';
+    const s = resumeData.skills || {};
+    skillLanguagesInp.value = s.languages || '';
+    skillFrameworksInp.value = s.frameworks || '';
+    skillToolsInp.value = s.tools || '';
+    skillOtherInp.value = s.other || '';
   }
 
-  // Render Dynamic Education, Experience, Projects in Form
+  /**
+   * Render Dynamic Form Lists (Education, Experience, Projects)
+   */
   function renderDynamicFormSections() {
-    // 1. Education
+    // Education
     educationList.innerHTML = '';
-    resumeData.education.forEach((item, index) => {
+    (resumeData.education || []).forEach((edu, index) => {
       const el = document.createElement('div');
       el.className = 'dynamic-item';
-      el.dataset.id = item.id;
+      el.dataset.id = edu.id;
       el.innerHTML = `
         <div class="dynamic-item-header">
-          <span class="dynamic-item-title">Education #${index + 1}</span>
-          <button type="button" class="btn-remove-item" data-action="remove-edu" data-id="${item.id}">
-            <i class="fa-solid fa-trash-can"></i> Remove
-          </button>
-        </div>
-        <div class="form-group">
-          <label class="form-label text-sm">Degree / Qualification *</label>
-          <input type="text" class="form-control item-degree" value="${escapeHtml(item.degree)}" placeholder="e.g. B.Tech in CSE">
-        </div>
-        <div class="form-group">
-          <label class="form-label text-sm">Institution / College / School *</label>
-          <input type="text" class="form-control item-institution" value="${escapeHtml(item.institution)}" placeholder="e.g. National Institute of Technology">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-          <div class="form-group">
-            <label class="form-label text-sm">Graduation Year / Dates</label>
-            <input type="text" class="form-control item-duration" value="${escapeHtml(item.duration)}" placeholder="e.g. 2020 - 2024">
-          </div>
-          <div class="form-group">
-            <label class="form-label text-sm">CGPA / Percentage</label>
-            <input type="text" class="form-control item-score" value="${escapeHtml(item.score)}" placeholder="e.g. CGPA: 8.5/10">
+          <strong style="font-size: 0.85rem;">#${index + 1} Degree / School</strong>
+          <div class="dynamic-item-actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-edu" data-id="${edu.id}" title="Move Up" ${index === 0 ? 'disabled' : ''}>
+              <i class="fa-solid fa-arrow-up"></i>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-edu" data-id="${edu.id}" title="Move Down" ${index === resumeData.education.length - 1 ? 'disabled' : ''}>
+              <i class="fa-solid fa-arrow-down"></i>
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-edu" data-id="${edu.id}" title="Delete Entry">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
           </div>
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label text-sm">Location (Optional)</label>
-          <input type="text" class="form-control item-location" value="${escapeHtml(item.location)}" placeholder="e.g. New Delhi, India">
+        <div class="form-row-2" style="margin-bottom: 0.5rem;">
+          <div>
+            <label class="form-label text-sm" for="edu-deg-${edu.id}">Degree / Field of Study</label>
+            <input type="text" id="edu-deg-${edu.id}" class="form-control item-degree" placeholder="e.g. B.S. in Management" value="${escapeHTML(edu.degree)}">
+          </div>
+          <div>
+            <label class="form-label text-sm" for="edu-inst-${edu.id}">Institution / School</label>
+            <input type="text" id="edu-inst-${edu.id}" class="form-control item-institution" placeholder="e.g. University Name" value="${escapeHTML(edu.institution)}">
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div>
+            <label class="form-label text-sm" for="edu-dur-${edu.id}">Dates / Years</label>
+            <input type="text" id="edu-dur-${edu.id}" class="form-control item-duration" placeholder="e.g. 2018 - 2022" value="${escapeHTML(edu.duration)}">
+          </div>
+          <div>
+            <label class="form-label text-sm" for="edu-loc-${edu.id}">Location</label>
+            <input type="text" id="edu-loc-${edu.id}" class="form-control item-location" placeholder="e.g. Chicago, IL" value="${escapeHTML(edu.location)}">
+          </div>
+          <div>
+            <label class="form-label text-sm" for="edu-score-${edu.id}">GPA / Honors (Optional)</label>
+            <input type="text" id="edu-score-${edu.id}" class="form-control item-score" placeholder="e.g. GPA: 3.9" value="${escapeHTML(edu.score)}">
+          </div>
         </div>
       `;
       educationList.appendChild(el);
     });
 
-    // 2. Experience
+    // Experience
     experienceList.innerHTML = '';
-    resumeData.experience.forEach((item, index) => {
+    (resumeData.experience || []).forEach((exp, index) => {
       const el = document.createElement('div');
       el.className = 'dynamic-item';
-      el.dataset.id = item.id;
+      el.dataset.id = exp.id;
       el.innerHTML = `
         <div class="dynamic-item-header">
-          <span class="dynamic-item-title">Experience #${index + 1}</span>
-          <button type="button" class="btn-remove-item" data-action="remove-exp" data-id="${item.id}">
-            <i class="fa-solid fa-trash-can"></i> Remove
-          </button>
-        </div>
-        <div class="form-group">
-          <label class="form-label text-sm">Job Title / Role *</label>
-          <input type="text" class="form-control item-role" value="${escapeHtml(item.role)}" placeholder="e.g. Software Developer Intern">
-        </div>
-        <div class="form-group">
-          <label class="form-label text-sm">Company / Organization *</label>
-          <input type="text" class="form-control item-company" value="${escapeHtml(item.company)}" placeholder="e.g. TechCorp Solutions">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-          <div class="form-group">
-            <label class="form-label text-sm">Duration / Dates</label>
-            <input type="text" class="form-control item-duration" value="${escapeHtml(item.duration)}" placeholder="e.g. Jan 2024 - Jun 2024">
-          </div>
-          <div class="form-group">
-            <label class="form-label text-sm">Location</label>
-            <input type="text" class="form-control item-location" value="${escapeHtml(item.location)}" placeholder="e.g. Bengaluru, India">
+          <strong style="font-size: 0.85rem;">#${index + 1} Role / Company</strong>
+          <div class="dynamic-item-actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-exp" data-id="${exp.id}" title="Move Up" ${index === 0 ? 'disabled' : ''}>
+              <i class="fa-solid fa-arrow-up"></i>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-exp" data-id="${exp.id}" title="Move Down" ${index === resumeData.experience.length - 1 ? 'disabled' : ''}>
+              <i class="fa-solid fa-arrow-down"></i>
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-exp" data-id="${exp.id}" title="Delete Entry">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
           </div>
         </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label text-sm">Responsibilities & Achievements (One per line)</label>
-          <textarea class="form-control item-bullets" rows="3" placeholder="Engineered REST APIs using Node.js...\nImproved throughput by 20%...">${escapeHtml(item.bulletsText)}</textarea>
-          <p class="form-hint">Each new line automatically turns into an ATS bullet point.</p>
+        <div class="form-row-2" style="margin-bottom: 0.5rem;">
+          <div>
+            <label class="form-label text-sm" for="exp-role-${exp.id}">Job Title / Role</label>
+            <input type="text" id="exp-role-${exp.id}" class="form-control item-role" placeholder="e.g. Operations Coordinator" value="${escapeHTML(exp.role)}">
+          </div>
+          <div>
+            <label class="form-label text-sm" for="exp-comp-${exp.id}">Company / Organization</label>
+            <input type="text" id="exp-comp-${exp.id}" class="form-control item-company" placeholder="e.g. Acme Corp" value="${escapeHTML(exp.company)}">
+          </div>
+        </div>
+        <div class="form-row-2" style="margin-bottom: 0.5rem;">
+          <div>
+            <label class="form-label text-sm" for="exp-dur-${exp.id}">Duration</label>
+            <input type="text" id="exp-dur-${exp.id}" class="form-control item-duration" placeholder="e.g. Jan 2022 - Present" value="${escapeHTML(exp.duration)}">
+          </div>
+          <div>
+            <label class="form-label text-sm" for="exp-loc-${exp.id}">Location</label>
+            <input type="text" id="exp-loc-${exp.id}" class="form-control item-location" placeholder="e.g. New York, NY" value="${escapeHTML(exp.location)}">
+          </div>
+        </div>
+        <div>
+          <label class="form-label text-sm" for="exp-bul-${exp.id}">Key Responsibilities & Achievements (One per line)</label>
+          <textarea id="exp-bul-${exp.id}" class="form-control item-bullets" rows="3" placeholder="Enter bullet points (start each achievement on a new line)...">${escapeHTML(exp.bulletsText)}</textarea>
         </div>
       `;
       experienceList.appendChild(el);
     });
 
-    // 3. Projects
+    // Projects
     projectsList.innerHTML = '';
-    resumeData.projects.forEach((item, index) => {
+    (resumeData.projects || []).forEach((proj, index) => {
       const el = document.createElement('div');
       el.className = 'dynamic-item';
-      el.dataset.id = item.id;
+      el.dataset.id = proj.id;
       el.innerHTML = `
         <div class="dynamic-item-header">
-          <span class="dynamic-item-title">Project #${index + 1}</span>
-          <button type="button" class="btn-remove-item" data-action="remove-proj" data-id="${item.id}">
-            <i class="fa-solid fa-trash-can"></i> Remove
-          </button>
+          <strong style="font-size: 0.85rem;">#${index + 1} Project</strong>
+          <div class="dynamic-item-actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-proj" data-id="${proj.id}" title="Move Up" ${index === 0 ? 'disabled' : ''}>
+              <i class="fa-solid fa-arrow-up"></i>
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-proj" data-id="${proj.id}" title="Move Down" ${index === resumeData.projects.length - 1 ? 'disabled' : ''}>
+              <i class="fa-solid fa-arrow-down"></i>
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-proj" data-id="${proj.id}" title="Delete Entry">
+              <i class="fa-regular fa-trash-can"></i>
+            </button>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label text-sm">Project Name *</label>
-          <input type="text" class="form-control item-name" value="${escapeHtml(item.name)}" placeholder="e.g. E-Commerce Microservices">
+        <div class="form-row-2" style="margin-bottom: 0.5rem;">
+          <div>
+            <label class="form-label text-sm" for="proj-name-${proj.id}">Project Name</label>
+            <input type="text" id="proj-name-${proj.id}" class="form-control item-name" placeholder="e.g. Process Optimization Project" value="${escapeHTML(proj.name)}">
+          </div>
+          <div>
+            <label class="form-label text-sm" for="proj-tech-${proj.id}">Tools / Methodologies Used</label>
+            <input type="text" id="proj-tech-${proj.id}" class="form-control item-tech" placeholder="e.g. Asana, Tableau, Excel" value="${escapeHTML(proj.tech)}">
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label text-sm">Technologies Used</label>
-          <input type="text" class="form-control item-tech" value="${escapeHtml(item.tech)}" placeholder="e.g. React.js, Node.js, MongoDB, Docker">
+        <div style="margin-bottom: 0.5rem;">
+          <label class="form-label text-sm" for="proj-link-${proj.id}">Link / Case Study URL (Optional)</label>
+          <input type="text" id="proj-link-${proj.id}" class="form-control item-link" placeholder="e.g. portfolio.com/case-study" value="${escapeHTML(proj.link)}">
         </div>
-        <div class="form-group">
-          <label class="form-label text-sm">Project Link / Repo</label>
-          <input type="text" class="form-control item-link" value="${escapeHtml(item.link)}" placeholder="e.g. github.com/username/project">
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-          <label class="form-label text-sm">Key Contributions (One per line)</label>
-          <textarea class="form-control item-bullets" rows="2" placeholder="Designed scalable architecture...\nIntegrated authentication with JWT...">${escapeHtml(item.bulletsText)}</textarea>
+        <div>
+          <label class="form-label text-sm" for="proj-bul-${proj.id}">Project Highlights & Impact (One per line)</label>
+          <textarea id="proj-bul-${proj.id}" class="form-control item-bullets" rows="2" placeholder="Key outcomes or impact metrics...">${escapeHTML(proj.bulletsText)}</textarea>
         </div>
       `;
       projectsList.appendChild(el);
     });
   }
 
-  // Render Resume Preview DOM
+  /**
+   * Render Resume Live Preview
+   */
   function renderResumePreview() {
-    // 1. Personal Details
-    const name = resumeData.personal.fullName.trim() || 'YOUR NAME';
-    prevFullName.textContent = name.toUpperCase();
+    const p = resumeData.personal || {};
 
-    if (resumeData.personal.targetTitle.trim()) {
-      prevTargetTitle.textContent = resumeData.personal.targetTitle.trim();
+    // Name & Target Title
+    prevFullName.textContent = (p.fullName || 'YOUR FULL NAME').toUpperCase();
+    if (p.targetTitle && p.targetTitle.trim()) {
+      prevTargetTitle.textContent = p.targetTitle;
       prevTargetTitle.style.display = 'block';
     } else {
+      prevTargetTitle.textContent = '';
       prevTargetTitle.style.display = 'none';
     }
 
-    // Contact line items
-    prevPhone.textContent = resumeData.personal.phone.trim();
-    prevPhone.style.display = resumeData.personal.phone.trim() ? 'inline' : 'none';
+    // Contact Information: only insert bullet separators between non-empty items!
+    prevContactLine.innerHTML = '';
+    const contactItems = [];
+    if (p.phone && p.phone.trim()) contactItems.push({ text: p.phone.trim(), href: 'tel:' + p.phone.trim().replace(/\s+/g, '') });
+    if (p.email && p.email.trim()) contactItems.push({ text: p.email.trim(), href: 'mailto:' + p.email.trim() });
+    if (p.location && p.location.trim()) contactItems.push({ text: p.location.trim() });
+    if (p.linkedin && p.linkedin.trim()) contactItems.push({ text: p.linkedin.trim(), href: sanitizeHref(p.linkedin.trim()) });
+    if (p.github && p.github.trim()) contactItems.push({ text: p.github.trim(), href: sanitizeHref(p.github.trim()) });
+    if (p.website && p.website.trim()) contactItems.push({ text: p.website.trim(), href: sanitizeHref(p.website.trim()) });
 
-    prevEmail.textContent = resumeData.personal.email.trim();
-    prevEmail.style.display = resumeData.personal.email.trim() ? 'inline' : 'none';
+    contactItems.forEach((item, index) => {
+      const span = document.createElement('span');
+      span.className = 'resume-contact-item';
+      if (item.href) {
+        const a = document.createElement('a');
+        a.href = item.href;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = item.text;
+        span.appendChild(a);
+      } else {
+        span.textContent = item.text;
+      }
+      prevContactLine.appendChild(span);
 
-    prevLocation.textContent = resumeData.personal.location.trim();
-    prevLocation.style.display = resumeData.personal.location.trim() ? 'inline' : 'none';
+      if (index < contactItems.length - 1) {
+        const sep = document.createElement('span');
+        sep.textContent = '•';
+        sep.style.color = '#9CA3AF';
+        prevContactLine.appendChild(sep);
+      }
+    });
 
-    if (resumeData.personal.linkedin.trim()) {
-      prevLinkedIn.textContent = resumeData.personal.linkedin.trim();
-      prevLinkedIn.style.display = 'inline';
-      prevSepLinkedIn.style.display = 'inline';
-    } else {
-      prevLinkedIn.style.display = 'none';
-      prevSepLinkedIn.style.display = 'none';
-    }
-
-    if (resumeData.personal.github.trim()) {
-      prevGitHub.textContent = resumeData.personal.github.trim();
-      prevGitHub.style.display = 'inline';
-      prevSepGitHub.style.display = 'inline';
-    } else {
-      prevGitHub.style.display = 'none';
-      prevSepGitHub.style.display = 'none';
-    }
-
-    // 2. Summary
-    if (resumeData.summary.trim()) {
+    // Professional Summary
+    if (resumeData.summary && resumeData.summary.trim()) {
+      prevSummaryTitle.textContent = resumeData.summaryTitle || 'PROFESSIONAL SUMMARY';
+      prevSummary.textContent = resumeData.summary;
       prevSectionSummary.style.display = 'block';
-      prevSummary.textContent = resumeData.summary.trim();
     } else {
       prevSectionSummary.style.display = 'none';
     }
 
-    // 3. Education
-    if (resumeData.education.length > 0) {
-      prevSectionEducation.style.display = 'block';
-      prevEducationList.innerHTML = '';
-      resumeData.education.forEach(edu => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'resume-entry';
-        
-        let detailsPart = '';
-        if (edu.score && edu.location) {
-          detailsPart = `${escapeHtml(edu.score)} | ${escapeHtml(edu.location)}`;
-        } else if (edu.score) {
-          detailsPart = escapeHtml(edu.score);
-        } else if (edu.location) {
-          detailsPart = escapeHtml(edu.location);
+    // Work Experience
+    const exp = resumeData.experience || [];
+    const validExp = exp.filter(x => x.role || x.company || x.bulletsText);
+    if (validExp.length > 0) {
+      prevExperienceTitle.textContent = resumeData.experienceTitle || 'WORK EXPERIENCE';
+      prevExperienceList.innerHTML = '';
+      validExp.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resume-entry';
+
+        const roleComp = [item.role, item.company].filter(Boolean).join(' | ');
+        const durLoc = [item.duration, item.location].filter(Boolean).join(' • ');
+
+        let bulletsHtml = '';
+        if (item.bulletsText && item.bulletsText.trim()) {
+          const lines = item.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+          const cleanLines = lines.map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
+          if (cleanLines.length > 0) {
+            bulletsHtml = `<ul class="resume-bullets">${cleanLines.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>`;
+          }
         }
 
-        itemEl.innerHTML = `
+        div.innerHTML = `
           <div class="resume-entry-header">
-            <div>
-              <span class="resume-entry-title">${escapeHtml(edu.degree)}</span> | 
-              <span class="resume-entry-subtitle">${escapeHtml(edu.institution)}</span>
-            </div>
-            <div class="resume-entry-date">${escapeHtml(edu.duration)}</div>
+            <span>${escapeHTML(roleComp)}</span>
+            <span style="font-weight: normal; font-style: italic; font-size: 9pt;">${escapeHTML(durLoc)}</span>
           </div>
-          ${detailsPart ? `<div style="font-size: 9.5pt; font-style: italic; color: #374151;">${detailsPart}</div>` : ''}
+          ${bulletsHtml}
         `;
-        prevEducationList.appendChild(itemEl);
+        prevExperienceList.appendChild(div);
       });
-    } else {
-      prevSectionEducation.style.display = 'none';
-    }
-
-    // 4. Experience
-    if (resumeData.experience.length > 0) {
       prevSectionExperience.style.display = 'block';
-      prevExperienceList.innerHTML = '';
-      resumeData.experience.forEach(exp => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'resume-entry';
-
-        const bullets = parseBullets(exp.bulletsText);
-        const bulletsHtml = bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('');
-
-        itemEl.innerHTML = `
-          <div class="resume-entry-header">
-            <div>
-              <span class="resume-entry-title">${escapeHtml(exp.role)}</span> | 
-              <span class="resume-entry-subtitle">${escapeHtml(exp.company)}</span>
-            </div>
-            <div class="resume-entry-date">${escapeHtml(exp.duration)}${exp.location ? ` | ${escapeHtml(exp.location)}` : ''}</div>
-          </div>
-          ${bulletsHtml ? `<ul class="resume-bullets">${bulletsHtml}</ul>` : ''}
-        `;
-        prevExperienceList.appendChild(itemEl);
-      });
     } else {
       prevSectionExperience.style.display = 'none';
     }
 
-    // 5. Projects
-    if (resumeData.projects.length > 0) {
-      prevSectionProjects.style.display = 'block';
-      prevProjectsList.innerHTML = '';
-      resumeData.projects.forEach(proj => {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'resume-entry';
+    // Education
+    const edu = resumeData.education || [];
+    const validEdu = edu.filter(x => x.degree || x.institution);
+    if (validEdu.length > 0) {
+      prevEducationTitle.textContent = resumeData.educationTitle || 'EDUCATION';
+      prevEducationList.innerHTML = '';
+      validEdu.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resume-entry';
 
-        const bullets = parseBullets(proj.bulletsText);
-        const bulletsHtml = bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('');
+        const degInst = [item.degree, item.institution].filter(Boolean).join(' — ');
+        const meta = [item.duration, item.location, item.score].filter(Boolean).join(' • ');
 
-        itemEl.innerHTML = `
+        div.innerHTML = `
           <div class="resume-entry-header">
-            <div>
-              <span class="resume-entry-title">${escapeHtml(proj.name)}</span>
-              ${proj.tech ? ` <span style="font-size: 9.5pt; font-weight: normal; font-style: italic;">(${escapeHtml(proj.tech)})</span>` : ''}
-            </div>
-            ${proj.link ? `<div class="resume-entry-date">${escapeHtml(proj.link)}</div>` : ''}
+            <span>${escapeHTML(degInst)}</span>
+            <span style="font-weight: normal; font-style: italic; font-size: 9pt;">${escapeHTML(meta)}</span>
           </div>
-          ${bulletsHtml ? `<ul class="resume-bullets">${bulletsHtml}</ul>` : ''}
         `;
-        prevProjectsList.appendChild(itemEl);
+        prevEducationList.appendChild(div);
       });
+      prevSectionEducation.style.display = 'block';
+    } else {
+      prevSectionEducation.style.display = 'none';
+    }
+
+    // Projects
+    const proj = resumeData.projects || [];
+    const validProj = proj.filter(x => x.name || x.tech || x.bulletsText);
+    if (validProj.length > 0) {
+      prevProjectsTitle.textContent = resumeData.projectsTitle || 'KEY PROJECTS';
+      prevProjectsList.innerHTML = '';
+      validProj.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resume-entry';
+
+        const nameTech = item.tech ? `${item.name} | <span style="font-weight: normal; font-style: italic;">${escapeHTML(item.tech)}</span>` : escapeHTML(item.name);
+        const linkHtml = item.link ? `<a href="${sanitizeHref(item.link)}" target="_blank" rel="noopener noreferrer" style="font-size: 8.5pt; color: #1D4ED8;">${escapeHTML(item.link)}</a>` : '';
+
+        let bulletsHtml = '';
+        if (item.bulletsText && item.bulletsText.trim()) {
+          const lines = item.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+          const cleanLines = lines.map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
+          if (cleanLines.length > 0) {
+            bulletsHtml = `<ul class="resume-bullets">${cleanLines.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>`;
+          }
+        }
+
+        div.innerHTML = `
+          <div class="resume-entry-header">
+            <span>${nameTech}</span>
+            <span>${linkHtml}</span>
+          </div>
+          ${bulletsHtml}
+        `;
+        prevProjectsList.appendChild(div);
+      });
+      prevSectionProjects.style.display = 'block';
     } else {
       prevSectionProjects.style.display = 'none';
     }
 
-    // 6. Skills
-    const hasLang = resumeData.skills.languages.trim();
-    const hasFrame = resumeData.skills.frameworks.trim();
-    const hasTools = resumeData.skills.tools.trim();
-    const hasOther = resumeData.skills.other.trim();
+    // Skills
+    const skills = resumeData.skills || {};
+    const skillRows = [];
+    if (skills.languages && skills.languages.trim()) skillRows.push({ label: 'Core Competencies', val: skills.languages.trim() });
+    if (skills.frameworks && skills.frameworks.trim()) skillRows.push({ label: 'Tools & Platforms', val: skills.frameworks.trim() });
+    if (skills.tools && skills.tools.trim()) skillRows.push({ label: 'Technical & Data Skills', val: skills.tools.trim() });
+    if (skills.other && skills.other.trim()) skillRows.push({ label: 'Professional Skills', val: skills.other.trim() });
 
-    if (hasLang || hasFrame || hasTools || hasOther) {
+    if (skillRows.length > 0) {
+      prevSkillsTitle.textContent = resumeData.skillsTitle || 'SKILLS & COMPETENCIES';
+      prevSkillsList.innerHTML = '';
+      skillRows.forEach(row => {
+        const div = document.createElement('div');
+        div.className = 'resume-skills-row';
+        div.innerHTML = `<span class="skills-category">${escapeHTML(row.label)}: </span><span>${escapeHTML(row.val)}</span>`;
+        prevSkillsList.appendChild(div);
+      });
       prevSectionSkills.style.display = 'block';
-
-      prevSkillsLanguages.textContent = hasLang;
-      prevRowLanguages.style.display = hasLang ? 'flex' : 'none';
-
-      prevSkillsFrameworks.textContent = hasFrame;
-      prevRowFrameworks.style.display = hasFrame ? 'flex' : 'none';
-
-      prevSkillsTools.textContent = hasTools;
-      prevRowTools.style.display = hasTools ? 'flex' : 'none';
-
-      prevSkillsOther.textContent = hasOther;
-      prevRowOther.style.display = hasOther ? 'flex' : 'none';
     } else {
       prevSectionSkills.style.display = 'none';
     }
+
+    // Autosave Draft if enabled
+    saveDraftToStorage();
+
+    // Trigger responsive fit-to-width recalculation
+    updatePreviewScale();
   }
 
-  // Parse lines to bullet array
-  function parseBullets(text) {
-    if (!text) return [];
-    return text
-      .split('\n')
-      .map(line => line.trim().replace(/^[-*•]\s*/, ''))
-      .filter(line => line.length > 0);
+  /**
+   * Fit-to-Width Preview Scaling
+   * Replaces hard-coded 0.65 scale and negative margins with exact geometry.
+   */
+  function updatePreviewScale() {
+    if (!resumePreviewOuter || !previewWrapper || !resumeSheet) return;
+    const availableWidth = resumePreviewOuter.clientWidth - 20;
+    // Standard A4 width in px at 96 DPI is 794px (210mm)
+    const sheetWidth = 794;
+    const scale = Math.min(1, Math.max(0.35, availableWidth / sheetWidth));
+
+    resumeSheet.style.transform = `scale(${scale})`;
+    previewWrapper.style.height = `${resumeSheet.offsetHeight * scale}px`;
   }
 
-  // Escape HTML to prevent XSS
-  function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-
-  // Setup Event Listeners
+  /**
+   * Attach Event Listeners
+   */
   function attachEventListeners() {
-    // Realtime input updates for personal info & summary
+    // Dirty flag on any user typing
+    document.addEventListener('input', () => {
+      isDirty = true;
+    });
+
+    // Inputs
     fullNameInp.addEventListener('input', (e) => {
       resumeData.personal.fullName = e.target.value;
       renderResumePreview();
     });
-
     targetTitleInp.addEventListener('input', (e) => {
       resumeData.personal.targetTitle = e.target.value;
       renderResumePreview();
     });
-
     emailInp.addEventListener('input', (e) => {
       resumeData.personal.email = e.target.value;
       renderResumePreview();
     });
-
     phoneInp.addEventListener('input', (e) => {
       resumeData.personal.phone = e.target.value;
       renderResumePreview();
     });
-
     locationInp.addEventListener('input', (e) => {
       resumeData.personal.location = e.target.value;
       renderResumePreview();
     });
-
     linkedinInp.addEventListener('input', (e) => {
       resumeData.personal.linkedin = e.target.value;
       renderResumePreview();
     });
-
     githubInp.addEventListener('input', (e) => {
       resumeData.personal.github = e.target.value;
       renderResumePreview();
     });
+    if (websiteInp) {
+      websiteInp.addEventListener('input', (e) => {
+        resumeData.personal.website = e.target.value;
+        renderResumePreview();
+      });
+    }
 
     summaryInp.addEventListener('input', (e) => {
       resumeData.summary = e.target.value;
@@ -511,17 +702,14 @@
       resumeData.skills.languages = e.target.value;
       renderResumePreview();
     });
-
     skillFrameworksInp.addEventListener('input', (e) => {
       resumeData.skills.frameworks = e.target.value;
       renderResumePreview();
     });
-
     skillToolsInp.addEventListener('input', (e) => {
       resumeData.skills.tools = e.target.value;
       renderResumePreview();
     });
-
     skillOtherInp.addEventListener('input', (e) => {
       resumeData.skills.other = e.target.value;
       renderResumePreview();
@@ -532,11 +720,10 @@
     experienceList.addEventListener('input', handleExperienceInput);
     projectsList.addEventListener('input', handleProjectInput);
 
-    // Dynamic Add / Remove buttons
+    // Dynamic Add Buttons
     btnAddEducation.addEventListener('click', () => {
-      const newId = 'edu-' + Date.now();
       resumeData.education.push({
-        id: newId,
+        id: 'edu-' + Date.now(),
         degree: '',
         institution: '',
         location: '',
@@ -547,20 +734,9 @@
       renderResumePreview();
     });
 
-    educationList.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-action="remove-edu"]');
-      if (btn) {
-        const id = btn.dataset.id;
-        resumeData.education = resumeData.education.filter(x => x.id !== id);
-        renderDynamicFormSections();
-        renderResumePreview();
-      }
-    });
-
     btnAddExperience.addEventListener('click', () => {
-      const newId = 'exp-' + Date.now();
       resumeData.experience.push({
-        id: newId,
+        id: 'exp-' + Date.now(),
         role: '',
         company: '',
         location: '',
@@ -571,20 +747,9 @@
       renderResumePreview();
     });
 
-    experienceList.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-action="remove-exp"]');
-      if (btn) {
-        const id = btn.dataset.id;
-        resumeData.experience = resumeData.experience.filter(x => x.id !== id);
-        renderDynamicFormSections();
-        renderResumePreview();
-      }
-    });
-
     btnAddProject.addEventListener('click', () => {
-      const newId = 'proj-' + Date.now();
       resumeData.projects.push({
-        id: newId,
+        id: 'proj-' + Date.now(),
         name: '',
         tech: '',
         link: '',
@@ -594,65 +759,184 @@
       renderResumePreview();
     });
 
-    projectsList.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-action="remove-proj"]');
-      if (btn) {
-        const id = btn.dataset.id;
-        resumeData.projects = resumeData.projects.filter(x => x.id !== id);
+    // Dynamic List Action delegation (Remove, Move Up, Move Down)
+    educationList.addEventListener('click', handleEducationAction);
+    experienceList.addEventListener('click', handleExperienceAction);
+    projectsList.addEventListener('click', handleProjectAction);
+
+    // Font selector
+    fontSelect.addEventListener('change', () => {
+      currentFont = fontSelect.value;
+      if (currentFont === 'sans') {
+        resumeSheet.classList.add('font-sans');
+      } else {
+        resumeSheet.classList.remove('font-sans');
+      }
+      updatePreviewScale();
+    });
+
+    // Load Sample Button with Overwrite Protection
+    btnLoadSample.addEventListener('click', () => {
+      if (isDirty) {
+        if (!confirm('Loading sample data will replace your current edits. Do you wish to continue?')) {
+          return;
+        }
+      }
+      resumeData = JSON.parse(JSON.stringify(SAMPLE_DATA));
+      isDirty = false;
+      populateFormWithData();
+      renderDynamicFormSections();
+      renderResumePreview();
+    });
+
+    // Clear Form Button with Overwrite Protection
+    btnClearForm.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all resume fields?')) {
+        resumeData = JSON.parse(JSON.stringify(EMPTY_DATA));
+        isDirty = false;
+        populateFormWithData();
         renderDynamicFormSections();
         renderResumePreview();
       }
     });
 
-    // Font selector toggle
-    fontSelect.addEventListener('change', () => {
-      if (fontSelect.value === 'sans') {
-        resumeSheet.classList.add('font-sans');
-      } else {
-        resumeSheet.classList.remove('font-sans');
-      }
+    // Draft Checkbox
+    if (chkSaveDraft) {
+      chkSaveDraft.addEventListener('change', () => {
+        autoSaveDraft = chkSaveDraft.checked;
+        try {
+          localStorage.setItem('applyready_draft_enabled', String(autoSaveDraft));
+        } catch (e) {}
+        if (autoSaveDraft) {
+          saveDraftToStorage();
+        } else {
+          deleteDraftFromStorage();
+        }
+      });
+    }
+
+    if (btnDeleteDraft) {
+      btnDeleteDraft.addEventListener('click', () => {
+        if (confirm('Delete your saved draft from this device?')) {
+          deleteDraftFromStorage();
+          if (chkSaveDraft) chkSaveDraft.checked = false;
+          autoSaveDraft = false;
+          try {
+            localStorage.setItem('applyready_draft_enabled', 'false');
+          } catch (e) {}
+        }
+      });
+    }
+
+    // JSON Export
+    btnExportJSON.addEventListener('click', () => {
+      const payload = {
+        version: 1,
+        app: 'ApplyReady',
+        exportedAt: new Date().toISOString(),
+        data: resumeData
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const safeName = (resumeData.personal.fullName || 'Candidate').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+      a.href = url;
+      a.download = `${safeName}_Resume_Backup.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
     });
 
-    // Load Sample Button
-    btnLoadSample.addEventListener('click', () => {
-      loadSampleData();
-    });
-
-    // Clear Form Button
-    btnClearForm.addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear all resume fields?')) {
-        clearAllData();
-      }
-    });
-
-    // Download PDF Button
-    btnDownloadPDF.addEventListener('click', exportToPDF);
-
-    // Modal Events
-    btnCloseModal.addEventListener('click', closeMonetizeModal);
-    linkDismissModal.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeMonetizeModal();
-    });
-    monetizeModal.addEventListener('click', (e) => {
-      if (e.target === monetizeModal) {
-        closeMonetizeModal();
-      }
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && monetizeModal.classList.contains('active')) {
-        closeMonetizeModal();
-      }
-    });
+  /**
+   * Validate ApplyReady Resume Backup Schema
+   */
+  function validateResumeSchema(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+    if (!payload.data || typeof payload.data !== 'object') return false;
+    const d = payload.data;
+    if (!d.personal || typeof d.personal !== 'object') return false;
+    if (!Array.isArray(d.experience) || !Array.isArray(d.education) || !Array.isArray(d.projects)) return false;
+    if (d.skills && typeof d.skills !== 'object') return false;
+    return true;
   }
 
-  // Handle Dynamic Inputs
+  // Expose for automated testing
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { validateResumeSchema };
+  }
+
+  // JSON Import
+  btnImportJSON.addEventListener('click', () => fileImportInput.click());
+  fileImportInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) {
+      alert('File size exceeds 1 MB. Please provide a valid ApplyReady backup file.');
+      fileImportInput.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        if (!validateResumeSchema(parsed)) {
+          throw new Error('Invalid resume data schema');
+        }
+
+        if (isDirty) {
+          if (!confirm('Importing this file will replace your current edits. Do you wish to continue?')) {
+            fileImportInput.value = '';
+            return;
+          }
+        }
+
+        resumeData = Object.assign(JSON.parse(JSON.stringify(EMPTY_DATA)), parsed.data);
+        isDirty = false;
+        populateFormWithData();
+        renderDynamicFormSections();
+        renderResumePreview();
+        alert('Resume data imported successfully.');
+      } catch (err) {
+        alert('Failed to import resume. The file is corrupt or does not match ApplyReady JSON backup schema.');
+      }
+      fileImportInput.value = '';
+    };
+    reader.readAsText(file);
+  });
+
+    // Download PDF (Vector Engine)
+    btnDownloadPDF.addEventListener('click', exportToVectorPDF);
+
+    // Browser Print Fallback
+    if (btnPrintPDF) {
+      btnPrintPDF.addEventListener('click', () => {
+        window.print();
+      });
+    }
+
+    // Mobile View Tabs
+    if (tabEdit && tabPreview && resumeAppLayout) {
+      tabEdit.addEventListener('click', () => {
+        tabEdit.classList.add('active');
+        tabPreview.classList.remove('active');
+        resumeAppLayout.className = 'resume-app-layout view-edit';
+      });
+
+      tabPreview.addEventListener('click', () => {
+        tabPreview.classList.add('active');
+        tabEdit.classList.remove('active');
+        resumeAppLayout.className = 'resume-app-layout view-preview';
+        setTimeout(updatePreviewScale, 50);
+      });
+    }
+  }
+
+  // Dynamic Item Input Handlers
   function handleEducationInput(e) {
     const parent = e.target.closest('.dynamic-item');
     if (!parent) return;
-    const id = parent.dataset.id;
-    const item = resumeData.education.find(x => x.id === id);
+    const item = resumeData.education.find(x => x.id === parent.dataset.id);
     if (!item) return;
 
     if (e.target.classList.contains('item-degree')) item.degree = e.target.value;
@@ -660,15 +944,13 @@
     if (e.target.classList.contains('item-duration')) item.duration = e.target.value;
     if (e.target.classList.contains('item-score')) item.score = e.target.value;
     if (e.target.classList.contains('item-location')) item.location = e.target.value;
-
     renderResumePreview();
   }
 
   function handleExperienceInput(e) {
     const parent = e.target.closest('.dynamic-item');
     if (!parent) return;
-    const id = parent.dataset.id;
-    const item = resumeData.experience.find(x => x.id === id);
+    const item = resumeData.experience.find(x => x.id === parent.dataset.id);
     if (!item) return;
 
     if (e.target.classList.contains('item-role')) item.role = e.target.value;
@@ -676,196 +958,168 @@
     if (e.target.classList.contains('item-duration')) item.duration = e.target.value;
     if (e.target.classList.contains('item-location')) item.location = e.target.value;
     if (e.target.classList.contains('item-bullets')) item.bulletsText = e.target.value;
-
     renderResumePreview();
   }
 
   function handleProjectInput(e) {
     const parent = e.target.closest('.dynamic-item');
     if (!parent) return;
-    const id = parent.dataset.id;
-    const item = resumeData.projects.find(x => x.id === id);
+    const item = resumeData.projects.find(x => x.id === parent.dataset.id);
     if (!item) return;
 
     if (e.target.classList.contains('item-name')) item.name = e.target.value;
     if (e.target.classList.contains('item-tech')) item.tech = e.target.value;
     if (e.target.classList.contains('item-link')) item.link = e.target.value;
     if (e.target.classList.contains('item-bullets')) item.bulletsText = e.target.value;
-
     renderResumePreview();
   }
 
-  // Accordion Toggles
+  // Dynamic Item Action Handlers (Move / Delete)
+  function handleEducationAction(e) {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    const idx = resumeData.education.findIndex(x => x.id === id);
+    if (idx === -1) return;
+
+    if (action === 'remove-edu') {
+      resumeData.education.splice(idx, 1);
+    } else if (action === 'move-up-edu' && idx > 0) {
+      const temp = resumeData.education[idx];
+      resumeData.education[idx] = resumeData.education[idx - 1];
+      resumeData.education[idx - 1] = temp;
+    } else if (action === 'move-down-edu' && idx < resumeData.education.length - 1) {
+      const temp = resumeData.education[idx];
+      resumeData.education[idx] = resumeData.education[idx + 1];
+      resumeData.education[idx + 1] = temp;
+    }
+
+    renderDynamicFormSections();
+    renderResumePreview();
+  }
+
+  function handleExperienceAction(e) {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    const idx = resumeData.experience.findIndex(x => x.id === id);
+    if (idx === -1) return;
+
+    if (action === 'remove-exp') {
+      resumeData.experience.splice(idx, 1);
+    } else if (action === 'move-up-exp' && idx > 0) {
+      const temp = resumeData.experience[idx];
+      resumeData.experience[idx] = resumeData.experience[idx - 1];
+      resumeData.experience[idx - 1] = temp;
+    } else if (action === 'move-down-exp' && idx < resumeData.experience.length - 1) {
+      const temp = resumeData.experience[idx];
+      resumeData.experience[idx] = resumeData.experience[idx + 1];
+      resumeData.experience[idx + 1] = temp;
+    }
+
+    renderDynamicFormSections();
+    renderResumePreview();
+  }
+
+  function handleProjectAction(e) {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    const idx = resumeData.projects.findIndex(x => x.id === id);
+    if (idx === -1) return;
+
+    if (action === 'remove-proj') {
+      resumeData.projects.splice(idx, 1);
+    } else if (action === 'move-up-proj' && idx > 0) {
+      const temp = resumeData.projects[idx];
+      resumeData.projects[idx] = resumeData.projects[idx - 1];
+      resumeData.projects[idx - 1] = temp;
+    } else if (action === 'move-down-proj' && idx < resumeData.projects.length - 1) {
+      const temp = resumeData.projects[idx];
+      resumeData.projects[idx] = resumeData.projects[idx + 1];
+      resumeData.projects[idx + 1] = temp;
+    }
+
+    renderDynamicFormSections();
+    renderResumePreview();
+  }
+
+  // Setup Accordions
   function setupAccordions() {
     const headers = document.querySelectorAll('.accordion-header');
     headers.forEach(header => {
       header.addEventListener('click', () => {
         const section = header.parentElement;
+        const isOpen = section.classList.contains('open');
         section.classList.toggle('open');
+        header.setAttribute('aria-expanded', String(!isOpen));
       });
     });
   }
 
-  // Load Sample Data
-  function loadSampleData() {
-    resumeData = {
-      personal: {
-        fullName: 'RAHUL SHARMA',
-        targetTitle: 'Full Stack Developer | B.Tech Computer Science',
-        email: 'rahul.sharma@gmail.com',
-        phone: '+91 98765 43210',
-        location: 'Bengaluru, Karnataka, India',
-        linkedin: 'linkedin.com/in/rahulsharma',
-        github: 'github.com/rahulsharma'
-      },
-      summary: 'Motivated software engineer with practical experience in full-stack web development, RESTful APIs, and database architecture. Proven track record of architecting scalable applications and collaborating in agile teams. Passionate about solving complex algorithmic challenges and optimizing application performance.',
-      education: [
-        {
-          id: 'edu-1',
-          degree: 'B.Tech in Computer Science & Engineering',
-          institution: 'National Institute of Technology (NIT)',
-          location: 'Surathkal, India',
-          duration: '2020 - 2024',
-          score: 'CGPA: 8.8 / 10'
-        },
-        {
-          id: 'edu-2',
-          degree: 'Senior Secondary (Class XII) - CBSE Science',
-          institution: 'Delhi Public School',
-          location: 'Delhi, India',
-          duration: '2018 - 2020',
-          score: 'Percentage: 94.4%'
-        }
-      ],
-      experience: [
-        {
-          id: 'exp-1',
-          role: 'Software Developer Intern',
-          company: 'TechCorp Solutions',
-          location: 'Bengaluru, India',
-          duration: 'Jan 2024 - Jun 2024',
-          bulletsText: 'Developed and deployed RESTful microservices in Node.js, reducing server response latency by 22% across 50,000+ active users.\nIntegrated Redis caching for hot database queries, decreasing PostgreSQL load by 35%.\nCollaborated with senior engineers in sprint reviews, CI/CD pipeline automation via GitHub Actions, and unit testing with Jest.'
-        }
-      ],
-      projects: [
-        {
-          id: 'proj-1',
-          name: 'E-Commerce Platform with Microservices',
-          tech: 'React.js, Node.js, Express, MongoDB, Docker',
-          link: 'github.com/rahulsharma/ecommerce-platform',
-          bulletsText: 'Engineered an end-to-end shopping platform with JWT authentication, role-based access control, and Razorpay payment gateway integration.\nDesigned responsive product catalog with debounced live search, faceted filtering, and optimized MongoDB index queries.'
-        },
-        {
-          id: 'proj-2',
-          name: 'Job Application & ATS Keyword Analyzer',
-          tech: 'Python, Flask, SpaCy NLP, SQLite',
-          link: 'github.com/rahulsharma/ats-analyzer',
-          bulletsText: 'Built a natural language processing tool parsing PDF resumes to extract skill keywords and compute ATS relevancy score against job descriptions.\nAchieved 91% parsing accuracy on 500+ benchmark resumes with automated keyword highlighting.'
-        }
-      ],
-      skills: {
-        languages: 'JavaScript (ES6+), TypeScript, Python, C++, SQL',
-        frameworks: 'React.js, Next.js, Node.js, Express.js, Redux Toolkit, Tailwind CSS',
-        tools: 'MongoDB, PostgreSQL, Git, Docker, Postman, Linux',
-        other: 'Data Structures & Algorithms, Object-Oriented Design, System Design, REST APIs'
+  /**
+   * Export to Vector Text PDF
+   */
+  function exportToVectorPDF() {
+    if (!window.ApplyReadyPDF) {
+      alert('PDF generation engine is not ready. Please try again.');
+      return;
+    }
+
+    // Validate genuinely required information
+    const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
+    if (!fullName) {
+      alert('Please enter your Full Name in Section 1 before downloading your resume.');
+      if (fullNameInp) {
+        fullNameInp.focus();
+        fullNameInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    };
+      return;
+    }
 
-    populateFormWithData();
-    renderDynamicFormSections();
-    renderResumePreview();
-  }
-
-  // Clear All Form Fields
-  function clearAllData() {
-    resumeData = {
-      personal: {
-        fullName: '',
-        targetTitle: '',
-        email: '',
-        phone: '',
-        location: '',
-        linkedin: '',
-        github: ''
-      },
-      summary: '',
-      education: [],
-      experience: [],
-      projects: [],
-      skills: {
-        languages: '',
-        frameworks: '',
-        tools: '',
-        other: ''
+    const email = (resumeData.personal && resumeData.personal.email ? resumeData.personal.email : '').trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert(`The email address "${email}" appears invalid. Please check and correct the format.`);
+      if (emailInp) {
+        emailInp.focus();
+        emailInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    };
-
-    populateFormWithData();
-    renderDynamicFormSections();
-    renderResumePreview();
-  }
-
-  // Export to PDF with html2pdf.js
-  function exportToPDF() {
-    if (!window.html2pdf) {
-      alert('PDF generation library is loading. Please try again in a moment.');
       return;
     }
 
     const originalBtnHtml = btnDownloadPDF.innerHTML;
     btnDownloadPDF.disabled = true;
-    btnDownloadPDF.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating PDF...';
+    btnDownloadPDF.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating Vector PDF...';
 
-    const safeName = (resumeData.personal.fullName || 'Candidate')
-      .trim()
-      .replace(/[^a-zA-Z0-9_-]/g, '_');
-
-    const opt = {
-      margin: [10, 10, 10, 10], // 10mm margins for A4
-      filename: `${safeName}_ATS_Resume.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        letterRendering: true,
-        scrollY: 0
-      },
-      jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: 'portrait'
-      },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
-    html2pdf()
-      .set(opt)
-      .from(resumeSheet)
-      .save()
-      .then(() => {
-        btnDownloadPDF.disabled = false;
-        btnDownloadPDF.innerHTML = originalBtnHtml;
-
-        // Trigger Monetization Modal after PDF is downloaded
-        setTimeout(() => {
-          openMonetizeModal();
-        }, 1000);
-      })
-      .catch((err) => {
-        console.error('PDF generation error:', err);
-        btnDownloadPDF.disabled = false;
-        btnDownloadPDF.innerHTML = originalBtnHtml;
-        alert('Could not generate PDF. Please check your browser print settings or try again.');
+    try {
+      const doc = window.ApplyReadyPDF.generateResumePDF(resumeData, {
+        fontFamily: currentFont
       });
-  }
 
-  // Monetization Modal Management
-  function openMonetizeModal() {
-    monetizeModal.classList.add('active');
-  }
+      const blob = doc.toBlob();
+      const safeName = (resumeData.personal.fullName || 'Candidate')
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, '_');
 
-  function closeMonetizeModal() {
-    monetizeModal.classList.remove('active');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeName}_ATS_Resume.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+      console.error('Vector PDF export error:', err);
+      alert('An error occurred while generating the PDF. Please try browser print fallback or contact support.');
+    } finally {
+      btnDownloadPDF.disabled = false;
+      btnDownloadPDF.innerHTML = originalBtnHtml;
+    }
   }
 
   // Initialize on DOM Ready

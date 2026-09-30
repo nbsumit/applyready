@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Use ApplyReady | Practical User Guides</title>
+  <meta name="description" content="Step-by-step guide to resizing images, compressing under strict KB limits, and generating ATS-friendly single-column resumes with ApplyReady.in.">
+  <link rel="canonical" href="https://applyready.in/how-to-use.html">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://applyready.in/how-to-use.html">
+  <meta property="og:title" content="How to Use ApplyReady | Practical User Guides">
+  <meta property="og:description" content="Master image resizing, strict KB compression, and searchable vector resume PDF generation with our practical step-by-step documentation.">
+  <meta property="og:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#2563EB">
+
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('applyready_theme');
+        var theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo" aria-label="ApplyReady Home">
+        <img src="assets/icon.svg" alt="ApplyReady Logo" class="brand-img" width="32" height="32">
+        <span>ApplyReady</span>
+        <span class="brand-tag">.in</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Image Resizer</span>
+        </a>
+        <a href="resume.html" class="nav-link">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Resume Builder</span>
+        </a>
+        <a href="how-to-use.html" class="nav-link active" aria-current="page">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Guides</span>
+        </a>
+        <a href="about.html" class="nav-link">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>About</span>
+        </a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+    <article class="guide-content">
+      <header style="margin-bottom: 2rem;">
+        <h1>How to Use ApplyReady</h1>
+        <p class="hero-subtitle" style="text-align: left; margin: 0;">
+          Comprehensive guide to resizing images under strict file-size limits and creating ATS-friendly resumes.
+        </p>
+      </header>
+
+      <!-- Section 1: Image Resizer & Compressor -->
+      <section class="app-card">
+        <h2>1. Resizing & Compressing Images</h2>
+        <p>
+          ApplyReady’s Image Resizer allows you to set exact output pixel dimensions (e.g. 350 × 450 px) and a strict maximum file size (e.g. 50 KB). Follow these steps:
+        </p>
+        <ol>
+          <li>
+            <strong>Select Target Dimensions:</strong> Choose one of our standard presets (such as Avatar, Passport Photo, Signature, or Social Card) or select <em>Custom Dimensions</em> to input your own custom width and height.
+          </li>
+          <li>
+            <strong>Configure Output Format:</strong> Choose JPEG for photos, PNG for graphics needing lossless quality, or WebP for modern web delivery. If converting a transparent image to JPEG, pick a background fill color (White or Black).
+          </li>
+          <li>
+            <strong>Upload Your Source Image:</strong> Drag and drop your image into the upload box or tap <em>Browse Files</em>. Large smartphone camera photos are automatically handled.
+          </li>
+          <li>
+            <strong>Adjust Your Crop:</strong> Use the interactive crop handles, rotation controls (±90°), and zoom buttons to frame your document perfectly.
+          </li>
+          <li>
+            <strong>Optional Annotation Strip:</strong> If you need a name or date printed at the bottom of the photo, check <em>Add Date / Name Strip</em>. The crop region will automatically adjust to preserve the photo's aspect ratio without vertical distortion.
+          </li>
+          <li>
+            <strong>Process & Download:</strong> Click <em>Process & Compress Image</em>. The engine iteratively optimizes the image to meet your exact byte limit. Once verified, download your processed image.
+          </li>
+        </ol>
+      </section>
+
+      <!-- Section 2: ATS Resume Builder -->
+      <section class="app-card">
+        <h2>2. Building an ATS-Friendly Resume</h2>
+        <p>
+          Applicant Tracking Systems (ATS) and recruiters prefer clean, single-column documents formatted with standard font hierarchies and true text streams. Here is how to use the builder:
+        </p>
+        <ol>
+          <li>
+            <strong>Start with Sample or Blank:</strong> Click <em>Load Sample</em> to see a complete professional example, or start fresh with empty fields.
+          </li>
+          <li>
+            <strong>Fill in Contact Details:</strong> Enter your name, target title, email, phone, location, and professional links. Separator bullets will automatically appear only between populated fields.
+          </li>
+          <li>
+            <strong>Add Experience, Education & Projects:</strong> Use the <em>Add</em> buttons to create dynamic entries. You can reorder entries with the Move Up and Move Down buttons or delete unnecessary sections.
+          </li>
+          <li>
+            <strong>Customize Skills:</strong> Enter your domain competencies, software tools, and methodologies in organized lines.
+          </li>
+          <li>
+            <strong>Choose Typography:</strong> Toggle between <em>Classic Serif (Times New Roman)</em> and <em>Clean Sans-Serif (Modern)</em> to match your industry.
+          </li>
+          <li>
+            <strong>Save Local Drafts & Backup:</strong> Turn on <em>Save draft on this device</em> to persist your work locally. You can also download a versioned JSON backup file via the <em>Backup</em> button.
+          </li>
+          <li>
+            <strong>Export Vector PDF:</strong> Click <em>Download PDF (A4)</em> to generate a crisp, searchable, selectable vector PDF, or use <em>Print</em> to print directly via your browser.
+          </li>
+        </ol>
+      </section>
+
+      <!-- Section 3: In-Depth Guides -->
+      <section class="app-card">
+        <h2>In-Depth Workflow Guides</h2>
+        <p>Explore our targeted guides to learn more about image optimization and resume best practices:</p>
+        <div class="guide-card-grid">
+          <a href="guides/image-dimensions-vs-file-size.html" class="guide-card">
+            <strong style="color: var(--text-heading);">Dimensions vs. File Size (KB)</strong>
+            <p class="text-muted mt-1" style="font-size: 0.875rem;">Learn how pixel dimensions directly impact byte size and how to find the optimal balance.</p>
+          </a>
+          <a href="guides/compression-targets-guide.html" class="guide-card">
+            <strong style="color: var(--text-heading);">Hitting Compression Targets</strong>
+            <p class="text-muted mt-1" style="font-size: 0.875rem;">How to achieve strict 20KB, 50KB, or 100KB limits without noticeable image degradation.</p>
+          </a>
+          <a href="guides/image-formats-guide.html" class="guide-card">
+            <strong style="color: var(--text-heading);">Image Formats & Transparency</strong>
+            <p class="text-muted mt-1" style="font-size: 0.875rem;">JPEG vs. PNG vs. WebP: choosing the right format and handling transparent backgrounds.</p>
+          </a>
+          <a href="guides/ats-friendly-resume-guide.html" class="guide-card">
+            <strong style="color: var(--text-heading);">ATS Resume Layout Best Practices</strong>
+            <p class="text-muted mt-1" style="font-size: 0.875rem;">Why simple single-column layouts with true text outperform complex graphic templates.</p>
+          </a>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="assets/icon.svg" alt="ApplyReady" class="brand-img" width="24" height="24">
+        <span>ApplyReady.in</span>
+        <span style="font-weight: 400; color: var(--text-muted); font-size: 0.825rem;">— Free & Private In-Browser Document Tools</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer Links">
+        <a href="index.html" class="footer-link">Image Resizer</a>
+        <a href="resume.html" class="footer-link">Resume Builder</a>
+        <a href="how-to-use.html" class="footer-link">How to Use</a>
+        <a href="about.html" class="footer-link">About</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var themeToggle = document.getElementById('themeToggle');
+      function updateIcon(theme) {
+        if (!themeToggle) return;
+        var icon = themeToggle.querySelector('i');
+        if (!icon) return;
+        icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      }
+      updateIcon(document.documentElement.getAttribute('data-theme') || 'light');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+          var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', active);
+          try { localStorage.setItem('applyready_theme', active); } catch (e) {}
+          updateIcon(active);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

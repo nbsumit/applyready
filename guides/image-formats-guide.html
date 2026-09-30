@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JPEG vs. PNG vs. WebP: Image Formats & Transparency | ApplyReady.in</title>
+  <meta name="description" content="Compare JPEG, PNG, and WebP formats. Learn how to preserve transparency, choose background fills, and optimize file sizes.">
+  <link rel="canonical" href="https://applyready.in/guides/image-formats-guide.html">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://applyready.in/guides/image-formats-guide.html">
+  <meta property="og:title" content="JPEG vs. PNG vs. WebP Guide | ApplyReady.in">
+  <meta property="og:description" content="Understanding image formats, compression honesty, and transparent background preservation.">
+  <meta property="og:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="../assets/icon.svg">
+  <link rel="icon" type="image/x-icon" href="../favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon/apple-touch-icon.png">
+  <link rel="manifest" href="../favicon/site.webmanifest">
+  <meta name="theme-color" content="#2563EB">
+
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('applyready_theme');
+        var theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="../index.html" class="brand-logo" aria-label="ApplyReady Home">
+        <img src="../assets/icon.svg" alt="ApplyReady Logo" class="brand-img" width="32" height="32">
+        <span>ApplyReady</span>
+        <span class="brand-tag">.in</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="../index.html" class="nav-link">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Image Resizer</span>
+        </a>
+        <a href="../resume.html" class="nav-link">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Resume Builder</span>
+        </a>
+        <a href="../how-to-use.html" class="nav-link active" aria-current="page">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Guides</span>
+        </a>
+        <a href="../about.html" class="nav-link">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>About</span>
+        </a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+    <article class="guide-content">
+      <header style="margin-bottom: 2rem;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Format Comparison</span>
+        <h1>JPEG vs. PNG vs. WebP: Choosing the Right Format</h1>
+        <p class="hero-subtitle" style="text-align: left; margin: 0;">
+          A technical overview of image encoding, transparency support, and why JPEG quality settings do not apply to PNG.
+        </p>
+      </header>
+
+      <section class="app-card">
+        <h2>1. JPEG (Joint Photographic Experts Group)</h2>
+        <p>
+          JPEG (<code>.jpg</code> / <code>.jpeg</code>) is the global standard for photographs and natural images.
+        </p>
+        <ul>
+          <li><strong>How it works:</strong> JPEG uses lossy discrete cosine transform compression, discarding high-frequency color variations that the human eye cannot perceive.</li>
+          <li><strong>Transparency:</strong> <em>JPEG does not support transparency.</em> Any transparent pixels in your source image must be composited onto a solid background color (typically White or Black).</li>
+          <li><strong>Best for:</strong> Passport photos, profile portraits, camera pictures, and any portal requiring small KB sizes.</li>
+        </ul>
+
+        <h2>2. PNG (Portable Network Graphics)</h2>
+        <p>
+          PNG (<code>.png</code>) is a lossless format based on the DEFLATE compression algorithm.
+        </p>
+        <ul>
+          <li><strong>How it works:</strong> PNG preserves 100% of pixel data without any compression loss. Because of this, standard browser Canvas APIs cannot compress PNG using a variable quality factor (such as 0.8 or 0.5).</li>
+          <li><strong>Transparency:</strong> PNG supports full 8-bit alpha channel transparency, making it the preferred choice for signatures, logos, stamps, and icons.</li>
+          <li><strong>Size trade-off:</strong> Because it is lossless, a detailed photo saved as PNG will be 3× to 5× larger than a JPEG at the same resolution. If you have a strict 20 KB limit on a photo, PNG will likely fail.</li>
+        </ul>
+
+        <h2>3. WebP (Web Picture Format)</h2>
+        <p>
+          Developed by Google, WebP (<code>.webp</code>) combines the best features of JPEG and PNG.
+        </p>
+        <ul>
+          <li><strong>How it works:</strong> WebP supports both lossy and lossless compression with modern predictive coding.</li>
+          <li><strong>Transparency:</strong> WebP supports alpha channel transparency in both lossy and lossless modes! You can have a transparent background while still compressing under strict KB targets.</li>
+          <li><strong>Efficiency:</strong> WebP files are typically 25% to 35% smaller than comparable JPEGs at equivalent visual quality.</li>
+        </ul>
+
+        <h2>Managing Background Fills in ApplyReady</h2>
+        <p>
+          When you upload a PNG with a transparent background and select JPEG output, ApplyReady provides an explicit <strong>Background Fill</strong> choice (White or Black). This prevents unwanted black rectangles from appearing behind your transparent signatures or documents when converted to JPEG.
+        </p>
+
+        <p style="margin-top: 1.5rem;">
+          <a href="../index.html" class="btn btn-primary" style="display: inline-flex; width: auto;">
+            <i class="fa-solid fa-crop-simple"></i> Open the Resizer
+          </a>
+        </p>
+      </section>
+    </article>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="../assets/icon.svg" alt="ApplyReady" class="brand-img" width="24" height="24">
+        <span>ApplyReady.in</span>
+        <span style="font-weight: 400; color: var(--text-muted); font-size: 0.825rem;">— Free & Private In-Browser Document Tools</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer Links">
+        <a href="../index.html" class="footer-link">Image Resizer</a>
+        <a href="../resume.html" class="footer-link">Resume Builder</a>
+        <a href="../how-to-use.html" class="footer-link">How to Use</a>
+        <a href="../about.html" class="footer-link">About</a>
+        <a href="../privacy.html" class="footer-link">Privacy Policy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var themeToggle = document.getElementById('themeToggle');
+      function updateIcon(theme) {
+        if (!themeToggle) return;
+        var icon = themeToggle.querySelector('i');
+        if (!icon) return;
+        icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      }
+      updateIcon(document.documentElement.getAttribute('data-theme') || 'light');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+          var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', active);
+          try { localStorage.setItem('applyready_theme', active); } catch (e) {}
+          updateIcon(active);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

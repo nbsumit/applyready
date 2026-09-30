@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How to Hit Strict Compression Targets (20KB, 50KB, 100KB) | ApplyReady.in</title>
+  <meta name="description" content="Learn how to compress photos and signatures under strict 20KB, 50KB, and 100KB limits without distortion or excessive artifacts.">
+  <link rel="canonical" href="https://applyready.in/guides/compression-targets-guide.html">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://applyready.in/guides/compression-targets-guide.html">
+  <meta property="og:title" content="How to Hit Strict Compression Targets | ApplyReady.in">
+  <meta property="og:description" content="Step-by-step techniques for meeting strict file size targets in official application portals.">
+  <meta property="og:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="../assets/icon.svg">
+  <link rel="icon" type="image/x-icon" href="../favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon/apple-touch-icon.png">
+  <link rel="manifest" href="../favicon/site.webmanifest">
+  <meta name="theme-color" content="#2563EB">
+
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('applyready_theme');
+        var theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="../index.html" class="brand-logo" aria-label="ApplyReady Home">
+        <img src="../assets/icon.svg" alt="ApplyReady Logo" class="brand-img" width="32" height="32">
+        <span>ApplyReady</span>
+        <span class="brand-tag">.in</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="../index.html" class="nav-link">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Image Resizer</span>
+        </a>
+        <a href="../resume.html" class="nav-link">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Resume Builder</span>
+        </a>
+        <a href="../how-to-use.html" class="nav-link active" aria-current="page">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Guides</span>
+        </a>
+        <a href="../about.html" class="nav-link">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>About</span>
+        </a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+    <article class="guide-content">
+      <header style="margin-bottom: 2rem;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Optimization Techniques</span>
+        <h1>Hitting Strict Compression Targets (20KB, 50KB, 100KB)</h1>
+        <p class="hero-subtitle" style="text-align: left; margin: 0;">
+          How adaptive quantization loops work, what causes compression to fail, and how to configure settings for guaranteed success.
+        </p>
+      </header>
+
+      <section class="app-card">
+        <h2>The Challenge of Hard File-Size Ceilings</h2>
+        <p>
+          Many government portals, visa applications, and university admissions systems enforce uncompromising file size limits. A file that is even 1 byte over the 50 KB ceiling (51,201 bytes) is rejected with generic errors like <em>“Upload failed: File exceeds allowable size.”</em>
+        </p>
+
+        <h2>Common Compression Pitfalls</h2>
+        <ul>
+          <li><strong>Rounding Errors:</strong> Many tools display rounded values like “49.8 KB” based on 1 KB = 1000 B, while the destination server validates against binary 1,024 B (50 KB = 51,200 bytes). If the actual file is 51,300 bytes, it will be rejected.</li>
+          <li><strong>Oversized Fallbacks:</strong> Some poorly built web resizers resolve their last compression attempt even if it remains oversized, falsely marking the operation as successful.</li>
+          <li><strong>Lossless Formats:</strong> PNG is mathematically lossless. Trying to compress a 400 × 400 complex photo into a 20 KB PNG is physically impossible without losing resolution, because PNG cannot use lossy quality steps.</li>
+        </ul>
+
+        <h2>How ApplyReady’s Strict Compressor Works</h2>
+        <p>
+          ApplyReady uses an adaptive quality search algorithm:
+        </p>
+        <ol>
+          <li><strong>Initial Render:</strong> Your image is cropped and drawn at the exact target dimensions (e.g. 350 × 450 px).</li>
+          <li><strong>Stepped Quantization:</strong> The engine encodes the canvas with high quality (0.95). If the resulting byte count exceeds your target limit, it automatically tries lower steps (0.85, 0.75, 0.65, 0.50, 0.35, 0.20, 0.10, 0.05).</li>
+          <li><strong>Honest Error Reporting:</strong> If even at minimum quality (0.05) the file exceeds the target, ApplyReady <strong>never</strong> reports false success or silently shrinks dimensions. Instead, it informs you clearly of the actual size achieved and suggests actionable remedies (such as reducing width/height or selecting WebP).</li>
+          <li><strong>Byte-Level Verification:</strong> Before displaying the download link, the encoded blob's actual size in bytes is compared to <code>maxKB × 1024</code>.</li>
+        </ol>
+
+        <h2>Practical Recommendations for Common Limits</h2>
+        <table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+              <th style="padding: 0.6rem;">Target Limit</th>
+              <th style="padding: 0.6rem;">Recommended Resolution</th>
+              <th style="padding: 0.6rem;">Format</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 0.6rem;"><strong>Under 20 KB</strong> (Signatures / Icons)</td>
+              <td style="padding: 0.6rem;">140 × 60 px up to 300 × 100 px</td>
+              <td style="padding: 0.6rem;">JPEG / WebP</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 0.6rem;"><strong>Under 50 KB</strong> (Passport / ID Photos)</td>
+              <td style="padding: 0.6rem;">350 × 450 px or 200 × 230 px</td>
+              <td style="padding: 0.6rem;">JPEG / WebP</td>
+            </tr>
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 0.6rem;"><strong>Under 100 KB</strong> (Avatars / Badges)</td>
+              <td style="padding: 0.6rem;">400 × 400 px up to 600 × 600 px</td>
+              <td style="padding: 0.6rem;">JPEG / WebP</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p style="margin-top: 1.5rem;">
+          <a href="../index.html" class="btn btn-primary" style="display: inline-flex; width: auto;">
+            <i class="fa-solid fa-crop-simple"></i> Resize Your Image Under Strict Limits
+          </a>
+        </p>
+      </section>
+    </article>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="../assets/icon.svg" alt="ApplyReady" class="brand-img" width="24" height="24">
+        <span>ApplyReady.in</span>
+        <span style="font-weight: 400; color: var(--text-muted); font-size: 0.825rem;">— Free & Private In-Browser Document Tools</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer Links">
+        <a href="../index.html" class="footer-link">Image Resizer</a>
+        <a href="../resume.html" class="footer-link">Resume Builder</a>
+        <a href="../how-to-use.html" class="footer-link">How to Use</a>
+        <a href="../about.html" class="footer-link">About</a>
+        <a href="../privacy.html" class="footer-link">Privacy Policy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var themeToggle = document.getElementById('themeToggle');
+      function updateIcon(theme) {
+        if (!themeToggle) return;
+        var icon = themeToggle.querySelector('i');
+        if (!icon) return;
+        icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      }
+      updateIcon(document.documentElement.getAttribute('data-theme') || 'light');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+          var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', active);
+          try { localStorage.setItem('applyready_theme', active); } catch (e) {}
+          updateIcon(active);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

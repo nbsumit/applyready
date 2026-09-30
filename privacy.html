@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy | ApplyReady.in</title>
+  <meta name="description" content="Privacy Policy for ApplyReady.in. We operate on a strict 100% client-side model: your images, resumes, and personal documents never touch our servers.">
+  <link rel="canonical" href="https://applyready.in/privacy.html">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://applyready.in/privacy.html">
+  <meta property="og:title" content="Privacy Policy | ApplyReady.in">
+  <meta property="og:description" content="Transparent privacy: 100% in-browser processing, zero server uploads, and explicit control over local draft storage.">
+  <meta property="og:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#2563EB">
+
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('applyready_theme');
+        var theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo" aria-label="ApplyReady Home">
+        <img src="assets/icon.svg" alt="ApplyReady Logo" class="brand-img" width="32" height="32">
+        <span>ApplyReady</span>
+        <span class="brand-tag">.in</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Image Resizer</span>
+        </a>
+        <a href="resume.html" class="nav-link">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Resume Builder</span>
+        </a>
+        <a href="how-to-use.html" class="nav-link">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Guides</span>
+        </a>
+        <a href="about.html" class="nav-link">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>About</span>
+        </a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+    <article class="guide-content">
+      <header style="margin-bottom: 2rem;">
+        <h1>Privacy Policy</h1>
+        <p class="hero-subtitle" style="text-align: left; margin: 0;">
+          Last Updated: September 30, 2026. Truthful, transparent disclosure of how ApplyReady handles data.
+        </p>
+      </header>
+
+      <section class="app-card">
+        <h2>1. Core Privacy Principle: Zero Server Uploads</h2>
+        <p>
+          ApplyReady (https://applyready.in) is engineered to process your documents, images, and resumes entirely on your client device (laptop, phone, or tablet).
+        </p>
+        <p>
+          When you select an image file to resize or type your career history into the resume builder, that data remains strictly inside your web browser’s memory space. <strong>We do not transmit, upload, process, store, or view your uploaded images or resume content on any external web server.</strong>
+        </p>
+
+        <h2>2. Local Storage & Draft Persistence</h2>
+        <p>
+          In the Resume Builder, an optional feature allows you to <em>“Save draft on this device.”</em>
+        </p>
+        <ul>
+          <li><strong>How it works:</strong> If you explicitly enable this checkbox, your resume data is written to your browser’s local storage (<code>localStorage</code>) so that you can resume your session after closing the browser tab.</li>
+          <li><strong>Where it lives:</strong> This data lives solely inside your local browser storage. It is never synchronized to the cloud or transferred across devices.</li>
+          <li><strong>Shared Devices:</strong> If you are using a shared computer, cyber cafe kiosk, or public terminal, you should keep local saving disabled or click the <strong>“Delete Draft”</strong> button before closing your session.</li>
+          <li><strong>JSON Backups:</strong> If you use the “Backup (JSON)” action, the resulting file is saved directly to your local file downloads.</li>
+        </ul>
+
+        <h2>3. Third-Party CDNs & External Resources</h2>
+        <p>
+          To maintain high reliability and fast delivery without heavy bundle sizes, ApplyReady loads select open-source libraries from public Content Delivery Networks (CDNs):
+        </p>
+        <ul>
+          <li><strong>Google Fonts:</strong> Loads the Inter font family. Google may collect standard HTTP request telemetry (such as IP address and user-agent) when fonts are requested.</li>
+          <li><strong>Cloudflare CDNJS:</strong> Delivers Cropper.js and Font Awesome icons. Standard CDN access logs apply.</li>
+          <li><strong>Razorpay:</strong> If you click the voluntary “Buy me a Chai” link, you will be navigated to Razorpay’s official payment portal (<code>razorpay.me/@nbsumit</code>). All payment transactions and data collection on that domain are governed by Razorpay’s respective Privacy Policy.</li>
+        </ul>
+
+        <h2>4. Cookies & Web Tracking</h2>
+        <p>
+          ApplyReady does not use third-party marketing cookies, user profiling beacons, or advertising trackers. We do not sell, rent, or monetize your personal information or document contents.
+        </p>
+
+        <h2>5. Contact & Inquiries</h2>
+        <p>
+          If you have questions regarding this privacy policy or our open-source codebase, you can reach out via our GitHub repository:
+          <a href="https://github.com/nbsumit/applyready" target="_blank" rel="noopener noreferrer">github.com/nbsumit/applyready</a>.
+        </p>
+      </section>
+    </article>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="assets/icon.svg" alt="ApplyReady" class="brand-img" width="24" height="24">
+        <span>ApplyReady.in</span>
+        <span style="font-weight: 400; color: var(--text-muted); font-size: 0.825rem;">— Free & Private In-Browser Document Tools</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer Links">
+        <a href="index.html" class="footer-link">Image Resizer</a>
+        <a href="resume.html" class="footer-link">Resume Builder</a>
+        <a href="how-to-use.html" class="footer-link">How to Use</a>
+        <a href="about.html" class="footer-link">About</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var themeToggle = document.getElementById('themeToggle');
+      function updateIcon(theme) {
+        if (!themeToggle) return;
+        var icon = themeToggle.querySelector('i');
+        if (!icon) return;
+        icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      }
+      updateIcon(document.documentElement.getAttribute('data-theme') || 'light');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+          var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', active);
+          try { localStorage.setItem('applyready_theme', active); } catch (e) {}
+          updateIcon(active);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

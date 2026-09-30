@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Dimensions vs. File Size (KB) Guide | ApplyReady.in</title>
+  <meta name="description" content="Understand the crucial difference between image pixel dimensions (width × height) and storage file size (KB / MB), and how to optimize both.">
+  <link rel="canonical" href="https://applyready.in/guides/image-dimensions-vs-file-size.html">
+
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://applyready.in/guides/image-dimensions-vs-file-size.html">
+  <meta property="og:title" content="Image Dimensions vs. File Size (KB) Guide | ApplyReady.in">
+  <meta property="og:description" content="Understand how pixel resolution affects file size and how to resize images without quality degradation.">
+  <meta property="og:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="../assets/icon.svg">
+  <link rel="icon" type="image/x-icon" href="../favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../favicon/apple-touch-icon.png">
+  <link rel="manifest" href="../favicon/site.webmanifest">
+  <meta name="theme-color" content="#2563EB">
+
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('applyready_theme');
+        var theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="../index.html" class="brand-logo" aria-label="ApplyReady Home">
+        <img src="../assets/icon.svg" alt="ApplyReady Logo" class="brand-img" width="32" height="32">
+        <span>ApplyReady</span>
+        <span class="brand-tag">.in</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="../index.html" class="nav-link">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Image Resizer</span>
+        </a>
+        <a href="../resume.html" class="nav-link">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Resume Builder</span>
+        </a>
+        <a href="../how-to-use.html" class="nav-link active" aria-current="page">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Guides</span>
+        </a>
+        <a href="../about.html" class="nav-link">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>About</span>
+        </a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+    <article class="guide-content">
+      <header style="margin-bottom: 2rem;">
+        <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Image Optimization Guide</span>
+        <h1>Image Dimensions vs. File Size (KB): What You Need to Know</h1>
+        <p class="hero-subtitle" style="text-align: left; margin: 0;">
+          A clear breakdown of why high resolution leads to large files and how to achieve exact portal requirements without blurry output.
+        </p>
+      </header>
+
+      <section class="app-card">
+        <h2>Pixel Dimensions (Resolution)</h2>
+        <p>
+          Pixel dimensions refer to the physical width and height of an image measured in pixels (px). For example, an image with dimensions of <strong>350 × 450 px</strong> contains:
+        </p>
+        <p style="background: var(--bg-card-subtle); padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-family: monospace;">
+          350 × 450 = 157,500 total pixels
+        </p>
+        <p>
+          In contrast, a 12-megapixel smartphone camera photo has dimensions around <strong>4000 × 3000 px</strong>, totaling 12,000,000 pixels.
+        </p>
+
+        <h2>File Size in Bytes and Kilobytes (KB)</h2>
+        <p>
+          File size measures the digital storage occupied by the image on a disk or memory. In computing and web systems:
+        </p>
+        <ul>
+          <li><strong>1 Byte (B):</strong> The foundational unit of digital storage.</li>
+          <li><strong>1 Kilobyte (KB):</strong> In standard web standards, 1 KB is defined as 1,024 bytes (or 1,000 bytes in SI decimal). ApplyReady strictly validates against binary standards (1 KB = 1,024 bytes) so your files never fail portal upload limits.</li>
+          <li><strong>1 Megabyte (MB):</strong> 1,024 KB (1,048,576 bytes).</li>
+        </ul>
+
+        <h2>The Relationship Between Dimensions and File Size</h2>
+        <p>
+          An uncompressed true-color (24-bit RGB) image requires 3 bytes per pixel (1 byte each for Red, Green, and Blue channels). Therefore, raw uncompressed data for a 12-megapixel photo exceeds 36 Megabytes.
+        </p>
+        <p>
+          File formats like JPEG and WebP employ mathematical compression algorithms (discrete cosine transforms, quantization, and entropy encoding) to reduce this raw data to a few hundred kilobytes. However, compression has limits:
+        </p>
+        <ul>
+          <li><strong>Higher dimensions require more bytes:</strong> Attempting to compress a 4000 × 3000 image down to 20 KB forces extreme quantization, creating severe blockiness, blur, and artifacts.</li>
+          <li><strong>Downscaling preserves visual quality:</strong> By first resizing the image to realistic display dimensions (such as 350 × 450 px), an image requires far fewer pixels, allowing JPEG or WebP to compress the file under 50 KB while keeping it sharp and crisp.</li>
+        </ul>
+
+        <h2>How ApplyReady Solves This</h2>
+        <p>
+          ApplyReady couples an interactive, distortion-free Cropper with an adaptive compression loop. When you set target dimensions of 350 × 450 px and a 50 KB limit:
+        </p>
+        <ol>
+          <li>The canvas scales the exact cropped region to 350 × 450 px.</li>
+          <li>Our compression engine iteratively adjusts encoding parameters to meet the target file size.</li>
+          <li>Before presenting the download, the engine decodes the output blob to verify that both dimensions and byte size satisfy your exact requirements.</li>
+        </ol>
+
+        <p style="margin-top: 2rem;">
+          <a href="../index.html" class="btn btn-primary" style="display: inline-flex; width: auto;">
+            <i class="fa-solid fa-crop-simple"></i> Try the Image Resizer Now
+          </a>
+        </p>
+      </section>
+    </article>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="../assets/icon.svg" alt="ApplyReady" class="brand-img" width="24" height="24">
+        <span>ApplyReady.in</span>
+        <span style="font-weight: 400; color: var(--text-muted); font-size: 0.825rem;">— Free & Private In-Browser Document Tools</span>
+      </div>
+      <nav class="footer-links" aria-label="Footer Links">
+        <a href="../index.html" class="footer-link">Image Resizer</a>
+        <a href="../resume.html" class="footer-link">Resume Builder</a>
+        <a href="../how-to-use.html" class="footer-link">How to Use</a>
+        <a href="../about.html" class="footer-link">About</a>
+        <a href="../privacy.html" class="footer-link">Privacy Policy</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var themeToggle = document.getElementById('themeToggle');
+      function updateIcon(theme) {
+        if (!themeToggle) return;
+        var icon = themeToggle.querySelector('i');
+        if (!icon) return;
+        icon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+      }
+      updateIcon(document.documentElement.getAttribute('data-theme') || 'light');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+          var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', active);
+          try { localStorage.setItem('applyready_theme', active); } catch (e) {}
+          updateIcon(active);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

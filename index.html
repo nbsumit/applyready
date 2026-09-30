@@ -3,11 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home | ApplyReady.in</title>
-  <meta name="description" content="Resize and compress photos & signatures for UPSC, SSC, IBPS, and state government exams strictly under KB limits. Add exam date. 100% free, safe, client-side browser processing.">
+  <title>Free Image Resizer & Compressor | ApplyReady.in</title>
+  <meta name="description" content="Resize, crop, and compress images to exact dimensions and strict file size targets in your browser. 100% private, client-side processing with zero server uploads.">
+  <link rel="canonical" href="https://applyready.in/">
 
-  <!-- Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://applyready.in/">
+  <meta property="og:title" content="Free Image Resizer & Compressor | ApplyReady.in">
+  <meta property="og:description" content="Resize, crop, and strictly compress images to exact dimensions and KB limits directly on your device. 100% private, client-side processing.">
+  <meta property="og:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:url" content="https://applyready.in/">
+  <meta name="twitter:title" content="Free Image Resizer & Compressor | ApplyReady.in">
+  <meta name="twitter:description" content="Resize, crop, and strictly compress images to exact dimensions and KB limits directly on your device. 100% private, client-side processing.">
+  <meta name="twitter:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#2563EB">
+
+  <!-- Early Theme Setter to prevent Flash of Wrong Theme -->
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('applyready_theme');
+        var theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,38 +54,77 @@
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Structured Data: WebSite & WebApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://applyready.in/#website",
+        "url": "https://applyready.in/",
+        "name": "ApplyReady",
+        "description": "Fast, private client-side utilities for resizing, compressing images, and building ATS resumes."
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://applyready.in/#app",
+        "name": "ApplyReady Image Resizer & Compressor",
+        "url": "https://applyready.in/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "All modern browsers (Chrome, Edge, Firefox, Safari)",
+        "browserRequirements": "Requires JavaScript and HTML5 Canvas support",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 
   <!-- NAVIGATION -->
-  <nav class="navbar">
+  <nav class="navbar" aria-label="Main Navigation">
     <div class="nav-container">
-      <a href="index.html" class="brand-logo">
-        <div class="brand-icon">
-          <i class="fa-solid fa-bolt"></i>
-        </div>
+      <a href="index.html" class="brand-logo" aria-label="ApplyReady Home">
+        <img src="assets/icon.svg" alt="ApplyReady Logo" class="brand-img" width="32" height="32">
         <span>ApplyReady</span>
         <span class="brand-tag">.in</span>
       </a>
 
       <div class="nav-links">
-        <a href="index.html" class="nav-link active">
+        <a href="index.html" class="nav-link active" aria-current="page">
           <i class="fa-solid fa-crop-simple"></i>
-          <span>Photo Resizer</span>
+          <span>Image Resizer</span>
         </a>
         <a href="resume.html" class="nav-link">
           <i class="fa-regular fa-file-lines"></i>
           <span>Resume Builder</span>
         </a>
+        <a href="how-to-use.html" class="nav-link">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Guides</span>
+        </a>
+        <a href="about.html" class="nav-link">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>About</span>
+        </a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
       </div>
     </div>
   </nav>
 
-  <!-- STEP 1: TRUST BADGE -->
+  <!-- TRUST BADGE -->
   <div class="trust-banner">
     <div class="trust-content">
       <span class="trust-badge-pill">Private & Safe</span>
-      <span><i class="fa-solid fa-lock"></i> <strong>100% Secure:</strong> All processing happens on your device. Your data never leaves your browser.</span>
+      <span><i class="fa-solid fa-lock"></i> <strong>100% Client-Side:</strong> Processing runs directly in your browser. Your images and documents are never uploaded to any server.</span>
     </div>
   </div>
 
@@ -62,83 +133,118 @@
     
     <!-- Hero Header -->
     <header class="hero-header">
-      <h1 class="hero-title">Sarkari Exam Photo & Signature Resizer</h1>
+      <h1 class="hero-title">Free Image Resizer & Strict Compressor</h1>
       <p class="hero-subtitle">
-        Crop to exact pixel dimensions, add official date stamp, and compress under strict 20KB / 50KB limits without quality loss. Zero uploads to servers.
+        Crop to exact pixel dimensions, resize without distortion, and strictly compress under your target KB limits. Fast, private, and runs entirely in your browser.
       </p>
     </header>
 
-    <!-- Resizer Card -->
+    <!-- Resizer Card Grid -->
     <div class="resizer-grid">
 
       <!-- Left Column: Controls & Upload -->
-      <section class="app-card">
-        <h2 class="card-title">
+      <section class="app-card" aria-labelledby="controlsHeading">
+        <h2 id="controlsHeading" class="card-title">
           <i class="fa-solid fa-sliders text-muted"></i>
-          <span>1. Select Exam Target Format</span>
+          <span>1. Dimensions & Target Size</span>
         </h2>
 
-        <!-- Format Dropdown Selector -->
+        <!-- Preset Dropdown -->
         <div class="form-group">
-          <label for="presetSelect" class="form-label">Exam Requirement Preset:</label>
+          <label for="presetSelect" class="form-label">Dimensions & Size Preset:</label>
           <select id="presetSelect" class="form-select">
-            <option value="upsc-photo" selected>UPSC Photo (350x350px, under 50KB, Add Date)</option>
-            <option value="ssc-sig">SSC Signature (140x60px, under 20KB)</option>
-            <option value="ssc-photo">SSC Photo (350x450px, under 50KB, Add Date)</option>
-            <option value="ibps-photo">IBPS / Banking Photo (200x230px, under 50KB)</option>
-            <option value="ibps-sig">IBPS / Banking Signature (140x60px, under 20KB)</option>
-            <option value="custom">Custom Dimensions & Size</option>
+            <option value="custom" selected>Custom Dimensions & Size Limit</option>
+            <option value="avatar">Profile / Avatar (400 × 400 px, max 100 KB)</option>
+            <option value="passport">ID / Passport Photo (350 × 450 px, max 50 KB)</option>
+            <option value="signature">Signature / Stamp (300 × 100 px, max 30 KB)</option>
+            <option value="web-banner">Social / Web Card (1200 × 630 px, max 300 KB)</option>
+            <option value="document">Document Scan (800 × 1000 px, max 200 KB)</option>
           </select>
         </div>
 
-        <!-- Custom Dimension Controls (Hidden unless Custom is picked) -->
-        <div id="customControls" class="custom-dims-row hidden">
+        <!-- Custom Dimension Controls -->
+        <div id="customControls" class="custom-dims-row">
           <div>
             <label class="form-label" for="customWidth">Width (px)</label>
-            <input type="number" id="customWidth" class="form-control" value="350" min="50" max="2000">
+            <input type="number" id="customWidth" class="form-control" value="350" min="20" max="8000" step="1">
           </div>
           <div>
             <label class="form-label" for="customHeight">Height (px)</label>
-            <input type="number" id="customHeight" class="form-control" value="350" min="50" max="2000">
+            <input type="number" id="customHeight" class="form-control" value="350" min="20" max="8000" step="1">
           </div>
           <div>
             <label class="form-label" for="customMaxKB">Max Size (KB)</label>
-            <input type="number" id="customMaxKB" class="form-control" value="50" min="5" max="500">
+            <input type="number" id="customMaxKB" class="form-control" value="50" min="5" max="20000" step="1">
+          </div>
+        </div>
+        <span id="dimError" class="field-error hidden" role="alert"></span>
+        <span id="sizeError" class="field-error hidden" role="alert"></span>
+
+        <!-- Output Format & Transparency Settings -->
+        <div class="form-row-2" style="margin-top: 1rem;">
+          <div class="form-group">
+            <label for="formatSelect" class="form-label">Output Format:</label>
+            <select id="formatSelect" class="form-select">
+              <option value="image/jpeg" selected>JPEG (.jpg)</option>
+              <option value="image/png">PNG (.png)</option>
+              <option value="image/webp">WebP (.webp)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bgFillSelect" class="form-label">Background Fill:</label>
+            <select id="bgFillSelect" class="form-select">
+              <option value="white" selected>White (#FFFFFF)</option>
+              <option value="black">Black (#000000)</option>
+              <option value="transparent" disabled>Transparent (PNG/WebP only)</option>
+            </select>
           </div>
         </div>
 
-        <!-- Target Spec Info Pill -->
-        <div id="presetSummaryBox" class="meta-stats mt-2" style="justify-content: flex-start;">
+        <!-- Aspect Ratio Lock -->
+        <div class="form-group">
+          <label for="aspectRatioSelect" class="form-label">Crop Aspect Ratio:</label>
+          <select id="aspectRatioSelect" class="form-select">
+            <option value="target" selected>Match Target Dimensions Ratio</option>
+            <option value="original">Keep Original Image Ratio</option>
+            <option value="1:1">Square (1:1)</option>
+            <option value="4:3">Standard (4:3)</option>
+            <option value="16:9">Widescreen (16:9)</option>
+            <option value="free">Free Crop (Unconstrained)</option>
+          </select>
+        </div>
+
+        <!-- Target Spec Info -->
+        <div id="presetSummaryBox" class="meta-stats" aria-live="polite">
           <div class="meta-stat-item">
             <span class="meta-stat-label">Target Dimensions</span>
-            <span class="meta-stat-val" id="specDims">350 x 350 px</span>
+            <span class="meta-stat-val" id="specDims">350 × 350 px</span>
           </div>
           <div class="meta-stat-item">
             <span class="meta-stat-label">Target File Size</span>
             <span class="meta-stat-val" id="specSize">Under 50 KB</span>
           </div>
           <div class="meta-stat-item">
-            <span class="meta-stat-label">Output Type</span>
-            <span class="meta-stat-val">JPEG (Standard)</span>
+            <span class="meta-stat-label">Target Format</span>
+            <span class="meta-stat-val" id="specFormat">JPEG</span>
           </div>
         </div>
 
-        <!-- Date on Photo Options -->
+        <!-- Optional Name / Date Annotations -->
         <div id="dateOptionsBox" class="date-strip-box">
-          <label class="checkbox-label">
-            <input type="checkbox" id="addDateCheckbox" checked>
-            <span>Add Date Strip at Bottom of Photo</span>
+          <label class="checkbox-label" for="addDateCheckbox">
+            <input type="checkbox" id="addDateCheckbox">
+            <span>Add Date / Name Strip (Optional)</span>
           </label>
-          <div id="dateInputGroup" class="mt-2">
-            <label for="examDateInput" class="form-label text-sm">Date Printed on Photo (DD-MM-YYYY):</label>
+          <div id="dateInputGroup" class="mt-2" style="display: none;">
+            <label for="examDateInput" class="form-label text-sm">Printed Date:</label>
             <div style="display: flex; gap: 0.5rem;">
               <input type="date" id="examDateInput" class="form-control" style="flex: 1;">
               <button type="button" id="btnTodayDate" class="btn btn-secondary btn-sm" title="Set to Today">Today</button>
             </div>
             <div class="mt-2">
-              <label for="candidateNameInput" class="form-label text-sm">Candidate Name (Optional):</label>
-              <input type="text" id="candidateNameInput" class="form-control" placeholder="e.g. RAHUL SHARMA">
-              <p class="form-hint">Some exams require Name + Date printed at the bottom.</p>
+              <label for="candidateNameInput" class="form-label text-sm">Printed Name / Label (Optional):</label>
+              <input type="text" id="candidateNameInput" class="form-control" placeholder="e.g. John Doe">
+              <p class="form-hint">Text is dynamically scaled to fit the annotation strip without distortion.</p>
             </div>
           </div>
         </div>
@@ -148,57 +254,75 @@
         <!-- Step 2: Upload Zone -->
         <h2 class="card-title">
           <i class="fa-solid fa-cloud-arrow-up text-muted"></i>
-          <span>2. Upload Document</span>
+          <span>2. Select Image</span>
         </h2>
 
-        <div id="dropzone" class="dropzone">
-          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg" class="hidden">
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload image area. Tap to choose image or drag and drop.">
+          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif" class="hidden" aria-hidden="true">
           <div class="dropzone-icon">
             <i class="fa-solid fa-image"></i>
           </div>
           <div class="dropzone-text">Tap to Choose Image or Drag & Drop</div>
-          <div class="dropzone-sub">Supports JPG, PNG, WEBP (Smartphone camera photos welcome)</div>
+          <div class="dropzone-sub">Supports JPG, PNG, WEBP, BMP, AVIF (Smartphone camera photos welcome)</div>
           <button type="button" id="btnBrowse" class="btn btn-secondary btn-sm mt-2">
             <i class="fa-regular fa-folder-open"></i> Browse Files
           </button>
         </div>
+
+        <!-- File Info Display -->
+        <div id="fileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
+            <i class="fa-solid fa-file-image" style="color: var(--primary);"></i>
+            <span id="fileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+          </div>
+          <button type="button" id="btnRemoveFile" class="btn btn-outline-danger btn-sm" title="Remove selected image">
+            <i class="fa-regular fa-trash-can"></i> Remove
+          </button>
+        </div>
+
       </section>
 
       <!-- Right Column: Cropping & Result Preview -->
-      <section class="app-card">
-        <h2 class="card-title">
+      <section class="app-card" aria-labelledby="cropHeading">
+        <h2 id="cropHeading" class="card-title">
           <i class="fa-solid fa-crop text-muted"></i>
-          <span>3. Crop & Process</span>
+          <span>3. Crop, Adjust & Export</span>
         </h2>
+
+        <!-- Process Error Alert Box -->
+        <div id="processErrorBox" class="alert-box alert-box-danger hidden" role="alert">
+          <i class="fa-solid fa-triangle-exclamation" style="margin-top: 0.15rem;"></i>
+          <span id="processErrorMessage"></span>
+        </div>
 
         <!-- Empty State Placeholder -->
         <div id="cropperPlaceholder" class="text-center" style="padding: 3rem 1rem; color: var(--text-muted);">
-          <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 3rem; margin-bottom: 1rem; color: #D1D5DB;"></i>
+          <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 3rem; margin-bottom: 1rem; color: var(--border-color-dark);"></i>
           <p style="font-weight: 600; font-size: 1.1rem; color: var(--text-heading);">No image uploaded yet</p>
-          <p class="text-sm mt-2">Upload your photo or signature on the left to start cropping.</p>
+          <p class="text-sm mt-2">Select an image on the left to start cropping and resizing.</p>
         </div>
 
         <!-- Active Cropper Area -->
         <div id="cropperActiveArea" class="hidden">
           <div class="cropper-container-wrapper">
-            <img id="imageToCrop" src="" alt="Cropper source">
+            <img id="imageToCrop" src="" alt="Cropper source preview">
           </div>
 
-          <!-- Cropper Controls -->
-          <div class="cropper-toolbar">
-            <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="Rotate Left">
-              <i class="fa-solid fa-rotate-left"></i> Rotate -90°
+          <!-- Cropper Controls Toolbar -->
+          <div class="cropper-toolbar" role="toolbar" aria-label="Crop adjustment tools">
+            <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="Rotate Left 90 degrees">
+              <i class="fa-solid fa-rotate-left"></i> -90°
             </button>
-            <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="Rotate Right">
-              <i class="fa-solid fa-rotate-right"></i> Rotate +90°
+            <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="Rotate Right 90 degrees">
+              <i class="fa-solid fa-rotate-right"></i> +90°
             </button>
-            <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="Reset Crop">
+            <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="Reset Crop Selection">
               <i class="fa-solid fa-arrow-rotate-back"></i> Reset
             </button>
-            <button type="button" id="btnZoomIn" class="btn btn-secondary btn-sm" title="Zoom In">
+            <button type="button" id="btnZoomIn" class="btn btn-secondary btn-sm" title="Zoom In" aria-label="Zoom In">
               <i class="fa-solid fa-magnifying-glass-plus"></i>
             </button>
-            <button type="button" id="btnZoomOut" class="btn btn-secondary btn-sm" title="Zoom Out">
+            <button type="button" id="btnZoomOut" class="btn btn-secondary btn-sm" title="Zoom Out" aria-label="Zoom Out">
               <i class="fa-solid fa-magnifying-glass-minus"></i>
             </button>
           </div>
@@ -212,32 +336,48 @@
         </div>
 
         <!-- Result Preview Section -->
-        <div id="resultArea" class="preview-result-card hidden">
+        <div id="resultArea" class="preview-result-card hidden" aria-live="polite">
           <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.75rem;">
-            <i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i> Ready for Exam Portal
+            <i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i> Processed Image Ready
           </h3>
 
           <div class="preview-image-box">
-            <img id="resultImage" src="" alt="Processed Result">
+            <img id="resultImage" src="" alt="Processed Result Preview">
           </div>
 
           <div class="meta-stats">
             <div class="meta-stat-item">
-              <span class="meta-stat-label">Dimensions</span>
-              <span class="meta-stat-val" id="resultDims">350 x 350 px</span>
+              <span class="meta-stat-label">Original Dimensions</span>
+              <span class="meta-stat-val" id="resultOrigDims">—</span>
             </div>
             <div class="meta-stat-item">
-              <span class="meta-stat-label">File Size</span>
+              <span class="meta-stat-label">Target Dimensions</span>
+              <span class="meta-stat-val" id="resultTargetDims">—</span>
+            </div>
+            <div class="meta-stat-item">
+              <span class="meta-stat-label">Measured Output</span>
+              <span class="meta-stat-val" id="resultDims">350 × 350 px</span>
+            </div>
+            <div class="meta-stat-item">
+              <span class="meta-stat-label">Target Size Limit</span>
+              <span class="meta-stat-val" id="resultTargetSize">Under 50 KB</span>
+            </div>
+            <div class="meta-stat-item">
+              <span class="meta-stat-label">Exact File Size</span>
               <span class="meta-stat-val status-ok" id="resultFileSize">38.2 KB</span>
             </div>
             <div class="meta-stat-item">
-              <span class="meta-stat-label">Exam Verification</span>
-              <span class="meta-stat-val status-ok"><i class="fa-solid fa-check"></i> Passed</span>
+              <span class="meta-stat-label">Format</span>
+              <span class="meta-stat-val" id="resultFormat">JPEG</span>
+            </div>
+            <div class="meta-stat-item" style="flex: 1 1 100%;">
+              <span class="meta-stat-label">Size Verification</span>
+              <span class="meta-stat-val status-ok" id="resultStatus">Satisfies Target Limit</span>
             </div>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <a id="btnDownload" download="ApplyReady_Photo.jpg" class="btn btn-success btn-block">
+            <a id="btnDownload" class="btn btn-success btn-block" download="ApplyReady_Image.jpg">
               <i class="fa-solid fa-download"></i> Download Image
             </a>
             <button type="button" id="btnCropAgain" class="btn btn-secondary btn-block">
@@ -250,77 +390,96 @@
 
     </div>
 
-    <!-- Educational Exam Specifications Info Box -->
-    <section class="app-card" style="margin-top: 1rem;">
-      <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;">
-        <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Official Exam Guidelines Reference
+    <!-- Practical Resizing Guide Card -->
+    <section class="app-card" style="margin-top: 1rem;" aria-labelledby="guideHeading">
+      <h3 id="guideHeading" style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-heading);">
+        <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Practical Image Sizing & Optimization Guide
       </h3>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; font-size: 0.875rem;">
-        <div style="background: var(--bg-page); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-          <strong>UPSC Civil Services / NDA / CDS:</strong>
-          <p class="text-muted mt-1">Photo must not be more than 10 days old with candidate's name and date printed clearly at the bottom. Max 50KB, min 20KB.</p>
-        </div>
-        <div style="background: var(--bg-page); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-          <strong>SSC CGL / CHSL / MTS:</strong>
-          <p class="text-muted mt-1">Signature must be on white paper in black/blue ink, 140x60px, strictly between 10KB to 20KB. Illegible signatures lead to rejection.</p>
-        </div>
-        <div style="background: var(--bg-page); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-          <strong>IBPS Bank PO / Clerk / SBI:</strong>
-          <p class="text-muted mt-1">Photograph dimensions 200 x 230 pixels, file size 20KB - 50KB. Signature dimensions 140 x 60 pixels, file size 10KB - 20KB.</p>
-        </div>
+      <div class="guide-card-grid">
+        <a href="guides/image-dimensions-vs-file-size.html" class="guide-card">
+          <strong style="color: var(--text-heading);">Dimensions vs. File Size (KB):</strong>
+          <p class="text-muted mt-1" style="font-size: 0.875rem;">Understand the difference between pixel resolution (width × height) and storage byte size, and how to balance clarity with file size constraints.</p>
+        </a>
+        <a href="guides/compression-targets-guide.html" class="guide-card">
+          <strong style="color: var(--text-heading);">Compression Targets (20KB, 50KB, 100KB):</strong>
+          <p class="text-muted mt-1" style="font-size: 0.875rem;">Learn how adaptive quality quantization works and why extreme limits require proportional dimension adjustments.</p>
+        </a>
+        <a href="guides/image-formats-guide.html" class="guide-card">
+          <strong style="color: var(--text-heading);">JPEG vs. PNG vs. WebP:</strong>
+          <p class="text-muted mt-1" style="font-size: 0.875rem;">When to use JPEG for photos, PNG for transparent graphics, and WebP for next-generation efficient web delivery.</p>
+        </a>
       </div>
     </section>
 
   </main>
 
-  <!-- STEP 4: MONETIZATION MODAL -->
-  <div id="monetizeModal" class="modal-overlay">
-    <div class="modal-card">
-      <button type="button" class="modal-close-btn" id="btnCloseModal" title="Close">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="modal-celebrate-icon">
-        <i class="fa-solid fa-mug-hot"></i>
-      </div>
-
-      <h3 class="modal-title">Success! Your files are ready.</h3>
-
-      <p class="modal-body-text">
-        ApplyReady is built by a student, for students. We saved you a trip to the cyber cafe and kept your data 100% private. If this helped you today, please consider supporting the servers!
-      </p>
-
-      <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="btn-chai" id="btnChaiModal">
-        <i class="fa-solid fa-heart" style="color: #F87171;"></i>
-        <span>☕ Buy me a Chai (₹30)</span>
-        <span class="chai-badge">Razorpay</span>
-      </a>
-
-      <div>
-        <a href="#" class="modal-dismiss-link" id="linkDismissModal">Maybe next time, take me back</a>
-      </div>
-    </div>
-  </div>
-
   <!-- FOOTER -->
   <footer class="site-footer">
     <div class="footer-content">
-      <div>
-        <strong>ApplyReady.in</strong> | Free, Fast & Private utilities for Indian Students & Aspirants.
+      <div class="footer-brand">
+        <img src="assets/icon.svg" alt="ApplyReady" class="brand-img" width="24" height="24">
+        <span>ApplyReady.in</span>
+        <span style="font-weight: 400; color: var(--text-muted); font-size: 0.825rem;">— Free & Private In-Browser Document Tools</span>
       </div>
-      <div class="footer-links">
-        <a href="index.html" class="footer-link">Photo Resizer</a>
+      <nav class="footer-links" aria-label="Footer Links">
+        <a href="index.html" class="footer-link">Image Resizer</a>
         <a href="resume.html" class="footer-link">Resume Builder</a>
-        <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="footer-link">Support Us ☕</a>
-      </div>
+        <a href="how-to-use.html" class="footer-link">How to Use</a>
+        <a href="about.html" class="footer-link">About</a>
+        <a href="privacy.html" class="footer-link">Privacy Policy</a>
+        <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="footer-link" style="color: #0B72E7; font-weight: 600;">
+          <i class="fa-solid fa-mug-hot"></i> Support ☕
+        </a>
+      </nav>
     </div>
   </footer>
 
+  <!-- Theme Switcher Script -->
+  <script>
+    (function () {
+      var themeToggle = document.getElementById('themeToggle');
+      function updateIcon(theme) {
+        if (!themeToggle) return;
+        var icon = themeToggle.querySelector('i');
+        if (!icon) return;
+        if (theme === 'dark') {
+          icon.className = 'fa-solid fa-sun';
+          themeToggle.setAttribute('aria-label', 'Switch to light theme');
+        } else {
+          icon.className = 'fa-solid fa-moon';
+          themeToggle.setAttribute('aria-label', 'Switch to dark theme');
+        }
+      }
+
+      var current = document.documentElement.getAttribute('data-theme') || 'light';
+      updateIcon(current);
+
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+          var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', active);
+          try {
+            localStorage.setItem('applyready_theme', active);
+          } catch (e) {}
+          updateIcon(active);
+        });
+      }
+
+      // Listen for system theme changes if user hasn't explicitly set preference
+      try {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+          if (!localStorage.getItem('applyready_theme')) {
+            var newTheme = e.matches ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            updateIcon(newTheme);
+          }
+        });
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- DEPENDENCIES (CDN) -->
-  <!-- Cropper.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
-  <!-- Compressor.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js"></script>
 
   <!-- Application Logic -->
   <script src="js/resizer.js"></script>
