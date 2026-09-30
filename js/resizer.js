@@ -145,25 +145,29 @@
    * Pure Dimension & File Size Validator
    * Validates custom dimensions, Megapixel ceiling, and size limits
    */
-  function validateDimensionSpecs(rawWStr, rawHStr, rawKBStr) {
+  function validateDimensionSpecs(rawWStr, rawHStr, rawKBStr, addDate = false) {
     const isInteger = (s) => /^\d+$/.test(String(s || '').trim());
     let width = 350;
     let height = 350;
     let maxKB = 50;
     let isValid = true;
     let dimErrorMsg = null;
+    let wErrorMsg = null;
+    let hErrorMsg = null;
     let sizeErrorMsg = null;
 
     let wValid = false;
     let hValid = false;
 
     if (!isInteger(rawWStr)) {
-      dimErrorMsg = 'Width must be a positive integer.';
+      wErrorMsg = 'Width must be a positive integer.';
+      dimErrorMsg = wErrorMsg;
       isValid = false;
     } else {
       const wVal = Number(rawWStr);
       if (!Number.isFinite(wVal) || !Number.isInteger(wVal) || wVal < 20 || wVal > 8000) {
-        dimErrorMsg = 'Width must be an integer between 20 and 8,000 px.';
+        wErrorMsg = 'Width must be an integer between 20 and 8,000 px.';
+        dimErrorMsg = wErrorMsg;
         isValid = false;
       } else {
         width = wVal;
@@ -172,12 +176,14 @@
     }
 
     if (!isInteger(rawHStr)) {
-      dimErrorMsg = dimErrorMsg || 'Height must be a positive integer.';
+      hErrorMsg = 'Height must be a positive integer.';
+      dimErrorMsg = dimErrorMsg || hErrorMsg;
       isValid = false;
     } else {
       const hVal = Number(rawHStr);
       if (!Number.isFinite(hVal) || !Number.isInteger(hVal) || hVal < 20 || hVal > 8000) {
-        dimErrorMsg = dimErrorMsg || 'Height must be an integer between 20 and 8,000 px.';
+        hErrorMsg = 'Height must be an integer between 20 and 8,000 px.';
+        dimErrorMsg = dimErrorMsg || hErrorMsg;
         isValid = false;
       } else {
         height = hVal;
@@ -187,6 +193,14 @@
 
     if (wValid && hValid && (width * height > 32000000)) {
       dimErrorMsg = 'Total image pixels exceed safe limit (32 Megapixels).';
+      wErrorMsg = 'Total image pixels exceed safe limit (32 Megapixels).';
+      hErrorMsg = 'Total image pixels exceed safe limit (32 Megapixels).';
+      isValid = false;
+    }
+
+    if (hValid && addDate && height < 80) {
+      dimErrorMsg = 'Height must be at least 80 px when Name / Date strip is enabled.';
+      hErrorMsg = dimErrorMsg;
       isValid = false;
     }
 
@@ -209,6 +223,8 @@
       height,
       maxKB,
       dimErrorMsg,
+      wErrorMsg,
+      hErrorMsg,
       sizeErrorMsg
     };
   }
@@ -219,6 +235,7 @@
   function getActiveSpecs() {
     hideErrors();
     const isCustom = currentPresetKey === 'custom';
+    const addDate = Boolean(addDateCheckbox && addDateCheckbox.checked);
     let width = 350;
     let height = 350;
     let maxKB = 50;
@@ -230,14 +247,14 @@
       const rawHStr = customHeightInput ? customHeightInput.value : '';
       const rawKBStr = customMaxKBInput ? customMaxKBInput.value : '';
 
-      const validation = validateDimensionSpecs(rawWStr, rawHStr, rawKBStr);
+      const validation = validateDimensionSpecs(rawWStr, rawHStr, rawKBStr, addDate);
       width = validation.width;
       height = validation.height;
       maxKB = validation.maxKB;
       isValid = validation.isValid;
 
       if (validation.dimErrorMsg) {
-        showDimError(validation.dimErrorMsg);
+        showDimError(validation.dimErrorMsg, validation.wErrorMsg, validation.hErrorMsg);
       }
       if (validation.sizeErrorMsg) {
         showSizeError(validation.sizeErrorMsg);
@@ -250,6 +267,11 @@
       height = p.height;
       maxKB = p.maxKB;
       prefix = p.defaultPrefix;
+
+      if (addDate && height < 80) {
+        showDimError('Height must be at least 80 px when Name / Date strip is enabled.', null, true);
+        isValid = false;
+      }
     }
 
     const mimeType = formatSelect ? formatSelect.value : 'image/jpeg';
@@ -266,13 +288,13 @@
     };
   }
 
-  function showDimError(msg) {
+  function showDimError(msg, wErr, hErr) {
     if (dimError) {
       dimError.textContent = msg;
       dimError.classList.remove('hidden');
     }
-    if (customWidthInput) customWidthInput.classList.add('is-invalid');
-    if (customHeightInput) customHeightInput.classList.add('is-invalid');
+    if (customWidthInput && (wErr || (!wErr && !hErr))) customWidthInput.classList.add('is-invalid');
+    if (customHeightInput && (hErr || (!wErr && !hErr))) customHeightInput.classList.add('is-invalid');
   }
 
   function showSizeError(msg) {
@@ -434,18 +456,34 @@
     }
 
     if (aspectRatioSelect) {
-      aspectRatioSelect.addEventListener('change', updateCropperRatio);
+      aspectRatioSelect.addEventListener('change', () => {
+        updateCropperRatio();
+        invalidateResult();
+      });
     }
 
     addDateCheckbox.addEventListener('change', () => {
       if (dateInputGroup) {
         dateInputGroup.style.display = addDateCheckbox.checked ? 'block' : 'none';
       }
-      updateCropperRatio();
-      invalidateResult();
+      updatePresetUI();
     });
 
-    if (btnTodayDate) btnTodayDate.addEventListener('click', setTodayDate);
+    if (btnTodayDate) {
+      btnTodayDate.addEventListener('click', () => {
+        setTodayDate();
+        invalidateResult();
+      });
+    }
+
+    if (annotationDateInput) {
+      annotationDateInput.addEventListener('input', invalidateResult);
+      annotationDateInput.addEventListener('change', invalidateResult);
+    }
+
+    if (candidateNameInput) {
+      candidateNameInput.addEventListener('input', invalidateResult);
+    }
 
     // File Input & Dropzone
     btnBrowse.addEventListener('click', () => fileInput.click());
@@ -513,11 +551,17 @@
     });
 
     btnZoomIn.addEventListener('click', () => {
-      if (cropper) cropper.zoom(0.1);
+      if (cropper) {
+        cropper.zoom(0.1);
+        invalidateResult();
+      }
     });
 
     btnZoomOut.addEventListener('click', () => {
-      if (cropper) cropper.zoom(-0.1);
+      if (cropper) {
+        cropper.zoom(-0.1);
+        invalidateResult();
+      }
     });
 
     // Process & Download
@@ -664,6 +708,7 @@
     sourceDimensions = { width: 0, height: 0, sizeBytes: 0 };
     imageToCrop.src = '';
 
+    if (btnProcess) btnProcess.disabled = true;
     if (fileInfoBox) fileInfoBox.classList.add('hidden');
     cropperActiveArea.classList.add('hidden');
     cropperPlaceholder.classList.remove('hidden');
@@ -712,8 +757,8 @@
     }
 
     if (addDate) {
-      if (targetHeight < 120) {
-        throw new Error('Image height must be at least 120 px when Date / Name strip is enabled.');
+      if (targetHeight < 80) {
+        throw new Error('Image height must be at least 80 px when Date / Name strip is enabled.');
       }
 
       const stripHeight = Math.max(34, Math.round(targetHeight * 0.16));
@@ -767,7 +812,10 @@
       ctx.fillStyle = '#000000';
       ctx.textAlign = 'center';
 
-      if (candidateName) {
+      const hasName = Boolean(candidateName);
+      const hasDate = Boolean(formattedDate);
+
+      if (hasName && hasDate) {
         // Two lines: Candidate Name + Date
         let nameFontSize = Math.max(9, Math.round(stripHeight * 0.32));
         ctx.font = `bold ${nameFontSize}px 'Inter', sans-serif`;
@@ -781,18 +829,42 @@
 
         let displayName = candidateName;
         if (ctx.measureText(displayName).width > maxTextWidth) {
-          while (displayName.length > 3 && ctx.measureText(displayName + '…').width > maxTextWidth) {
-            displayName = displayName.slice(0, -1);
+          const chars = Array.from(candidateName);
+          while (chars.length > 1 && ctx.measureText(chars.join('') + '…').width > maxTextWidth) {
+            chars.pop();
           }
-          displayName += '…';
+          displayName = chars.join('') + '…';
         }
 
-        ctx.fillText(displayName, targetWidth / 2, photoHeight + (stripHeight * 0.38));
+        ctx.textBaseline = 'middle';
+        ctx.fillText(displayName, targetWidth / 2, photoHeight + (stripHeight * 0.35));
 
         const dateFontSize = Math.max(8, Math.round(stripHeight * 0.28));
         ctx.font = `600 ${dateFontSize}px 'Inter', sans-serif`;
-        ctx.fillText(`DATE: ${formattedDate}`, targetWidth / 2, photoHeight + (stripHeight * 0.80));
-      } else {
+        ctx.fillText(`DATE: ${formattedDate}`, targetWidth / 2, photoHeight + (stripHeight * 0.75));
+      } else if (hasName) {
+        // Single centered candidate name
+        let nameFontSize = Math.max(10, Math.round(stripHeight * 0.44));
+        ctx.font = `bold ${nameFontSize}px 'Inter', sans-serif`;
+
+        const maxTextWidth = targetWidth * 0.92;
+        while (ctx.measureText(candidateName).width > maxTextWidth && nameFontSize > 7) {
+          nameFontSize -= 1;
+          ctx.font = `bold ${nameFontSize}px 'Inter', sans-serif`;
+        }
+
+        let displayName = candidateName;
+        if (ctx.measureText(displayName).width > maxTextWidth) {
+          const chars = Array.from(candidateName);
+          while (chars.length > 1 && ctx.measureText(chars.join('') + '…').width > maxTextWidth) {
+            chars.pop();
+          }
+          displayName = chars.join('') + '…';
+        }
+
+        ctx.textBaseline = 'middle';
+        ctx.fillText(displayName, targetWidth / 2, photoHeight + (stripHeight / 2));
+      } else if (hasDate) {
         // Single centered date line
         const fontSize = Math.max(10, Math.round(stripHeight * 0.44));
         ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;

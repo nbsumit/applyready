@@ -194,6 +194,7 @@
     setupAccordions();
     updatePreviewScale();
     window.addEventListener('resize', updatePreviewScale);
+    window.addEventListener('orientationchange', () => setTimeout(updatePreviewScale, 150));
   }
 
   /**
@@ -1059,6 +1060,23 @@
   }
 
   /**
+   * Validate URL format for supplied links
+   */
+  function isValidUrlFormat(str) {
+    if (!str) return true;
+    const s = String(str).trim();
+    if (/\s/.test(s)) return false;
+    if (/^(javascript|data|vbscript|file):/i.test(s)) return false;
+    try {
+      const testUrl = s.startsWith('http://') || s.startsWith('https://') ? s : 'https://' + s;
+      const u = new URL(testUrl);
+      return Boolean(u.hostname && u.hostname.includes('.'));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
    * Export to Vector Text PDF
    */
   function exportToVectorPDF() {
@@ -1086,6 +1104,45 @@
         emailInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       return;
+    }
+
+    const linkedin = (resumeData.personal && resumeData.personal.linkedin ? resumeData.personal.linkedin : '').trim();
+    if (linkedin && !isValidUrlFormat(linkedin)) {
+      alert(`The LinkedIn URL "${linkedin}" appears invalid. Please check and correct the format.`);
+      if (linkedinInp) {
+        linkedinInp.focus();
+        linkedinInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    const website = (resumeData.personal && resumeData.personal.website ? resumeData.personal.website : '').trim();
+    if (website && !isValidUrlFormat(website)) {
+      alert(`The Website URL "${website}" appears invalid. Please check and correct the format.`);
+      if (websiteInp) {
+        websiteInp.focus();
+        websiteInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    const github = (resumeData.personal && resumeData.personal.github ? resumeData.personal.github : '').trim();
+    if (github && !isValidUrlFormat(github)) {
+      alert(`The GitHub URL "${github}" appears invalid. Please check and correct the format.`);
+      if (githubInp) {
+        githubInp.focus();
+        githubInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    if (Array.isArray(resumeData.projects)) {
+      for (const proj of resumeData.projects) {
+        if (proj.link && !isValidUrlFormat(proj.link)) {
+          alert(`The project link "${proj.link}" appears invalid. Please check the format.`);
+          return;
+        }
+      }
     }
 
     const originalBtnHtml = btnDownloadPDF.innerHTML;
@@ -1132,7 +1189,8 @@
       SAMPLE_DATA,
       EMPTY_DATA,
       escapeHTML,
-      sanitizeHref
+      sanitizeHref,
+      isValidUrlFormat
     };
   }
 

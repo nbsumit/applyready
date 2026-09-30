@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { generateResumePDF, measureTextWidth, splitTextToLines, escapePdfText } = require('../js/pdf-engine.js');
-const { validateResumeSchema, SAMPLE_DATA, EMPTY_DATA, escapeHTML, sanitizeHref } = require('../js/resume.js');
+const { validateResumeSchema, SAMPLE_DATA, EMPTY_DATA, escapeHTML, sanitizeHref, isValidUrlFormat } = require('../js/resume.js');
 const { PRESETS, formatAnnotationDate, validateDimensionSpecs } = require('../js/resizer.js');
 
 let totalTests = 0;
@@ -233,6 +233,33 @@ const textUnicodeSans = extractTextFromPdf(docUnicodeSans.build()).join(' ');
 assert(textUnicodeSerif.includes('RENÉE MÜLLER, PH.D.'), 'Unicode accented name "RENÉE MÜLLER" extracted cleanly in Serif font');
 assert(textUnicodeSans.includes('RENÉE MÜLLER, PH.D.'), 'Unicode accented name "RENÉE MÜLLER" extracted cleanly in Sans font');
 
+// Test 9: Long Entry Header & Date Collision Prevention
+const longEntryResume = JSON.parse(JSON.stringify(sampleResume));
+longEntryResume.experience = [
+  {
+    id: 'exp-long-1',
+    role: 'Senior Vice President of Global Enterprise Logistics and Supply Chain Optimization',
+    company: 'OmniCorp Worldwide Solutions Incorporated',
+    location: 'San Francisco Bay Area, CA',
+    duration: 'Jan 2018 - Present',
+    bulletsText: 'Successfully managed multi-region logistics without text overlap.'
+  }
+];
+longEntryResume.education = [
+  {
+    id: 'edu-long-1',
+    degree: 'Master of Science in Artificial Intelligence and Computational Neuroscience',
+    institution: 'Massachusetts Institute of Technology School of Engineering',
+    location: 'Cambridge, MA',
+    duration: '2015 - 2017',
+    score: 'Summa Cum Laude'
+  }
+];
+const docLongCollision = generateResumePDF(longEntryResume, { fontFamily: 'serif' });
+const longPdfText = extractTextFromPdf(docLongCollision.build()).join(' ');
+assert(longPdfText.includes('Senior Vice President of Global Enterprise Logistics') && longPdfText.includes('Jan 2018 - Present'), 'Long role and right-aligned date are both preserved and rendered without collision');
+assert(longPdfText.includes('Master of Science in Artificial Intelligence') && longPdfText.includes('Summa Cum Laude'), 'Long education degree and honors are both preserved without collision');
+
 console.log('');
 
 // ------------------------------------------------------------------
@@ -261,6 +288,14 @@ assert(escapeHTML('<script>alert("xss")&test\'</script>') === '&lt;script&gt;ale
 assert(sanitizeHref('javascript:alert(1)') === '#', 'sanitizeHref blocks javascript: protocols');
 assert(sanitizeHref('example.com') === 'https://example.com', 'sanitizeHref normalizes web URLs to https://');
 assert(sanitizeHref('mailto:test@example.com') === 'mailto:test@example.com', 'sanitizeHref preserves mailto: links');
+
+// Test URL format validation
+assert(isValidUrlFormat('linkedin.com/in/alexmorgan'), 'Valid domain URL passes URL format validation');
+assert(isValidUrlFormat('https://alexmorgan.com/portfolio'), 'Valid https URL passes URL format validation');
+assert(isValidUrlFormat(''), 'Empty optional URL passes URL format validation');
+assert(!isValidUrlFormat('not a valid url with spaces'), 'URL with whitespace is rejected');
+assert(!isValidUrlFormat('javascript:alert(1)'), 'Dangerous javascript: URI is rejected by URL format validation');
+assert(!isValidUrlFormat('nodotdomain'), 'Domain without dot is rejected by URL format validation');
 
 console.log('');
 
@@ -300,6 +335,19 @@ assert(formatAnnotationDate(null) === '', 'formatAnnotationDate handles null cle
 assert(PRESETS.passport && PRESETS.avatar && PRESETS.signature && PRESETS['web-banner'] && PRESETS.document, 'All 5 standard dimension presets are defined');
 assert(PRESETS.passport.width === 350 && PRESETS.passport.height === 450 && PRESETS.passport.maxKB === 50, 'Passport preset has correct dimensions (350x450, 50KB)');
 assert(PRESETS.signature.width === 300 && PRESETS.signature.height === 100 && PRESETS.signature.maxKB === 30, 'Signature preset has correct dimensions (300x100, 30KB)');
+
+// Test Annotation Height Boundary & Granular Errors
+const vDateHeightTooSmall = validateDimensionSpecs('350', '60', '50', true);
+assert(!vDateHeightTooSmall.isValid && vDateHeightTooSmall.hErrorMsg.includes('Height must be at least 80 px'), 'Dimension validator rejects height < 80 px when annotation strip is enabled');
+
+const vDateHeightValid = validateDimensionSpecs('350', '100', '50', true);
+assert(vDateHeightValid.isValid && vDateHeightValid.height === 100, 'Dimension validator accepts height >= 80 px when annotation strip is enabled');
+
+const vGranularW = validateDimensionSpecs('abc', '350', '50');
+assert(vGranularW.wErrorMsg && !vGranularW.hErrorMsg, 'Dimension validator returns isolated wErrorMsg without tainting height');
+
+const vGranularH = validateDimensionSpecs('350', 'abc', '50');
+assert(!vGranularH.wErrorMsg && vGranularH.hErrorMsg, 'Dimension validator returns isolated hErrorMsg without tainting width');
 
 console.log('');
 
@@ -444,6 +492,15 @@ const primaryContrast = getContrastRatio(primaryBlueRGB, whiteRGB);
 assert(oldContrast < 3.0, `Confirmed old green (#10B981) had insufficient contrast: ${oldContrast.toFixed(2)}:1 (Fails WCAG AA)`);
 assert(newContrast >= 4.5, `New green button color (#047857) satisfies WCAG AA normal text criteria: ${newContrast.toFixed(2)}:1 (>= 4.5:1)`);
 assert(primaryContrast >= 4.0, `Primary button color (#2563EB) satisfies UI component contrast: ${primaryContrast.toFixed(2)}:1 (>= 3:1)`);
+
+// Verify dark theme --accent-green compliance directly from style.css
+const styleCssContent = fs.readFileSync(path.join(repoRoot, 'css', 'style.css'), 'utf8');
+const darkThemeMatch = styleCssContent.match(/\[data-theme="dark"\]\s*\{([^}]+)\}/);
+assert(Boolean(darkThemeMatch), 'CSS contains [data-theme="dark"] ruleset');
+const darkGreenMatch = darkThemeMatch ? darkThemeMatch[1].match(/--accent-green:\s*([^;]+);/) : null;
+assert(Boolean(darkGreenMatch), 'Dark theme defines --accent-green variable');
+const darkGreenVal = darkGreenMatch ? darkGreenMatch[1].trim() : '';
+assert(darkGreenVal === '#047857', `Dark theme --accent-green is accessible (#047857, actual: ${darkGreenVal})`);
 
 console.log('');
 

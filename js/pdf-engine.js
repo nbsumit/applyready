@@ -571,24 +571,51 @@
           // Role and Company (Left aligned)
           const roleCompany = [exp.role, exp.company].filter(Boolean).join('  |  ');
           const roleFontSize = 9.5;
-          doc.drawText(roleCompany, marginLeft, currentY + roleFontSize, {
-            fontSize: roleFontSize,
-            fontStyle: 'bold',
-            color: [0.05, 0.05, 0.05]
-          });
-
-          // Duration & Location (Right aligned)
           const dateLoc = [exp.duration, exp.location].filter(Boolean).join('  •  ');
-          if (dateLoc) {
-            const dateWidth = measureTextWidth(dateLoc, 9, fontKey);
-            const dateX = A4_WIDTH - marginRight - dateWidth;
-            doc.drawText(dateLoc, dateX, currentY + 9, {
-              fontSize: 9,
-              fontStyle: 'italic',
-              color: [0.35, 0.4, 0.45]
+          const dateWidth = dateLoc ? measureTextWidth(dateLoc, 9, fontKey) : 0;
+          const roleWidth = measureTextWidth(roleCompany, roleFontSize, fontKey);
+          const maxLeftWidth = dateWidth > 0 ? contentWidth - dateWidth - 12 : contentWidth;
+
+          if (roleWidth <= maxLeftWidth) {
+            // Fits cleanly on the same line
+            doc.drawText(roleCompany, marginLeft, currentY + roleFontSize, {
+              fontSize: roleFontSize,
+              fontStyle: 'bold',
+              color: [0.05, 0.05, 0.05]
             });
+            if (dateLoc) {
+              const dateX = A4_WIDTH - marginRight - dateWidth;
+              doc.drawText(dateLoc, dateX, currentY + 9, {
+                fontSize: 9,
+                fontStyle: 'italic',
+                color: [0.35, 0.4, 0.45]
+              });
+            }
+            currentY += roleFontSize + 4;
+          } else {
+            // Text would collide with date: wrap gracefully without overlapping
+            const roleLines = splitTextToLines(roleCompany, roleFontSize, contentWidth, fontKey);
+            for (let rl = 0; rl < roleLines.length; rl++) {
+              if (rl > 0) ensureSpace(roleFontSize + 3);
+              doc.drawText(roleLines[rl], marginLeft, currentY + roleFontSize, {
+                fontSize: roleFontSize,
+                fontStyle: 'bold',
+                color: [0.05, 0.05, 0.05]
+              });
+              currentY += roleFontSize + 2;
+            }
+            if (dateLoc) {
+              ensureSpace(12);
+              doc.drawText(dateLoc, marginLeft, currentY + 9, {
+                fontSize: 9,
+                fontStyle: 'italic',
+                color: [0.35, 0.4, 0.45]
+              });
+              currentY += 9 + 4;
+            } else {
+              currentY += 2;
+            }
           }
-          currentY += roleFontSize + 4;
 
           // Bullets
           if (exp.bulletsText && exp.bulletsText.trim()) {
@@ -645,24 +672,50 @@
           // Degree & Institution
           const degreeInst = [edu.degree, edu.institution].filter(Boolean).join('  —  ');
           const degFontSize = 9.5;
-          doc.drawText(degreeInst, marginLeft, currentY + degFontSize, {
-            fontSize: degFontSize,
-            fontStyle: 'bold',
-            color: [0.05, 0.05, 0.05]
-          });
-
-          // Duration & Location / Score (Right aligned)
           const metaParts = [edu.duration, edu.location, edu.score].filter(Boolean).join('  •  ');
-          if (metaParts) {
-            const metaWidth = measureTextWidth(metaParts, 9, fontKey);
-            const metaX = A4_WIDTH - marginRight - metaWidth;
-            doc.drawText(metaParts, metaX, currentY + 9, {
-              fontSize: 9,
-              fontStyle: 'italic',
-              color: [0.35, 0.4, 0.45]
+          const metaWidth = metaParts ? measureTextWidth(metaParts, 9, fontKey) : 0;
+          const degWidth = measureTextWidth(degreeInst, degFontSize, fontKey);
+          const maxDegWidth = metaWidth > 0 ? contentWidth - metaWidth - 12 : contentWidth;
+
+          if (degWidth <= maxDegWidth) {
+            doc.drawText(degreeInst, marginLeft, currentY + degFontSize, {
+              fontSize: degFontSize,
+              fontStyle: 'bold',
+              color: [0.05, 0.05, 0.05]
             });
+            if (metaParts) {
+              const metaX = A4_WIDTH - marginRight - metaWidth;
+              doc.drawText(metaParts, metaX, currentY + 9, {
+                fontSize: 9,
+                fontStyle: 'italic',
+                color: [0.35, 0.4, 0.45]
+              });
+            }
+            currentY += degFontSize + 6;
+          } else {
+            const degLines = splitTextToLines(degreeInst, degFontSize, contentWidth, fontKey);
+            for (let dl = 0; dl < degLines.length; dl++) {
+              if (dl > 0) ensureSpace(degFontSize + 3);
+              doc.drawText(degLines[dl], marginLeft, currentY + degFontSize, {
+                fontSize: degFontSize,
+                fontStyle: 'bold',
+                color: [0.05, 0.05, 0.05]
+              });
+              currentY += degFontSize + 2;
+            }
+            if (metaParts) {
+              ensureSpace(12);
+              doc.drawText(metaParts, marginLeft, currentY + 9, {
+                fontSize: 9,
+                fontStyle: 'italic',
+                color: [0.35, 0.4, 0.45]
+              });
+              currentY += 9 + 4;
+            } else {
+              currentY += 2;
+            }
           }
-          currentY += degFontSize + 6;
+          currentY += 4;
         }
         currentY += 4;
       }
@@ -691,52 +744,76 @@
           // Project Name & Tech
           const projName = proj.name || 'Project';
           const projFontSize = 9.5;
-          doc.drawText(projName, marginLeft, currentY + projFontSize, {
-            fontSize: projFontSize,
-            fontStyle: 'bold',
-            color: [0.05, 0.05, 0.05]
-          });
+          const techText = (proj.tech && proj.tech.trim()) ? `|  ${proj.tech.trim()}` : '';
+          const nameTech = techText ? `${projName}  ${techText}` : projName;
+          const linkText = (proj.link && proj.link.trim()) ? proj.link.trim() : '';
+          const linkWidth = linkText ? measureTextWidth(linkText, 8.5, fontKey) : 0;
+          const nameTechWidth = measureTextWidth(nameTech, projFontSize, fontKey);
+          const maxProjLeftWidth = linkWidth > 0 ? contentWidth - linkWidth - 12 : contentWidth;
 
-          let techStartX = marginLeft + measureTextWidth(projName, projFontSize, fontKey) + 6;
-          let techWidth = 0;
-          if (proj.tech && proj.tech.trim()) {
-            const techText = `|  ${proj.tech.trim()}`;
-            techWidth = measureTextWidth(techText, 9, fontKey);
-            doc.drawText(techText, techStartX, currentY + 9, {
-              fontSize: 9,
-              fontStyle: 'italic',
-              color: [0.35, 0.4, 0.45]
+          if (nameTechWidth <= maxProjLeftWidth && linkText) {
+            // Fits cleanly with right-aligned link
+            doc.drawText(projName, marginLeft, currentY + projFontSize, {
+              fontSize: projFontSize,
+              fontStyle: 'bold',
+              color: [0.05, 0.05, 0.05]
             });
-          }
-
-          // Link (Check for collision with project title/tech)
-          if (proj.link && proj.link.trim()) {
-            const linkText = proj.link.trim();
-            const linkWidth = measureTextWidth(linkText, 8.5, fontKey);
-            const linkX = A4_WIDTH - marginRight - linkWidth;
-            const leftBoundary = techStartX + techWidth + 8;
-
-            if (leftBoundary > linkX) {
-              // Wrap link to its own indented sub-line to prevent overlap
-              currentY += projFontSize + 3;
-              doc.drawText(linkText, marginLeft + 12, currentY + 8.5, {
-                fontSize: 8.5,
-                fontStyle: 'normal',
-                color: [0.05, 0.35, 0.75]
+            if (techText) {
+              const techStartX = marginLeft + measureTextWidth(projName, projFontSize, fontKey) + 6;
+              doc.drawText(techText, techStartX, currentY + 9, {
+                fontSize: 9,
+                fontStyle: 'italic',
+                color: [0.35, 0.4, 0.45]
               });
-              doc.addLink(marginLeft + 12, currentY, linkWidth, 10, linkText);
-              currentY += 8.5 + 4;
-            } else {
-              doc.drawText(linkText, linkX, currentY + 8.5, {
-                fontSize: 8.5,
-                fontStyle: 'normal',
-                color: [0.05, 0.35, 0.75]
-              });
-              doc.addLink(linkX, currentY, linkWidth, 10, linkText);
-              currentY += projFontSize + 4;
             }
-          } else {
+            const linkX = A4_WIDTH - marginRight - linkWidth;
+            doc.drawText(linkText, linkX, currentY + 8.5, {
+              fontSize: 8.5,
+              fontStyle: 'normal',
+              color: [0.05, 0.35, 0.75]
+            });
+            doc.addLink(linkX, currentY, linkWidth, 10, linkText);
             currentY += projFontSize + 4;
+          } else {
+            // Draw name and tech, wrap link below if present
+            doc.drawText(projName, marginLeft, currentY + projFontSize, {
+              fontSize: projFontSize,
+              fontStyle: 'bold',
+              color: [0.05, 0.05, 0.05]
+            });
+            const afterNameX = marginLeft + measureTextWidth(projName, projFontSize, fontKey) + 6;
+            if (techText) {
+              const availableTechWidth = contentWidth - (afterNameX - marginLeft);
+              if (measureTextWidth(techText, 9, fontKey) <= availableTechWidth) {
+                doc.drawText(techText, afterNameX, currentY + 9, {
+                  fontSize: 9,
+                  fontStyle: 'italic',
+                  color: [0.35, 0.4, 0.45]
+                });
+                currentY += projFontSize + 3;
+              } else {
+                currentY += projFontSize + 2;
+                doc.drawText(techText, marginLeft + 10, currentY + 9, {
+                  fontSize: 9,
+                  fontStyle: 'italic',
+                  color: [0.35, 0.4, 0.45]
+                });
+                currentY += 9 + 3;
+              }
+            } else {
+              currentY += projFontSize + 3;
+            }
+
+            if (linkText) {
+              ensureSpace(12);
+              doc.drawText(linkText, marginLeft + 10, currentY + 8.5, {
+                fontSize: 8.5,
+                fontStyle: 'normal',
+                color: [0.05, 0.35, 0.75]
+              });
+              doc.addLink(marginLeft + 10, currentY, linkWidth, 10, linkText);
+              currentY += 8.5 + 4;
+            }
           }
 
           // Bullets
