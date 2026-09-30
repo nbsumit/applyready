@@ -33,7 +33,7 @@ ApplyReady is a lightning-fast, mobile-first, privacy-focused web application bu
 
 ### 3. Student-First Monetization
 - Built for students by a student.
-- Integrated voluntary support button: **☕ Buy me a Chai (₹30)** powered by Razorpay (`https://razorpay.com/@nbsumit`).
+- Integrated voluntary support button: **☕ Buy me a Chai (₹30)** powered by Razorpay (`https://razorpay.me/@nbsumit`).
 
 ---
 
