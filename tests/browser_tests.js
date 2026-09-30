@@ -130,7 +130,7 @@ const server = http.createServer((req,res) => {
     const bbox=execFileSync('pdftotext',['-bbox',filename,'-'],{encoding:'utf8'});
     for(const match of bbox.matchAll(/<word xMin="([\d.-]+)" yMin="([\d.-]+)" xMax="([\d.-]+)" yMax="([\d.-]+)"/g))ok(+match[1]>=20 && +match[3]<=590 && +match[2]>=10 && +match[4]<=832,`${template}: text falls outside safe paper bounds`);
     const info=execFileSync('pdfinfo',[filename],{encoding:'utf8'});const pages=Number(info.match(/Pages:\s+(\d+)/)[1]);ok((await page.locator('#pageCountPill').textContent()).startsWith(String(pages)),'Displayed PDF page count agrees with downloaded file');
-    ok(await page.locator('#resumeVisualPages .resume-visual-page').count()===pages,`${template}: visible preview page count agrees with downloaded PDF`);
+    const visiblePages=await page.locator('#resumeVisualPages .resume-visual-page').count();ok(visiblePages===pages,`${template}: visible preview page count agrees with downloaded PDF (${visiblePages} preview vs ${pages} PDF)`);
     ok(await page.locator('#resumeVisualPages .resume-visual-page').evaluateAll(nodes=>nodes.every(node=>node.scrollHeight<=node.clientHeight+2)),`${template}: visible preview pages do not overflow their paper bounds`);
     ok(await page.locator('#resumeSheet').evaluate(el=>getComputedStyle(el).visibility==='hidden'),`${template}: export source remains hidden on screen`);
   }

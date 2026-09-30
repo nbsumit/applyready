@@ -655,10 +655,13 @@
     const target = getEl('resumeVisualPages');
     if (!source || !target) return 1;
     target.innerHTML = '';
+
     const pageClass = Array.from(source.classList).filter(name => name !== 'resume-source-sheet').join(' ');
     const sourceHeader = source.querySelector(':scope > .resume-header');
     const sectionsRoot = source.querySelector(':scope > div');
-    const sourceSections = sectionsRoot ? Array.from(sectionsRoot.children).filter(node => node.classList && node.classList.contains('resume-section')) : [];
+    const sourceSections = sectionsRoot
+      ? Array.from(sectionsRoot.children).filter(node => node.classList && node.classList.contains('resume-section'))
+      : [];
     const wantedPages = Math.max(1, Number(expectedPages) || 1);
     const pages = [];
 
@@ -667,26 +670,37 @@
       page.className = `${pageClass} resume-visual-page`;
       page.dataset.previewPage = String(pages.length + 1);
       if (includeHeader && sourceHeader) page.appendChild(sourceHeader.cloneNode(true));
+
       const sections = document.createElement('div');
       sections.className = 'resume-page-sections';
       page.appendChild(sections);
       target.appendChild(page);
+
       const record = { page, sections };
       pages.push(record);
       return record;
     }
-    function isOverflowing(page) { return page.scrollHeight > page.clientHeight + 2; }
+
+    function isOverflowing(page) {
+      return page.scrollHeight > page.clientHeight + 2;
+    }
+
     function sectionParts(original) {
       const children = Array.from(original.children);
       const title = children.find(node => node.classList && node.classList.contains('resume-section-title')) || null;
       const bodyNodes = children.filter(node => node !== title);
-      if (bodyNodes.length === 1 && bodyNodes[0].tagName === 'DIV' && bodyNodes[0].children.length) return { title, wrapper: bodyNodes[0], units: Array.from(bodyNodes[0].children) };
+
+      if (bodyNodes.length === 1 && bodyNodes[0].tagName === 'DIV' && bodyNodes[0].children.length) {
+        return { title, wrapper: bodyNodes[0], units: Array.from(bodyNodes[0].children) };
+      }
       return { title, wrapper: null, units: bodyNodes };
     }
-    function makeSectionChunk(original, includeTitle) {
+
+    function makeChunk(original, includeTitle) {
       const parts = sectionParts(original);
       const shell = original.cloneNode(false);
       if (includeTitle && parts.title) shell.appendChild(parts.title.cloneNode(true));
+
       let holder = shell;
       if (parts.wrapper) {
         const wrapper = parts.wrapper.cloneNode(false);
@@ -697,40 +711,62 @@
     }
 
     let current = createPage(true);
-    function splitOversizedSection(original) {
+
+    function appendSplitSection(original) {
       const parts = sectionParts(original);
-      if (!parts.units.length) { current.sections.appendChild(original.cloneNode(true)); return; }
-      let chunk = makeSectionChunk(original, true);
-      current.sections.appendChild(chunk.shell);
-      let unitsOnChunk = 0;
-      parts.units.forEach(unit => {
-        const clone = unit.cloneNode(true);
-        chunk.holder.appendChild(clone);
-        unitsOnChunk += 1;
-        if (isOverflowing(current.page) && unitsOnChunk > 1) {
-          chunk.holder.removeChild(clone);
+      if (!parts.units.length) {
+        const clone = original.cloneNode(true);
+        current.sections.appendChild(clone);
+        if (isOverflowing(current.page) && current.sections.children.length > 1) {
+          current.sections.removeChild(clone);
           current = createPage(false);
-          chunk = makeSectionChunk(original, false);
-          current.sections.appendChild(chunk.shell);
-          chunk.holder.appendChild(clone);
-          unitsOnChunk = 1;
+          current.sections.appendChild(clone);
         }
-      });
+        return;
+      }
+
+      let chunk = makeChunk(original, true);
+      current.sections.appendChild(chunk.shell);
+
+      const first = parts.units[0].cloneNode(true);
+      chunk.holder.appendChild(first);
+
+      // Keep a section title with its first content item. Only move to a new
+      // sheet when that pair cannot fit in the remaining space.
+      if (isOverflowing(current.page) && (current.sections.children.length > 1 || current.page.querySelector('.resume-header'))) {
+        current.sections.removeChild(chunk.shell);
+        current = createPage(false);
+        chunk = makeChunk(original, true);
+        current.sections.appendChild(chunk.shell);
+        chunk.holder.appendChild(first);
+      }
+
+      for (let i = 1; i < parts.units.length; i++) {
+        const unit = parts.units[i].cloneNode(true);
+        chunk.holder.appendChild(unit);
+
+        if (!isOverflowing(current.page)) continue;
+
+        chunk.holder.removeChild(unit);
+        current = createPage(false);
+        chunk = makeChunk(original, false);
+        current.sections.appendChild(chunk.shell);
+        chunk.holder.appendChild(unit);
+      }
     }
 
     sourceSections.forEach(section => {
-      const clone = section.cloneNode(true);
-      current.sections.appendChild(clone);
+      const whole = section.cloneNode(true);
+      current.sections.appendChild(whole);
       if (!isOverflowing(current.page)) return;
-      current.sections.removeChild(clone);
-      if (current.sections.children.length > 0 || current.page.querySelector('.resume-header')) current = createPage(false);
-      const retry = section.cloneNode(true);
-      current.sections.appendChild(retry);
-      if (!isOverflowing(current.page)) return;
-      current.sections.removeChild(retry);
-      splitOversizedSection(section);
+
+      current.sections.removeChild(whole);
+      appendSplitSection(section);
     });
 
+    // The vector PDF engine is authoritative for the document page count.
+    // Browser text metrics can be slightly tighter; in that case spread the
+    // final sections so the preview exposes the same number of physical sheets.
     while (pages.length < wantedPages) {
       const donor = pages[pages.length - 1];
       const donorSections = Array.from(donor.sections.children);
@@ -740,7 +776,10 @@
       donorSections.slice(splitAt).forEach(node => next.sections.appendChild(node));
     }
     while (pages.length < wantedPages) createPage(false);
-    pages.forEach((record, index) => record.page.setAttribute('aria-label', `Resume page ${index + 1} of ${pages.length}`));
+
+    pages.forEach((record, index) => {
+      record.page.setAttribute('aria-label', `Resume page ${index + 1} of ${pages.length}`);
+    });
     target.dataset.pageCount = String(pages.length);
     return pages.length;
   }
