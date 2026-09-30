@@ -127,3 +127,22 @@ The review system evaluates 6 real quality dimensions:
 1. **Zero Server Uploads:** All PDF generation, DOCX serialization, image resizing, and compression occur entirely in browser memory on the user's CPU/GPU.
 2. **Local Draft Persistence:** Resume draft data is stored strictly in `localStorage` under key `applyready_resume_v2` with explicit "Clear Draft" and "Export Backup" controls.
 3. **CNAME & SEO Integrity:** Preserved custom domain (`applyready.in`), complete favicon suite, sitemap with 9 canonical entries, and robots.txt.
+
+---
+
+## 7. Production Quality & Accessibility Enhancements
+
+### 7.1 Template Full Preview Modal & Section Order Guard
+- **Full Preview Dialog:** Each template card in the gallery features dedicated "Preview" and "Use" buttons. Activating "Preview" opens an accessible `#templatePreviewModal` populated with standard demonstration data, enabling comprehensive review of typography, headers, and section styling before selection.
+- **Accessible Focus Management:** Closing the preview modal (via Close button, backdrop click, or `Escape` key) automatically restores keyboard focus to the triggering element.
+- **Section Order Preservation:** When a template is selected on an empty document, the template's recommended section order is applied automatically. On documents containing candidate data, the existing section order is preserved untouched, and an explicit action (`#btnApplyRecommendedOrder`) is offered so the user can optionally apply the recommended order with full Undo/Redo reversibility.
+
+### 7.2 Aspect-Ratio Lock & Before/After Comparison in Resizer
+- **Aspect-Ratio Lock:** Added `#btnLockAspect` between custom width and height inputs. When locked (the default), adjusting either dimension proportionally updates the other to preserve the image's aspect ratio without distortion.
+- **Quick File Replacement:** Added `#btnReplaceFile` directly in the file metadata box, allowing users to swap source images in one click without resetting active dimensions or output preferences.
+- **Before / After Comparison:** The result preview area incorporates a dual-view toggle (`#btnViewProcessed`, `#btnViewOriginal`) allowing instant A/B visual comparison between the source and compressed image, including real-time file size indicators.
+
+### 7.3 DOCX Parity & PDF Text Wrapping
+- **DOCX Template Parity:** The OOXML generator accepts `template`, `density`, and `fontSize` options. It applies compact 720 dxa (0.5 in) margins for compact templates and 1080 dxa (0.75 in) for standard templates, with header alignment (left vs. center) matching the template catalogue.
+- **PDF Long Token Wrapping:** The vector PDF engine incorporates `breakLongWord` to split URLs or unbroken strings longer than `maxWidth` into valid sub-chunks, preventing margin collisions and text truncation.
+- **Focus Preservation on Dynamic Item Actions:** Adding, reordering, duplicating, or deleting entries in Experience, Education, Projects, and Optional sections preserves keyboard focus on the adjacent action button or section Add button rather than losing focus to the document root.

@@ -165,6 +165,40 @@ Verify dark and light mode contrast ratios conform to WCAG AA guidelines (>= 4.5
 
 ---
 
+## Task 5: Quality Upgrades: Text Wrapping, Template Parity, Aspect Lock & Focus Preservation
+
+### Objective
+Verify the production-grade quality enhancements: token-level text wrapping, DOCX template parity, aspect ratio lock, before/after image comparison toggle, template full preview dialog, empty document section order logic, and usable keyboard focus preservation.
+
+### Step-by-Step Procedure
+1. **PDF Text Wrapping:**
+   - Input long unbroken tokens (e.g. URLs over 100 characters without spaces) into experience bullets or project links.
+   - Assert `splitTextToLines` invokes `breakLongWord` and produces valid sub-chunks strictly within `maxWidth`.
+   - Result: **PASS**. Tested in Suite 14.
+2. **DOCX Template & Density Options:**
+   - Generate DOCX with compact density and compact-professional template.
+   - Assert `word/document.xml` sets margins to 720 dxa (0.5 in) and left header alignment.
+   - Generate DOCX with standard density and classic-professional template.
+   - Assert `word/document.xml` sets margins to 1080 dxa (0.75 in) and centered header alignment.
+   - Result: **PASS**. Tested in Suite 14.
+3. **Resizer Aspect Ratio Lock & Comparison View:**
+   - Toggle `#btnLockAspect` in custom controls. Change width and observe proportional height calculation.
+   - Test `#btnReplaceFile` in file info box to replace source image without clearing settings.
+   - Process image and toggle `#btnViewProcessed` and `#btnViewOriginal` in `#resultArea`.
+   - Result: **PASS**. Tested in Suite 14.
+4. **Template Full Preview Modal & Section Order Guard:**
+   - Click "Preview" button on any template card in Tab 2.
+   - `#templatePreviewModal` dialog opens displaying standard sample data in that template's styling.
+   - Close modal via button or `Escape` key: keyboard focus returns to the preview trigger button.
+   - Select template on empty document: recommended section order applies automatically.
+   - Select template on document with content: existing section order is preserved, and `#btnApplyRecommendedOrder` appears.
+   - Result: **PASS**. Tested in Suite 14.
+5. **Usable Focus Preservation:**
+   - Reordering, duplicating, or deleting items in Experience, Education, Projects, or Optional sections re-renders the list and automatically refocuses the adjacent action button or section Add button.
+   - Result: **PASS**. Tested in Suite 14.
+
+---
+
 ## Summary of Verification Status
 
 | Test Area | Suite / Test Case | Total Tests | Status |
@@ -182,4 +216,5 @@ Verify dark and light mode contrast ratios conform to WCAG AA guidelines (>= 4.5
 | Plain-Text Export Parity | Suite 11: Text Structure & Bullet Marks | 8 | **PASS** |
 | Schema Migration (v1 to v2) | Suite 12: Backward Compatibility | 19 | **PASS** |
 | Zero Support Modals & Nags | Suite 13: Repository-Wide Ban | 62 | **PASS** |
-| **Grand Total** | **All 13 Verification Suites** | **283** | **100% PASS** |
+| Quality Upgrades & Parity | Suite 14: Text Wrapping, DOCX, Aspect Lock, Focus | 26 | **PASS** |
+| **Grand Total** | **All 14 Verification Suites** | **382** | **100% PASS** |

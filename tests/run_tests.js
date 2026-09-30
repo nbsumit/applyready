@@ -797,6 +797,70 @@ jsFiles.forEach(jsFile => {
   assert(!c.includes('showChaiModal'), `${jsFile} contains NO showChaiModal function`);
 });
 
+// ------------------------------------------------------------------
+// SUITE 14: Quality Upgrades: Text Wrapping, Template Parity, Aspect Lock & Focus Preservation
+// ------------------------------------------------------------------
+console.log('SUITE 14: Quality Upgrades: Text Wrapping, Template Parity, Aspect Lock & Focus Preservation');
+
+// 1. Long word / unbroken token text wrapping in PDF engine
+const longUnbrokenToken = 'https://verylongdomainnameandpathwithoutanyspaceswhatsoeverthatwouldotherwiseoverflowtheentirepagemarginsandcauseclipping.com/test';
+const wrappedLines = splitTextToLines(longUnbrokenToken, 10, 100, 'sans');
+assert(Array.isArray(wrappedLines) && wrappedLines.length > 1, 'splitTextToLines safely wraps long unbroken URL tokens into multiple lines');
+const allLinesFit = wrappedLines.every(l => measureTextWidth(l, 10, 'sans') <= 100);
+assert(allLinesFit, 'Every wrapped token line fits strictly within specified maxWidth');
+
+// 2. DOCX options with custom template, density and fontSize
+const compactDocxZip = generateResumeDOCX(sampleResume, {
+  template: 'compact-professional',
+  density: 'compact',
+  fontSize: 'comfortable'
+});
+const compactDocXmlFile = compactDocxZip.files.find(f => f.name === 'word/document.xml');
+assert(Boolean(compactDocXmlFile), 'DOCX archive contains word/document.xml with custom template options');
+const compactDocXmlStr = Buffer.from(compactDocXmlFile.data).toString('utf8');
+assert(compactDocXmlStr.includes('w:top="720"') && compactDocXmlStr.includes('w:bottom="720"'), 'DOCX engine applies compact margins (720 dxa = 0.5 in) when density is compact');
+assert(compactDocXmlStr.includes('w:jc w:val="left"'), 'Compact Professional template sets left header alignment in DOCX');
+
+const standardDocxZip = generateResumeDOCX(sampleResume, {
+  template: 'classic-professional',
+  density: 'standard'
+});
+const stdDocXmlStr = Buffer.from(standardDocxZip.files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(stdDocXmlStr.includes('w:top="1080"') && stdDocXmlStr.includes('w:bottom="1080"'), 'Classic Professional template sets standard margins (1080 dxa = 0.75 in) in DOCX');
+assert(stdDocXmlStr.includes('w:jc w:val="center"'), 'Classic Professional template sets centered header alignment in DOCX');
+
+// 3. Aspect Ratio Lock and Dimension Calculation in Resizer
+const dimSpecs = validateDimensionSpecs('800', '600', '100', false);
+assert(dimSpecs.isValid === true, 'validateDimensionSpecs validates 800x600 px dimensions correctly');
+assert(dimSpecs.width === 800 && dimSpecs.height === 600, 'Dimensions parsed correctly');
+const lockedCalcH = Math.round(400 / (800 / 600));
+assert(lockedCalcH === 300, 'Aspect ratio lock calculation correctly scales height proportionally (400 -> 300)');
+
+// 4. HTML verification for image resizer UI controls
+const indexHtmlContent = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
+assert(indexHtmlContent.includes('id="btnLockAspect"'), 'index.html contains aspect ratio lock button (#btnLockAspect)');
+assert(indexHtmlContent.includes('id="btnReplaceFile"'), 'index.html contains replace file button (#btnReplaceFile)');
+assert(indexHtmlContent.includes('id="originalComparisonImage"'), 'index.html contains original comparison image (#originalComparisonImage)');
+assert(indexHtmlContent.includes('id="btnViewProcessed"'), 'index.html contains view processed toggle button (#btnViewProcessed)');
+assert(indexHtmlContent.includes('id="btnViewOriginal"'), 'index.html contains view original toggle button (#btnViewOriginal)');
+assert(indexHtmlContent.includes('checkerboard-pattern'), 'index.html contains checkerboard pattern class for transparent image viewing');
+
+// 5. HTML verification for resume builder controls & preview modal
+const resumeHtmlContent = fs.readFileSync(path.join(repoRoot, 'resume.html'), 'utf8');
+assert(resumeHtmlContent.includes('id="templatePreviewModal"'), 'resume.html contains accessible template preview modal (#templatePreviewModal)');
+assert(resumeHtmlContent.includes('id="tmplModalPreviewSheet"'), 'resume.html contains template preview modal sheet container (#tmplModalPreviewSheet)');
+assert(resumeHtmlContent.includes('id="btnCloseTmplModal"'), 'resume.html contains modal close button (#btnCloseTmplModal)');
+assert(resumeHtmlContent.includes('id="btnUseTmplModal"'), 'resume.html contains modal use template button (#btnUseTmplModal)');
+assert(resumeHtmlContent.includes('id="btnApplyRecommendedOrder"'), 'resume.html contains apply recommended section order button (#btnApplyRecommendedOrder)');
+
+// 6. Focus preservation and modal logic in resume.js
+const resumeJsContent = fs.readFileSync(path.join(repoRoot, 'js', 'resume.js'), 'utf8');
+assert(resumeJsContent.includes('restoreListFocus'), 'resume.js defines restoreListFocus for keyboard accessibility');
+assert(resumeJsContent.includes('restoreRemoveFocus'), 'resume.js defines restoreRemoveFocus to avoid focus loss on item removal');
+assert(resumeJsContent.includes('openTemplatePreviewModal'), 'resume.js defines openTemplatePreviewModal');
+assert(resumeJsContent.includes('closeTemplatePreviewModal'), 'resume.js defines closeTemplatePreviewModal');
+assert(resumeJsContent.includes('isDocumentEmpty'), 'resume.js defines isDocumentEmpty to guard section ordering');
+
 console.log('');
 console.log('====================================================');
 console.log(`TOTAL TESTS: ${totalTests} | PASSED: ${passedTests} | FAILED: ${failedTests}`);

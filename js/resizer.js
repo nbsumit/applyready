@@ -98,7 +98,13 @@
   const btnBrowse = getEl('btnBrowse');
   const fileInfoBox = getEl('fileInfoBox');
   const fileInfoText = getEl('fileInfoText');
+  const btnReplaceFile = getEl('btnReplaceFile');
   const btnRemoveFile = getEl('btnRemoveFile');
+
+  // Aspect Ratio Lock
+  const btnLockAspect = getEl('btnLockAspect');
+  let isAspectLocked = true;
+  let lockedRatio = 1.0;
 
   // Cropper Elements
   const cropperPlaceholder = getEl('cropperPlaceholder');
@@ -116,12 +122,19 @@
   // Result Elements
   const resultArea = getEl('resultArea');
   const resultImage = getEl('resultImage');
+  const originalComparisonImage = getEl('originalComparisonImage');
+  const btnViewProcessed = getEl('btnViewProcessed');
+  const btnViewOriginal = getEl('btnViewOriginal');
+  const compProcessedKB = getEl('compProcessedKB');
+  const compOriginalKB = getEl('compOriginalKB');
   const resultDims = getEl('resultDims');
   const resultFileSize = getEl('resultFileSize');
   const resultFormat = getEl('resultFormat');
   const resultStatus = getEl('resultStatus');
   const btnDownload = getEl('btnDownload');
   const btnCropAgain = getEl('btnCropAgain');
+
+  let originalFileBlobUrl = null;
 
   /**
    * Initialize Resizer Module
@@ -417,18 +430,68 @@
       URL.revokeObjectURL(processedBlobUrl);
       processedBlobUrl = null;
     }
+    if (btnViewProcessed && btnViewOriginal) {
+      btnViewProcessed.classList.add('active');
+      btnViewProcessed.setAttribute('aria-pressed', 'true');
+      btnViewOriginal.classList.remove('active');
+      btnViewOriginal.setAttribute('aria-pressed', 'false');
+    }
+    if (resultImage) resultImage.classList.remove('hidden');
+    if (originalComparisonImage) originalComparisonImage.classList.add('hidden');
   }
 
   /**
    * Attach all DOM Event Listeners
    */
   function attachEventListeners() {
-    presetSelect.addEventListener('change', updatePresetUI);
+    presetSelect.addEventListener('change', () => {
+      const p = PRESETS[presetSelect.value];
+      if (p && p.width && p.height) {
+        lockedRatio = p.width / p.height;
+      }
+      updatePresetUI();
+    });
+
+    if (btnLockAspect) {
+      btnLockAspect.addEventListener('click', () => {
+        isAspectLocked = !isAspectLocked;
+        btnLockAspect.classList.toggle('active', isAspectLocked);
+        btnLockAspect.setAttribute('aria-pressed', String(isAspectLocked));
+        btnLockAspect.title = isAspectLocked ? 'Aspect ratio locked (proportional width & height)' : 'Aspect ratio unlocked';
+        btnLockAspect.innerHTML = isAspectLocked ? '<i class="fa-solid fa-lock"></i>' : '<i class="fa-solid fa-lock-open"></i>';
+        if (isAspectLocked) {
+          const w = parseFloat(customWidthInput.value) || 350;
+          const h = parseFloat(customHeightInput.value) || 350;
+          if (w > 0 && h > 0) lockedRatio = w / h;
+        }
+      });
+    }
+
+    customWidthInput.addEventListener('input', () => {
+      if (isAspectLocked && lockedRatio > 0 && document.activeElement === customWidthInput) {
+        const w = parseFloat(customWidthInput.value);
+        if (!isNaN(w) && w >= 20) {
+          customHeightInput.value = Math.max(20, Math.min(8000, Math.round(w / lockedRatio)));
+        }
+      }
+      updatePresetUI();
+    });
+
+    customHeightInput.addEventListener('input', () => {
+      if (isAspectLocked && lockedRatio > 0 && document.activeElement === customHeightInput) {
+        const h = parseFloat(customHeightInput.value);
+        if (!isNaN(h) && h >= 20) {
+          customWidthInput.value = Math.max(20, Math.min(8000, Math.round(h * lockedRatio)));
+        }
+      }
+      updatePresetUI();
+    });
+
+    customMaxKBInput.addEventListener('input', () => {
+      updatePresetUI();
+    });
 
     [customWidthInput, customHeightInput, customMaxKBInput].forEach(inp => {
-      inp.addEventListener('input', () => {
-        updatePresetUI();
-      });
       inp.addEventListener('blur', () => {
         getActiveSpecs();
       });
@@ -523,9 +586,35 @@
       }
     });
 
+    // Replace file button
+    if (btnReplaceFile) {
+      btnReplaceFile.addEventListener('click', () => fileInput.click());
+    }
+
     // Remove file button
     if (btnRemoveFile) {
       btnRemoveFile.addEventListener('click', removeUploadedImage);
+    }
+
+    // Before / After comparison view toggle
+    if (btnViewProcessed && btnViewOriginal) {
+      btnViewProcessed.addEventListener('click', () => {
+        btnViewProcessed.classList.add('active');
+        btnViewProcessed.setAttribute('aria-pressed', 'true');
+        btnViewOriginal.classList.remove('active');
+        btnViewOriginal.setAttribute('aria-pressed', 'false');
+        if (resultImage) resultImage.classList.remove('hidden');
+        if (originalComparisonImage) originalComparisonImage.classList.add('hidden');
+      });
+
+      btnViewOriginal.addEventListener('click', () => {
+        btnViewOriginal.classList.add('active');
+        btnViewOriginal.setAttribute('aria-pressed', 'true');
+        btnViewProcessed.classList.remove('active');
+        btnViewProcessed.setAttribute('aria-pressed', 'false');
+        if (originalComparisonImage) originalComparisonImage.classList.remove('hidden');
+        if (resultImage) resultImage.classList.add('hidden');
+      });
     }
 
     // Cropper Toolbar Controls
@@ -655,6 +744,14 @@
           fileInfoBox.classList.remove('hidden');
         }
 
+        if (originalFileBlobUrl) {
+          URL.revokeObjectURL(originalFileBlobUrl);
+        }
+        originalFileBlobUrl = URL.createObjectURL(file);
+        if (originalComparisonImage) {
+          originalComparisonImage.src = originalFileBlobUrl;
+        }
+
         // Initialize Cropper.js
         if (cropper) {
           cropper.destroy();
@@ -707,6 +804,14 @@
     sourceImage = null;
     sourceDimensions = { width: 0, height: 0, sizeBytes: 0 };
     imageToCrop.src = '';
+
+    if (originalFileBlobUrl) {
+      URL.revokeObjectURL(originalFileBlobUrl);
+      originalFileBlobUrl = null;
+    }
+    if (originalComparisonImage) {
+      originalComparisonImage.src = '';
+    }
 
     if (btnProcess) btnProcess.disabled = true;
     if (fileInfoBox) fileInfoBox.classList.add('hidden');
@@ -1056,6 +1161,13 @@
       const actualBytes = compressedBlob.size;
       const actualKB = (actualBytes / 1024).toFixed(2);
       resultFileSize.textContent = `${actualBytes.toLocaleString()} bytes (${actualKB} KB, 1 KB = 1024 B)`;
+
+      if (compProcessedKB) {
+        compProcessedKB.textContent = `${actualKB} KB`;
+      }
+      if (compOriginalKB && currentFile) {
+        compOriginalKB.textContent = `${(currentFile.size / 1024).toFixed(1)} KB`;
+      }
 
       const formatNames = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
       if (resultFormat) resultFormat.textContent = formatNames[specs.mimeType] || specs.mimeType;

@@ -74,7 +74,27 @@
   }
 
   /**
-   * Split string into lines that fit within maxWidth points
+   * Break a word that exceeds maxWidth into sub-chunks that fit within maxWidth
+   */
+  function breakLongWord(word, fontSize, maxWidth, fontKey) {
+    if (!word) return [];
+    const chunks = [];
+    let currentChunk = '';
+    for (let i = 0; i < word.length; i++) {
+      const testChunk = currentChunk + word[i];
+      if (measureTextWidth(testChunk, fontSize, fontKey) <= maxWidth) {
+        currentChunk = testChunk;
+      } else {
+        if (currentChunk) chunks.push(currentChunk);
+        currentChunk = word[i];
+      }
+    }
+    if (currentChunk) chunks.push(currentChunk);
+    return chunks.length > 0 ? chunks : [word];
+  }
+
+  /**
+   * Split string into lines that fit within maxWidth points, handling long unbroken tokens safely
    */
   function splitTextToLines(text, fontSize, maxWidth, fontKey) {
     if (!text) return [];
@@ -87,16 +107,37 @@
         continue;
       }
       const words = paragraph.split(/\s+/);
-      let currentLine = words[0];
+      let currentLine = '';
 
-      for (let w = 1; w < words.length; w++) {
-        const testLine = currentLine + ' ' + words[w];
-        const width = measureTextWidth(testLine, fontSize, fontKey);
-        if (width <= maxWidth) {
-          currentLine = testLine;
+      for (let w = 0; w < words.length; w++) {
+        const word = words[w];
+        const wordWidth = measureTextWidth(word, fontSize, fontKey);
+
+        if (wordWidth > maxWidth) {
+          // If currentLine is non-empty, flush it
+          if (currentLine) {
+            resultLines.push(currentLine);
+            currentLine = '';
+          }
+          const wordChunks = breakLongWord(word, fontSize, maxWidth, fontKey);
+          for (let c = 0; c < wordChunks.length - 1; c++) {
+            resultLines.push(wordChunks[c]);
+          }
+          currentLine = wordChunks[wordChunks.length - 1];
+          continue;
+        }
+
+        if (!currentLine) {
+          currentLine = word;
         } else {
-          resultLines.push(currentLine);
-          currentLine = words[w];
+          const testLine = currentLine + ' ' + word;
+          const width = measureTextWidth(testLine, fontSize, fontKey);
+          if (width <= maxWidth) {
+            currentLine = testLine;
+          } else {
+            resultLines.push(currentLine);
+            currentLine = word;
+          }
         }
       }
       if (currentLine) {
@@ -412,6 +453,17 @@
     const density = options.density || (resumeData.design && resumeData.design.density) || (templateId === 'compact-professional' ? 'compact' : 'standard');
     const isCompact = density === 'compact';
 
+    // Base font size configuration
+    const fontSizeOpt = options.fontSize || (resumeData.design && resumeData.design.fontSize) || 'standard';
+    let baseFontSize = 9.5;
+    if (fontSizeOpt === 'comfortable') {
+      baseFontSize = 10.0;
+    } else if (fontSizeOpt === 'compact') {
+      baseFontSize = 9.0;
+    } else if (isCompact) {
+      baseFontSize = 8.75;
+    }
+
     const doc = new VectorPDFDocument({
       fontFamily,
       pageWidth,
@@ -582,7 +634,7 @@
       if (!summary) return;
 
       renderSectionHeader(resumeData.summaryTitle || 'Professional Summary');
-      const bodyFontSize = isCompact ? 8.75 : 9.5;
+      const bodyFontSize = baseFontSize;
       const summaryLines = splitTextToLines(summary, bodyFontSize, contentWidth, fontKey);
 
       for (let l = 0; l < summaryLines.length; l++) {
@@ -619,7 +671,7 @@
         ensureSpace(isCompact ? 20 : 28);
 
         const roleCompany = [exp.role, exp.company].filter(Boolean).join('  |  ');
-        const roleFontSize = isCompact ? 8.75 : 9.5;
+        const roleFontSize = baseFontSize;
         const dateLoc = [exp.duration, exp.location].filter(Boolean).join('  •  ');
         const dateWidth = dateLoc ? measureTextWidth(dateLoc, isCompact ? 8.5 : 9, fontKey) : 0;
         const roleWidth = measureTextWidth(roleCompany, roleFontSize, fontKey);
@@ -669,7 +721,7 @@
           const rawBullets = exp.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
           const bulletIndent = isCompact ? 10 : 12;
           const bulletTextWidth = contentWidth - bulletIndent;
-          const bulletFontSize = isCompact ? 8.5 : 9;
+          const bulletFontSize = Math.max(8.0, baseFontSize - 0.5);
 
           for (let b = 0; b < rawBullets.length; b++) {
             const bulletText = rawBullets[b].trim().replace(/^[-*•]\s*/, '');
@@ -717,7 +769,7 @@
         ensureSpace(isCompact ? 18 : 24);
 
         const degreeInst = [edu.degree, edu.institution].filter(Boolean).join('  —  ');
-        const degFontSize = isCompact ? 8.75 : 9.5;
+        const degFontSize = baseFontSize;
         const metaParts = [edu.duration, edu.location, edu.score].filter(Boolean).join('  •  ');
         const metaWidth = metaParts ? measureTextWidth(metaParts, isCompact ? 8.5 : 9, fontKey) : 0;
         const degWidth = measureTextWidth(degreeInst, degFontSize, fontKey);
@@ -788,7 +840,7 @@
         ensureSpace(isCompact ? 20 : 28);
 
         const projName = proj.name || 'Project';
-        const projFontSize = isCompact ? 8.75 : 9.5;
+        const projFontSize = baseFontSize;
         const techText = (proj.tech && proj.tech.trim()) ? `|  ${proj.tech.trim()}` : '';
         const nameTech = techText ? `${projName}  ${techText}` : projName;
         const linkText = (proj.link && proj.link.trim()) ? proj.link.trim() : '';
@@ -864,7 +916,7 @@
           const rawBullets = proj.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
           const bulletIndent = isCompact ? 10 : 12;
           const bulletTextWidth = contentWidth - bulletIndent;
-          const bulletFontSize = isCompact ? 8.5 : 9;
+          const bulletFontSize = Math.max(8.0, baseFontSize - 0.5);
 
           for (let b = 0; b < rawBullets.length; b++) {
             const bulletText = rawBullets[b].trim().replace(/^[-*•]\s*/, '');
@@ -910,7 +962,7 @@
 
       renderSectionHeader(resumeData.skillsTitle || 'Skills & Competencies');
 
-      const skillFontSize = isCompact ? 8.5 : 9;
+      const skillFontSize = Math.max(8.0, baseFontSize - 0.5);
       for (let i = 0; i < skillEntries.length; i++) {
         const item = skillEntries[i];
         ensureSpace(isCompact ? 12 : 14);
@@ -948,7 +1000,7 @@
       if (!Array.isArray(certs) || certs.length === 0) return;
 
       renderSectionHeader('Certifications & Credentials');
-      const fontSize = isCompact ? 8.5 : 9;
+      const fontSize = Math.max(8.0, baseFontSize - 0.5);
 
       for (const cert of certs) {
         const title = (cert.name || cert.title || '').trim();
@@ -973,7 +1025,7 @@
       if (!Array.isArray(achs) || achs.length === 0) return;
 
       renderSectionHeader('Honors & Achievements');
-      const fontSize = isCompact ? 8.5 : 9;
+      const fontSize = Math.max(8.0, baseFontSize - 0.5);
 
       for (const ach of achs) {
         const text = (typeof ach === 'string' ? ach : (ach.title || ach.text || '')).trim();
@@ -999,7 +1051,7 @@
       if (!Array.isArray(vols) || vols.length === 0) return;
 
       renderSectionHeader('Community & Leadership');
-      const fontSize = isCompact ? 8.5 : 9;
+      const fontSize = Math.max(8.0, baseFontSize - 0.5);
 
       for (const vol of vols) {
         const role = (vol.role || '').trim();
@@ -1024,7 +1076,7 @@
       if (!Array.isArray(langs) || langs.length === 0) return;
 
       renderSectionHeader('Languages');
-      const fontSize = isCompact ? 8.5 : 9;
+      const fontSize = Math.max(8.0, baseFontSize - 0.5);
       const langStr = langs.map(l => typeof l === 'string' ? l : `${l.name || ''} (${l.proficiency || 'Fluent'})`).filter(Boolean).join('  •  ');
       if (!langStr) return;
 
@@ -1040,7 +1092,7 @@
     function renderAcademic() {
       const acad = resumeData.academic;
       if (!acad || typeof acad !== 'object') return;
-      const fontSize = isCompact ? 8.5 : 9;
+      const fontSize = Math.max(8.0, baseFontSize - 0.5);
 
       if (Array.isArray(acad.publications) && acad.publications.length > 0) {
         renderSectionHeader('Peer-Reviewed Publications');

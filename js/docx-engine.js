@@ -190,16 +190,50 @@
    */
   function generateResumeDOCX(resumeData, options = {}) {
     const zip = new SimpleZip();
-    const pageSize = (options.pageSize || 'a4').toLowerCase();
+    const pageSize = (options.pageSize || (resumeData.design && resumeData.design.pageSize) || 'a4').toLowerCase();
     const isLetter = pageSize === 'letter';
+
+    const templateId = options.template || (resumeData.design && resumeData.design.templateId) || resumeData.template || 'classic-professional';
+    const density = options.density || (resumeData.design && resumeData.design.density) || (templateId === 'compact-professional' ? 'compact' : 'standard');
+    const isCompact = density === 'compact';
 
     // A4: 11906 x 16838 dxa (210mm x 297mm)
     // Letter: 12240 x 15840 dxa (8.5in x 11in)
     const pageW = isLetter ? 12240 : 11906;
     const pageH = isLetter ? 15840 : 16838;
-    const marginDxa = 1080; // 0.75 in
+    const marginDxa = isCompact ? 720 : 1080; // 0.5 in for compact, 0.75 in for standard
 
-    const fontName = options.fontFamily === 'serif' ? 'Times New Roman' : 'Arial';
+    let fontFamily = options.fontFamily || (resumeData.design && resumeData.design.fontFamily);
+    if (!fontFamily) {
+      fontFamily = (templateId === 'classic-professional' || templateId === 'experienced-professional' || templateId === 'academic-cv')
+        ? 'serif'
+        : 'sans';
+    }
+    const fontName = fontFamily === 'serif' ? 'Times New Roman' : 'Arial';
+
+    // Header alignment
+    const headerAlign = (templateId === 'classic-professional' || templateId === 'experienced-professional' || templateId === 'academic-cv')
+      ? 'center'
+      : 'left';
+
+    // Heading border in styles
+    let headingBorderXml = '<w:bottom w:val="single" w:sz="6" w:space="2" w:color="CBD5E1"/>';
+    if (templateId === 'modern-minimal') {
+      headingBorderXml = '<w:bottom w:val="none"/>';
+    } else if (templateId === 'experienced-professional') {
+      headingBorderXml = '<w:bottom w:val="double" w:sz="12" w:space="3" w:color="0F172A"/>';
+    } else if (templateId === 'classic-professional') {
+      headingBorderXml = '<w:bottom w:val="single" w:sz="8" w:space="2" w:color="0F172A"/>';
+    } else if (templateId === 'career-transition') {
+      headingBorderXml = '<w:bottom w:val="single" w:sz="6" w:space="2" w:color="047857"/>';
+    }
+
+    // Font size in half-points (dxa)
+    const fontSizeOpt = options.fontSize || (resumeData.design && resumeData.design.fontSize) || 'standard';
+    let baseSzVal = 19;
+    if (fontSizeOpt === 'comfortable') baseSzVal = 20;
+    else if (fontSizeOpt === 'compact') baseSzVal = 18;
+    else if (isCompact) baseSzVal = 18;
 
     // Track Hyperlinks for document.xml.rels
     const relationships = [];
@@ -244,7 +278,7 @@
     <w:rPrDefault>
       <w:rPr>
         <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}"/>
-        <w:sz w:val="20"/>
+        <w:sz w:val="${baseSzVal}"/>
         <w:color w:val="1F2937"/>
         <w:lang w:val="en-US"/>
       </w:rPr>
@@ -253,7 +287,7 @@
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
     <w:name w:val="Normal"/>
     <w:pPr>
-      <w:spacing w:after="80" w:line="240" w:lineRule="auto"/>
+      <w:spacing w:after="${isCompact ? '40' : '80'}" w:line="${isCompact ? '220' : '240'}" w:lineRule="auto"/>
     </w:pPr>
   </w:style>
   <w:style w:type="paragraph" w:styleId="Heading1">
@@ -262,15 +296,15 @@
     <w:next w:val="Normal"/>
     <w:pPr>
       <w:keepNext/>
-      <w:spacing w:before="240" w:after="80"/>
+      <w:spacing w:before="${isCompact ? '160' : '240'}" w:after="${isCompact ? '40' : '80'}"/>
       <w:pBdr>
-        <w:bottom w:val="single" w:sz="6" w:space="2" w:color="CBD5E1"/>
+        ${headingBorderXml}
       </w:pBdr>
     </w:pPr>
     <w:rPr>
       <w:b/>
       <w:caps/>
-      <w:sz w:val="22"/>
+      <w:sz w:val="${baseSzVal + 3}"/>
       <w:color w:val="0F172A"/>
     </w:rPr>
   </w:style>
@@ -278,7 +312,7 @@
     <w:name w:val="List Bullet"/>
     <w:basedOn w:val="Normal"/>
     <w:pPr>
-      <w:spacing w:after="40" w:line="230" w:lineRule="auto"/>
+      <w:spacing w:after="${isCompact ? '20' : '40'}" w:line="${isCompact ? '210' : '230'}" w:lineRule="auto"/>
       <w:ind w:left="360" w:hanging="240"/>
     </w:pPr>
   </w:style>
@@ -294,7 +328,7 @@
     bodyXml.push(`
       <w:p>
         <w:pPr>
-          <w:jc w:val="center"/>
+          <w:jc w:val="${headerAlign}"/>
           <w:spacing w:before="0" w:after="40"/>
         </w:pPr>
         <w:r>
@@ -312,7 +346,7 @@
       bodyXml.push(`
         <w:p>
           <w:pPr>
-            <w:jc w:val="center"/>
+            <w:jc w:val="${headerAlign}"/>
             <w:spacing w:before="0" w:after="80"/>
           </w:pPr>
           <w:r>
@@ -385,7 +419,7 @@
       bodyXml.push(`
         <w:p>
           <w:pPr>
-            <w:jc w:val="center"/>
+            <w:jc w:val="${headerAlign}"/>
             <w:spacing w:before="0" w:after="160"/>
           </w:pPr>
           ${contactRuns}

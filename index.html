@@ -163,9 +163,14 @@
             <i class="fa-solid fa-file-image" style="color: var(--primary);"></i>
             <span id="fileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
           </div>
-          <button type="button" id="btnRemoveFile" class="btn btn-outline-danger btn-sm" title="Remove selected image">
-            <i class="fa-regular fa-trash-can"></i> Remove
-          </button>
+          <div style="display: flex; gap: 0.4rem;">
+            <button type="button" id="btnReplaceFile" class="btn btn-secondary btn-sm" title="Select a different image">
+              <i class="fa-solid fa-arrow-right-arrow-left"></i> Replace
+            </button>
+            <button type="button" id="btnRemoveFile" class="btn btn-outline-danger btn-sm" title="Remove selected image">
+              <i class="fa-regular fa-trash-can"></i> Remove
+            </button>
+          </div>
         </div>
 
         <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
@@ -193,6 +198,11 @@
           <div>
             <label class="form-label" for="customWidth">Width (px)</label>
             <input type="number" id="customWidth" class="form-control" value="350" min="20" max="8000" step="1">
+          </div>
+          <div class="aspect-lock-wrap">
+            <button type="button" id="btnLockAspect" class="btn-lock-aspect active" title="Aspect ratio locked (proportional width & height)" aria-label="Toggle aspect ratio lock" aria-pressed="true">
+              <i class="fa-solid fa-lock"></i>
+            </button>
           </div>
           <div>
             <label class="form-label" for="customHeight">Height (px)</label>
@@ -341,12 +351,25 @@
 
         <!-- Result Preview Section -->
         <div id="resultArea" class="preview-result-card hidden" aria-live="polite">
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.75rem;">
-            <i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i> Processed Image Ready
-          </h3>
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading); margin: 0;">
+              <i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i> Processed Image Ready
+            </h3>
+            
+            <!-- Before / After Comparison Toggle -->
+            <div class="comparison-view-toggle" role="group" aria-label="Image comparison view">
+              <button type="button" id="btnViewProcessed" class="btn active" aria-pressed="true">
+                <i class="fa-solid fa-circle-check"></i> Processed (<span id="compProcessedKB">—</span>)
+              </button>
+              <button type="button" id="btnViewOriginal" class="btn" aria-pressed="false">
+                <i class="fa-solid fa-image"></i> Original (<span id="compOriginalKB">—</span>)
+              </button>
+            </div>
+          </div>
 
           <div class="preview-image-box checkerboard-pattern">
             <img id="resultImage" src="" alt="Processed Result Preview">
+            <img id="originalComparisonImage" src="" alt="Original Source Preview" class="hidden">
           </div>
 
           <div class="meta-stats">

@@ -316,6 +316,7 @@
     loadDraftFromStorage();
     setupEditorTabs();
     setupTemplateGallery();
+    setupTemplatePreviewModal();
     populateAllFormFields();
     renderAllDynamicLists();
     setupDesignControls();
@@ -432,6 +433,340 @@
     });
   }
 
+  let modalTriggerElement = null;
+  let activeModalTemplateId = null;
+
+  function isDocumentEmpty() {
+    const p = resumeData.personal || {};
+    const hasName = Boolean(p.fullName && p.fullName.trim());
+    const hasSummary = Boolean(resumeData.summary && resumeData.summary.trim());
+    const hasExp = Boolean(resumeData.experience && resumeData.experience.some(e => (e.role && e.role.trim()) || (e.company && e.company.trim())));
+    const hasEdu = Boolean(resumeData.education && resumeData.education.some(e => (e.degree && e.degree.trim()) || (e.institution && e.institution.trim())));
+    const hasProj = Boolean(resumeData.projects && resumeData.projects.some(pr => (pr.name && pr.name.trim())));
+    return !hasName && !hasSummary && !hasExp && !hasEdu && !hasProj;
+  }
+
+  function renderResumeDataToHTML(data, templateId) {
+    const tmpl = TEMPLATES[templateId] || TEMPLATES['classic-professional'];
+    const p = data.personal || {};
+
+    const contactItems = [];
+    if (p.phone && p.phone.trim()) contactItems.push({ text: p.phone.trim(), href: 'tel:' + p.phone.trim().replace(/\s+/g, '') });
+    if (p.email && p.email.trim()) contactItems.push({ text: p.email.trim(), href: 'mailto:' + p.email.trim() });
+    if (p.location && p.location.trim()) contactItems.push({ text: p.location.trim() });
+    if (p.linkedin && p.linkedin.trim()) contactItems.push({ text: p.linkedin.trim(), href: sanitizeHref(p.linkedin.trim()) });
+    if (p.github && p.github.trim()) contactItems.push({ text: p.github.trim(), href: sanitizeHref(p.github.trim()) });
+    if (p.website && p.website.trim()) contactItems.push({ text: p.website.trim(), href: sanitizeHref(p.website.trim()) });
+
+    let contactHtml = contactItems.map((item, idx) => {
+      const inner = item.href ? `<a href="${item.href}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.text)}</a>` : escapeHTML(item.text);
+      return `<span class="resume-contact-item">${inner}</span>` + (idx < contactItems.length - 1 ? '<span style="color: #94A3B8; margin: 0 0.35rem;">•</span>' : '');
+    }).join('');
+
+    const sections = {};
+
+    const summaryText = (data.summary || '').trim();
+    if (summaryText && (!data.sectionVisibility || data.sectionVisibility.summary !== false)) {
+      sections['summary'] = `
+        <section class="resume-section">
+          <h3 class="resume-section-title">${escapeHTML(data.summaryTitle || 'PROFESSIONAL SUMMARY')}</h3>
+          <p style="font-size: 9.5pt; line-height: 1.4; text-align: justify; margin: 0;">${escapeHTML(summaryText)}</p>
+        </section>`;
+    }
+
+    const exp = (data.experience || []).filter(x => x.role || x.company || x.bulletsText);
+    if (exp.length > 0 && (!data.sectionVisibility || data.sectionVisibility.experience !== false)) {
+      let expItems = exp.map(item => {
+        const roleComp = [item.role, item.company].filter(Boolean).join(' | ');
+        const durLoc = [item.duration, item.location].filter(Boolean).join(' • ');
+        let bHtml = '';
+        if (item.bulletsText && item.bulletsText.trim()) {
+          const lines = item.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+          const clean = lines.map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
+          if (clean.length > 0) {
+            bHtml = `<ul class="resume-bullets">${clean.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>`;
+          }
+        }
+        return `
+          <div class="resume-entry">
+            <div class="resume-entry-header">
+              <span>${escapeHTML(roleComp)}</span>
+              <span style="font-weight: normal; font-style: italic; font-size: 9pt;">${escapeHTML(durLoc)}</span>
+            </div>
+            ${bHtml}
+          </div>`;
+      }).join('');
+      sections['experience'] = `
+        <section class="resume-section">
+          <h3 class="resume-section-title">${escapeHTML(data.experienceTitle || 'WORK EXPERIENCE')}</h3>
+          <div>${expItems}</div>
+        </section>`;
+    }
+
+    const edu = (data.education || []).filter(x => x.degree || x.institution);
+    if (edu.length > 0 && (!data.sectionVisibility || data.sectionVisibility.education !== false)) {
+      let eduItems = edu.map(item => {
+        const degInst = [item.degree, item.institution].filter(Boolean).join(' — ');
+        const durLocScore = [item.duration, item.location, item.score].filter(Boolean).join(' • ');
+        return `
+          <div class="resume-entry">
+            <div class="resume-entry-header">
+              <span>${escapeHTML(degInst)}</span>
+              <span style="font-weight: normal; font-style: italic; font-size: 9pt;">${escapeHTML(durLocScore)}</span>
+            </div>
+          </div>`;
+      }).join('');
+      sections['education'] = `
+        <section class="resume-section">
+          <h3 class="resume-section-title">${escapeHTML(data.educationTitle || 'EDUCATION')}</h3>
+          <div>${eduItems}</div>
+        </section>`;
+    }
+
+    const proj = (data.projects || []).filter(x => x.name || x.tech || x.bulletsText);
+    if (proj.length > 0 && (!data.sectionVisibility || data.sectionVisibility.projects !== false)) {
+      let projItems = proj.map(item => {
+        const tech = item.tech ? `| ${item.tech}` : '';
+        const link = item.link ? `<a href="${sanitizeHref(item.link)}" target="_blank" rel="noopener noreferrer" style="color: #1D4ED8; font-weight: normal; font-size: 8.5pt;">${escapeHTML(item.link)}</a>` : '';
+        let bHtml = '';
+        if (item.bulletsText && item.bulletsText.trim()) {
+          const lines = item.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+          const clean = lines.map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
+          if (clean.length > 0) {
+            bHtml = `<ul class="resume-bullets">${clean.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>`;
+          }
+        }
+        return `
+          <div class="resume-entry">
+            <div class="resume-entry-header">
+              <span>${escapeHTML(item.name)} <span style="font-style: italic; font-weight: normal; color: #4B5563;">${escapeHTML(tech)}</span></span>
+              <span>${link}</span>
+            </div>
+            ${bHtml}
+          </div>`;
+      }).join('');
+      sections['projects'] = `
+        <section class="resume-section">
+          <h3 class="resume-section-title">${escapeHTML(data.projectsTitle || 'KEY PROJECTS & INITIATIVES')}</h3>
+          <div>${projItems}</div>
+        </section>`;
+    }
+
+    const s = data.skills || {};
+    const skillRows = [];
+    if (s.languages && s.languages.trim()) skillRows.push({ label: 'Core Competencies', val: s.languages.trim() });
+    if (s.frameworks && s.frameworks.trim()) skillRows.push({ label: 'Tools & Platforms', val: s.frameworks.trim() });
+    if (s.tools && s.tools.trim()) skillRows.push({ label: 'Technical & Data Skills', val: s.tools.trim() });
+    if (s.other && s.other.trim()) skillRows.push({ label: 'Professional Skills', val: s.other.trim() });
+    if (skillRows.length > 0 && (!data.sectionVisibility || data.sectionVisibility.skills !== false)) {
+      let sHtml = skillRows.map(r => `
+        <div class="resume-skills-row">
+          <span class="skills-category">${escapeHTML(r.label)}: </span><span>${escapeHTML(r.val)}</span>
+        </div>`).join('');
+      sections['skills'] = `
+        <section class="resume-section">
+          <h3 class="resume-section-title">${escapeHTML(data.skillsTitle || 'SKILLS & COMPETENCIES')}</h3>
+          <div>${sHtml}</div>
+        </section>`;
+    }
+
+    const certs = data.certifications || [];
+    if (certs.length > 0 && data.sectionVisibility && data.sectionVisibility.certifications) {
+      let cHtml = certs.map(c => `
+        <div class="resume-entry">
+          <strong>${escapeHTML(c.name || c.title)}</strong> ${c.issuer ? ' — ' + escapeHTML(c.issuer) : ''} ${c.year ? '(' + escapeHTML(c.year) + ')' : ''}
+        </div>`).join('');
+      sections['certifications'] = `
+        <section class="resume-section">
+          <h3 class="resume-section-title">CERTIFICATIONS & CREDENTIALS</h3>
+          <div>${cHtml}</div>
+        </section>`;
+    }
+
+    const achs = data.achievements || [];
+    if (achs.length > 0 && data.sectionVisibility && data.sectionVisibility.achievements) {
+      let aHtml = achs.map(a => {
+        const text = typeof a === 'string' ? a : (a.title || a.text || '');
+        return `<div class="resume-entry">• ${escapeHTML(text)}</div>`;
+      }).join('');
+      sections['achievements'] = `
+        <section class="resume-section">
+          <h3 class="resume-section-title">HONORS & ACHIEVEMENTS</h3>
+          <div>${aHtml}</div>
+        </section>`;
+    }
+
+    if (templateId === 'academic-cv' || (data.academic && data.sectionVisibility && data.sectionVisibility.academic)) {
+      const pubs = (data.academic && data.academic.publications) || [
+        'Morgan, A. et al. (2023). High-Throughput Supply Chain Optimization in In-Browser Environments. Operations Journal, 14(2), 78-95.',
+        'Morgan, A. (2021). Predictive Bottleneck Analysis for Logistics Networks. Journal of Enterprise Engineering, 9(1), 112-128.'
+      ];
+      const teaching = (data.academic && data.academic.teaching) || [
+        { role: 'Guest Lecturer, Supply Chain Analytics', institution: 'University of Illinois', term: 'Fall 2023' }
+      ];
+      let pubHtml = pubs.map(p => {
+        const t = typeof p === 'string' ? p : (p.title || '');
+        return `<div class="resume-entry">• ${escapeHTML(t)}</div>`;
+      }).join('');
+      let teachHtml = teaching.map(t => {
+        const r = t.role || t.course || '';
+        const inst = [t.institution, t.term].filter(Boolean).join(' — ');
+        return `<div class="resume-entry"><strong>${escapeHTML(r)}</strong> ${inst ? ' (' + escapeHTML(inst) + ')' : ''}</div>`;
+      }).join('');
+
+      sections['academic'] = `
+        <section class="resume-section">
+          <h3 class="resume-section-title">PUBLICATIONS & RESEARCH</h3>
+          <div>${pubHtml}</div>
+          <h4 style="font-size: 8.5pt; font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.25rem; color: #1E293B;">TEACHING EXPERIENCE</h4>
+          <div>${teachHtml}</div>
+        </section>`;
+    }
+
+    const order = (tmpl.recommendedOrder && tmpl.recommendedOrder.length > 0)
+      ? tmpl.recommendedOrder
+      : (data.design && data.design.sectionOrder) || ['summary', 'experience', 'education', 'projects', 'skills'];
+
+    let orderedHtml = '';
+    order.forEach(k => {
+      if (sections[k]) orderedHtml += sections[k];
+    });
+    Object.keys(sections).forEach(k => {
+      if (!order.includes(k) && sections[k]) orderedHtml += sections[k];
+    });
+
+    return `
+      <header class="resume-header">
+        <h1 class="resume-name">${escapeHTML((p.fullName || 'ALEX R. MORGAN').toUpperCase())}</h1>
+        ${p.targetTitle ? `<div class="resume-target-title">${escapeHTML(p.targetTitle)}</div>` : ''}
+        <div class="resume-contact-line">${contactHtml}</div>
+      </header>
+      <div>${orderedHtml}</div>
+    `;
+  }
+
+  function renderTemplateIntoContainer(sheet, templateId, data) {
+    const tmpl = TEMPLATES[templateId] || TEMPLATES['classic-professional'];
+    const fontClass = (tmpl.fontFamily === 'sans' || (data.design && data.design.fontFamily === 'sans')) ? 'font-sans' : '';
+    const density = tmpl.density || (data.design && data.design.density) || 'standard';
+    const fontSize = (data.design && data.design.fontSize) || 'standard';
+    const pageSize = (data.design && data.design.pageSize) || 'a4';
+
+    sheet.className = `ats-resume-sheet template-${templateId} page-${pageSize} density-${density} font-size-${fontSize} ${fontClass}`;
+    sheet.innerHTML = renderResumeDataToHTML(data, templateId);
+  }
+
+  function openTemplatePreviewModal(templateId, triggerBtn) {
+    const modal = getEl('templatePreviewModal');
+    const sheet = getEl('tmplModalPreviewSheet');
+    const title = getEl('tmplModalTitle');
+    const tmpl = TEMPLATES[templateId];
+    if (!modal || !sheet || !tmpl) return;
+
+    modalTriggerElement = triggerBtn || document.activeElement;
+    activeModalTemplateId = templateId;
+
+    if (title) {
+      title.textContent = `${tmpl.name} — Full Template Preview`;
+    }
+
+    renderTemplateIntoContainer(sheet, templateId, SAMPLE_DATA);
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    const closeBtn = getEl('btnCloseTmplModal');
+    if (closeBtn) {
+      setTimeout(() => closeBtn.focus(), 50);
+    }
+  }
+
+  function closeTemplatePreviewModal() {
+    const modal = getEl('templatePreviewModal');
+    if (!modal || modal.classList.contains('hidden')) return;
+
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+
+    if (modalTriggerElement && typeof modalTriggerElement.focus === 'function') {
+      modalTriggerElement.focus();
+    }
+    modalTriggerElement = null;
+    activeModalTemplateId = null;
+  }
+
+  function setupTemplatePreviewModal() {
+    const modal = getEl('templatePreviewModal');
+    const btnClose = getEl('btnCloseTmplModal');
+    const btnCloseFooter = getEl('btnCloseTmplModalFooter');
+    const btnUse = getEl('btnUseTmplModal');
+
+    if (btnClose) btnClose.addEventListener('click', closeTemplatePreviewModal);
+    if (btnCloseFooter) btnCloseFooter.addEventListener('click', closeTemplatePreviewModal);
+    if (btnUse) {
+      btnUse.addEventListener('click', () => {
+        if (activeModalTemplateId) {
+          selectTemplate(activeModalTemplateId);
+        }
+        closeTemplatePreviewModal();
+      });
+    }
+
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeTemplatePreviewModal();
+        }
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = getEl('templatePreviewModal');
+        if (modal && !modal.classList.contains('hidden')) {
+          closeTemplatePreviewModal();
+        }
+      }
+    });
+  }
+
+  function restoreListFocus(listId, targetId, preferredAction, fallbackAddBtnId) {
+    setTimeout(() => {
+      const list = getEl(listId);
+      if (!list) return;
+      if (targetId) {
+        const item = list.querySelector(`.dynamic-item[data-id="${targetId}"]`);
+        if (item) {
+          const btn = item.querySelector(`button[data-action="${preferredAction}"]`) || item.querySelector('button');
+          if (btn && !btn.disabled) {
+            btn.focus();
+            return;
+          }
+        }
+      }
+      const addBtn = getEl(fallbackAddBtnId);
+      if (addBtn) addBtn.focus();
+    }, 20);
+  }
+
+  function restoreRemoveFocus(listId, prevIdx, fallbackAddBtnId) {
+    setTimeout(() => {
+      const list = getEl(listId);
+      if (!list) return;
+      const items = list.querySelectorAll('.dynamic-item');
+      if (items.length > 0) {
+        const targetItem = items[Math.min(prevIdx, items.length - 1)];
+        const btn = targetItem ? targetItem.querySelector('button[data-action*="remove"]') || targetItem.querySelector('button') : null;
+        if (btn) {
+          btn.focus();
+          return;
+        }
+      }
+      const addBtn = getEl(fallbackAddBtnId);
+      if (addBtn) addBtn.focus();
+    }, 20);
+  }
+
   /**
    * Setup Template Gallery in Design Tab
    */
@@ -458,14 +793,29 @@
           <span class="template-badge">${escapeHTML(tmpl.badge || 'ATS')}</span>
         </div>
         <p class="template-card-desc">${escapeHTML(tmpl.description)}</p>
-        <button type="button" class="btn ${resumeData.template === key ? 'btn-primary' : 'btn-secondary'} btn-sm btn-block btn-select-template" data-template="${key}">
-          ${resumeData.template === key ? '<i class="fa-solid fa-check"></i> Active Template' : 'Use Template'}
-        </button>
+        <div class="template-card-actions">
+          <button type="button" class="btn btn-secondary btn-sm btn-preview-template" data-template="${key}" title="Full preview of ${escapeHTML(tmpl.name)}">
+            <i class="fa-regular fa-eye"></i> Preview
+          </button>
+          <button type="button" class="btn ${resumeData.template === key ? 'btn-primary' : 'btn-outline-primary'} btn-sm btn-select-template" data-template="${key}">
+            ${resumeData.template === key ? '<i class="fa-solid fa-check"></i> Active' : 'Use'}
+          </button>
+        </div>
       `;
 
-      card.querySelector('.btn-select-template').addEventListener('click', () => {
-        selectTemplate(key);
-      });
+      const btnPreview = card.querySelector('.btn-preview-template');
+      if (btnPreview) {
+        btnPreview.addEventListener('click', () => {
+          openTemplatePreviewModal(key, btnPreview);
+        });
+      }
+
+      const btnSelect = card.querySelector('.btn-select-template');
+      if (btnSelect) {
+        btnSelect.addEventListener('click', () => {
+          selectTemplate(key);
+        });
+      }
 
       galleryGrid.appendChild(card);
     });
@@ -485,14 +835,45 @@
     if (tmpl.fontFamily) resumeData.design.fontFamily = tmpl.fontFamily;
     if (tmpl.density) resumeData.design.density = tmpl.density;
 
+    const btnApplyRecommended = getEl('btnApplyRecommendedOrder');
+
+    if (tmpl.recommendedOrder && Array.isArray(tmpl.recommendedOrder)) {
+      if (isDocumentEmpty()) {
+        // Automatically apply recommended order for new empty documents
+        resumeData.design.sectionOrder = [...tmpl.recommendedOrder];
+        if (btnApplyRecommended) btnApplyRecommended.classList.add('hidden');
+      } else {
+        // Document has content: do not overwrite user's section order silently.
+        const currentOrder = resumeData.design.sectionOrder || [];
+        const isDifferent = JSON.stringify(currentOrder) !== JSON.stringify(tmpl.recommendedOrder);
+        if (btnApplyRecommended) {
+          if (isDifferent) {
+            btnApplyRecommended.classList.remove('hidden');
+            btnApplyRecommended.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Apply ${escapeHTML(tmpl.name)}'s Recommended Section Order`;
+            btnApplyRecommended.onclick = () => {
+              pushHistoryState();
+              resumeData.design.sectionOrder = [...tmpl.recommendedOrder];
+              renderSectionOrderControls();
+              renderResumePreview();
+              btnApplyRecommended.classList.add('hidden');
+            };
+          } else {
+            btnApplyRecommended.classList.add('hidden');
+          }
+        }
+      }
+    } else if (btnApplyRecommended) {
+      btnApplyRecommended.classList.add('hidden');
+    }
+
     // Update gallery UI active states
     document.querySelectorAll('.template-card').forEach(c => {
       const isCurrent = c.dataset.templateId === templateId;
       c.classList.toggle('active', isCurrent);
       const btn = c.querySelector('.btn-select-template');
       if (btn) {
-        btn.className = `btn ${isCurrent ? 'btn-primary' : 'btn-secondary'} btn-sm btn-block btn-select-template`;
-        btn.innerHTML = isCurrent ? '<i class="fa-solid fa-check"></i> Active Template' : 'Use Template';
+        btn.className = `btn ${isCurrent ? 'btn-primary' : 'btn-outline-primary'} btn-sm btn-select-template`;
+        btn.innerHTML = isCurrent ? '<i class="fa-solid fa-check"></i> Active' : 'Use';
       }
     });
 
@@ -1003,6 +1384,17 @@
           resumeData.design.sectionOrder = order;
           renderSectionOrderControls();
           renderResumePreview();
+          setTimeout(() => {
+            const newIdx = (action === 'order-up') ? idx - 1 : idx + 1;
+            const c = getEl('sectionOrderContainer');
+            if (c) {
+              const rows = c.querySelectorAll('.dynamic-item');
+              if (rows[newIdx]) {
+                const b = rows[newIdx].querySelector(`button[data-action="${action}"]`);
+                if (b && !b.disabled) b.focus();
+              }
+            }
+          }, 20);
         });
       });
 
@@ -1019,7 +1411,7 @@
 
     // Apply template class
     const tmplId = resumeData.template || 'classic-professional';
-    sheet.className = `ats-resume-sheet template-${tmplId} page-${resumeData.design.pageSize || 'a4'} density-${resumeData.design.density || 'standard'}`;
+    sheet.className = `ats-resume-sheet template-${tmplId} page-${resumeData.design.pageSize || 'a4'} density-${resumeData.design.density || 'standard'} font-size-${resumeData.design.fontSize || 'standard'}`;
 
     if (resumeData.design.fontFamily === 'sans') {
       sheet.classList.add('font-sans');
@@ -2002,18 +2394,34 @@
     pushHistoryState();
     if (action === 'remove-exp') {
       resumeData.experience.splice(idx, 1);
+      renderExperienceList();
+      renderResumePreview();
+      restoreRemoveFocus('experienceList', idx, 'btnAddExperience');
+      return;
     } else if (action === 'duplicate-exp') {
       const copy = JSON.parse(JSON.stringify(resumeData.experience[idx]));
       copy.id = 'exp-' + Date.now();
       resumeData.experience.splice(idx + 1, 0, copy);
+      renderExperienceList();
+      renderResumePreview();
+      restoreListFocus('experienceList', copy.id, 'duplicate-exp', 'btnAddExperience');
+      return;
     } else if (action === 'move-up-exp' && idx > 0) {
       const temp = resumeData.experience[idx];
       resumeData.experience[idx] = resumeData.experience[idx - 1];
       resumeData.experience[idx - 1] = temp;
+      renderExperienceList();
+      renderResumePreview();
+      restoreListFocus('experienceList', id, 'move-up-exp', 'btnAddExperience');
+      return;
     } else if (action === 'move-down-exp' && idx < resumeData.experience.length - 1) {
       const temp = resumeData.experience[idx];
       resumeData.experience[idx] = resumeData.experience[idx + 1];
       resumeData.experience[idx + 1] = temp;
+      renderExperienceList();
+      renderResumePreview();
+      restoreListFocus('experienceList', id, 'move-down-exp', 'btnAddExperience');
+      return;
     }
 
     renderExperienceList();
@@ -2045,18 +2453,34 @@
     pushHistoryState();
     if (action === 'remove-edu') {
       resumeData.education.splice(idx, 1);
+      renderEducationList();
+      renderResumePreview();
+      restoreRemoveFocus('educationList', idx, 'btnAddEducation');
+      return;
     } else if (action === 'duplicate-edu') {
       const copy = JSON.parse(JSON.stringify(resumeData.education[idx]));
       copy.id = 'edu-' + Date.now();
       resumeData.education.splice(idx + 1, 0, copy);
+      renderEducationList();
+      renderResumePreview();
+      restoreListFocus('educationList', copy.id, 'duplicate-edu', 'btnAddEducation');
+      return;
     } else if (action === 'move-up-edu' && idx > 0) {
       const temp = resumeData.education[idx];
       resumeData.education[idx] = resumeData.education[idx - 1];
       resumeData.education[idx - 1] = temp;
+      renderEducationList();
+      renderResumePreview();
+      restoreListFocus('educationList', id, 'move-up-edu', 'btnAddEducation');
+      return;
     } else if (action === 'move-down-edu' && idx < resumeData.education.length - 1) {
       const temp = resumeData.education[idx];
       resumeData.education[idx] = resumeData.education[idx + 1];
       resumeData.education[idx + 1] = temp;
+      renderEducationList();
+      renderResumePreview();
+      restoreListFocus('educationList', id, 'move-down-edu', 'btnAddEducation');
+      return;
     }
 
     renderEducationList();
@@ -2087,18 +2511,34 @@
     pushHistoryState();
     if (action === 'remove-proj') {
       resumeData.projects.splice(idx, 1);
+      renderProjectsList();
+      renderResumePreview();
+      restoreRemoveFocus('projectsList', idx, 'btnAddProject');
+      return;
     } else if (action === 'duplicate-proj') {
       const copy = JSON.parse(JSON.stringify(resumeData.projects[idx]));
       copy.id = 'proj-' + Date.now();
       resumeData.projects.splice(idx + 1, 0, copy);
+      renderProjectsList();
+      renderResumePreview();
+      restoreListFocus('projectsList', copy.id, 'duplicate-proj', 'btnAddProject');
+      return;
     } else if (action === 'move-up-proj' && idx > 0) {
       const temp = resumeData.projects[idx];
       resumeData.projects[idx] = resumeData.projects[idx - 1];
       resumeData.projects[idx - 1] = temp;
+      renderProjectsList();
+      renderResumePreview();
+      restoreListFocus('projectsList', id, 'move-up-proj', 'btnAddProject');
+      return;
     } else if (action === 'move-down-proj' && idx < resumeData.projects.length - 1) {
       const temp = resumeData.projects[idx];
       resumeData.projects[idx] = resumeData.projects[idx + 1];
       resumeData.projects[idx + 1] = temp;
+      renderProjectsList();
+      renderResumePreview();
+      restoreListFocus('projectsList', id, 'move-down-proj', 'btnAddProject');
+      return;
     }
 
     renderProjectsList();
@@ -2122,6 +2562,7 @@
     resumeData.certifications.splice(idx, 1);
     renderOptionalSections();
     renderResumePreview();
+    restoreRemoveFocus('certificationsList', idx, 'btnAddCertification');
   }
 
   function handleAchInput(e) {
@@ -2138,6 +2579,7 @@
     resumeData.achievements.splice(idx, 1);
     renderOptionalSections();
     renderResumePreview();
+    restoreRemoveFocus('achievementsList', idx, 'btnAddAchievement');
   }
 
   function handleVolInput(e) {
@@ -2156,6 +2598,7 @@
     resumeData.volunteering.splice(idx, 1);
     renderOptionalSections();
     renderResumePreview();
+    restoreRemoveFocus('volunteeringList', idx, 'btnAddVolunteering');
   }
 
   function handleLangInput(e) {
@@ -2173,6 +2616,7 @@
     resumeData.languages.splice(idx, 1);
     renderOptionalSections();
     renderResumePreview();
+    restoreRemoveFocus('languagesList', idx, 'btnAddLanguage');
   }
 
   function handlePubInput(e) {
@@ -2189,6 +2633,7 @@
     resumeData.academic.publications.splice(idx, 1);
     renderOptionalSections();
     renderResumePreview();
+    restoreRemoveFocus('academicPubsList', idx, 'btnAddPublication');
   }
 
   function handleTeachInput(e) {
@@ -2207,6 +2652,7 @@
     resumeData.academic.teaching.splice(idx, 1);
     renderOptionalSections();
     renderResumePreview();
+    restoreRemoveFocus('academicTeachingList', idx, 'btnAddTeaching');
   }
 
   function setupAccordions() {
@@ -2304,7 +2750,10 @@
     try {
       const zip = window.ApplyReadyDOCX.generateResumeDOCX(resumeData, {
         pageSize: resumeData.design.pageSize || 'a4',
-        fontFamily: resumeData.design.fontFamily || 'serif'
+        fontFamily: resumeData.design.fontFamily || 'serif',
+        template: resumeData.template || 'classic-professional',
+        density: resumeData.design.density || 'standard',
+        fontSize: resumeData.design.fontSize || 'standard'
       });
 
       const blob = zip.toBlob();
