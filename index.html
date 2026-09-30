@@ -113,6 +113,10 @@
           <i class="fa-solid fa-circle-info"></i>
           <span>About</span>
         </a>
+        <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="nav-support-link" aria-label="Support ApplyReady (opens in new tab)" title="Support ApplyReady">
+          <i class="fa-solid fa-mug-hot"></i>
+          <span>Support</span>
+        </a>
         <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
           <i class="fa-solid fa-moon"></i>
         </button>
@@ -120,22 +124,14 @@
     </div>
   </nav>
 
-  <!-- TRUST BADGE -->
-  <div class="trust-banner">
-    <div class="trust-content">
-      <span class="trust-badge-pill">Private & Safe</span>
-      <span><i class="fa-solid fa-lock"></i> <strong>100% Client-Side:</strong> Processing runs directly in your browser. Your images and documents are never uploaded to any server.</span>
-    </div>
-  </div>
-
   <!-- MAIN CONTAINER -->
   <main class="main-content">
     
     <!-- Hero Header -->
-    <header class="hero-header">
-      <h1 class="hero-title">Free Image Resizer & Strict Compressor</h1>
+    <header class="hero-header" style="margin-bottom: 1.25rem;">
+      <h1 class="hero-title">In-Browser Image Resizer & Strict Compressor</h1>
       <p class="hero-subtitle">
-        Crop to exact pixel dimensions, resize without distortion, and strictly compress under your target KB limits. Fast, private, and runs entirely in your browser.
+        Crop to exact pixel dimensions, resize cleanly, and strictly compress to target KB limits. 100% private, client-side processing with zero server uploads.
       </p>
     </header>
 
@@ -145,8 +141,38 @@
       <!-- Left Column: Controls & Upload -->
       <section class="app-card" aria-labelledby="controlsHeading">
         <h2 id="controlsHeading" class="card-title">
+          <i class="fa-solid fa-cloud-arrow-up text-muted"></i>
+          <span>1. Select Image</span>
+        </h2>
+
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload image area. Tap to choose image or drag and drop.">
+          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif" class="hidden" aria-hidden="true">
+          <div class="dropzone-icon">
+            <i class="fa-solid fa-image"></i>
+          </div>
+          <div class="dropzone-text">Tap to Choose Image or Drag & Drop</div>
+          <div class="dropzone-sub">Supports JPG, PNG, WEBP, BMP, AVIF (Smartphone camera photos welcome)</div>
+          <button type="button" id="btnBrowse" class="btn btn-secondary btn-sm mt-2">
+            <i class="fa-regular fa-folder-open"></i> Browse Files
+          </button>
+        </div>
+
+        <!-- File Info Display -->
+        <div id="fileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
+            <i class="fa-solid fa-file-image" style="color: var(--primary);"></i>
+            <span id="fileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+          </div>
+          <button type="button" id="btnRemoveFile" class="btn btn-outline-danger btn-sm" title="Remove selected image">
+            <i class="fa-regular fa-trash-can"></i> Remove
+          </button>
+        </div>
+
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+        <h2 class="card-title">
           <i class="fa-solid fa-sliders text-muted"></i>
-          <span>1. Dimensions & Target Size</span>
+          <span>2. Output Dimensions & Target Size</span>
         </h2>
 
         <!-- Preset Dropdown -->
@@ -180,7 +206,7 @@
         <span id="dimError" class="field-error hidden" role="alert"></span>
         <span id="sizeError" class="field-error hidden" role="alert"></span>
 
-        <!-- Output Format & Transparency Settings -->
+        <!-- Output Format & Aspect Ratio -->
         <div class="form-row-2" style="margin-top: 1rem;">
           <div class="form-group">
             <label for="formatSelect" class="form-label">Output Format:</label>
@@ -191,26 +217,16 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="bgFillSelect" class="form-label">Background Fill:</label>
-            <select id="bgFillSelect" class="form-select">
-              <option value="white" selected>White (#FFFFFF)</option>
-              <option value="black">Black (#000000)</option>
-              <option value="transparent" disabled>Transparent (PNG/WebP only)</option>
+            <label for="aspectRatioSelect" class="form-label">Crop Aspect Ratio:</label>
+            <select id="aspectRatioSelect" class="form-select">
+              <option value="target" selected>Match Target Dimensions Ratio</option>
+              <option value="original">Keep Original Image Ratio</option>
+              <option value="1:1">Square (1:1)</option>
+              <option value="4:3">Standard (4:3)</option>
+              <option value="16:9">Widescreen (16:9)</option>
+              <option value="free">Free Crop (Unconstrained)</option>
             </select>
           </div>
-        </div>
-
-        <!-- Aspect Ratio Lock -->
-        <div class="form-group">
-          <label for="aspectRatioSelect" class="form-label">Crop Aspect Ratio:</label>
-          <select id="aspectRatioSelect" class="form-select">
-            <option value="target" selected>Match Target Dimensions Ratio</option>
-            <option value="original">Keep Original Image Ratio</option>
-            <option value="1:1">Square (1:1)</option>
-            <option value="4:3">Standard (4:3)</option>
-            <option value="16:9">Widescreen (16:9)</option>
-            <option value="free">Free Crop (Unconstrained)</option>
-          </select>
         </div>
 
         <!-- Target Spec Info -->
@@ -229,56 +245,44 @@
           </div>
         </div>
 
-        <!-- Optional Name / Date Annotations -->
-        <div id="dateOptionsBox" class="date-strip-box">
-          <label class="checkbox-label" for="addDateCheckbox">
-            <input type="checkbox" id="addDateCheckbox">
-            <span>Add Date / Name Strip (Optional)</span>
-          </label>
-          <div id="dateInputGroup" class="mt-2" style="display: none;">
-            <label for="annotationDateInput" class="form-label text-sm">Printed Date:</label>
-            <div style="display: flex; gap: 0.5rem;">
-              <input type="date" id="annotationDateInput" class="form-control" style="flex: 1;">
-              <button type="button" id="btnTodayDate" class="btn btn-secondary btn-sm" title="Set to Today">Today</button>
+        <!-- Advanced Options Disclosure: Background Fill & Annotations -->
+        <details class="advanced-disclosure">
+          <summary>
+            <i class="fa-solid fa-sliders"></i>
+            <span>Advanced Options (Background Fill & Annotations)</span>
+          </summary>
+          <div class="advanced-disclosure-body">
+            <div class="form-group">
+              <label for="bgFillSelect" class="form-label">Background Fill:</label>
+              <select id="bgFillSelect" class="form-select">
+                <option value="white" selected>White (#FFFFFF) - Recommended</option>
+                <option value="black">Black (#000000)</option>
+                <option value="transparent" disabled>Transparent (PNG/WebP only)</option>
+              </select>
+              <p class="form-hint">JPEG format does not support transparency; unfilled margins default to this color.</p>
             </div>
-            <div class="mt-2">
-              <label for="candidateNameInput" class="form-label text-sm">Printed Name / Label (Optional):</label>
-              <input type="text" id="candidateNameInput" class="form-control" placeholder="e.g. John Doe">
-              <p class="form-hint">Text is dynamically scaled to fit the annotation strip without distortion.</p>
+
+            <!-- Optional Name / Date Annotations -->
+            <div id="dateOptionsBox" class="date-strip-box" style="margin-top: 0.75rem;">
+              <label class="checkbox-label" for="addDateCheckbox">
+                <input type="checkbox" id="addDateCheckbox">
+                <span>Add Date / Name Strip (Optional)</span>
+              </label>
+              <div id="dateInputGroup" class="mt-2" style="display: none;">
+                <label for="annotationDateInput" class="form-label text-sm">Printed Date:</label>
+                <div style="display: flex; gap: 0.5rem;">
+                  <input type="date" id="annotationDateInput" class="form-control" style="flex: 1;">
+                  <button type="button" id="btnTodayDate" class="btn btn-secondary btn-sm" title="Set to Today">Today</button>
+                </div>
+                <div class="mt-2">
+                  <label for="candidateNameInput" class="form-label text-sm">Printed Name / Label (Optional):</label>
+                  <input type="text" id="candidateNameInput" class="form-control" placeholder="e.g. John Doe">
+                  <p class="form-hint">Text is dynamically scaled to fit the annotation strip without distortion.</p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
-
-        <!-- Step 2: Upload Zone -->
-        <h2 class="card-title">
-          <i class="fa-solid fa-cloud-arrow-up text-muted"></i>
-          <span>2. Select Image</span>
-        </h2>
-
-        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload image area. Tap to choose image or drag and drop.">
-          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif" class="hidden" aria-hidden="true">
-          <div class="dropzone-icon">
-            <i class="fa-solid fa-image"></i>
-          </div>
-          <div class="dropzone-text">Tap to Choose Image or Drag & Drop</div>
-          <div class="dropzone-sub">Supports JPG, PNG, WEBP, BMP, AVIF (Smartphone camera photos welcome)</div>
-          <button type="button" id="btnBrowse" class="btn btn-secondary btn-sm mt-2">
-            <i class="fa-regular fa-folder-open"></i> Browse Files
-          </button>
-        </div>
-
-        <!-- File Info Display -->
-        <div id="fileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
-            <i class="fa-solid fa-file-image" style="color: var(--primary);"></i>
-            <span id="fileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
-          </div>
-          <button type="button" id="btnRemoveFile" class="btn btn-outline-danger btn-sm" title="Remove selected image">
-            <i class="fa-regular fa-trash-can"></i> Remove
-          </button>
-        </div>
+        </details>
 
       </section>
 
@@ -304,7 +308,7 @@
 
         <!-- Active Cropper Area -->
         <div id="cropperActiveArea" class="hidden">
-          <div class="cropper-container-wrapper">
+          <div class="cropper-container-wrapper checkerboard-pattern">
             <img id="imageToCrop" src="" alt="Cropper source preview">
           </div>
 
@@ -341,7 +345,7 @@
             <i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i> Processed Image Ready
           </h3>
 
-          <div class="preview-image-box">
+          <div class="preview-image-box checkerboard-pattern">
             <img id="resultImage" src="" alt="Processed Result Preview">
           </div>
 

@@ -7,9 +7,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const { generateResumePDF, measureTextWidth, splitTextToLines, escapePdfText } = require('../js/pdf-engine.js');
+const { generateResumePDF, generateResumeText, measureTextWidth, splitTextToLines, escapePdfText } = require('../js/pdf-engine.js');
 const { validateResumeSchema, SAMPLE_DATA, EMPTY_DATA, escapeHTML, sanitizeHref, isValidUrlFormat } = require('../js/resume.js');
 const { PRESETS, formatAnnotationDate, validateDimensionSpecs } = require('../js/resizer.js');
+const { TEMPLATES, migrateResumeSchema } = require('../js/templates.js');
+const { generateResumeDOCX, SimpleZip, escapeXml } = require('../js/docx-engine.js');
 
 let totalTests = 0;
 let passedTests = 0;
@@ -521,6 +523,279 @@ assert(fs.existsSync(seoSetupDocPath), 'docs/SEO_SETUP.md exists');
 const seoDocContent = fs.readFileSync(seoSetupDocPath, 'utf8');
 assert(seoDocContent.includes('Google Search Console') && seoDocContent.includes('Bing Webmaster Tools'), 'SEO_SETUP.md documents Google and Bing submission');
 assert(seoDocContent.includes('IndexNow'), 'SEO_SETUP.md documents owner-controlled IndexNow submission');
+
+console.log('');
+
+// ------------------------------------------------------------------
+// SUITE 9: All 8 ATS Resume Templates Rendering to Vector PDF
+// ------------------------------------------------------------------
+console.log('SUITE 9: All 8 ATS Resume Templates Rendering to Vector PDF');
+
+const templateKeys = Object.keys(TEMPLATES);
+assert(templateKeys.length === 8, `Exactly 8 ATS resume templates defined (found ${templateKeys.length})`);
+
+const expectedTemplates = [
+  'classic-professional',
+  'modern-minimal',
+  'graduate-early-career',
+  'experienced-professional',
+  'project-focused',
+  'career-transition',
+  'compact-professional',
+  'academic-cv'
+];
+
+expectedTemplates.forEach(tId => {
+  const tpl = TEMPLATES[tId];
+  assert(Boolean(tpl), `Template "${tId}" exists in TEMPLATES registry`);
+  assert(tpl && typeof tpl.name === 'string' && tpl.name.length > 0, `Template "${tId}" has human-readable name: "${tpl ? tpl.name : ''}"`);
+  assert(tpl && typeof tpl.svgThumbnail === 'string' && tpl.svgThumbnail.includes('<svg'), `Template "${tId}" has valid SVG thumbnail`);
+  assert(tpl && Array.isArray(tpl.recommendedOrder) && tpl.recommendedOrder.length >= 5, `Template "${tId}" specifies recommended section order`);
+
+  // Render PDF with this template
+  const resumeClone = JSON.parse(JSON.stringify(sampleResume));
+  resumeClone.design = {
+    templateId: tId,
+    pageSize: 'a4',
+    fontFamily: tpl.fontFamily || 'serif',
+    density: tpl.density || 'standard',
+    sectionOrder: tpl.recommendedOrder
+  };
+  resumeClone.sectionVisibility = Object.assign({}, tpl.defaultVisibility);
+
+  const pdfDoc = generateResumePDF(resumeClone, { templateId: tId });
+  const pdfOutput = pdfDoc.build();
+  assert(typeof pdfOutput === 'string', `Template "${tId}" renders to PDF string`);
+  assert(pdfOutput.startsWith('%PDF-1.4'), `Template "${tId}" PDF has valid %PDF-1.4 header`);
+  assert(pdfOutput.endsWith('%%EOF\n'), `Template "${tId}" PDF has valid %%EOF trailer`);
+  assert(pdfOutput.length > 1500, `Template "${tId}" PDF output size is substantive (${pdfOutput.length} bytes)`);
+});
+
+// Page size verification: A4 vs US Letter
+const a4Doc = generateResumePDF(sampleResume, { pageSize: 'a4' });
+const a4Pdf = a4Doc.build();
+assert(a4Pdf.includes('/MediaBox [0 0 595.28 841.89]'), 'PDF engine correctly applies ISO A4 dimensions (595.28 x 841.89 pt)');
+
+const letterDoc = generateResumePDF(sampleResume, { pageSize: 'letter' });
+const letterPdf = letterDoc.build();
+assert(letterPdf.includes('/MediaBox [0 0 612 792]'), 'PDF engine correctly applies US Letter dimensions (612.00 x 792.00 pt)');
+
+// Multi-page Academic CV rendering test
+const academicResume = JSON.parse(JSON.stringify(sampleResume));
+academicResume.design = { templateId: 'academic-cv', pageSize: 'a4', fontFamily: 'serif', density: 'standard' };
+academicResume.sectionVisibility = { academic: true, summary: true, experience: true, education: true, skills: true };
+academicResume.academic = {
+  publications: [
+    'Doe, J. & Smith, A. (2024). High-Performance Distributed Systems. Journal of Computing, 12(3), 45-62.',
+    'Doe, J. et al. (2023). Scalable In-Browser OOXML Processing. ACM SIGPLAN, 8(2), 112-125.',
+    'Doe, J. (2022). Algorithmic Complexity in Client-Side Document Engines. IEEE Trans. Softw. Eng., 48(4), 301-315.',
+    'Doe, J. & Patel, R. (2021). Zero-Upload Web Architectures. Web Systems Review, 19(1), 18-32.'
+  ],
+  teaching: [
+    'Senior Lecturer, Advanced Systems Architecture (Fall 2023, 120 students)',
+    'Teaching Fellow, Data Structures & Operating Systems (Spring 2022, 90 students)'
+  ],
+  presentations: [
+    'Keynote: "The Privacy Dividend in Document Applications", OpenWeb Conf 2024, Zurich.',
+    'Session Speaker: "Vector Rendering in PDF 1.4", WebTech Summit 2023, Boston.'
+  ],
+  grants: [
+    'Principal Investigator: $250,000 NSF Grant for Web-Based Accessibility Architectures (2022-2024).'
+  ]
+};
+const acadDoc = generateResumePDF(academicResume, { templateId: 'academic-cv' });
+const acadPdf = acadDoc.build();
+assert(acadPdf.startsWith('%PDF-1.4') && acadPdf.endsWith('%%EOF\n'), 'Academic CV renders valid PDF with publications and teaching');
+const pageCountMatch = acadPdf.match(/\/Type\s+\/Page\b/g);
+assert(pageCountMatch && pageCountMatch.length >= 1, `Academic CV generates valid pages (found ${pageCountMatch ? pageCountMatch.length : 0} page objects)`);
+
+console.log('');
+
+// ------------------------------------------------------------------
+// SUITE 10: Zero-Dependency Client-Side DOCX Generation & OOXML Architecture
+// ------------------------------------------------------------------
+console.log('SUITE 10: Zero-Dependency Client-Side DOCX Generation & OOXML Architecture');
+
+const docxZip = generateResumeDOCX(sampleResume, { pageSize: 'a4', fontFamily: 'serif' });
+assert(docxZip instanceof SimpleZip, 'generateResumeDOCX returns an instance of SimpleZip');
+
+const docxBuf = docxZip.toBuffer();
+assert(Buffer.isBuffer(docxBuf), 'SimpleZip.toBuffer() returns a Node Buffer');
+assert(docxBuf.length > 500, `DOCX buffer has substantive size (${docxBuf.length} bytes)`);
+
+// Check standard PKZip magic signature: 0x50, 0x4B, 0x03, 0x04
+assert(docxBuf[0] === 0x50 && docxBuf[1] === 0x4B && docxBuf[2] === 0x03 && docxBuf[3] === 0x04, 'DOCX output begins with standard PKZip magic bytes (0x504B0304)');
+
+// Check all essential OOXML parts exist in zip package
+const requiredParts = [
+  '[Content_Types].xml',
+  '_rels/.rels',
+  'word/styles.xml',
+  'word/document.xml',
+  'word/_rels/document.xml.rels'
+];
+
+requiredParts.forEach(partName => {
+  const file = docxZip.files.find(f => f.name === partName);
+  assert(Boolean(file), `DOCX archive contains required OOXML part "${partName}"`);
+});
+
+// Check document.xml content integrity
+const docXmlFile = docxZip.files.find(f => f.name === 'word/document.xml');
+const docXmlStr = Buffer.from(docXmlFile.data).toString('utf8');
+assert(docXmlStr.includes('Jane Doe, PMP'), 'word/document.xml contains candidate full name');
+assert(docXmlStr.includes('Director of Global Operations'), 'word/document.xml contains job title');
+assert(docXmlStr.includes('OmniCorp International'), 'word/document.xml contains company name');
+assert(docXmlStr.includes('Executive Summary'), 'word/document.xml contains section title');
+assert(docXmlStr.includes('<w:pgSz w:w="11906" w:h="16838"/>'), 'word/document.xml specifies ISO A4 page dimensions in dxa (11906 x 16838)');
+
+// Check US Letter page dimensions in DOCX
+const docxLetter = generateResumeDOCX(sampleResume, { pageSize: 'letter' });
+const docXmlLetterFile = docxLetter.files.find(f => f.name === 'word/document.xml');
+const docXmlLetterStr = Buffer.from(docXmlLetterFile.data).toString('utf8');
+assert(docXmlLetterStr.includes('<w:pgSz w:w="12240" w:h="15840"/>'), 'word/document.xml specifies US Letter page dimensions in dxa (12240 x 15840)');
+
+// Check styles.xml
+const stylesFile = docxZip.files.find(f => f.name === 'word/styles.xml');
+const stylesStr = Buffer.from(stylesFile.data).toString('utf8');
+assert(stylesStr.includes('w:styleId="Heading1"'), 'word/styles.xml defines Heading1 style');
+assert(stylesStr.includes('w:styleId="ListBullet"'), 'word/styles.xml defines ListBullet style');
+
+// Check XML character escaping
+assert(escapeXml('AT&T <test> & "quotes"') === 'AT&amp;T &lt;test&gt; &amp; &quot;quotes&quot;', 'DOCX escapeXml correctly sanitizes &, <, >, " characters');
+
+console.log('');
+
+// ------------------------------------------------------------------
+// SUITE 11: Formatted Plain-Text Export Parity
+// ------------------------------------------------------------------
+console.log('SUITE 11: Formatted Plain-Text Export Parity');
+
+const plainText = generateResumeText(sampleResume);
+assert(typeof plainText === 'string', 'generateResumeText returns string output');
+assert(plainText.includes('JANE DOE, PMP'), 'Plain-text export contains uppercase candidate name');
+assert(plainText.includes('Senior Operations Director'), 'Plain-text export contains target title');
+assert(plainText.includes('jane.doe@example.com'), 'Plain-text export contains contact email');
+assert(plainText.includes('OmniCorp International'), 'Plain-text export contains company name');
+assert(plainText.includes('Director of Global Operations'), 'Plain-text export contains role title');
+assert(plainText.includes('* Orchestrated workflow optimization'), 'Plain-text export formats bullets with clean bullet marks');
+assert(!/<[a-z][\s\S]*>/i.test(plainText), 'Plain-text export contains zero HTML tags or markup artifacts');
+
+console.log('');
+
+// ------------------------------------------------------------------
+// SUITE 12: Resume Schema Migration & Persistence (v1 to v2)
+// ------------------------------------------------------------------
+console.log('SUITE 12: Resume Schema Migration & Persistence (v1 to v2)');
+
+const legacyV1Data = {
+  personal: {
+    fullName: 'David Miller',
+    targetTitle: 'Full-Stack Developer',
+    email: 'david@example.com'
+  },
+  summaryTitle: 'About Me',
+  summary: 'Passionate developer building accessible web tools.',
+  experienceTitle: 'Work Experience',
+  experience: [
+    { role: 'Software Engineer', company: 'TechWorks', duration: '2020 - 2023', bulletsText: 'Built APIs' }
+  ],
+  educationTitle: 'Education',
+  education: [
+    { degree: 'B.S. Computer Science', institution: 'State University', year: '2020' }
+  ],
+  skills: {
+    languages: 'JavaScript, Python',
+    tools: 'Git, Docker'
+  }
+};
+
+const migratedV2 = migrateResumeSchema(legacyV1Data);
+assert(migratedV2.schemaVersion === 2, 'migrateResumeSchema upgrades legacy data to schemaVersion 2');
+assert(migratedV2.design && migratedV2.design.templateId === 'classic-professional', 'migrated schema defaults templateId to "classic-professional"');
+assert(migratedV2.design.pageSize === 'a4', 'migrated schema defaults pageSize to "a4"');
+assert(migratedV2.design.density === 'standard', 'migrated schema defaults density to "standard"');
+assert(Array.isArray(migratedV2.design.sectionOrder) && migratedV2.design.sectionOrder.length === 10, 'migrated schema initializes 10-section order array');
+assert(migratedV2.sectionVisibility && migratedV2.sectionVisibility.summary === true, 'migrated schema initializes sectionVisibility map');
+assert(Array.isArray(migratedV2.certifications), 'migrated schema adds certifications array');
+assert(Array.isArray(migratedV2.achievements), 'migrated schema adds achievements array');
+assert(Array.isArray(migratedV2.volunteering), 'migrated schema adds volunteering array');
+assert(Array.isArray(migratedV2.languages), 'migrated schema adds languages array');
+assert(typeof migratedV2.academic === 'object', 'migrated schema adds academic container');
+assert(migratedV2.personal.fullName === 'David Miller', 'migrated schema preserves candidate fullName');
+assert(migratedV2.experience[0].company === 'TechWorks', 'migrated schema preserves experience records');
+
+// Empty / invalid input migration test
+const emptyMigrated = migrateResumeSchema(null);
+assert(emptyMigrated.schemaVersion === 2, 'migrateResumeSchema handles null input gracefully');
+assert(emptyMigrated.personal && emptyMigrated.personal.fullName === '', 'migrateResumeSchema defaults empty personal fields');
+
+// Idempotent v2 migration test
+const customV2Input = {
+  schemaVersion: 2,
+  design: {
+    templateId: 'modern-minimal',
+    pageSize: 'letter',
+    fontFamily: 'sans',
+    density: 'compact',
+    sectionOrder: ['skills', 'experience', 'education', 'summary', 'projects', 'certifications', 'achievements', 'volunteering', 'languages', 'academic']
+  },
+  personal: {
+    fullName: 'Sarah Connor',
+    email: 'sarah@resistance.org'
+  },
+  sectionVisibility: {
+    summary: false,
+    academic: false
+  }
+};
+
+const v2Preserved = migrateResumeSchema(customV2Input);
+assert(v2Preserved.design.templateId === 'modern-minimal', 'migrateResumeSchema preserves existing v2 templateId');
+assert(v2Preserved.design.pageSize === 'letter', 'migrateResumeSchema preserves existing v2 pageSize');
+assert(v2Preserved.design.sectionOrder[0] === 'skills', 'migrateResumeSchema preserves custom sectionOrder');
+assert(v2Preserved.sectionVisibility.summary === false, 'migrateResumeSchema preserves custom sectionVisibility');
+
+console.log('');
+
+// ------------------------------------------------------------------
+// SUITE 13: Strict Prohibition of Support Popups, Modals, Nags, or Timed Overlays
+// ------------------------------------------------------------------
+console.log('SUITE 13: Strict Prohibition of Support Popups, Modals, Nags, or Timed Overlays');
+
+// 1. Check style.css has zero modal rules
+const styleContent = fs.readFileSync(path.join(repoRoot, 'css', 'style.css'), 'utf8');
+assert(!styleContent.includes('.modal-overlay'), 'style.css contains NO .modal-overlay selector');
+assert(!styleContent.includes('.modal-card'), 'style.css contains NO .modal-card selector');
+assert(!styleContent.includes('.modal-close-btn'), 'style.css contains NO .modal-close-btn selector');
+assert(!styleContent.includes('.btn-chai'), 'style.css contains NO .btn-chai selector');
+
+// 2. Check HTML files contain NO modal HTML markup
+htmlFiles.forEach(file => {
+  const filePath = path.join(repoRoot, file);
+  const content = fs.readFileSync(filePath, 'utf8');
+  assert(!content.includes('class="modal-overlay"'), `${file} contains NO modal-overlay markup`);
+  assert(!content.includes('id="supportModal"'), `${file} contains NO supportModal element`);
+  assert(!content.includes('id="chaiModal"'), `${file} contains NO chaiModal element`);
+
+  // Assert understated navbar support link exists
+  assert(content.includes('class="nav-support-link"'), `${file} contains understated .nav-support-link`);
+  assert(content.includes('https://razorpay.me/@nbsumit'), `${file} links to official Razorpay support URL`);
+
+  // Assert footer support link exists
+  assert(content.includes('class="footer-link"'), `${file} contains .footer-link`);
+});
+
+// 3. Check JS files contain NO popups, modals, or timed donation prompts
+const jsFiles = ['js/resume.js', 'js/resizer.js', 'js/pdf-engine.js', 'js/docx-engine.js', 'js/templates.js'];
+jsFiles.forEach(jsFile => {
+  const p = path.join(repoRoot, jsFile);
+  const c = fs.readFileSync(p, 'utf8');
+  assert(!c.includes('openSupportModal'), `${jsFile} contains NO openSupportModal function`);
+  assert(!c.includes('showSupportModal'), `${jsFile} contains NO showSupportModal function`);
+  assert(!c.includes('promptSupport'), `${jsFile} contains NO promptSupport function`);
+  assert(!c.includes('showChaiModal'), `${jsFile} contains NO showChaiModal function`);
+});
 
 console.log('');
 console.log('====================================================');
