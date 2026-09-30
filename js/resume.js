@@ -2124,6 +2124,13 @@
             renderResumePreview();
             runResumeReview();
             notify('Resume backup restored.');
+            // Restored sections can change the page height substantially. Show the
+            // restored identity instead of leaving a field beneath the sticky header.
+            const contactSection = getEl('sec-personal');
+            contactSection.classList.add('open');
+            contactSection.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
+            contactSection.scrollIntoView({ block: 'start', behavior: 'auto' });
+            getEl('fullName').focus({ preventScroll: true });
           } catch (err) {
             notify('Could not import this backup. Your current resume is preserved.', true);
           }

@@ -113,6 +113,8 @@ const server = http.createServer((req,res) => {
   const fixture=resumeFixture();dialogAction='accept';
   await page.locator('#fileImportInput').setInputFiles({name:'resume.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({version:2,app:'ApplyReady',data:fixture}))});
   await page.waitForFunction(()=>document.getElementById('resumeSheet').textContent.includes('GRANT_MARKER'));
+  ok(await page.locator('#fullName').evaluate(el=>el===document.activeElement), 'Restoring a backup focuses its contact details');
+  ok(await page.locator('#fullName').evaluate(el=>el.getBoundingClientRect().top>=document.querySelector('.navbar').getBoundingClientRect().bottom), 'Restored contact fields are clear of the sticky navigation');
   for(const marker of ['VOLUNTEER_MARKER','LANGUAGE_MARKER','PUBLICATION_MARKER','TEACHING_MARKER','PRESENTATION_MARKER','GRANT_MARKER'])ok((await page.locator('#resumeSheet').textContent()).includes(marker),`Preview includes ${marker}`);
   await audit('resume-with-optional-sections');
   for(const [template,config] of Object.entries(TEMPLATES)) {
