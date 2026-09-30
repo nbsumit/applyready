@@ -64,6 +64,33 @@ const server = http.createServer((req,res) => {
     }
   }
   console.log('✓ Responsive layouts, both themes, and initial accessibility');
+  await visit('index.html');
+  ok(await page.locator('#btnOriginalSize').isDisabled(), 'Original size requires a decoded source');
+  await page.locator('[data-preset="passport"]').click();
+  ok(await page.locator('#presetSelect').inputValue()==='passport', 'Quick photo preset updates the selected preset');
+  ok(await page.locator('#customWidth').isVisible(), 'Preset dimensions remain editable');
+  await page.locator('#presetSelect').selectOption('custom');
+  await page.locator('#customWidth').fill('700');
+  ok(await page.locator('#customHeight').inputValue()==='900', 'Switching from a portrait preset to custom retains its ratio');
+  await page.locator('[data-preset="signature"]').click();
+  await page.locator('#customWidth').fill('600');
+  ok(await page.locator('#presetSelect').inputValue()==='custom', 'Editing preset dimensions switches to custom');
+  ok(await page.locator('#customHeight').inputValue()==='200', 'Editing a preset retains its ratio');
+  ok(await page.locator('[data-preset="signature"]').getAttribute('aria-pressed')==='false', 'Edited preset is no longer announced as active');
+  await page.locator('#btnTryExample').click();
+  await page.waitForFunction(()=>!document.getElementById('btnOriginalSize').disabled);
+  ok((await page.locator('#fileInfoText').textContent()).includes('sample_document.png'), 'Sample document loads without a remote upload');
+  await page.locator('#btnOriginalSize').click();
+  ok(await page.locator('#customWidth').inputValue()==='960' && await page.locator('#customHeight').inputValue()==='1200', 'Original dimensions are restored');
+  const fullCrop=await page.evaluate(()=>document.getElementById('imageToCrop').cropper.getData());
+  ok(Math.abs(fullCrop.x)<1 && Math.abs(fullCrop.y)<1 && Math.abs(fullCrop.width-960)<1 && Math.abs(fullCrop.height-1200)<1, 'Original size selects the full source without clipping');
+  await page.locator('#customMaxKB').fill('200');await page.locator('#btnProcess').click();await page.locator('#resultArea').waitFor({state:'visible'});
+  const originalResult=await page.evaluate(async()=>{const blob=await fetch(document.getElementById('btnDownload').href).then(r=>r.blob());const img=await createImageBitmap(blob);return {w:img.width,h:img.height,bytes:blob.size};});
+  ok(originalResult.w===960 && originalResult.h===1200 && originalResult.bytes<=200*1024, 'Original-size compression verifies the output dimensions and byte limit');
+  ok(await page.locator('#workspaceStatus').textContent()==='Ready to download', 'Workspace status reflects successful processing');
+  await page.locator('#btnRemoveFile').click();
+  ok(await page.locator('#btnOriginalSize').isDisabled() && await page.locator('#cropperPlaceholder').isVisible(), 'Removing the source restores a usable upload state');
+  console.log('✓ Editable quick presets, aspect-ratio regression, local demo, and full-image compression');
   await visit('resume.html');
   await page.locator('#fullName').fill('Jordan Lee');
   await page.locator('#btnUndo').click();ok(await page.locator('#fullName').inputValue()==='', 'Typing undo restores previous text');

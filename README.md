@@ -22,6 +22,9 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
   - `Social / Web Card`: 1200 x 630 px, max 300 KB.
   - `Document Scan`: 800 x 1000 px, max 200 KB.
 - **Aspect-Ratio Lock and File Replacement**: Lock aspect ratio while entering custom dimensions to prevent distortion; swap source files in one click with the Replace action.
+- **Editable Quick Presets**: Start with a photo, signature, profile or document preset, then edit any dimension or size limit. Switching to custom keeps the current proportions.
+- **Original-Size Compression**: Select the full image at its original dimensions, reset rotation and remove the text strip with one button. Output limits are still validated before processing.
+- **Local Sample Document**: Try the complete workflow without providing a personal file. The demonstration image is generated in the browser.
 - **Before and After Visual Comparison**: Toggle between original source and processed output with real-time file size indicators.
 - **Multiple Formats and Transparency**: Supports JPEG, PNG, and WebP. Transparent backgrounds are preserved in PNG and WebP, with configurable background fill (White / Black) when converting to JPEG.
 - **Strict Byte-Level Verification**: Compression uses adaptive quality quantization. Never reports false success if an image remains oversized, and verifies output dimensions, MIME type, and exact byte size prior to download.
@@ -113,7 +116,7 @@ A comprehensive test suite is included in `tests/run_tests.js` covering 14 test 
 - Sitemap XML validity, canonical link consistency, and robots.txt rules.
 - Responsive styling, focus preservation, and WCAG AA color contrast ratios.
 
-For the workspace changes and current verification workflow, see [docs/WORKSPACE_REFRESH.md](docs/WORKSPACE_REFRESH.md). The additional behavior and browser suites validate actual exports, draft recovery, responsive layouts, and accessibility.
+For the workspace changes and current verification workflow, see [docs/WORKSPACE_REFRESH.md](docs/WORKSPACE_REFRESH.md) and [docs/PROFESSIONAL_WORKSPACE.md](docs/PROFESSIONAL_WORKSPACE.md). The additional behavior and browser suites validate actual exports, draft recovery, responsive layouts, editable presets, original-size compression, and accessibility.
 
 Run the complete checks with `npm ci`, `npm test`, `npx playwright install chromium`, and `npm run test:browser`. Browser verification requires Poppler (`pdftotext`, `pdfinfo`) and `unzip`; CI installs these and retains screenshots and exported documents. This includes 32 long PDF cases across all templates, paper sizes, and font families.
 

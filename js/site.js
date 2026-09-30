@@ -13,7 +13,7 @@
       toggle.innerHTML = `<i class="fa-solid fa-${theme === 'dark' ? 'sun' : 'moon'}" aria-hidden="true"></i>`;
     }
     const color = document.querySelector('meta[name="theme-color"]');
-    if (color) color.content = theme === 'dark' ? '#0d1423' : '#f6f8fc';
+    if (color) color.content = theme === 'dark' ? '#111619' : '#f6f7f8';
   }
   setTheme(document.documentElement.dataset.theme || 'light');
   if (toggle) toggle.addEventListener('click', () => {

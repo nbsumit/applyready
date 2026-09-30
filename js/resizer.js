@@ -104,6 +104,9 @@
   const fileInfoText = getEl('fileInfoText');
   const btnReplaceFile = getEl('btnReplaceFile');
   const btnRemoveFile = getEl('btnRemoveFile');
+  const btnOriginalSize = getEl('btnOriginalSize');
+  const btnTryExample = getEl('btnTryExample');
+  const workspaceStatus = getEl('workspaceStatus');
 
   // Aspect Ratio Lock
   const btnLockAspect = getEl('btnLockAspect');
@@ -147,6 +150,83 @@
     setTodayDate();
     updatePresetUI();
     attachEventListeners();
+  }
+
+  function setWorkspaceStatus(message) {
+    if (workspaceStatus) workspaceStatus.textContent = message;
+  }
+
+  // Keep the ratio honest: invalid or oversized results are validated, not clamped.
+  function scaleLockedDimension(value, ratio, changedAxis) {
+    const size = Number(value);
+    if (!Number.isInteger(size) || size < 20 || !Number.isFinite(ratio) || ratio <= 0) return null;
+    return Math.round(changedAxis === 'width' ? size / ratio : size * ratio);
+  }
+
+  function applyPreset(key) {
+    if (!PRESETS[key]) return;
+    presetSelect.value = key;
+    if (key !== 'custom') {
+      const preset = PRESETS[key];
+      customWidthInput.value = preset.width;
+      customHeightInput.value = preset.height;
+      customMaxKBInput.value = preset.maxKB;
+      aspectRatioSelect.value = 'target';
+    }
+    // Custom retains the displayed dimensions, including the previous preset's ratio.
+    const width = Number(customWidthInput.value), height = Number(customHeightInput.value);
+    if (width > 0 && height > 0) lockedRatio = width / height;
+    updatePresetUI();
+  }
+
+  function markCustom() { presetSelect.value = 'custom'; }
+
+  function useOriginalSize() {
+    if (!cropperReady || !cropper) return;
+    const { width, height } = sourceDimensions;
+    const validation = validateDimensionSpecs(width, height, customMaxKBInput.value);
+    if (validation.dimErrorMsg) {
+      showProcessError('The original dimensions exceed the supported range (20–8,000 px per side, up to 32 megapixels). Set smaller output dimensions.');
+      return;
+    }
+    customWidthInput.value = width;
+    customHeightInput.value = height;
+    lockedRatio = width / height;
+    markCustom();
+    addDateCheckbox.checked = false;
+    dateInputGroup.style.display = 'none';
+    aspectRatioSelect.value = 'original';
+    if (processErrorBox) processErrorBox.classList.add('hidden');
+    updatePresetUI();
+    cropper.reset();
+    cropper.setData({ x: 0, y: 0, width, height, rotate: 0, scaleX: 1, scaleY: 1 });
+    if (window.ApplyReadyUI) window.ApplyReadyUI.notify('Full image selected at its original dimensions. Set your file limit, then resize & compress.');
+  }
+
+  function loadExample() {
+    // A clearly labelled synthetic document keeps the demo local and contains no personal data.
+    const canvas = document.createElement('canvas');
+    canvas.width = 960; canvas.height = 1200;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 960, 1200);
+    ctx.fillStyle = '#17634d'; ctx.fillRect(72, 80, 56, 7);
+    ctx.fillStyle = '#182126'; ctx.font = 'bold 48px sans-serif'; ctx.fillText('Sample document', 72, 170);
+    ctx.font = '24px sans-serif'; ctx.fillStyle = '#5c6970'; ctx.fillText('ApplyReady image tools · demonstration file', 72, 216);
+    ctx.font = 'bold 25px sans-serif'; ctx.fillStyle = '#182126'; ctx.fillText('A simple way to prepare your files', 72, 322);
+    ctx.font = '22px sans-serif'; ctx.fillStyle = '#344148';
+    ['Choose your dimensions and file size limit.', 'Adjust the crop to keep the details you need.', 'Download a verified image, ready to upload.', '', 'Use original size to keep this entire document.', 'Try another preset to see how the crop changes.'].forEach((line, i) => ctx.fillText(line, 72, 375 + i * 42));
+    ctx.strokeStyle = '#dfe4e7'; ctx.lineWidth = 2;
+    for (let y = 710; y <= 1000; y += 58) { ctx.beginPath(); ctx.moveTo(72, y); ctx.lineTo(888, y); ctx.stroke(); }
+    ctx.font = '18px sans-serif'; ctx.fillStyle = '#5c6970'; ctx.fillText('SAMPLE ONLY — no personal information', 72, 1110);
+    const requestId = currentOpId;
+    btnTryExample.disabled = true;
+    canvas.toBlob(blob => {
+      btnTryExample.disabled = false;
+      if (requestId !== currentOpId) return;
+      if (!blob) { showProcessError('Could not create the sample. Please choose an image instead.'); return; }
+      applyPreset('document');
+      handleFileSelect(new File([blob], 'ApplyReady_sample_document.png', { type: 'image/png' }));
+    }, 'image/png');
   }
 
   function setTodayDate() {
@@ -342,21 +422,10 @@
    */
   function updatePresetUI() {
     currentPresetKey = presetSelect.value;
-    const isCustom = currentPresetKey === 'custom';
-
-    if (customControls) {
-      if (isCustom) {
-        customControls.classList.remove('hidden');
-      } else {
-        customControls.classList.add('hidden');
-        const p = PRESETS[currentPresetKey];
-        if (p) {
-          customWidthInput.value = p.width;
-          customHeightInput.value = p.height;
-          customMaxKBInput.value = p.maxKB;
-        }
-      }
-    }
+    if (customControls) customControls.classList.remove('hidden');
+    if (doc) doc.querySelectorAll('[data-preset]').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.preset === currentPresetKey));
+    });
 
     const specs = getActiveSpecs();
     if (specs.isValid) {
@@ -440,6 +509,7 @@
     }
     if (cropperReady && cropperActiveArea) cropperActiveArea.classList.remove('hidden');
     if (resultArea) resultArea.classList.add('hidden');
+    setWorkspaceStatus(cropperReady ? 'Ready to edit' : 'No image selected');
     if (btnDownload) {
       btnDownload.removeAttribute('href');
       btnDownload.removeAttribute('download');
@@ -462,13 +532,12 @@
    * Attach all DOM Event Listeners
    */
   function attachEventListeners() {
-    presetSelect.addEventListener('change', () => {
-      const p = PRESETS[presetSelect.value];
-      if (p && p.width && p.height) {
-        lockedRatio = p.width / p.height;
-      }
-      updatePresetUI();
+    presetSelect.addEventListener('change', () => applyPreset(presetSelect.value));
+    doc.querySelectorAll('[data-preset]').forEach(button => {
+      button.addEventListener('click', () => applyPreset(button.dataset.preset));
     });
+    if (btnOriginalSize) btnOriginalSize.addEventListener('click', useOriginalSize);
+    if (btnTryExample) btnTryExample.addEventListener('click', loadExample);
 
     if (btnLockAspect) {
       btnLockAspect.addEventListener('click', () => {
@@ -486,26 +555,25 @@
     }
 
     customWidthInput.addEventListener('input', () => {
+      markCustom();
       if (isAspectLocked && lockedRatio > 0 && document.activeElement === customWidthInput) {
-        const w = parseFloat(customWidthInput.value);
-        if (!isNaN(w) && w >= 20) {
-          customHeightInput.value = Math.max(20, Math.min(8000, Math.round(w / lockedRatio)));
-        }
+        const height = scaleLockedDimension(customWidthInput.value, lockedRatio, 'width');
+        if (height !== null) customHeightInput.value = height;
       }
       updatePresetUI();
     });
 
     customHeightInput.addEventListener('input', () => {
+      markCustom();
       if (isAspectLocked && lockedRatio > 0 && document.activeElement === customHeightInput) {
-        const h = parseFloat(customHeightInput.value);
-        if (!isNaN(h) && h >= 20) {
-          customWidthInput.value = Math.max(20, Math.min(8000, Math.round(h * lockedRatio)));
-        }
+        const width = scaleLockedDimension(customHeightInput.value, lockedRatio, 'height');
+        if (width !== null) customWidthInput.value = width;
       }
       updatePresetUI();
     });
 
     customMaxKBInput.addEventListener('input', () => {
+      markCustom();
       updatePresetUI();
     });
 
@@ -583,20 +651,21 @@
       fileInput.value = '';
     });
 
-    // Drag and Drop
-    dropzone.addEventListener('dragover', (e) => {
+    // Accept replacements anywhere in the workspace, including over an active crop.
+    const dropTarget = doc.querySelector('.image-stage') || dropzone;
+    dropTarget.addEventListener('dragover', (e) => {
       e.preventDefault();
       e.stopPropagation();
       dropzone.classList.add('dragover');
     });
 
-    dropzone.addEventListener('dragleave', (e) => {
+    dropTarget.addEventListener('dragleave', (e) => {
       e.preventDefault();
       e.stopPropagation();
       dropzone.classList.remove('dragover');
     });
 
-    dropzone.addEventListener('drop', (e) => {
+    dropTarget.addEventListener('drop', (e) => {
       e.preventDefault();
       e.stopPropagation();
       dropzone.classList.remove('dragover');
@@ -692,6 +761,7 @@
     btnCropAgain.addEventListener('click', () => {
       resultArea.classList.add('hidden');
       cropperActiveArea.classList.remove('hidden');
+      setWorkspaceStatus('Ready to edit');
       cropperActiveArea.scrollIntoView({ behavior: 'smooth' });
     });
   }
@@ -723,6 +793,7 @@
     removeUploadedImage();
     const opId = ++currentOpId;
     currentFile = file;
+    setWorkspaceStatus('Opening image…');
     if (btnProcess) btnProcess.disabled = true;
 
     const reader = new FileReader();
@@ -808,6 +879,8 @@
           ready: function () {
             if (opId !== currentOpId) return;
             cropperReady = true;
+            if (btnOriginalSize) btnOriginalSize.disabled = false;
+            setWorkspaceStatus('Ready to edit');
             updateCropperRatio();
             if (window.innerWidth <= 760) cropperActiveArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
             const specs = getActiveSpecs();
@@ -849,6 +922,7 @@
     }
 
     if (btnProcess) btnProcess.disabled = true;
+    if (btnOriginalSize) btnOriginalSize.disabled = true;
     if (fileInfoBox) fileInfoBox.classList.add('hidden');
     cropperActiveArea.classList.add('hidden');
     cropperPlaceholder.classList.remove('hidden');
@@ -858,6 +932,7 @@
   }
 
   function showProcessError(msg) {
+    setWorkspaceStatus('Check the error below');
     if (processErrorBox && processErrorMessage) {
       processErrorMessage.textContent = msg;
       processErrorBox.classList.remove('hidden');
@@ -1097,6 +1172,7 @@
     const revision = configRevision;
     let validationUrl = null;
     processing = true;
+    setWorkspaceStatus('Processing…');
     btnProcess.setAttribute('aria-busy', 'true');
     btnProcess.disabled = true;
     btnProcess.innerHTML = '<i aria-hidden="true" class="fa-solid fa-spinner fa-spin"></i> Processing & Compressing...';
@@ -1200,6 +1276,7 @@
       // Switch views
       cropperActiveArea.classList.add('hidden');
       resultArea.classList.remove('hidden');
+      setWorkspaceStatus('Ready to download');
       resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       btnDownload.focus();
 
@@ -1228,6 +1305,7 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       PRESETS,
+      scaleLockedDimension,
       formatAnnotationDate,
       validateDimensionSpecs
     };

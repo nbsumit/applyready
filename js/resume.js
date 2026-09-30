@@ -1482,7 +1482,8 @@
     // Calculate scaling
     let scale = 1;
     if (currentZoom === 'fit') {
-      const availableWidth = resumePreviewOuter.clientWidth - 24;
+      const previewStyle = getComputedStyle(resumePreviewOuter);
+      const availableWidth = resumePreviewOuter.clientWidth - parseFloat(previewStyle.paddingLeft) - parseFloat(previewStyle.paddingRight);
       const sheetWidth = resumeSheet.offsetWidth || 794;
       scale = Math.min(1, Math.max(0.05, availableWidth / sheetWidth));
     } else if (currentZoom === '75') {

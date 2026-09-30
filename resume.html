@@ -40,7 +40,7 @@
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/workspace.css">
+  <link rel="stylesheet" href="css/workspace.css?v=20260930">
 
   <!-- Structured Data: WebApplication -->
   <script type="application/ld+json">
@@ -86,11 +86,10 @@
 
     <!-- Hero Header -->
     <header class="hero-header workspace-hero resume-hero">
-      <div class="hero-copy"><div class="eyebrow"><span class="status-dot"></span> YOUR NEXT CHAPTER STARTS HERE</div>
-        <h1 class="hero-title">Your experience.<br><span>Ready for what's next.</span></h1>
-        <p class="hero-subtitle">Build a clear, professional resume with 8 ATS-friendly templates. Edit your details, choose a design, and download for free.</p>
-        <div class="trust-pills"><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Private by design</span><span>PDF, Word & text</span><span>No watermarks</span></div></div>
-      <div class="hero-export"><button type="button" id="btnOpenExport" class="btn btn-primary"><i class="fa-solid fa-arrow-down-to-line" aria-hidden="true"></i> Review & download</button><span>Your content stays yours.</span></div>
+      <div class="hero-copy"><div class="eyebrow">TOOLS FOR YOUR NEXT APPLICATION</div>
+        <h1 class="hero-title">Resume builder</h1>
+        <p class="hero-subtitle">Your experience, clearly presented. Eight templates. Free PDF and Word downloads.</p></div>
+      <div class="hero-export"><button type="button" id="btnOpenExport" class="btn btn-primary"><i class="fa-solid fa-download" aria-hidden="true"></i> Review & download</button><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Your details stay on this device</span></div>
     </header>
 
     <!-- Mobile View Switcher (Visible on screens <= 949px) -->
@@ -128,6 +127,7 @@
              TAB 1: CONTENT VIEW
              ========================================================= -->
         <div id="viewContent" class="editor-tab-pane active" role="tabpanel" aria-labelledby="tabContent">
+          <div class="editor-intro"><h3>Build your resume</h3><p>Start with your contact details, then add the sections relevant to you.</p></div>
 
           <!-- Editor Action Bar: Undo, Redo, Sample, Clear, Backup, Import -->
           <div class="editor-action-bar">
@@ -704,7 +704,7 @@
     <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
-  <script src="js/site.js"></script>
+  <script src="js/site.js?v=20260930"></script>
 
   <!-- Template Full Preview Modal -->
   <div id="templatePreviewModal" class="template-preview-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="tmplModalTitle">
@@ -744,6 +744,6 @@
   <script src="js/docx-engine.js"></script>
 
   <!-- Resume Builder Logic -->
-  <script src="js/resume.js"></script>
+  <script src="js/resume.js?v=20260930"></script>
 </body>
 </html>

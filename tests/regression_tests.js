@@ -5,9 +5,21 @@ const pdf = require('../js/pdf-engine');
 const docx = require('../js/docx-engine');
 const { TEMPLATES } = require('../js/templates');
 const { resumeFixture } = require('./fixtures');
+const { scaleLockedDimension, validateDimensionSpecs } = require('../js/resizer');
 let checks = 0;
 const check = (name, fn) => { fn(); checks++; console.log(`✓ ${name}`); };
 const backup = data => ({ version: 2, app: 'ApplyReady', data });
+check('Locked portrait and landscape dimensions preserve their actual proportions', () => {
+  assert.equal(scaleLockedDimension('700', 350 / 450, 'width'), 900);
+  assert.equal(scaleLockedDimension('900', 350 / 450, 'height'), 700);
+  assert.equal(scaleLockedDimension('600', 3, 'width'), 200);
+});
+check('Locked dimensions expose unsafe sizes instead of silently distorting the image', () => {
+  const height = scaleLockedDimension('8000', 1 / 2, 'width');
+  assert.equal(height, 16000);
+  assert.equal(validateDimensionSpecs('8000', height, '50').isValid, false);
+  for (const value of ['', 'abc', '20.5', '-10', 'Infinity']) assert.equal(scaleLockedDimension(value, 1, 'width'), null);
+});
 check('Valid current backup and legacy version 1 remain supported', () => {
   assert(schema.validate(backup(resumeFixture())));
   assert(schema.validate({version:1,data:resumeFixture()}));

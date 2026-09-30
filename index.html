@@ -43,7 +43,7 @@
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/workspace.css">
+  <link rel="stylesheet" href="css/workspace.css?v=20260930">
 
   <!-- Structured Data: WebSite & WebApplication -->
   <script type="application/ld+json">
@@ -101,13 +101,20 @@
     <!-- Hero Header -->
     <header class="hero-header workspace-hero">
       <div class="hero-copy">
-        <div class="eyebrow"><span class="status-dot"></span> YOUR EVERYDAY IMAGE WORKSPACE</div>
-        <h1 class="hero-title">Perfect dimensions.<br><span>Smaller files.</span></h1>
-        <p class="hero-subtitle">Crop, resize, and compress in one place. Get the exact pixels and file size you need, with your images staying on your device.</p>
-        <div class="trust-pills"><span><i class="fa-solid fa-lock" aria-hidden="true"></i> On-device processing</span><span><i class="fa-solid fa-check" aria-hidden="true"></i> Free downloads</span><span>No sign-up</span></div>
+        <div class="eyebrow">TOOLS FOR YOUR NEXT APPLICATION</div>
+        <h1 class="hero-title">Image tools</h1>
+        <p class="hero-subtitle">The right dimensions. The right file size. Ready to upload.</p>
       </div>
-      <a href="resume.html" class="sibling-tool"><span class="sibling-icon"><i class="fa-regular fa-file-lines" aria-hidden="true"></i></span><span><small>ALSO IN YOUR TOOLKIT</small><strong>A resume for your next move</strong><span>8 clean templates. PDF & Word export.</span></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+      <div class="workspace-assurance"><i class="fa-solid fa-lock" aria-hidden="true"></i><div><strong>Your files stay on your device</strong><span>Free to use. No account or watermark.</span></div></div>
     </header>
+
+    <div class="preset-bar" role="group" aria-label="Quick image presets">
+      <span class="preset-bar-label">Quick start</span>
+      <button type="button" class="preset-shortcut" data-preset="passport" aria-pressed="false"><i class="fa-regular fa-id-card" aria-hidden="true"></i> ID photo <span>350 × 450</span></button>
+      <button type="button" class="preset-shortcut" data-preset="signature" aria-pressed="false"><i class="fa-solid fa-signature" aria-hidden="true"></i> Signature <span>300 × 100</span></button>
+      <button type="button" class="preset-shortcut" data-preset="avatar" aria-pressed="false"><i class="fa-regular fa-user" aria-hidden="true"></i> Profile <span>400 × 400</span></button>
+      <button type="button" class="preset-shortcut" data-preset="document" aria-pressed="false"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> Document <span>800 × 1000</span></button>
+    </div>
 
     <!-- Resizer Card Grid -->
     <div class="resizer-grid">
@@ -115,21 +122,9 @@
       <!-- Left Column: Controls & Upload -->
       <section class="app-card image-controls" aria-labelledby="controlsHeading">
         <h2 id="controlsHeading" class="card-title">
-          <i class="fa-solid fa-cloud-arrow-up text-muted" aria-hidden="true"></i>
-          <span>Upload an image</span><span class="step-number">01</span>
+          <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+          <span>Output settings</span>
         </h2>
-
-        <div id="dropzone" class="dropzone" role="group" aria-label="Choose or drop an image">
-          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" aria-hidden="true">
-          <div class="dropzone-icon">
-            <i class="fa-solid fa-image" aria-hidden="true"></i>
-          </div>
-          <div class="dropzone-text">Drop your image here</div>
-          <div class="dropzone-sub">JPG, PNG, WebP, GIF, BMP or AVIF · up to 50 MB</div>
-          <button type="button" id="btnBrowse" class="btn btn-secondary btn-sm mt-2">
-            <i class="fa-regular fa-folder-open" aria-hidden="true"></i> Choose image
-          </button>
-        </div>
 
         <!-- File Info Display -->
         <div id="fileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between;">
@@ -147,13 +142,6 @@
           </div>
         </div>
 
-        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
-
-        <h2 class="card-title">
-          <i class="fa-solid fa-sliders text-muted" aria-hidden="true"></i>
-          <span>Make it the right size</span>
-        </h2>
-
         <!-- Preset Dropdown -->
         <div class="form-group">
           <label for="presetSelect" class="form-label">Start with a preset</label>
@@ -166,6 +154,7 @@
             <option value="document">Document Scan (800 × 1000 px, max 200 KB)</option>
           </select>
         </div>
+        <p class="form-hint preset-note">Presets are starting points. Check the dimensions and size limit required by your application.</p>
 
         <!-- Custom Dimension Controls -->
         <div id="customControls" class="custom-dims-row">
@@ -189,6 +178,8 @@
         </div>
         <span id="dimError" class="field-error hidden" role="alert"></span>
         <span id="sizeError" class="field-error hidden" role="alert"></span>
+        <button type="button" id="btnOriginalSize" class="btn btn-secondary btn-sm original-size-btn" disabled><i class="fa-solid fa-expand" aria-hidden="true"></i> Use original size</button>
+        <p class="form-hint">Keep the full image and its dimensions when you only need a smaller file.</p>
 
         <!-- Output Format & Aspect Ratio -->
         <div class="form-row-2" style="margin-top: 1rem;">
@@ -274,7 +265,7 @@
       <section class="app-card image-stage" aria-labelledby="cropHeading">
         <h2 id="cropHeading" class="card-title">
           <i class="fa-solid fa-crop text-muted" aria-hidden="true"></i>
-          <span>Your image workspace</span><span class="step-number">02</span>
+          <span>Image workspace</span><span id="workspaceStatus" class="workspace-status" role="status">No image selected</span>
         </h2>
 
         <!-- Process Error Alert Box -->
@@ -285,13 +276,20 @@
 
         <!-- Empty State Placeholder -->
         <div id="cropperPlaceholder" class="crop-empty">
-          <div class="empty-art" aria-hidden="true"><div class="art-image"><svg viewBox="0 0 160 120" fill="none"><circle cx="112" cy="32" r="12" fill="currentColor" opacity=".35"/><path d="M8 104L48 57L82 92L105 68L152 104" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="art-dimension">350 × 350 px</span><span class="art-file"><i class="fa-solid fa-check"></i> Under your file limit</span></div>
-          <h3>A fresh canvas for your image</h3><p>Choose an image to start. Your crop and final result will appear here.</p>
-          <div class="empty-steps"><span><b>1</b> Choose image</span><span><b>2</b> Adjust crop</span><span><b>3</b> Download</span></div>
+          <div id="dropzone" class="dropzone" role="group" aria-label="Choose or drop an image">
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" aria-hidden="true">
+            <div class="upload-symbol" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></div>
+            <h3>Drop an image to get started</h3>
+            <p class="dropzone-text">Crop, resize and compress in one place.</p>
+            <button type="button" id="btnBrowse" class="btn btn-primary"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose image</button>
+            <p class="dropzone-sub">JPG, PNG, WebP, GIF, BMP or AVIF · up to 50 MB<br>Animated images are exported as a still image.</p>
+          </div>
+          <button type="button" id="btnTryExample" class="example-link">No image handy? Try a sample document <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
         </div>
 
         <!-- Active Cropper Area -->
         <div id="cropperActiveArea" class="hidden">
+          <a class="mobile-settings-link" href="#controlsHeading"><i class="fa-solid fa-sliders" aria-hidden="true"></i> Adjust output settings <i class="fa-solid fa-arrow-down" aria-hidden="true"></i></a>
           <div class="cropper-container-wrapper checkerboard-pattern" tabindex="0" role="group" aria-label="Image crop. Arrow keys move the crop selection; plus and minus zoom.">
             <img id="imageToCrop" src="" alt="Cropper source preview">
           </div>
@@ -388,30 +386,33 @@
           </div>
         </div>
 
+        <div class="workspace-footnote"><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Processed in your browser</span><span>1. Choose image <span aria-hidden="true">/</span> 2. Adjust <span aria-hidden="true">/</span> 3. Download</span></div>
       </section>
 
     </div>
 
     <!-- Practical Resizing Guide Card -->
-    <section class="app-card" style="margin-top: 1rem;" aria-labelledby="guideHeading">
+    <section class="resource-section" aria-labelledby="guideHeading">
       <h3 id="guideHeading" style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-heading);">
-        <i class="fa-solid fa-circle-info" aria-hidden="true" style="color: var(--primary);"></i> A little guidance, when you need it
+        Get the details right
       </h3>
       <div class="guide-card-grid">
         <a href="guides/image-dimensions-vs-file-size.html" class="guide-card">
-          <strong style="color: var(--text-heading);">Dimensions vs. File Size (KB):</strong>
-          <p class="text-muted mt-1" style="font-size: 0.875rem;">Understand the difference between pixel resolution (width × height) and storage byte size, and how to balance clarity with file size constraints.</p>
+          <strong>Pixels or kilobytes?</strong>
+          <p class="text-muted mt-1">Understand which setting to change when a form rejects your image.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a href="guides/compression-targets-guide.html" class="guide-card">
-          <strong style="color: var(--text-heading);">Compression Targets (20KB, 50KB, 100KB):</strong>
-          <p class="text-muted mt-1" style="font-size: 0.875rem;">Learn how adaptive quality quantization works and why extreme limits require proportional dimension adjustments.</p>
+          <strong>Meet a strict file limit</strong>
+          <p class="text-muted mt-1">Prepare a 20 KB, 50 KB or 100 KB file while keeping it readable.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a href="guides/image-formats-guide.html" class="guide-card">
-          <strong style="color: var(--text-heading);">JPEG vs. PNG vs. WebP:</strong>
-          <p class="text-muted mt-1" style="font-size: 0.875rem;">When to use JPEG for photos, PNG for transparent graphics, and WebP for next-generation efficient web delivery.</p>
+          <strong>Choose the right format</strong>
+          <p class="text-muted mt-1">Compare JPEG, PNG and WebP for photos, signatures and documents.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
         </a>
       </div>
     </section>
+
+    <aside class="related-tool"><div><span class="eyebrow">ALSO ON APPLYREADY</span><h2>One less thing between you and your next role.</h2><p>Create a professional resume with eight templates and free PDF, Word and text exports.</p></div><a class="btn btn-secondary" href="resume.html">Open resume builder <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></aside>
 
   </main>
 
@@ -434,12 +435,12 @@
     <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
-  <script src="js/site.js"></script>
+  <script src="js/site.js?v=20260930"></script>
 
   <!-- DEPENDENCIES (CDN) -->
   <script src="js/vendor/cropper.min.js"></script>
 
   <!-- Application Logic -->
-  <script src="js/resizer.js"></script>
+  <script src="js/resizer.js?v=20260930"></script>
 </body>
 </html>
