@@ -91,6 +91,8 @@ const server = http.createServer((req,res) => {
   for(const [template,config] of Object.entries(TEMPLATES)) {
     await page.locator('#tabDesign').click();await page.locator(`[data-template-id="${template}"] .btn-select-template`).click();
     ok((await page.locator('#resumeSheet').textContent()).includes('GRANT_MARKER'),`${template}: template switch preserves optional content`);
+    ok(await page.getByRole('button',{name:'Full preview of '+config.name,exact:true}).count()===1,`${template}: preview has an unambiguous accessible name`);
+    ok(await page.getByRole('button',{name:'Use '+config.name+' template',exact:true}).getAttribute('aria-pressed')==='true',`${template}: selected template is announced`);
     const download=page.waitForEvent('download');await page.locator('#btnQuickPDF').click();const file=await download;const filename=path.join(output,`${template}.pdf`);await file.saveAs(filename);
     const text=execFileSync('pdftotext',[filename,'-'],{encoding:'utf8'});
     for(const marker of ['VOLUNTEER_MARKER','LANGUAGE_MARKER','PUBLICATION_MARKER','TEACHING_MARKER','GRANT_MARKER'])ok(text.includes(marker),`${template}: actual PDF extraction lost ${marker}`);

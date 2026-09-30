@@ -822,11 +822,11 @@
         </div>
         <p class="template-card-desc">${escapeHTML(tmpl.description)}</p>
         <div class="template-card-actions">
-          <button type="button" class="btn btn-secondary btn-sm btn-preview-template" data-template="${key}" title="Full preview of ${escapeHTML(tmpl.name)}">
-            <i class="fa-regular fa-eye"></i> Preview
+          <button type="button" class="btn btn-secondary btn-sm btn-preview-template" data-template="${key}" title="Full preview of ${escapeHTML(tmpl.name)}" aria-label="Full preview of ${escapeHTML(tmpl.name)}">
+            <i aria-hidden="true" class="fa-regular fa-eye"></i> Preview
           </button>
-          <button type="button" class="btn ${resumeData.template === key ? 'btn-primary' : 'btn-outline-primary'} btn-sm btn-select-template" data-template="${key}">
-            ${resumeData.template === key ? '<i class="fa-solid fa-check"></i> Active' : 'Use'}
+          <button type="button" class="btn ${resumeData.template === key ? 'btn-primary' : 'btn-outline-primary'} btn-sm btn-select-template" data-template="${key}" aria-label="Use ${escapeHTML(tmpl.name)} template" aria-pressed="${resumeData.template === key}">
+            ${resumeData.template === key ? '<i aria-hidden="true" class="fa-solid fa-check"></i> Active' : 'Use'}
           </button>
         </div>
       `;
@@ -878,7 +878,7 @@
         if (btnApplyRecommended) {
           if (isDifferent) {
             btnApplyRecommended.classList.remove('hidden');
-            btnApplyRecommended.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Apply ${escapeHTML(tmpl.name)}'s Recommended Section Order`;
+            btnApplyRecommended.innerHTML = `<i aria-hidden="true" class="fa-solid fa-arrows-rotate"></i> Apply ${escapeHTML(tmpl.name)}'s Recommended Section Order`;
             btnApplyRecommended.onclick = () => {
               pushHistoryState();
               resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
@@ -902,7 +902,8 @@
       const btn = c.querySelector('.btn-select-template');
       if (btn) {
         btn.className = `btn ${isCurrent ? 'btn-primary' : 'btn-outline-primary'} btn-sm btn-select-template`;
-        btn.innerHTML = isCurrent ? '<i class="fa-solid fa-check"></i> Active' : 'Use';
+        btn.setAttribute('aria-pressed', String(isCurrent));
+        btn.innerHTML = isCurrent ? '<i aria-hidden="true" class="fa-solid fa-check"></i> Active' : 'Use';
       }
     });
 
@@ -956,17 +957,17 @@
         <div class="dynamic-item-header">
           <strong style="font-size: 0.85rem;">#${index + 1} Role / Company</strong>
           <div class="dynamic-item-actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-exp" data-id="${exp.id}" title="Move Up" ${index === 0 ? 'disabled' : ''}>
-              <i class="fa-solid fa-arrow-up"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-exp" data-id="${exp.id}" title="Move Up" aria-label="Move entry ${index + 1} up" ${index === 0 ? 'disabled' : ''}>
+              <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-exp" data-id="${exp.id}" title="Move Down" ${index === resumeData.experience.length - 1 ? 'disabled' : ''}>
-              <i class="fa-solid fa-arrow-down"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-exp" data-id="${exp.id}" title="Move Down" aria-label="Move entry ${index + 1} down" ${index === resumeData.experience.length - 1 ? 'disabled' : ''}>
+              <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="duplicate-exp" data-id="${exp.id}" title="Duplicate Entry">
-              <i class="fa-regular fa-copy"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="duplicate-exp" data-id="${exp.id}" title="Duplicate Entry" aria-label="Duplicate entry ${index + 1}">
+              <i aria-hidden="true" class="fa-regular fa-copy"></i>
             </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-exp" data-id="${exp.id}" title="Delete Entry">
-              <i class="fa-regular fa-trash-can"></i>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-exp" data-id="${exp.id}" title="Delete Entry" aria-label="Delete Entry">
+              <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
             </button>
           </div>
         </div>
@@ -1012,17 +1013,17 @@
         <div class="dynamic-item-header">
           <strong style="font-size: 0.85rem;">#${index + 1} Degree / School</strong>
           <div class="dynamic-item-actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-edu" data-id="${edu.id}" title="Move Up" ${index === 0 ? 'disabled' : ''}>
-              <i class="fa-solid fa-arrow-up"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-edu" data-id="${edu.id}" title="Move Up" aria-label="Move entry ${index + 1} up" ${index === 0 ? 'disabled' : ''}>
+              <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-edu" data-id="${edu.id}" title="Move Down" ${index === resumeData.education.length - 1 ? 'disabled' : ''}>
-              <i class="fa-solid fa-arrow-down"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-edu" data-id="${edu.id}" title="Move Down" aria-label="Move entry ${index + 1} down" ${index === resumeData.education.length - 1 ? 'disabled' : ''}>
+              <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="duplicate-edu" data-id="${edu.id}" title="Duplicate Entry">
-              <i class="fa-regular fa-copy"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="duplicate-edu" data-id="${edu.id}" title="Duplicate Entry" aria-label="Duplicate entry ${index + 1}">
+              <i aria-hidden="true" class="fa-regular fa-copy"></i>
             </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-edu" data-id="${edu.id}" title="Delete Entry">
-              <i class="fa-regular fa-trash-can"></i>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-edu" data-id="${edu.id}" title="Delete Entry" aria-label="Delete Entry">
+              <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
             </button>
           </div>
         </div>
@@ -1068,17 +1069,17 @@
         <div class="dynamic-item-header">
           <strong style="font-size: 0.85rem;">#${index + 1} Project</strong>
           <div class="dynamic-item-actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-proj" data-id="${proj.id}" title="Move Up" ${index === 0 ? 'disabled' : ''}>
-              <i class="fa-solid fa-arrow-up"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-proj" data-id="${proj.id}" title="Move Up" aria-label="Move entry ${index + 1} up" ${index === 0 ? 'disabled' : ''}>
+              <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-proj" data-id="${proj.id}" title="Move Down" ${index === resumeData.projects.length - 1 ? 'disabled' : ''}>
-              <i class="fa-solid fa-arrow-down"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-proj" data-id="${proj.id}" title="Move Down" aria-label="Move entry ${index + 1} down" ${index === resumeData.projects.length - 1 ? 'disabled' : ''}>
+              <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="duplicate-proj" data-id="${proj.id}" title="Duplicate Entry">
-              <i class="fa-regular fa-copy"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="duplicate-proj" data-id="${proj.id}" title="Duplicate Entry" aria-label="Duplicate entry ${index + 1}">
+              <i aria-hidden="true" class="fa-regular fa-copy"></i>
             </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-proj" data-id="${proj.id}" title="Delete Entry">
-              <i class="fa-regular fa-trash-can"></i>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-proj" data-id="${proj.id}" title="Delete Entry" aria-label="Delete Entry">
+              <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
             </button>
           </div>
         </div>
@@ -1138,7 +1139,7 @@
             <div class="dynamic-item-header">
               <strong style="font-size: 0.85rem;">Certification #${idx + 1}</strong>
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-cert" data-index="${idx}">
-                <i class="fa-regular fa-trash-can"></i>
+                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
             </div>
             <div class="form-row-3">
@@ -1176,7 +1177,7 @@
             <div style="display: flex; gap: 0.5rem; align-items: center;">
               <input type="text" class="form-control item-ach-text" value="${escapeHTML(text)}" data-index="${idx}" placeholder="e.g. Recipient of 2023 Leadership Award" style="flex: 1;">
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-ach" data-index="${idx}">
-                <i class="fa-regular fa-trash-can"></i>
+                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
             </div>
           `;
@@ -1199,7 +1200,7 @@
             <div class="dynamic-item-header">
               <strong style="font-size: 0.85rem;">Role / Organization</strong>
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-vol" data-index="${idx}">
-                <i class="fa-regular fa-trash-can"></i>
+                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
             </div>
             <div class="form-row-3">
@@ -1230,7 +1231,7 @@
               <input type="text" class="form-control item-lang-name" placeholder="Language (e.g. Spanish)" value="${escapeHTML(name)}" data-index="${idx}" style="flex: 2;">
               <input type="text" class="form-control item-lang-prof" placeholder="Proficiency (e.g. Professional Working)" value="${escapeHTML(prof)}" data-index="${idx}" style="flex: 2;">
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-lang" data-index="${idx}">
-                <i class="fa-regular fa-trash-can"></i>
+                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
             </div>
           `;
@@ -1254,7 +1255,7 @@
             <div style="display: flex; gap: 0.5rem; align-items: center;">
               <textarea class="form-control item-pub-text" data-index="${idx}" rows="2" placeholder="Full publication citation...">${escapeHTML(p.title || p.citation)}</textarea>
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-pub" data-index="${idx}">
-                <i class="fa-regular fa-trash-can"></i>
+                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
             </div>
           `;
@@ -1273,7 +1274,7 @@
             <div class="dynamic-item-header">
               <strong style="font-size: 0.85rem;">Teaching Entry</strong>
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-teach" data-index="${idx}">
-                <i class="fa-regular fa-trash-can"></i>
+                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
             </div>
             <div class="form-row-3">
@@ -1394,11 +1395,11 @@
             <span>${labels[key]}</span>
           </label>
           <div style="display: flex; gap: 0.3rem;">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="order-up" data-index="${index}" title="Move Up" ${index === 0 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
-              <i class="fa-solid fa-arrow-up"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="order-up" data-index="${index}" title="Move Up" aria-label="Move ${labels[key]} up" ${index === 0 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
+              <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="order-down" data-index="${index}" title="Move Down" ${index === order.length - 1 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
-              <i class="fa-solid fa-arrow-down"></i>
+            <button type="button" class="btn btn-secondary btn-sm" data-action="order-down" data-index="${index}" title="Move Down" aria-label="Move ${labels[key]} down" ${index === order.length - 1 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
+              <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
             </button>
           </div>
         </div>
@@ -1660,7 +1661,7 @@
       checklist.innerHTML = `
         <div class="review-item" style="border-left: 3px solid var(--accent-green);">
           <div class="review-item-content">
-            <i class="fa-solid fa-circle-check" style="color: var(--accent-green); margin-top: 0.15rem;"></i>
+            <i aria-hidden="true" class="fa-solid fa-circle-check" style="color: var(--accent-green); margin-top: 0.15rem;"></i>
             <span>All contact information, links, and sections conform to clean ATS formatting standards.</span>
           </div>
         </div>
@@ -1684,7 +1685,7 @@
 
       item.innerHTML = `
         <div class="review-item-content">
-          <i class="fa-solid ${icon}" style="margin-top: 0.15rem;"></i>
+          <i aria-hidden="true" class="fa-solid ${icon}" style="margin-top: 0.15rem;"></i>
           <span>${escapeHTML(iss.message)}</span>
         </div>
         <button type="button" class="btn btn-secondary btn-sm review-jump-btn" data-target="${iss.targetField || iss.section}">
@@ -2501,7 +2502,7 @@
     const originalHtml = btn ? btn.innerHTML : '';
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating PDF...';
+      btn.innerHTML = '<i aria-hidden="true" class="fa-solid fa-spinner fa-spin"></i> Generating PDF...';
     }
 
     try {
@@ -2561,7 +2562,7 @@
     const originalHtml = btn ? btn.innerHTML : '';
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Building DOCX...';
+      btn.innerHTML = '<i aria-hidden="true" class="fa-solid fa-spinner fa-spin"></i> Building DOCX...';
     }
 
     try {

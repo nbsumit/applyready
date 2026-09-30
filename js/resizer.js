@@ -476,7 +476,7 @@
         btnLockAspect.classList.toggle('active', isAspectLocked);
         btnLockAspect.setAttribute('aria-pressed', String(isAspectLocked));
         btnLockAspect.title = isAspectLocked ? 'Aspect ratio locked (proportional width & height)' : 'Aspect ratio unlocked';
-        btnLockAspect.innerHTML = isAspectLocked ? '<i class="fa-solid fa-lock"></i>' : '<i class="fa-solid fa-lock-open"></i>';
+        btnLockAspect.innerHTML = isAspectLocked ? '<i aria-hidden="true" class="fa-solid fa-lock"></i>' : '<i aria-hidden="true" class="fa-solid fa-lock-open"></i>';
         if (isAspectLocked) {
           const w = parseFloat(customWidthInput.value) || 350;
           const h = parseFloat(customHeightInput.value) || 350;
@@ -1099,7 +1099,7 @@
     processing = true;
     btnProcess.setAttribute('aria-busy', 'true');
     btnProcess.disabled = true;
-    btnProcess.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing & Compressing...';
+    btnProcess.innerHTML = '<i aria-hidden="true" class="fa-solid fa-spinner fa-spin"></i> Processing & Compressing...';
 
     try {
       const addDate = addDateCheckbox && addDateCheckbox.checked;
