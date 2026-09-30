@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApplyReady.in - Sarkari Exam Photo & Signature Resizer | 100% Client-Side & Private</title>
+  <meta name="description" content="Resize and compress photos & signatures for UPSC, SSC, IBPS, and state government exams strictly under KB limits. Add exam date. 100% free, safe, client-side browser processing.">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Cropper.js CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <div class="brand-icon">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <span>ApplyReady</span>
+        <span class="brand-tag">.in</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-link active">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Photo Resizer</span>
+        </a>
+        <a href="resume.html" class="nav-link">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Resume Builder</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- STEP 1: TRUST BADGE -->
+  <div class="trust-banner">
+    <div class="trust-content">
+      <span class="trust-badge-pill">Private & Safe</span>
+      <span><i class="fa-solid fa-lock"></i> <strong>100% Secure:</strong> All processing happens on your device. Your data never leaves your browser.</span>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+    
+    <!-- Hero Header -->
+    <header class="hero-header">
+      <h1 class="hero-title">Sarkari Exam Photo & Signature Resizer</h1>
+      <p class="hero-subtitle">
+        Crop to exact pixel dimensions, add official date stamp, and compress under strict 20KB / 50KB limits without quality loss. Zero uploads to servers.
+      </p>
+    </header>
+
+    <!-- Resizer Card -->
+    <div class="resizer-grid">
+
+      <!-- Left Column: Controls & Upload -->
+      <section class="app-card">
+        <h2 class="card-title">
+          <i class="fa-solid fa-sliders text-muted"></i>
+          <span>1. Select Exam Target Format</span>
+        </h2>
+
+        <!-- Format Dropdown Selector -->
+        <div class="form-group">
+          <label for="presetSelect" class="form-label">Exam Requirement Preset:</label>
+          <select id="presetSelect" class="form-select">
+            <option value="upsc-photo" selected>UPSC Photo (350x350px, under 50KB, Add Date)</option>
+            <option value="ssc-sig">SSC Signature (140x60px, under 20KB)</option>
+            <option value="ssc-photo">SSC Photo (350x450px, under 50KB, Add Date)</option>
+            <option value="ibps-photo">IBPS / Banking Photo (200x230px, under 50KB)</option>
+            <option value="ibps-sig">IBPS / Banking Signature (140x60px, under 20KB)</option>
+            <option value="custom">Custom Dimensions & Size</option>
+          </select>
+        </div>
+
+        <!-- Custom Dimension Controls (Hidden unless Custom is picked) -->
+        <div id="customControls" class="custom-dims-row hidden">
+          <div>
+            <label class="form-label" for="customWidth">Width (px)</label>
+            <input type="number" id="customWidth" class="form-control" value="350" min="50" max="2000">
+          </div>
+          <div>
+            <label class="form-label" for="customHeight">Height (px)</label>
+            <input type="number" id="customHeight" class="form-control" value="350" min="50" max="2000">
+          </div>
+          <div>
+            <label class="form-label" for="customMaxKB">Max Size (KB)</label>
+            <input type="number" id="customMaxKB" class="form-control" value="50" min="5" max="500">
+          </div>
+        </div>
+
+        <!-- Target Spec Info Pill -->
+        <div id="presetSummaryBox" class="meta-stats mt-2" style="justify-content: flex-start;">
+          <div class="meta-stat-item">
+            <span class="meta-stat-label">Target Dimensions</span>
+            <span class="meta-stat-val" id="specDims">350 x 350 px</span>
+          </div>
+          <div class="meta-stat-item">
+            <span class="meta-stat-label">Target File Size</span>
+            <span class="meta-stat-val" id="specSize">Under 50 KB</span>
+          </div>
+          <div class="meta-stat-item">
+            <span class="meta-stat-label">Output Type</span>
+            <span class="meta-stat-val">JPEG (Standard)</span>
+          </div>
+        </div>
+
+        <!-- Date on Photo Options -->
+        <div id="dateOptionsBox" class="date-strip-box">
+          <label class="checkbox-label">
+            <input type="checkbox" id="addDateCheckbox" checked>
+            <span>Add Date Strip at Bottom of Photo</span>
+          </label>
+          <div id="dateInputGroup" class="mt-2">
+            <label for="examDateInput" class="form-label text-sm">Date Printed on Photo (DD-MM-YYYY):</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="date" id="examDateInput" class="form-control" style="flex: 1;">
+              <button type="button" id="btnTodayDate" class="btn btn-secondary btn-sm" title="Set to Today">Today</button>
+            </div>
+            <div class="mt-2">
+              <label for="candidateNameInput" class="form-label text-sm">Candidate Name (Optional):</label>
+              <input type="text" id="candidateNameInput" class="form-control" placeholder="e.g. RAHUL SHARMA">
+              <p class="form-hint">Some exams require Name + Date printed at the bottom.</p>
+            </div>
+          </div>
+        </div>
+
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+        <!-- Step 2: Upload Zone -->
+        <h2 class="card-title">
+          <i class="fa-solid fa-cloud-arrow-up text-muted"></i>
+          <span>2. Upload Document</span>
+        </h2>
+
+        <div id="dropzone" class="dropzone">
+          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg" class="hidden">
+          <div class="dropzone-icon">
+            <i class="fa-solid fa-image"></i>
+          </div>
+          <div class="dropzone-text">Tap to Choose Image or Drag & Drop</div>
+          <div class="dropzone-sub">Supports JPG, PNG, WEBP (Smartphone camera photos welcome)</div>
+          <button type="button" id="btnBrowse" class="btn btn-secondary btn-sm mt-2">
+            <i class="fa-regular fa-folder-open"></i> Browse Files
+          </button>
+        </div>
+      </section>
+
+      <!-- Right Column: Cropping & Result Preview -->
+      <section class="app-card">
+        <h2 class="card-title">
+          <i class="fa-solid fa-crop text-muted"></i>
+          <span>3. Crop & Process</span>
+        </h2>
+
+        <!-- Empty State Placeholder -->
+        <div id="cropperPlaceholder" class="text-center" style="padding: 3rem 1rem; color: var(--text-muted);">
+          <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 3rem; margin-bottom: 1rem; color: #D1D5DB;"></i>
+          <p style="font-weight: 600; font-size: 1.1rem; color: var(--text-heading);">No image uploaded yet</p>
+          <p class="text-sm mt-2">Upload your photo or signature on the left to start cropping.</p>
+        </div>
+
+        <!-- Active Cropper Area -->
+        <div id="cropperActiveArea" class="hidden">
+          <div class="cropper-container-wrapper">
+            <img id="imageToCrop" src="" alt="Cropper source">
+          </div>
+
+          <!-- Cropper Controls -->
+          <div class="cropper-toolbar">
+            <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="Rotate Left">
+              <i class="fa-solid fa-rotate-left"></i> Rotate -90°
+            </button>
+            <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="Rotate Right">
+              <i class="fa-solid fa-rotate-right"></i> Rotate +90°
+            </button>
+            <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="Reset Crop">
+              <i class="fa-solid fa-arrow-rotate-back"></i> Reset
+            </button>
+            <button type="button" id="btnZoomIn" class="btn btn-secondary btn-sm" title="Zoom In">
+              <i class="fa-solid fa-magnifying-glass-plus"></i>
+            </button>
+            <button type="button" id="btnZoomOut" class="btn btn-secondary btn-sm" title="Zoom Out">
+              <i class="fa-solid fa-magnifying-glass-minus"></i>
+            </button>
+          </div>
+
+          <!-- Process Button -->
+          <div class="mt-4">
+            <button type="button" id="btnProcess" class="btn btn-primary btn-block">
+              <i class="fa-solid fa-bolt"></i> Process & Compress Image
+            </button>
+          </div>
+        </div>
+
+        <!-- Result Preview Section -->
+        <div id="resultArea" class="preview-result-card hidden">
+          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i> Ready for Exam Portal
+          </h3>
+
+          <div class="preview-image-box">
+            <img id="resultImage" src="" alt="Processed Result">
+          </div>
+
+          <div class="meta-stats">
+            <div class="meta-stat-item">
+              <span class="meta-stat-label">Dimensions</span>
+              <span class="meta-stat-val" id="resultDims">350 x 350 px</span>
+            </div>
+            <div class="meta-stat-item">
+              <span class="meta-stat-label">File Size</span>
+              <span class="meta-stat-val status-ok" id="resultFileSize">38.2 KB</span>
+            </div>
+            <div class="meta-stat-item">
+              <span class="meta-stat-label">Exam Verification</span>
+              <span class="meta-stat-val status-ok"><i class="fa-solid fa-check"></i> Passed</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <a id="btnDownload" download="ApplyReady_Photo.jpg" class="btn btn-success btn-block">
+              <i class="fa-solid fa-download"></i> Download Image
+            </a>
+            <button type="button" id="btnCropAgain" class="btn btn-secondary btn-block">
+              <i class="fa-solid fa-sliders"></i> Re-adjust Crop
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- Educational Exam Specifications Info Box -->
+    <section class="app-card" style="margin-top: 1rem;">
+      <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;">
+        <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Official Exam Guidelines Reference
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; font-size: 0.875rem;">
+        <div style="background: var(--bg-page); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <strong>UPSC Civil Services / NDA / CDS:</strong>
+          <p class="text-muted mt-1">Photo must not be more than 10 days old with candidate's name and date printed clearly at the bottom. Max 50KB, min 20KB.</p>
+        </div>
+        <div style="background: var(--bg-page); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <strong>SSC CGL / CHSL / MTS:</strong>
+          <p class="text-muted mt-1">Signature must be on white paper in black/blue ink, 140x60px, strictly between 10KB to 20KB. Illegible signatures lead to rejection.</p>
+        </div>
+        <div style="background: var(--bg-page); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <strong>IBPS Bank PO / Clerk / SBI:</strong>
+          <p class="text-muted mt-1">Photograph dimensions 200 x 230 pixels, file size 20KB - 50KB. Signature dimensions 140 x 60 pixels, file size 10KB - 20KB.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- STEP 4: MONETIZATION MODAL -->
+  <div id="monetizeModal" class="modal-overlay">
+    <div class="modal-card">
+      <button type="button" class="modal-close-btn" id="btnCloseModal" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="modal-celebrate-icon">
+        <i class="fa-solid fa-mug-hot"></i>
+      </div>
+
+      <h3 class="modal-title">Success! Your files are ready.</h3>
+
+      <p class="modal-body-text">
+        ApplyReady is built by a student, for students. We saved you a trip to the cyber cafe and kept your data 100% private. If this helped you today, please consider supporting the servers!
+      </p>
+
+      <a href="https://razorpay.com/@nbsumit" target="_blank" rel="noopener noreferrer" class="btn-chai" id="btnChaiModal">
+        <i class="fa-solid fa-heart" style="color: #F87171;"></i>
+        <span>☕ Buy me a Chai (₹30)</span>
+        <span class="chai-badge">Razorpay</span>
+      </a>
+
+      <div>
+        <a href="#" class="modal-dismiss-link" id="linkDismissModal">Maybe next time, take me back</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div>
+        <strong>ApplyReady.in</strong> — Free, Fast & Private utilities for Indian Students & Aspirants.
+      </div>
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">Photo Resizer</a>
+        <a href="resume.html" class="footer-link">Resume Builder</a>
+        <a href="https://razorpay.com/@nbsumit" target="_blank" rel="noopener noreferrer" class="footer-link">Support Us ☕</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- DEPENDENCIES (CDN) -->
+  <!-- Cropper.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <!-- Compressor.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js"></script>
+
+  <!-- Application Logic -->
+  <script src="js/resizer.js"></script>
+</body>
+</html>

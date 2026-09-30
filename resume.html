@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApplyReady.in - Single-Column ATS-Friendly Resume Builder | 100% Client-Side & Free</title>
+  <meta name="description" content="Build a clean, single-column ATS resume that passes Applicant Tracking Systems with 100% formatting compatibility. Real-time live preview, instant A4 PDF download. No login required.">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📄</text></svg>">
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <div class="brand-icon">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <span>ApplyReady</span>
+        <span class="brand-tag">.in</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">
+          <i class="fa-solid fa-crop-simple"></i>
+          <span>Photo Resizer</span>
+        </a>
+        <a href="resume.html" class="nav-link active">
+          <i class="fa-regular fa-file-lines"></i>
+          <span>Resume Builder</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- STEP 1: TRUST BADGE -->
+  <div class="trust-banner">
+    <div class="trust-content">
+      <span class="trust-badge-pill">Private & Safe</span>
+      <span><i class="fa-solid fa-lock"></i> <strong>100% Secure:</strong> All processing happens on your device. Your data never leaves your browser.</span>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+    
+    <!-- Hero Header -->
+    <header class="hero-header" style="margin-bottom: 1.5rem;">
+      <h1 class="hero-title">Single-Column ATS-Friendly Resume Builder</h1>
+      <p class="hero-subtitle">
+        Zero tables, zero graphics, zero complex sidebars. Built to pass corporate and Indian IT/Govt ATS screening algorithms with 100% readability.
+      </p>
+    </header>
+
+    <!-- Split Screen Layout -->
+    <div class="resume-app-layout">
+
+      <!-- LEFT: Form Input Panel -->
+      <section class="form-panel">
+        
+        <div class="panel-header">
+          <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-heading); display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-pen-to-square text-muted"></i> Resume Details
+          </h2>
+          <div class="panel-actions">
+            <button type="button" id="btnLoadSample" class="btn btn-outline-primary btn-sm" title="Populate with sample data">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Load Sample
+            </button>
+            <button type="button" id="btnClearForm" class="btn btn-secondary btn-sm" title="Clear all fields">
+              <i class="fa-regular fa-trash-can"></i> Clear
+            </button>
+          </div>
+        </div>
+
+        <div class="form-sections-container">
+
+          <!-- SECTION 1: Personal Details -->
+          <div class="accordion-section open" id="sec-personal">
+            <div class="accordion-header">
+              <span><i class="fa-solid fa-user-tie" style="margin-right: 0.5rem; color: var(--primary);"></i> 1. Contact & Personal Details</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="accordion-content">
+              <div class="form-group">
+                <label class="form-label" for="fullName">Full Name *</label>
+                <input type="text" id="fullName" class="form-control" placeholder="e.g. Rahul Sharma">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="targetTitle">Professional Headline / Target Role</label>
+                <input type="text" id="targetTitle" class="form-control" placeholder="e.g. Full Stack Developer | B.Tech CSE">
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                  <label class="form-label" for="email">Email *</label>
+                  <input type="email" id="email" class="form-control" placeholder="rahul.sharma@gmail.com">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="phone">Phone *</label>
+                  <input type="text" id="phone" class="form-control" placeholder="+91 98765 43210">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="location">Location (City, State)</label>
+                <input type="text" id="location" class="form-control" placeholder="e.g. Bengaluru, Karnataka, India">
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                  <label class="form-label" for="linkedin">LinkedIn URL</label>
+                  <input type="text" id="linkedin" class="form-control" placeholder="linkedin.com/in/rahulsharma">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="github">GitHub / Portfolio</label>
+                  <input type="text" id="github" class="form-control" placeholder="github.com/rahulsharma">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Professional Summary -->
+          <div class="accordion-section open" id="sec-summary">
+            <div class="accordion-header">
+              <span><i class="fa-solid fa-align-left" style="margin-right: 0.5rem; color: var(--primary);"></i> 2. Professional Summary</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="accordion-content">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="summaryText">Summary / Objective</label>
+                <textarea id="summaryText" class="form-control" rows="4" placeholder="Brief 3-4 sentence summary highlighting your core skills, education, and career aspirations..."></textarea>
+                <p class="form-hint">Keep it action-oriented with strong industry keywords.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3: Education -->
+          <div class="accordion-section open" id="sec-education">
+            <div class="accordion-header">
+              <span><i class="fa-solid fa-graduation-cap" style="margin-right: 0.5rem; color: var(--primary);"></i> 3. Education</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="accordion-content">
+              <div id="educationList"></div>
+              <button type="button" id="btnAddEducation" class="btn btn-outline-primary btn-sm btn-block mt-2">
+                <i class="fa-solid fa-plus"></i> Add Education
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION 4: Work Experience -->
+          <div class="accordion-section open" id="sec-experience">
+            <div class="accordion-header">
+              <span><i class="fa-solid fa-briefcase" style="margin-right: 0.5rem; color: var(--primary);"></i> 4. Work Experience & Internships</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="accordion-content">
+              <div id="experienceList"></div>
+              <button type="button" id="btnAddExperience" class="btn btn-outline-primary btn-sm btn-block mt-2">
+                <i class="fa-solid fa-plus"></i> Add Experience
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION 5: Projects -->
+          <div class="accordion-section open" id="sec-projects">
+            <div class="accordion-header">
+              <span><i class="fa-solid fa-diagram-project" style="margin-right: 0.5rem; color: var(--primary);"></i> 5. Key Projects</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="accordion-content">
+              <div id="projectsList"></div>
+              <button type="button" id="btnAddProject" class="btn btn-outline-primary btn-sm btn-block mt-2">
+                <i class="fa-solid fa-plus"></i> Add Project
+              </button>
+            </div>
+          </div>
+
+          <!-- SECTION 6: Skills -->
+          <div class="accordion-section open" id="sec-skills">
+            <div class="accordion-header">
+              <span><i class="fa-solid fa-gears" style="margin-right: 0.5rem; color: var(--primary);"></i> 6. Technical & Core Skills</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="accordion-content">
+              <div class="form-group">
+                <label class="form-label" for="skillLanguages">Programming Languages</label>
+                <input type="text" id="skillLanguages" class="form-control" placeholder="e.g. JavaScript, TypeScript, Python, Java, C++">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="skillFrameworks">Frameworks & Libraries</label>
+                <input type="text" id="skillFrameworks" class="form-control" placeholder="e.g. React.js, Node.js, Express, Next.js, Django">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="skillTools">Developer Tools & Databases</label>
+                <input type="text" id="skillTools" class="form-control" placeholder="e.g. Git, GitHub, MongoDB, PostgreSQL, Docker, Postman">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="skillOther">Core Competencies / Coursework</label>
+                <input type="text" id="skillOther" class="form-control" placeholder="e.g. Data Structures, Algorithms, DBMS, Operating Systems, OOPs">
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- RIGHT: Live Preview & Action Toolbar -->
+      <section class="preview-panel">
+        
+        <!-- Live Action Toolbar -->
+        <div class="preview-toolbar">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span class="ats-score-pill">
+              <i class="fa-solid fa-shield-check"></i> ATS Verified: 100%
+            </span>
+            <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem;">
+              <label for="fontSelect" style="font-weight: 600;">Font:</label>
+              <select id="fontSelect" class="form-select" style="min-height: 36px; padding: 0.2rem 0.6rem; font-size: 0.85rem; width: auto;">
+                <option value="serif" selected>Classic Serif (Times)</option>
+                <option value="sans">Clean Sans-Serif (Modern)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" id="btnDownloadPDF" class="btn btn-primary">
+              <i class="fa-solid fa-file-pdf"></i> Download PDF (A4)
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable A4 Document Viewport -->
+        <div class="resume-preview-outer">
+          
+          <!-- Strict ATS-Friendly Resume Sheet -->
+          <article id="resumeSheet" class="ats-resume-sheet">
+            
+            <!-- Header Section -->
+            <header class="resume-header">
+              <h1 class="resume-name" id="prevFullName">RAHUL SHARMA</h1>
+              <div class="resume-target-title" id="prevTargetTitle">Full Stack Developer | B.Tech Computer Science</div>
+              
+              <div class="resume-contact-line" id="prevContactLine">
+                <span class="resume-contact-item" id="prevPhone">+91 98765 43210</span>
+                <span>•</span>
+                <span class="resume-contact-item" id="prevEmail">rahul.sharma@gmail.com</span>
+                <span>•</span>
+                <span class="resume-contact-item" id="prevLocation">Bengaluru, Karnataka</span>
+                <span id="prevSepLinkedIn">•</span>
+                <span class="resume-contact-item" id="prevLinkedIn">linkedin.com/in/rahulsharma</span>
+                <span id="prevSepGitHub">•</span>
+                <span class="resume-contact-item" id="prevGitHub">github.com/rahulsharma</span>
+              </div>
+            </header>
+
+            <!-- Summary Section -->
+            <section class="resume-section" id="prevSectionSummary">
+              <h2 class="resume-section-title">PROFESSIONAL SUMMARY</h2>
+              <p id="prevSummary" style="font-size: 10pt; line-height: 1.4; text-align: justify;">
+                Motivated software engineer with practical experience in full-stack web development, RESTful APIs, and database architecture. Proven track record of architecting scalable applications and collaborating in agile teams. Passionate about solving complex algorithmic challenges and optimizing application performance.
+              </p>
+            </section>
+
+            <!-- Education Section -->
+            <section class="resume-section" id="prevSectionEducation">
+              <h2 class="resume-section-title">EDUCATION</h2>
+              <div id="prevEducationList">
+                <!-- Dynamically populated education items -->
+              </div>
+            </section>
+
+            <!-- Experience Section -->
+            <section class="resume-section" id="prevSectionExperience">
+              <h2 class="resume-section-title">WORK EXPERIENCE</h2>
+              <div id="prevExperienceList">
+                <!-- Dynamically populated experience items -->
+              </div>
+            </section>
+
+            <!-- Projects Section -->
+            <section class="resume-section" id="prevSectionProjects">
+              <h2 class="resume-section-title">KEY PROJECTS</h2>
+              <div id="prevProjectsList">
+                <!-- Dynamically populated project items -->
+              </div>
+            </section>
+
+            <!-- Skills Section -->
+            <section class="resume-section" id="prevSectionSkills">
+              <h2 class="resume-section-title">TECHNICAL SKILLS</h2>
+              <div class="resume-skills-grid">
+                <div class="resume-skills-row" id="prevRowLanguages">
+                  <span class="skills-category">Languages:</span>
+                  <span id="prevSkillsLanguages">JavaScript, TypeScript, Python, C++, SQL</span>
+                </div>
+                <div class="resume-skills-row" id="prevRowFrameworks">
+                  <span class="skills-category">Frameworks/Libraries:</span>
+                  <span id="prevSkillsFrameworks">React.js, Node.js, Express, Tailwind CSS, Redux Toolkit</span>
+                </div>
+                <div class="resume-skills-row" id="prevRowTools">
+                  <span class="skills-category">Tools & Databases:</span>
+                  <span id="prevSkillsTools">MongoDB, PostgreSQL, Git, Docker, Postman, Linux</span>
+                </div>
+                <div class="resume-skills-row" id="prevRowOther">
+                  <span class="skills-category">Core Concepts:</span>
+                  <span id="prevSkillsOther">Data Structures, Algorithms, DBMS, Operating Systems, Computer Networks</span>
+                </div>
+              </div>
+            </section>
+
+          </article>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- STEP 4: MONETIZATION MODAL -->
+  <div id="monetizeModal" class="modal-overlay">
+    <div class="modal-card">
+      <button type="button" class="modal-close-btn" id="btnCloseModal" title="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="modal-celebrate-icon">
+        <i class="fa-solid fa-mug-hot"></i>
+      </div>
+
+      <h3 class="modal-title">Success! Your files are ready.</h3>
+
+      <p class="modal-body-text">
+        ApplyReady is built by a student, for students. We saved you a trip to the cyber cafe and kept your data 100% private. If this helped you today, please consider supporting the servers!
+      </p>
+
+      <a href="https://razorpay.com/@nbsumit" target="_blank" rel="noopener noreferrer" class="btn-chai" id="btnChaiModal">
+        <i class="fa-solid fa-heart" style="color: #F87171;"></i>
+        <span>☕ Buy me a Chai (₹30)</span>
+        <span class="chai-badge">Razorpay</span>
+      </a>
+
+      <div>
+        <a href="#" class="modal-dismiss-link" id="linkDismissModal">Maybe next time, take me back</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div>
+        <strong>ApplyReady.in</strong> — Free, Fast & Private utilities for Indian Students & Aspirants.
+      </div>
+      <div class="footer-links">
+        <a href="index.html" class="footer-link">Photo Resizer</a>
+        <a href="resume.html" class="footer-link">Resume Builder</a>
+        <a href="https://razorpay.com/@nbsumit" target="_blank" rel="noopener noreferrer" class="footer-link">Support Us ☕</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- DEPENDENCIES (CDN) -->
+  <!-- html2pdf.js Bundle -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- Application Logic -->
+  <script src="js/resume.js"></script>
+</body>
+</html>
