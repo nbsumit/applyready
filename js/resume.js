@@ -24,7 +24,7 @@
         degree: 'B.Tech in Computer Science & Engineering',
         institution: 'National Institute of Technology (NIT)',
         location: 'Surathkal, India',
-        duration: '2020 – 2024',
+        duration: '2020 - 2024',
         score: 'CGPA: 8.8 / 10'
       },
       {
@@ -32,7 +32,7 @@
         degree: 'Senior Secondary (Class XII) - CBSE Science',
         institution: 'Delhi Public School',
         location: 'Delhi, India',
-        duration: '2018 – 2020',
+        duration: '2018 - 2020',
         score: 'Percentage: 94.4%'
       }
     ],
@@ -42,7 +42,7 @@
         role: 'Software Developer Intern',
         company: 'TechCorp Solutions',
         location: 'Bengaluru, India',
-        duration: 'Jan 2024 – Jun 2024',
+        duration: 'Jan 2024 - Jun 2024',
         bulletsText: 'Developed and deployed RESTful microservices in Node.js, reducing server response latency by 22% across 50,000+ active users.\nIntegrated Redis caching for hot database queries, decreasing PostgreSQL load by 35%.\nCollaborated with senior engineers in sprint reviews, CI/CD pipeline automation via GitHub Actions, and unit testing with Jest.'
       }
     ],
@@ -193,7 +193,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
           <div class="form-group">
             <label class="form-label text-sm">Graduation Year / Dates</label>
-            <input type="text" class="form-control item-duration" value="${escapeHtml(item.duration)}" placeholder="e.g. 2020 – 2024">
+            <input type="text" class="form-control item-duration" value="${escapeHtml(item.duration)}" placeholder="e.g. 2020 - 2024">
           </div>
           <div class="form-group">
             <label class="form-label text-sm">CGPA / Percentage</label>
@@ -232,7 +232,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
           <div class="form-group">
             <label class="form-label text-sm">Duration / Dates</label>
-            <input type="text" class="form-control item-duration" value="${escapeHtml(item.duration)}" placeholder="e.g. Jan 2024 – Jun 2024">
+            <input type="text" class="form-control item-duration" value="${escapeHtml(item.duration)}" placeholder="e.g. Jan 2024 - Jun 2024">
           </div>
           <div class="form-group">
             <label class="form-label text-sm">Location</label>
@@ -351,7 +351,7 @@
         itemEl.innerHTML = `
           <div class="resume-entry-header">
             <div>
-              <span class="resume-entry-title">${escapeHtml(edu.degree)}</span> — 
+              <span class="resume-entry-title">${escapeHtml(edu.degree)}</span> | 
               <span class="resume-entry-subtitle">${escapeHtml(edu.institution)}</span>
             </div>
             <div class="resume-entry-date">${escapeHtml(edu.duration)}</div>
@@ -725,7 +725,7 @@
           degree: 'B.Tech in Computer Science & Engineering',
           institution: 'National Institute of Technology (NIT)',
           location: 'Surathkal, India',
-          duration: '2020 – 2024',
+          duration: '2020 - 2024',
           score: 'CGPA: 8.8 / 10'
         },
         {
@@ -733,7 +733,7 @@
           degree: 'Senior Secondary (Class XII) - CBSE Science',
           institution: 'Delhi Public School',
           location: 'Delhi, India',
-          duration: '2018 – 2020',
+          duration: '2018 - 2020',
           score: 'Percentage: 94.4%'
         }
       ],
@@ -743,7 +743,7 @@
           role: 'Software Developer Intern',
           company: 'TechCorp Solutions',
           location: 'Bengaluru, India',
-          duration: 'Jan 2024 – Jun 2024',
+          duration: 'Jan 2024 - Jun 2024',
           bulletsText: 'Developed and deployed RESTful microservices in Node.js, reducing server response latency by 22% across 50,000+ active users.\nIntegrated Redis caching for hot database queries, decreasing PostgreSQL load by 35%.\nCollaborated with senior engineers in sprint reviews, CI/CD pipeline automation via GitHub Actions, and unit testing with Jest.'
         }
       ],
