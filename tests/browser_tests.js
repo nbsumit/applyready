@@ -159,8 +159,8 @@ const server = http.createServer((req,res) => {
   await page.emulateMedia({media:'print'});
   ok(await page.locator('#resumeVisualPages').evaluate(el=>getComputedStyle(el).display!=='none'),'Browser print keeps the visible preview pages');
   ok(await page.locator('#resumeSheet').evaluate(el=>getComputedStyle(el).display==='none'),'Browser print does not use the hidden continuous source');
-  await page.emulateMedia({media:'screen'});
   const unicodePdf=path.join(output,'unicode-browser.pdf');await page.pdf({path:unicodePdf,preferCSSPageSize:true});
+  await page.emulateMedia({media:'screen'});
   const unicodeInfo=execFileSync('pdfinfo',[unicodePdf],{encoding:'utf8'});
   const browserPages=Number(unicodeInfo.match(/Pages:\s+(\d+)/)[1]);
   ok(browserPages===visiblePrintPages,`Browser print page count matches preview (${browserPages} PDF vs ${visiblePrintPages} preview)`);
