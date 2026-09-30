@@ -9,8 +9,8 @@
   --bg-page: #f6f7f8; --bg-card: #fff; --bg-card-subtle: #f4f6f7;
   --text-heading: #182126; --text-main: #344148; --text-muted: #5c6970;
   --border-color: #dfe4e7; --input-border: #b9c3c9; --input-bg: #fff; --preview-backdrop: #e8ecef;
-  --radius-lg: 10px; --radius-md: 8px; --radius-sm: 6px;
-  --shadow-sm: 0 1px 2px rgba(24,33,38,.03); --shadow-md: 0 4px 16px rgba(24,33,38,.06);
+  --radius-lg: 20px; --radius-md: 14px; --radius-sm: 10px;
+  --shadow-sm: 0 2px 8px rgba(24,33,38,.04); --shadow-md: 0 12px 34px rgba(24,33,38,.08); --shadow-lg: 0 20px 55px rgba(24,33,38,.12);
 }
 [data-theme='dark'] {
   --accent-danger: #fda4af;
@@ -313,10 +313,43 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .template-card-actions { flex-direction: column; }
   .template-thumb-wrap { height: 125px; }
 }
+/* Polished surfaces, motion, content pages, and true paginated resume preview. */
+@media screen {
+  .navbar { background: var(--bg-card); backdrop-filter: blur(14px); }
+  .brand-img { border-radius: var(--radius-sm); }
+  .nav-link, .theme-toggle-btn, .nav-support-link, .preset-shortcut, .btn, .form-control, .form-select, .app-card, .form-panel, .preview-toolbar, .guide-card, .accordion-section, .dynamic-item, .dropzone, .advanced-disclosure, .preview-image-box, .template-card { transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease; }
+  .nav-link, .theme-toggle-btn, .preset-shortcut, .btn, .form-control, .form-select, .advanced-disclosure, .accordion-section, .dynamic-item { border-radius: var(--radius-sm); }
+  .app-card, .form-panel, .preview-toolbar, .guide-card, .dropzone, .resume-preview-outer { border-radius: var(--radius-lg); }
+  .theme-toggle-btn { border: 1px solid var(--border-color); background: var(--bg-card-subtle); }
+  .theme-toggle-btn:hover { background: var(--primary-light); color: var(--primary); border-color: var(--primary); }
+  .theme-toggle-btn i { transition: transform .22s ease; }
+  .theme-toggle-btn.is-dark i { transform: rotate(180deg); }
+  .btn:hover:not(:disabled), .preset-shortcut:hover { transform: translateY(-1px); }
+  .app-card { box-shadow: var(--shadow-md); }
+  .form-panel, .preview-toolbar { box-shadow: var(--shadow-sm); }
+  .resume-preview-outer { padding: 1.5rem; background: var(--preview-backdrop); }
+  .resume-preview-wrapper { position: relative; display: block; margin: 0 auto; }
+  .resume-visual-pages { display: flex; width: max-content; flex-direction: column; gap: 1.25rem; transform-origin: top left; }
+  .resume-visual-page { flex: none; margin: 0 !important; overflow: hidden; transform: none !important; transform-origin: top left; box-shadow: 0 12px 34px rgba(18,33,59,.16); }
+  .resume-visual-page.page-a4 { height: 297mm; min-height: 297mm; }
+  .resume-visual-page.page-letter { height: 11in; min-height: 11in; }
+  .resume-source-sheet { position: absolute !important; inset: 0 auto auto 0; visibility: hidden !important; pointer-events: none !important; margin: 0 !important; box-shadow: none !important; transform-origin: top left !important; }
+  .content-page .guide-content { max-width: 900px; padding: .5rem 0 2rem; }
+  .content-page .guide-content > header { max-width: 760px; margin-bottom: 1.5rem !important; }
+  .content-page .guide-content > .app-card { padding: clamp(1.35rem, 3vw, 2.35rem); border: 1px solid var(--border-color); background: var(--bg-card); }
+  .content-page .guide-content > .app-card h2 { margin: 2rem 0 .7rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); font-size: 1.02rem; letter-spacing: -.015em; }
+  .content-page .guide-content > .app-card h2:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+  .content-page .guide-content > .app-card p, .content-page .guide-content > .app-card li { line-height: 1.82; }
+  .content-page .guide-content > .app-card ul, .content-page .guide-content > .app-card ol { padding-left: 1.25rem; }
+  .content-page .guide-content > .app-card code { padding: .12rem .38rem; border: 1px solid var(--border-color); border-radius: 7px; background: var(--bg-card-subtle); }
+  .content-page .guide-content a { text-underline-offset: .18em; text-decoration-thickness: .08em; }
+}
+
 @media print {
-  .skip-link, .hero-export, .task-notification, .template-preview-backdrop, .preview-empty-note { display: none !important; }
+  .skip-link, .hero-export, .task-notification, .template-preview-backdrop, .preview-empty-note, .resume-visual-pages { display: none !important; }
   .resume-preview-outer { max-height: none !important; overflow: visible !important; border: 0 !important; }
   .resume-preview-wrapper { height: auto !important; }
+  .resume-source-sheet { position: static !important; visibility: visible !important; pointer-events: auto !important; }
   .ats-resume-sheet { min-height: 0 !important; height: auto !important; color-scheme: light; }
   .resume-header { break-inside: avoid; }
   .resume-section { break-inside: auto; }

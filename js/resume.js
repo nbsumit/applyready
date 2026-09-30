@@ -328,6 +328,7 @@
     updateUndoRedoButtons();
     runResumeReview();
 
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const sheet = getEl('resumeSheet'); if (sheet) visualPageCount = renderPaginatedPreview(sheet, pdfPageCount); updatePreviewScale(); });
     window.addEventListener('resize', () => { updatePreviewScale(); scaleTemplateModal(); });
     window.addEventListener('orientationchange', () => setTimeout(updatePreviewScale, 150));
   }
@@ -644,9 +645,104 @@
     const density = (data.design && data.design.density) || tmpl.density || 'standard';
     const fontSize = (data.design && data.design.fontSize) || 'standard';
     const pageSize = (data.design && data.design.pageSize) || 'a4';
+    const sourceClass = sheet.id === 'resumeSheet' ? ' resume-source-sheet' : '';
 
-    sheet.className = `ats-resume-sheet template-${templateId} page-${pageSize} density-${density} font-size-${fontSize} ${fontClass}`;
+    sheet.className = `ats-resume-sheet template-${templateId} page-${pageSize} density-${density} font-size-${fontSize} ${fontClass}${sourceClass}`;
     sheet.innerHTML = renderResumeDataToHTML(data, templateId);
+  }
+
+  function renderPaginatedPreview(source, expectedPages) {
+    const target = getEl('resumeVisualPages');
+    if (!source || !target) return 1;
+    target.innerHTML = '';
+    const pageClass = Array.from(source.classList).filter(name => name !== 'resume-source-sheet').join(' ');
+    const sourceHeader = source.querySelector(':scope > .resume-header');
+    const sectionsRoot = source.querySelector(':scope > div');
+    const sourceSections = sectionsRoot ? Array.from(sectionsRoot.children).filter(node => node.classList && node.classList.contains('resume-section')) : [];
+    const wantedPages = Math.max(1, Number(expectedPages) || 1);
+    const pages = [];
+
+    function createPage(includeHeader) {
+      const page = document.createElement('article');
+      page.className = `${pageClass} resume-visual-page`;
+      page.dataset.previewPage = String(pages.length + 1);
+      if (includeHeader && sourceHeader) page.appendChild(sourceHeader.cloneNode(true));
+      const sections = document.createElement('div');
+      sections.className = 'resume-page-sections';
+      page.appendChild(sections);
+      target.appendChild(page);
+      const record = { page, sections };
+      pages.push(record);
+      return record;
+    }
+    function isOverflowing(page) { return page.scrollHeight > page.clientHeight + 2; }
+    function sectionParts(original) {
+      const children = Array.from(original.children);
+      const title = children.find(node => node.classList && node.classList.contains('resume-section-title')) || null;
+      const bodyNodes = children.filter(node => node !== title);
+      if (bodyNodes.length === 1 && bodyNodes[0].tagName === 'DIV' && bodyNodes[0].children.length) return { title, wrapper: bodyNodes[0], units: Array.from(bodyNodes[0].children) };
+      return { title, wrapper: null, units: bodyNodes };
+    }
+    function makeSectionChunk(original, includeTitle) {
+      const parts = sectionParts(original);
+      const shell = original.cloneNode(false);
+      if (includeTitle && parts.title) shell.appendChild(parts.title.cloneNode(true));
+      let holder = shell;
+      if (parts.wrapper) {
+        const wrapper = parts.wrapper.cloneNode(false);
+        shell.appendChild(wrapper);
+        holder = wrapper;
+      }
+      return { shell, holder, units: parts.units };
+    }
+
+    let current = createPage(true);
+    function splitOversizedSection(original) {
+      const parts = sectionParts(original);
+      if (!parts.units.length) { current.sections.appendChild(original.cloneNode(true)); return; }
+      let chunk = makeSectionChunk(original, true);
+      current.sections.appendChild(chunk.shell);
+      let unitsOnChunk = 0;
+      parts.units.forEach(unit => {
+        const clone = unit.cloneNode(true);
+        chunk.holder.appendChild(clone);
+        unitsOnChunk += 1;
+        if (isOverflowing(current.page) && unitsOnChunk > 1) {
+          chunk.holder.removeChild(clone);
+          current = createPage(false);
+          chunk = makeSectionChunk(original, false);
+          current.sections.appendChild(chunk.shell);
+          chunk.holder.appendChild(clone);
+          unitsOnChunk = 1;
+        }
+      });
+    }
+
+    sourceSections.forEach(section => {
+      const clone = section.cloneNode(true);
+      current.sections.appendChild(clone);
+      if (!isOverflowing(current.page)) return;
+      current.sections.removeChild(clone);
+      if (current.sections.children.length > 0 || current.page.querySelector('.resume-header')) current = createPage(false);
+      const retry = section.cloneNode(true);
+      current.sections.appendChild(retry);
+      if (!isOverflowing(current.page)) return;
+      current.sections.removeChild(retry);
+      splitOversizedSection(section);
+    });
+
+    while (pages.length < wantedPages) {
+      const donor = pages[pages.length - 1];
+      const donorSections = Array.from(donor.sections.children);
+      if (donorSections.length < 2) break;
+      const splitAt = Math.ceil(donorSections.length / 2);
+      const next = createPage(false);
+      donorSections.slice(splitAt).forEach(node => next.sections.appendChild(node));
+    }
+    while (pages.length < wantedPages) createPage(false);
+    pages.forEach((record, index) => record.page.setAttribute('aria-label', `Resume page ${index + 1} of ${pages.length}`));
+    target.dataset.pageCount = String(pages.length);
+    return pages.length;
   }
 
   function openTemplatePreviewModal(templateId, triggerBtn) {
@@ -1453,6 +1549,7 @@
    * Render Resume Live Preview (DOM Updates)
    */
   let pdfPageCount = 1;
+  let visualPageCount = 1;
   function renderResumePreview() {
     const sheet = getEl('resumeSheet');
     if (!sheet) return;
@@ -1464,6 +1561,7 @@
     try {
       pdfPageCount = window.ApplyReadyPDF.generateResumePDF(resumeData).getPageCount();
     } catch (e) { pdfPageCount = null; }
+    visualPageCount = renderPaginatedPreview(sheet, pdfPageCount);
     saveDraftToStorage();
     updatePreviewScale();
   }
@@ -1475,36 +1573,29 @@
     const resumePreviewOuter = getEl('resumePreviewOuter');
     const previewWrapper = getEl('previewWrapper');
     const resumeSheet = getEl('resumeSheet');
+    const visualPages = getEl('resumeVisualPages');
     const pageCountPill = getEl('pageCountPill');
 
-    if (!resumePreviewOuter || !previewWrapper || !resumeSheet) return;
+    if (!resumePreviewOuter || !previewWrapper || !resumeSheet || !visualPages) return;
+    const firstPage = visualPages.querySelector('.resume-visual-page');
+    const paperWidth = (firstPage && firstPage.offsetWidth) || resumeSheet.offsetWidth || 794;
 
-    // Calculate scaling
     let scale = 1;
     if (currentZoom === 'fit') {
       const previewStyle = getComputedStyle(resumePreviewOuter);
       const availableWidth = resumePreviewOuter.clientWidth - parseFloat(previewStyle.paddingLeft) - parseFloat(previewStyle.paddingRight);
-      const sheetWidth = resumeSheet.offsetWidth || 794;
-      scale = Math.min(1, Math.max(0.05, availableWidth / sheetWidth));
-    } else if (currentZoom === '75') {
-      scale = 0.75;
-    } else if (currentZoom === '100') {
-      scale = 1.0;
-    } else if (currentZoom === '125') {
-      scale = 1.25;
-    }
+      scale = Math.min(1, Math.max(0.05, availableWidth / paperWidth));
+    } else if (currentZoom === '75') scale = 0.75;
+    else if (currentZoom === '100') scale = 1.0;
+    else if (currentZoom === '125') scale = 1.25;
 
+    visualPages.style.transform = `scale(${scale})`;
     resumeSheet.style.transform = `scale(${scale})`;
-    previewWrapper.style.width = `${resumeSheet.offsetWidth * scale}px`;
-    previewWrapper.style.height = `${resumeSheet.offsetHeight * scale}px`;
-
-    // Estimate pages based on sheet pixel height (standard A4 is 1123px at 96 DPI, Letter is 1056px)
-    const pageHeightPx = (resumeData.design.pageSize === 'letter') ? 1056 : 1123;
-    const totalHeight = resumeSheet.scrollHeight;
-    const estPages = Math.max(1, Math.ceil(totalHeight / pageHeightPx));
-
+    previewWrapper.style.width = `${paperWidth * scale}px`;
+    previewWrapper.style.height = `${visualPages.offsetHeight * scale}px`;
     if (pageCountPill) {
-      pageCountPill.textContent = pdfPageCount ? `${pdfPageCount} PDF page${pdfPageCount > 1 ? 's' : ''}` : 'Browser PDF';
+      const count = pdfPageCount || visualPageCount || 1;
+      pageCountPill.textContent = `${count} PDF page${count > 1 ? 's' : ''}`;
     }
   }
 

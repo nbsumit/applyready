@@ -10,7 +10,8 @@
     if (toggle) {
       toggle.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
       toggle.title = toggle.getAttribute('aria-label');
-      toggle.innerHTML = `<i class="fa-solid fa-${theme === 'dark' ? 'sun' : 'moon'}" aria-hidden="true"></i>`;
+      toggle.innerHTML = '<i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>';
+      toggle.classList.toggle('is-dark', theme === 'dark');
     }
     const color = document.querySelector('meta[name="theme-color"]');
     if (color) color.content = theme === 'dark' ? '#111619' : '#f6f7f8';

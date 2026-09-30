@@ -40,7 +40,7 @@
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/workspace.css?v=20260930-2">
+  <link rel="stylesheet" href="css/workspace.css?v=20260930-3">
 
   <!-- Structured Data: WebApplication -->
   <script type="application/ld+json">
@@ -595,9 +595,10 @@
         <p id="previewEmptyNote" class="preview-empty-note">Your resume starts here. Add your contact details or try a sample.</p>
         <div id="resumePreviewOuter" class="resume-preview-outer" tabindex="0" aria-label="Resume preview document">
           <div id="previewWrapper" class="resume-preview-wrapper">
+            <div id="resumeVisualPages" class="resume-visual-pages" role="document" aria-label="Paginated resume preview"></div>
 
-            <!-- Strict ATS Resume Sheet (ALWAYS White Paper with Dark Text in both themes) -->
-            <article id="resumeSheet" class="ats-resume-sheet template-classic-professional page-a4 density-standard" role="document">
+            <!-- Hidden full document source used for export/print and preview pagination -->
+            <article id="resumeSheet" class="ats-resume-sheet template-classic-professional page-a4 density-standard resume-source-sheet" role="document" aria-hidden="true" inert>
 
               <!-- Header Section -->
               <header class="resume-header">
@@ -704,7 +705,7 @@
     <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
-  <script src="js/site.js?v=20260930"></script>
+  <script src="js/site.js?v=20260930-3"></script>
 
   <!-- Template Full Preview Modal -->
   <div id="templatePreviewModal" class="template-preview-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="tmplModalTitle">
@@ -744,6 +745,6 @@
   <script src="js/docx-engine.js"></script>
 
   <!-- Resume Builder Logic -->
-  <script src="js/resume.js?v=20260930-2"></script>
+  <script src="js/resume.js?v=20260930-3"></script>
 </body>
 </html>
