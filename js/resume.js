@@ -8,6 +8,10 @@
 (function () {
   'use strict';
 
+  const SCHEMA = typeof ApplyReadySchema !== 'undefined' ? ApplyReadySchema
+    : (typeof require === 'function' ? require('./resume-schema.js') : null);
+  const notify = (message, error = false) => { if (window.ApplyReadyUI) window.ApplyReadyUI.notify(message, error); };
+
   // Templates catalogue fallback (if templates.js is loaded, it provides ApplyReadyTemplates)
   const TEMPLATES = (typeof ApplyReadyTemplates !== 'undefined' && ApplyReadyTemplates.TEMPLATES)
     ? ApplyReadyTemplates.TEMPLATES
@@ -197,6 +201,7 @@
     undoStack.push(JSON.stringify(resumeData));
     if (undoStack.length > MAX_HISTORY) undoStack.shift();
     redoStack.length = 0; // Clear redo on new action
+    isDirty = true;
     updateUndoRedoButtons();
   }
 
@@ -209,6 +214,8 @@
     renderAllDynamicLists();
     renderResumePreview();
     updateDesignControlsFromState();
+    setupTemplateGallery();
+    runResumeReview();
     updateUndoRedoButtons();
   }
 
@@ -221,6 +228,8 @@
     renderAllDynamicLists();
     renderResumePreview();
     updateDesignControlsFromState();
+    setupTemplateGallery();
+    runResumeReview();
     updateUndoRedoButtons();
   }
 
@@ -252,15 +261,14 @@
    * Sanitize URL for safe href
    */
   function sanitizeHref(url) {
-    if (!url) return '';
+    if (!url || typeof url !== 'string') return '#';
     const clean = url.trim();
-    if (clean.toLowerCase().startsWith('javascript:') || clean.toLowerCase().startsWith('data:')) {
-      return '#';
-    }
-    if (!clean.startsWith('http://') && !clean.startsWith('https://') && !clean.startsWith('mailto:') && !clean.startsWith('tel:')) {
-      return 'https://' + clean;
-    }
-    return clean;
+    if (/[\u0000-\u001f]/.test(clean)) return '#';
+    try {
+      const hasProtocol = /^[a-z][a-z0-9+.-]*:/i.test(clean);
+      const parsed = new URL(hasProtocol ? clean : 'https://' + clean);
+      return ['https:', 'http:', 'mailto:', 'tel:'].includes(parsed.protocol) ? parsed.href : '#';
+    } catch (e) { return '#'; }
   }
 
   /**
@@ -283,15 +291,7 @@
   /**
    * Validate Backup Schema (v1 or v2)
    */
-  function validateResumeSchema(payload) {
-    if (!payload || typeof payload !== 'object') return false;
-    if (!payload.data || typeof payload.data !== 'object') return false;
-    const d = payload.data;
-    if (!d.personal || typeof d.personal !== 'object') return false;
-    if (!Array.isArray(d.experience) || !Array.isArray(d.education) || !Array.isArray(d.projects)) return false;
-    if (d.skills && typeof d.skills !== 'object') return false;
-    return true;
-  }
+  function validateResumeSchema(payload) { return SCHEMA.validate(payload); }
 
   /**
    * Migrate any v1 or partial data safely into v2
@@ -320,6 +320,7 @@
     populateAllFormFields();
     renderAllDynamicLists();
     setupDesignControls();
+    updateDesignControlsFromState();
     renderResumePreview();
     attachEventListeners();
     setupAccordions();
@@ -327,7 +328,7 @@
     updateUndoRedoButtons();
     runResumeReview();
 
-    window.addEventListener('resize', updatePreviewScale);
+    window.addEventListener('resize', () => { updatePreviewScale(); scaleTemplateModal(); });
     window.addEventListener('orientationchange', () => setTimeout(updatePreviewScale, 150));
   }
 
@@ -346,7 +347,7 @@
         const saved = localStorage.getItem('applyready_resume_draft');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed && (parsed.data || parsed.version)) {
+          if (validateResumeSchema(parsed)) {
             resumeData = migrateResumeSchema(parsed);
             if (draftStatusText && parsed.savedAt) {
               const d = new Date(parsed.savedAt);
@@ -354,6 +355,7 @@
             }
             return;
           }
+          throw new Error('Saved draft is invalid');
         }
       } else {
         autoSaveDraft = false;
@@ -361,9 +363,11 @@
         if (draftStatusText) draftStatusText.textContent = 'Local saving disabled';
       }
     } catch (e) {
-      console.warn('Storage unavailable:', e);
+      autoSaveDraft = false;
+      const saveCheckbox = getEl('chkSaveDraft');
+      if (saveCheckbox) saveCheckbox.checked = false;
       const draftStatusText = getEl('draftStatusText');
-      if (draftStatusText) draftStatusText.textContent = 'Storage unavailable in private mode';
+      if (draftStatusText) draftStatusText.textContent = 'Draft could not be restored. Import a backup or start a new resume.';
     }
 
     // Default start with clean EMPTY_DATA (placeholders will guide the user)
@@ -386,7 +390,7 @@
         draftStatusText.textContent = `Draft saved: Just now (${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
       }
     } catch (e) {
-      console.error('Failed to save draft:', e);
+      // Storage can be blocked or full; keep the current in-memory draft.
       const draftStatusText = getEl('draftStatusText');
       if (draftStatusText) draftStatusText.textContent = 'Error saving to local storage (quota exceeded)';
     }
@@ -437,13 +441,14 @@
   let activeModalTemplateId = null;
 
   function isDocumentEmpty() {
-    const p = resumeData.personal || {};
-    const hasName = Boolean(p.fullName && p.fullName.trim());
-    const hasSummary = Boolean(resumeData.summary && resumeData.summary.trim());
-    const hasExp = Boolean(resumeData.experience && resumeData.experience.some(e => (e.role && e.role.trim()) || (e.company && e.company.trim())));
-    const hasEdu = Boolean(resumeData.education && resumeData.education.some(e => (e.degree && e.degree.trim()) || (e.institution && e.institution.trim())));
-    const hasProj = Boolean(resumeData.projects && resumeData.projects.some(pr => (pr.name && pr.name.trim())));
-    return !hasName && !hasSummary && !hasExp && !hasEdu && !hasProj;
+    const hasText = value => typeof value === 'string' ? !!value.trim()
+      : Array.isArray(value) ? value.some(hasText)
+      : value && typeof value === 'object' ? Object.keys(value).some(key => key !== 'id' && hasText(value[key])) : false;
+    return !hasText({ personal: resumeData.personal, summary: resumeData.summary, experience: resumeData.experience, education: resumeData.education, projects: resumeData.projects, skills: resumeData.skills, certifications: resumeData.certifications, achievements: resumeData.achievements, volunteering: resumeData.volunteering, languages: resumeData.languages, academic: resumeData.academic });
+  }
+
+  function newEntryId(prefix) {
+    return prefix + '-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
   }
 
   function renderResumeDataToHTML(data, templateId) {
@@ -459,7 +464,7 @@
     if (p.website && p.website.trim()) contactItems.push({ text: p.website.trim(), href: sanitizeHref(p.website.trim()) });
 
     let contactHtml = contactItems.map((item, idx) => {
-      const inner = item.href ? `<a href="${item.href}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.text)}</a>` : escapeHTML(item.text);
+      const inner = item.href ? `<a href="${escapeHTML(item.href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.text)}</a>` : escapeHTML(item.text);
       return `<span class="resume-contact-item">${inner}</span>` + (idx < contactItems.length - 1 ? '<span style="color: #94A3B8; margin: 0 0.35rem;">•</span>' : '');
     }).join('');
 
@@ -527,7 +532,7 @@
     if (proj.length > 0 && (!data.sectionVisibility || data.sectionVisibility.projects !== false)) {
       let projItems = proj.map(item => {
         const tech = item.tech ? `| ${item.tech}` : '';
-        const link = item.link ? `<a href="${sanitizeHref(item.link)}" target="_blank" rel="noopener noreferrer" style="color: #1D4ED8; font-weight: normal; font-size: 8.5pt;">${escapeHTML(item.link)}</a>` : '';
+        const link = item.link ? `<a href="${escapeHTML(sanitizeHref(item.link))}" target="_blank" rel="noopener noreferrer" style="color: #1D4ED8; font-weight: normal; font-size: 8.5pt;">${escapeHTML(item.link)}</a>` : '';
         let bHtml = '';
         if (item.bulletsText && item.bulletsText.trim()) {
           const lines = item.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
@@ -596,37 +601,25 @@
         </section>`;
     }
 
-    if (templateId === 'academic-cv' || (data.academic && data.sectionVisibility && data.sectionVisibility.academic)) {
-      const pubs = (data.academic && data.academic.publications) || [
-        'Morgan, A. et al. (2023). High-Throughput Supply Chain Optimization in In-Browser Environments. Operations Journal, 14(2), 78-95.',
-        'Morgan, A. (2021). Predictive Bottleneck Analysis for Logistics Networks. Journal of Enterprise Engineering, 9(1), 112-128.'
-      ];
-      const teaching = (data.academic && data.academic.teaching) || [
-        { role: 'Guest Lecturer, Supply Chain Analytics', institution: 'University of Illinois', term: 'Fall 2023' }
-      ];
-      let pubHtml = pubs.map(p => {
-        const t = typeof p === 'string' ? p : (p.title || '');
-        return `<div class="resume-entry">• ${escapeHTML(t)}</div>`;
-      }).join('');
-      let teachHtml = teaching.map(t => {
-        const r = t.role || t.course || '';
-        const inst = [t.institution, t.term].filter(Boolean).join(' — ');
-        return `<div class="resume-entry"><strong>${escapeHTML(r)}</strong> ${inst ? ' (' + escapeHTML(inst) + ')' : ''}</div>`;
-      }).join('');
-
-      sections['academic'] = `
-        <section class="resume-section">
-          <h3 class="resume-section-title">PUBLICATIONS & RESEARCH</h3>
-          <div>${pubHtml}</div>
-          <h4 style="font-size: 8.5pt; font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.25rem; color: #1E293B;">TEACHING EXPERIENCE</h4>
-          <div>${teachHtml}</div>
-        </section>`;
+    const addTextSection = (key, title, lines) => {
+      if (data.sectionVisibility && data.sectionVisibility[key] === false) return;
+      const content = lines.filter(Boolean);
+      if (content.length) sections[key] = `<section class="resume-section"><h3 class="resume-section-title">${escapeHTML(title)}</h3><div>${content.map(line => `<div class="resume-entry">${escapeHTML(line)}</div>`).join('')}</div></section>`;
+    };
+    addTextSection('volunteering', 'Community & Leadership', (data.volunteering || []).map(v => [v.role, v.organization || v.org, v.duration].filter(Boolean).join(' — ')));
+    addTextSection('languages', 'Languages', (data.languages || []).map(l => typeof l === 'string' ? l : [l.name, l.proficiency].filter(Boolean).join(' — ')));
+    const acad = data.academic || {};
+    if (!data.sectionVisibility || data.sectionVisibility.academic !== false) {
+      let html = '';
+      for (const [key, title] of [['publications', 'Peer-Reviewed Publications'], ['teaching', 'Teaching Experience'], ['presentations', 'Conference Presentations'], ['grants', 'Research Grants']]) {
+        const lines = (acad[key] || []).map(item => typeof item === 'string' ? item : key === 'teaching'
+          ? [item.role || item.course, item.institution, item.term].filter(Boolean).join(' — ')
+          : key === 'grants' ? [item.title || item.name, item.funder, item.year].filter(Boolean).join(' — ') : item.title || item.citation || item.event || '').filter(Boolean);
+        if (lines.length) html += `<section class="resume-section"><h3 class="resume-section-title">${escapeHTML(title)}</h3>${lines.map(line => `<div class="resume-entry">${escapeHTML(line)}</div>`).join('')}</section>`;
+      }
+      if (html) sections.academic = html;
     }
-
-    const order = (tmpl.recommendedOrder && tmpl.recommendedOrder.length > 0)
-      ? tmpl.recommendedOrder
-      : (data.design && data.design.sectionOrder) || ['summary', 'experience', 'education', 'projects', 'skills'];
-
+    const order = SCHEMA.normalizeSectionOrder(data.design && data.design.sectionOrder);
     let orderedHtml = '';
     order.forEach(k => {
       if (sections[k]) orderedHtml += sections[k];
@@ -637,7 +630,7 @@
 
     return `
       <header class="resume-header">
-        <h1 class="resume-name">${escapeHTML((p.fullName || 'ALEX R. MORGAN').toUpperCase())}</h1>
+        <h1 class="resume-name">${escapeHTML((p.fullName || 'YOUR NAME').toUpperCase())}</h1>
         ${p.targetTitle ? `<div class="resume-target-title">${escapeHTML(p.targetTitle)}</div>` : ''}
         <div class="resume-contact-line">${contactHtml}</div>
       </header>
@@ -647,8 +640,8 @@
 
   function renderTemplateIntoContainer(sheet, templateId, data) {
     const tmpl = TEMPLATES[templateId] || TEMPLATES['classic-professional'];
-    const fontClass = (tmpl.fontFamily === 'sans' || (data.design && data.design.fontFamily === 'sans')) ? 'font-sans' : '';
-    const density = tmpl.density || (data.design && data.design.density) || 'standard';
+    const fontClass = ((data.design && data.design.fontFamily) || tmpl.fontFamily) === 'sans' ? 'font-sans' : 'font-serif';
+    const density = (data.design && data.design.density) || tmpl.density || 'standard';
     const fontSize = (data.design && data.design.fontSize) || 'standard';
     const pageSize = (data.design && data.design.pageSize) || 'a4';
 
@@ -670,15 +663,41 @@
       title.textContent = `${tmpl.name} — Full Template Preview`;
     }
 
-    renderTemplateIntoContainer(sheet, templateId, SAMPLE_DATA);
+    const sample = SCHEMA.migrate(SAMPLE_DATA);
+    sample.design.fontFamily = tmpl.fontFamily;
+    sample.design.density = tmpl.density || 'standard';
+    sample.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
+    renderTemplateIntoContainer(sheet, templateId, sample);
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    getEl('mainContent').inert = true;
+    document.querySelector('.navbar').inert = true;
+    document.querySelector('.site-footer').inert = true;
+    scaleTemplateModal();
 
     const closeBtn = getEl('btnCloseTmplModal');
     if (closeBtn) {
-      setTimeout(() => closeBtn.focus(), 50);
+      closeBtn.focus();
     }
+  }
+
+  function scaleTemplateModal() {
+    const modal = getEl('templatePreviewModal');
+    const sheet = getEl('tmplModalPreviewSheet');
+    if (!modal || modal.classList.contains('hidden')) return;
+    let wrapper = getEl('tmplModalPreviewWrapper');
+    if (!wrapper) {
+      wrapper = document.createElement('div'); wrapper.id = 'tmplModalPreviewWrapper';
+      sheet.parentElement.insertBefore(wrapper, sheet); wrapper.appendChild(sheet);
+    }
+    const available = modal.querySelector('.template-preview-modal-body').clientWidth - 40;
+    const scale = Math.min(1, Math.max(.05, available / sheet.offsetWidth));
+    wrapper.style.width = `${sheet.offsetWidth * scale}px`;
+    wrapper.style.height = `${sheet.offsetHeight * scale}px`;
+    wrapper.style.flexShrink = '0';
+    sheet.style.transform = `scale(${scale})`;
+    sheet.style.margin = '0';
   }
 
   function closeTemplatePreviewModal() {
@@ -687,6 +706,9 @@
 
     modal.classList.add('hidden');
     document.body.style.overflow = '';
+    getEl('mainContent').inert = false;
+    document.querySelector('.navbar').inert = false;
+    document.querySelector('.site-footer').inert = false;
 
     if (modalTriggerElement && typeof modalTriggerElement.focus === 'function') {
       modalTriggerElement.focus();
@@ -721,6 +743,12 @@
     }
 
     document.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab' && modal && !modal.classList.contains('hidden')) {
+        const buttons = Array.from(modal.querySelectorAll('button:not(:disabled)'));
+        const first = buttons[0], last = buttons[buttons.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
       if (e.key === 'Escape') {
         const modal = getEl('templatePreviewModal');
         if (modal && !modal.classList.contains('hidden')) {
@@ -829,6 +857,7 @@
     pushHistoryState();
 
     resumeData.template = templateId;
+    resumeData.design.templateId = templateId;
     const tmpl = TEMPLATES[templateId];
 
     // Automatically set default typography & density associated with template
@@ -840,7 +869,7 @@
     if (tmpl.recommendedOrder && Array.isArray(tmpl.recommendedOrder)) {
       if (isDocumentEmpty()) {
         // Automatically apply recommended order for new empty documents
-        resumeData.design.sectionOrder = [...tmpl.recommendedOrder];
+        resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
         if (btnApplyRecommended) btnApplyRecommended.classList.add('hidden');
       } else {
         // Document has content: do not overwrite user's section order silently.
@@ -852,7 +881,7 @@
             btnApplyRecommended.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Apply ${escapeHTML(tmpl.name)}'s Recommended Section Order`;
             btnApplyRecommended.onclick = () => {
               pushHistoryState();
-              resumeData.design.sectionOrder = [...tmpl.recommendedOrder];
+              resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
               renderSectionOrderControls();
               renderResumePreview();
               btnApplyRecommended.classList.add('hidden');
@@ -1076,6 +1105,22 @@
     });
   }
 
+  function labelOptionalFields() {
+    const labels = { 'item-cert-name': 'Certification name', 'item-cert-issuer': 'Issuing body', 'item-cert-year': 'Certification year', 'item-ach-text': 'Achievement', 'item-vol-role': 'Volunteer role', 'item-vol-org': 'Volunteer organization', 'item-vol-dur': 'Volunteer dates', 'item-lang-name': 'Language', 'item-lang-prof': 'Language proficiency', 'item-pub-text': 'Publication citation', 'item-teach-role': 'Teaching role or course', 'item-teach-inst': 'Teaching institution', 'item-teach-term': 'Teaching term' };
+    document.querySelectorAll('#optionalSectionsArea .form-control').forEach(input => {
+      const key = Object.keys(labels).find(key => input.classList.contains(key));
+      if (key) {
+        input.id = `${key}-${input.dataset.index}`;
+        input.setAttribute('aria-label', labels[key]);
+        const label = input.parentElement.querySelector('label');
+        if (label) label.htmlFor = input.id;
+      }
+    });
+    document.querySelectorAll('#optionalSectionsArea button[data-action]').forEach(button => {
+      button.setAttribute('aria-label', `Remove ${button.dataset.action.replace('remove-', '')} entry ${Number(button.dataset.index) + 1}`);
+    });
+  }
+
   function renderOptionalSections() {
     const vis = resumeData.sectionVisibility || {};
 
@@ -1241,6 +1286,7 @@
         });
       }
     }
+    labelOptionalFields();
   }
 
   /**
@@ -1405,286 +1451,19 @@
   /**
    * Render Resume Live Preview (DOM Updates)
    */
+  let pdfPageCount = 1;
   function renderResumePreview() {
     const sheet = getEl('resumeSheet');
     if (!sheet) return;
-
-    // Apply template class
-    const tmplId = resumeData.template || 'classic-professional';
-    sheet.className = `ats-resume-sheet template-${tmplId} page-${resumeData.design.pageSize || 'a4'} density-${resumeData.design.density || 'standard'} font-size-${resumeData.design.fontSize || 'standard'}`;
-
-    if (resumeData.design.fontFamily === 'sans') {
-      sheet.classList.add('font-sans');
-    } else {
-      sheet.classList.remove('font-sans');
-    }
-
-    // Update active badge in preview toolbar
-    const prevBadge = getEl('prevTemplateBadge');
-    if (prevBadge && TEMPLATES[tmplId]) {
-      prevBadge.innerHTML = `<i class="fa-solid fa-shield-check"></i> ${escapeHTML(TEMPLATES[tmplId].name)}`;
-    }
-
-    const p = resumeData.personal || {};
-
-    // Name & Title
-    const prevFullName = getEl('prevFullName');
-    if (prevFullName) {
-      prevFullName.textContent = (p.fullName || 'YOUR FULL NAME').trim().toUpperCase();
-    }
-
-    const prevTargetTitle = getEl('prevTargetTitle');
-    if (prevTargetTitle) {
-      if (p.targetTitle && p.targetTitle.trim()) {
-        prevTargetTitle.textContent = p.targetTitle.trim();
-        prevTargetTitle.style.display = 'block';
-      } else {
-        prevTargetTitle.textContent = '';
-        prevTargetTitle.style.display = 'none';
-      }
-    }
-
-    // Contact Information
-    const prevContactLine = getEl('prevContactLine');
-    if (prevContactLine) {
-      prevContactLine.innerHTML = '';
-      const contactItems = [];
-      if (p.phone && p.phone.trim()) contactItems.push({ text: p.phone.trim(), href: 'tel:' + p.phone.trim().replace(/\s+/g, '') });
-      if (p.email && p.email.trim()) contactItems.push({ text: p.email.trim(), href: 'mailto:' + p.email.trim() });
-      if (p.location && p.location.trim()) contactItems.push({ text: p.location.trim() });
-      if (p.linkedin && p.linkedin.trim()) contactItems.push({ text: p.linkedin.trim(), href: sanitizeHref(p.linkedin.trim()) });
-      if (p.github && p.github.trim()) contactItems.push({ text: p.github.trim(), href: sanitizeHref(p.github.trim()) });
-      if (p.website && p.website.trim()) contactItems.push({ text: p.website.trim(), href: sanitizeHref(p.website.trim()) });
-
-      contactItems.forEach((item, index) => {
-        const span = document.createElement('span');
-        span.className = 'resume-contact-item';
-        if (item.href) {
-          const a = document.createElement('a');
-          a.href = item.href;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          a.textContent = item.text;
-          span.appendChild(a);
-        } else {
-          span.textContent = item.text;
-        }
-        prevContactLine.appendChild(span);
-
-        if (index < contactItems.length - 1) {
-          const sep = document.createElement('span');
-          sep.textContent = '•';
-          sep.style.color = '#94A3B8';
-          prevContactLine.appendChild(sep);
-        }
-      });
-    }
-
-    // Render individual sections content
-    // Summary
-    const prevSectionSummary = getEl('prevSectionSummary');
-    const prevSummary = getEl('prevSummary');
-    if (prevSectionSummary && prevSummary) {
-      const summaryText = (resumeData.summary || '').trim();
-      if (summaryText && resumeData.sectionVisibility.summary !== false) {
-        prevSummary.textContent = summaryText;
-        prevSectionSummary.style.display = 'block';
-      } else {
-        prevSectionSummary.style.display = 'none';
-      }
-    }
-
-    // Experience
-    const prevSectionExperience = getEl('prevSectionExperience');
-    const prevExperienceList = getEl('prevExperienceList');
-    if (prevSectionExperience && prevExperienceList) {
-      const exp = (resumeData.experience || []).filter(x => x.role || x.company || x.bulletsText);
-      if (exp.length > 0 && resumeData.sectionVisibility.experience !== false) {
-        prevExperienceList.innerHTML = '';
-        exp.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'resume-entry';
-          const roleComp = [item.role, item.company].filter(Boolean).join(' | ');
-          const durLoc = [item.duration, item.location].filter(Boolean).join(' • ');
-
-          let bulletsHtml = '';
-          if (item.bulletsText && item.bulletsText.trim()) {
-            const lines = item.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-            const clean = lines.map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
-            if (clean.length > 0) {
-              bulletsHtml = `<ul class="resume-bullets">${clean.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>`;
-            }
-          }
-
-          div.innerHTML = `
-            <div class="resume-entry-header">
-              <span>${escapeHTML(roleComp)}</span>
-              <span style="font-weight: normal; font-style: italic; font-size: 9pt;">${escapeHTML(durLoc)}</span>
-            </div>
-            ${bulletsHtml}
-          `;
-          prevExperienceList.appendChild(div);
-        });
-        prevSectionExperience.style.display = 'block';
-      } else {
-        prevSectionExperience.style.display = 'none';
-      }
-    }
-
-    // Education
-    const prevSectionEducation = getEl('prevSectionEducation');
-    const prevEducationList = getEl('prevEducationList');
-    if (prevSectionEducation && prevEducationList) {
-      const edu = (resumeData.education || []).filter(x => x.degree || x.institution);
-      if (edu.length > 0 && resumeData.sectionVisibility.education !== false) {
-        prevEducationList.innerHTML = '';
-        edu.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'resume-entry';
-          const degInst = [item.degree, item.institution].filter(Boolean).join(' — ');
-          const durLocScore = [item.duration, item.location, item.score].filter(Boolean).join(' • ');
-
-          div.innerHTML = `
-            <div class="resume-entry-header">
-              <span>${escapeHTML(degInst)}</span>
-              <span style="font-weight: normal; font-style: italic; font-size: 9pt;">${escapeHTML(durLocScore)}</span>
-            </div>
-          `;
-          prevEducationList.appendChild(div);
-        });
-        prevSectionEducation.style.display = 'block';
-      } else {
-        prevSectionEducation.style.display = 'none';
-      }
-    }
-
-    // Projects
-    const prevSectionProjects = getEl('prevSectionProjects');
-    const prevProjectsList = getEl('prevProjectsList');
-    if (prevSectionProjects && prevProjectsList) {
-      const proj = (resumeData.projects || []).filter(x => x.name || x.tech || x.bulletsText);
-      if (proj.length > 0 && resumeData.sectionVisibility.projects !== false) {
-        prevProjectsList.innerHTML = '';
-        proj.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'resume-entry';
-          const tech = item.tech ? `| ${item.tech}` : '';
-          const link = item.link ? `<a href="${sanitizeHref(item.link)}" target="_blank" rel="noopener noreferrer" style="color: #1D4ED8; font-weight: normal; font-size: 8.5pt;">${escapeHTML(item.link)}</a>` : '';
-
-          let bulletsHtml = '';
-          if (item.bulletsText && item.bulletsText.trim()) {
-            const lines = item.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-            const clean = lines.map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
-            if (clean.length > 0) {
-              bulletsHtml = `<ul class="resume-bullets">${clean.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>`;
-            }
-          }
-
-          div.innerHTML = `
-            <div class="resume-entry-header">
-              <span>${escapeHTML(item.name)} <span style="font-style: italic; font-weight: normal; color: #4B5563;">${escapeHTML(tech)}</span></span>
-              <span>${link}</span>
-            </div>
-            ${bulletsHtml}
-          `;
-          prevProjectsList.appendChild(div);
-        });
-        prevSectionProjects.style.display = 'block';
-      } else {
-        prevSectionProjects.style.display = 'none';
-      }
-    }
-
-    // Skills
-    const prevSectionSkills = getEl('prevSectionSkills');
-    const prevSkillsList = getEl('prevSkillsList');
-    if (prevSectionSkills && prevSkillsList) {
-      const s = resumeData.skills || {};
-      const rows = [];
-      if (s.languages && s.languages.trim()) rows.push({ label: 'Core Competencies', val: s.languages.trim() });
-      if (s.frameworks && s.frameworks.trim()) rows.push({ label: 'Tools & Platforms', val: s.frameworks.trim() });
-      if (s.tools && s.tools.trim()) rows.push({ label: 'Technical & Data Skills', val: s.tools.trim() });
-      if (s.other && s.other.trim()) rows.push({ label: 'Professional Skills', val: s.other.trim() });
-
-      if (rows.length > 0 && resumeData.sectionVisibility.skills !== false) {
-        prevSkillsList.innerHTML = '';
-        rows.forEach(r => {
-          const div = document.createElement('div');
-          div.className = 'resume-skills-row';
-          div.innerHTML = `<span class="skills-category">${escapeHTML(r.label)}: </span><span>${escapeHTML(r.val)}</span>`;
-          prevSkillsList.appendChild(div);
-        });
-        prevSectionSkills.style.display = 'block';
-      } else {
-        prevSectionSkills.style.display = 'none';
-      }
-    }
-
-    // Certifications
-    const prevSectionCert = getEl('prevSectionCertifications');
-    const prevCertList = getEl('prevCertificationsList');
-    if (prevSectionCert && prevCertList) {
-      const certs = resumeData.certifications || [];
-      if (certs.length > 0 && resumeData.sectionVisibility.certifications) {
-        prevCertList.innerHTML = '';
-        certs.forEach(c => {
-          const div = document.createElement('div');
-          div.className = 'resume-entry';
-          div.innerHTML = `<strong>${escapeHTML(c.name || c.title)}</strong> ${c.issuer ? ' — ' + escapeHTML(c.issuer) : ''} ${c.year ? '(' + escapeHTML(c.year) + ')' : ''}`;
-          prevCertList.appendChild(div);
-        });
-        prevSectionCert.style.display = 'block';
-      } else {
-        prevSectionCert.style.display = 'none';
-      }
-    }
-
-    // Achievements
-    const prevSectionAch = getEl('prevSectionAchievements');
-    const prevAchList = getEl('prevAchievementsList');
-    if (prevSectionAch && prevAchList) {
-      const achs = resumeData.achievements || [];
-      if (achs.length > 0 && resumeData.sectionVisibility.achievements) {
-        prevAchList.innerHTML = '';
-        achs.forEach(a => {
-          const text = typeof a === 'string' ? a : (a.title || a.text || '');
-          const div = document.createElement('div');
-          div.className = 'resume-entry';
-          div.innerHTML = `• ${escapeHTML(text)}`;
-          prevAchList.appendChild(div);
-        });
-        prevSectionAch.style.display = 'block';
-      } else {
-        prevSectionAch.style.display = 'none';
-      }
-    }
-
-    // Reorder sections in container based on active sectionOrder
-    const container = getEl('resumeSectionsContainer');
-    if (container && resumeData.design && Array.isArray(resumeData.design.sectionOrder)) {
-      const sectionMap = {
-        summary: prevSectionSummary,
-        experience: prevSectionExperience,
-        education: prevSectionEducation,
-        projects: prevSectionProjects,
-        skills: prevSectionSkills,
-        certifications: prevSectionCert,
-        achievements: prevSectionAch,
-        volunteering: getEl('prevSectionVolunteering'),
-        languages: getEl('prevSectionLanguages'),
-        academic: getEl('prevSectionAcademic')
-      };
-
-      resumeData.design.sectionOrder.forEach(secKey => {
-        const el = sectionMap[secKey];
-        if (el) container.appendChild(el);
-      });
-    }
-
-    // Autosave
+    renderTemplateIntoContainer(sheet, resumeData.template, resumeData);
+    const badge = getEl('prevTemplateBadge');
+    if (badge) badge.textContent = (TEMPLATES[resumeData.template] || TEMPLATES['classic-professional']).name;
+    const note = getEl('previewEmptyNote');
+    if (note) note.classList.toggle('hidden', !isDocumentEmpty());
+    try {
+      pdfPageCount = window.ApplyReadyPDF.generateResumePDF(resumeData).getPageCount();
+    } catch (e) { pdfPageCount = null; }
     saveDraftToStorage();
-
-    // Responsive scaling
     updatePreviewScale();
   }
 
@@ -1704,7 +1483,7 @@
     if (currentZoom === 'fit') {
       const availableWidth = resumePreviewOuter.clientWidth - 24;
       const sheetWidth = resumeSheet.offsetWidth || 794;
-      scale = Math.min(1, Math.max(0.35, availableWidth / sheetWidth));
+      scale = Math.min(1, Math.max(0.05, availableWidth / sheetWidth));
     } else if (currentZoom === '75') {
       scale = 0.75;
     } else if (currentZoom === '100') {
@@ -1714,6 +1493,7 @@
     }
 
     resumeSheet.style.transform = `scale(${scale})`;
+    previewWrapper.style.width = `${resumeSheet.offsetWidth * scale}px`;
     previewWrapper.style.height = `${resumeSheet.offsetHeight * scale}px`;
 
     // Estimate pages based on sheet pixel height (standard A4 is 1123px at 96 DPI, Letter is 1056px)
@@ -1722,7 +1502,7 @@
     const estPages = Math.max(1, Math.ceil(totalHeight / pageHeightPx));
 
     if (pageCountPill) {
-      pageCountPill.textContent = `Est. ${estPages} Page${estPages > 1 ? 's' : ''}`;
+      pageCountPill.textContent = pdfPageCount ? `${pdfPageCount} PDF page${pdfPageCount > 1 ? 's' : ''}` : 'Browser PDF';
     }
   }
 
@@ -1872,7 +1652,7 @@
     if (sheet && pageEstPill) {
       const pageHeightPx = (resumeData.design.pageSize === 'letter') ? 1056 : 1123;
       const estPages = Math.max(1, Math.ceil(sheet.scrollHeight / pageHeightPx));
-      pageEstPill.textContent = `~${estPages} Page${estPages > 1 ? 's' : ''}`;
+      pageEstPill.textContent = pdfPageCount ? `${pdfPageCount} PDF page${pdfPageCount > 1 ? 's' : ''}` : 'Browser PDF';
     }
 
     checklist.innerHTML = '';
@@ -1921,7 +1701,13 @@
         setTimeout(() => {
           const target = getEl(iss.targetField) || getEl('sec-' + iss.section);
           if (target) {
-            target.focus();
+            const section = target.closest('.accordion-section') || target;
+            if (section.classList.contains('accordion-section')) {
+              section.classList.add('open');
+              section.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
+            }
+            if (!iss.targetField) section.querySelector('.accordion-header').focus();
+            else target.focus();
             target.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
         }, 100);
@@ -1936,9 +1722,14 @@
    */
   function attachEventListeners() {
     // Dirty flag on typing
-    document.addEventListener('input', () => {
+    let lastTypingField, lastTypingAt = 0;
+    document.addEventListener('input', e => {
+      if (!e.target.closest('#formPanel')) return;
+      const now = Date.now();
+      if (e.target !== lastTypingField || now - lastTypingAt > 1000) pushHistoryState();
+      lastTypingField = e.target; lastTypingAt = now;
       isDirty = true;
-    });
+    }, true);
 
     // Keyboard shortcuts for Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
     document.addEventListener('keydown', (e) => {
@@ -1975,6 +1766,9 @@
         updatePreviewScale();
       });
     }
+
+    const openExport = getEl('btnOpenExport');
+    if (openExport) openExport.addEventListener('click', () => { getEl('tabEdit').click(); getEl('tabReview').click(); getEl('formPanel').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
 
     // Quick PDF button
     const btnQuickPDF = getEl('btnQuickPDF');
@@ -2063,7 +1857,7 @@
       btnAddExp.addEventListener('click', () => {
         pushHistoryState();
         resumeData.experience.push({
-          id: 'exp-' + Date.now(),
+          id: newEntryId('exp'),
           role: '',
           company: '',
           location: '',
@@ -2080,7 +1874,7 @@
       btnAddEdu.addEventListener('click', () => {
         pushHistoryState();
         resumeData.education.push({
-          id: 'edu-' + Date.now(),
+          id: newEntryId('edu'),
           degree: '',
           institution: '',
           location: '',
@@ -2097,7 +1891,7 @@
       btnAddProj.addEventListener('click', () => {
         pushHistoryState();
         resumeData.projects.push({
-          id: 'proj-' + Date.now(),
+          id: newEntryId('proj'),
           name: '',
           tech: '',
           link: '',
@@ -2120,7 +1914,7 @@
 
         // Ensure array exists
         if (val === 'certifications' && (!resumeData.certifications || resumeData.certifications.length === 0)) {
-          resumeData.certifications = [{ id: 'cert-' + Date.now(), name: '', issuer: '', year: '' }];
+          resumeData.certifications = [{ id: newEntryId('cert'), name: '', issuer: '', year: '' }];
         } else if (val === 'achievements' && (!resumeData.achievements || resumeData.achievements.length === 0)) {
           resumeData.achievements = [''];
         } else if (val === 'volunteering' && (!resumeData.volunteering || resumeData.volunteering.length === 0)) {
@@ -2151,7 +1945,7 @@
       btnAddCert.addEventListener('click', () => {
         pushHistoryState();
         if (!resumeData.certifications) resumeData.certifications = [];
-        resumeData.certifications.push({ id: 'cert-' + Date.now(), name: '', issuer: '', year: '' });
+        resumeData.certifications.push({ id: newEntryId('cert'), name: '', issuer: '', year: '' });
         renderOptionalSections();
         renderResumePreview();
       });
@@ -2213,7 +2007,7 @@
     const btnLoadSample = getEl('btnLoadSample');
     if (btnLoadSample) {
       btnLoadSample.addEventListener('click', () => {
-        if (isDirty) {
+        if (!isDocumentEmpty()) {
           if (!confirm('Populate the editor with demonstration sample data? This will overwrite your current fields.')) return;
         }
         pushHistoryState();
@@ -2260,6 +2054,7 @@
     if (btnDeleteDraft) {
       btnDeleteDraft.addEventListener('click', () => {
         if (!confirm('Delete your saved local draft from this device?')) return;
+        autoSaveDraft = false;
         deleteDraftFromStorage();
         if (chkSaveDraft) chkSaveDraft.checked = false;
         autoSaveDraft = false;
@@ -2300,7 +2095,7 @@
         if (!file) return;
 
         if (file.size > 2 * 1024 * 1024) {
-          alert('File size exceeds 2 MB. Please select a valid ApplyReady JSON backup file.');
+          notify('This backup exceeds 2 MB. Your resume is preserved.', true);
           fileImportInput.value = '';
           return;
         }
@@ -2312,7 +2107,7 @@
             if (!validateResumeSchema(parsed)) {
               throw new Error('Invalid resume schema');
             }
-            if (isDirty) {
+            if (!isDocumentEmpty()) {
               if (!confirm('Importing this file will replace your current edits. Do you wish to continue?')) {
                 fileImportInput.value = '';
                 return;
@@ -2326,12 +2121,13 @@
             updateDesignControlsFromState();
             renderResumePreview();
             runResumeReview();
-            alert('Resume data imported successfully.');
+            notify('Resume backup restored.');
           } catch (err) {
-            alert('Failed to import resume. The file is corrupt or does not match ApplyReady JSON backup schema.');
+            notify('Could not import this backup. Your current resume is preserved.', true);
           }
           fileImportInput.value = '';
         };
+        reader.onerror = () => { notify('Could not read this backup. Please choose it again.', true); fileImportInput.value = ''; };
         reader.readAsText(file);
       });
     }
@@ -2347,7 +2143,7 @@
     if (btnDownloadText) btnDownloadText.addEventListener('click', exportToPlainText);
 
     const btnPrintPDF = getEl('btnPrintPDF');
-    if (btnPrintPDF) btnPrintPDF.addEventListener('click', () => window.print());
+    if (btnPrintPDF) btnPrintPDF.addEventListener('click', printResume);
 
     // Mobile View Toggle
     const tabEdit = getEl('tabEdit');
@@ -2357,11 +2153,15 @@
       tabEdit.addEventListener('click', () => {
         tabEdit.classList.add('active');
         tabPreview.classList.remove('active');
+        tabEdit.setAttribute('aria-selected', 'true');
+        tabPreview.setAttribute('aria-selected', 'false');
         layout.className = 'resume-app-layout view-edit';
       });
       tabPreview.addEventListener('click', () => {
         tabPreview.classList.add('active');
         tabEdit.classList.remove('active');
+        tabPreview.setAttribute('aria-selected', 'true');
+        tabEdit.setAttribute('aria-selected', 'false');
         layout.className = 'resume-app-layout view-preview';
         setTimeout(updatePreviewScale, 50);
       });
@@ -2400,7 +2200,7 @@
       return;
     } else if (action === 'duplicate-exp') {
       const copy = JSON.parse(JSON.stringify(resumeData.experience[idx]));
-      copy.id = 'exp-' + Date.now();
+      copy.id = newEntryId('exp');
       resumeData.experience.splice(idx + 1, 0, copy);
       renderExperienceList();
       renderResumePreview();
@@ -2459,7 +2259,7 @@
       return;
     } else if (action === 'duplicate-edu') {
       const copy = JSON.parse(JSON.stringify(resumeData.education[idx]));
-      copy.id = 'edu-' + Date.now();
+      copy.id = newEntryId('edu');
       resumeData.education.splice(idx + 1, 0, copy);
       renderEducationList();
       renderResumePreview();
@@ -2517,7 +2317,7 @@
       return;
     } else if (action === 'duplicate-proj') {
       const copy = JSON.parse(JSON.stringify(resumeData.projects[idx]));
-      copy.id = 'proj-' + Date.now();
+      copy.id = newEntryId('proj');
       resumeData.projects.splice(idx + 1, 0, copy);
       renderProjectsList();
       renderResumePreview();
@@ -2669,15 +2469,25 @@
   /**
    * Export to True Vector PDF (Searchable text, A4 / Letter)
    */
+  function printResume() {
+    let style = getEl('printPageSize');
+    if (!style) { style = document.createElement('style'); style.id = 'printPageSize'; document.head.appendChild(style); }
+    style.textContent = `@media print { @page { size: ${resumeData.design.pageSize === 'letter' ? 'Letter' : 'A4'} portrait; margin: 12mm; } }`;
+    document.fonts.ready.then(() => window.print());
+  }
+
   function exportToVectorPDF() {
     if (!window.ApplyReadyPDF) {
-      alert('PDF generation engine is not ready. Please try again.');
+      notify('PDF export is unavailable. Reload or use Browser Print.', true);
       return;
     }
 
     const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
     if (!fullName) {
-      alert('Please enter your Full Name in Section 1 before downloading your resume.');
+      notify('Add your name in Contact details before downloading.', true);
+      getEl('tabEdit').click();
+      getEl('sec-personal').classList.add('open');
+      getEl('sec-personal').querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
       const fnInp = getEl('fullName');
       if (fnInp) {
         const tabContent = getEl('tabContent');
@@ -2698,6 +2508,7 @@
       const doc = window.ApplyReadyPDF.generateResumePDF(resumeData, {
         pageSize: resumeData.design.pageSize || 'a4',
         fontFamily: resumeData.design.fontFamily || 'serif',
+        fontSize: resumeData.design.fontSize || 'standard',
         template: resumeData.template || 'classic-professional',
         density: resumeData.design.density || 'standard',
         sectionOrder: resumeData.design.sectionOrder,
@@ -2715,8 +2526,10 @@
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
-      console.error('Vector PDF export error:', err);
-      alert('An error occurred while generating the PDF. Please try browser print fallback.');
+      if (err.code === 'UNSUPPORTED_PDF_TEXT') {
+        notify('Use Save as PDF in the print dialog to preserve all your characters.');
+        printResume();
+      } else notify('PDF could not be generated. Try Browser Print or Word.', true);
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -2730,13 +2543,17 @@
    */
   function exportToDOCX() {
     if (!window.ApplyReadyDOCX) {
-      alert('DOCX generator engine is not loaded. Please try again or download as PDF.');
+      notify('Word export is unavailable. Reload or use PDF.', true);
       return;
     }
 
     const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
     if (!fullName) {
-      alert('Please enter your Full Name before downloading your Word document.');
+      notify('Add your name in Contact details before downloading.', true);
+      getEl('tabEdit').click(); getEl('tabContent').click();
+      getEl('sec-personal').classList.add('open');
+      getEl('sec-personal').querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
+      getEl('fullName').focus();
       return;
     }
 
@@ -2767,8 +2584,7 @@
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
-      console.error('DOCX export error:', err);
-      alert('An error occurred while building the Word document.');
+      notify('Word export could not be generated. Please try again.', true);
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -2782,7 +2598,7 @@
    */
   function exportToPlainText() {
     if (!window.ApplyReadyPDF || !window.ApplyReadyPDF.generateResumeText) {
-      alert('Plain text generator is not ready. Please try again.');
+      notify('Text export is unavailable. Please reload.', true);
       return;
     }
 

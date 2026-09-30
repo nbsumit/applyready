@@ -61,6 +61,10 @@
   let sourceDimensions = { width: 0, height: 0, sizeBytes: 0 };
   let processedBlobUrl = null;
   let currentOpId = 0;
+  let configRevision = 0;
+  let cropperReady = false;
+  let processing = false;
+  const processLabel = '<i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize & compress';
 
   // DOM Elements (safe for Node test environments)
   const doc = typeof document !== 'undefined' ? document : null;
@@ -211,6 +215,12 @@
       isValid = false;
     }
 
+    if (wValid && addDate && width < 160) {
+      dimErrorMsg = 'Width must be at least 160 px for a readable text strip.';
+      wErrorMsg = dimErrorMsg;
+      isValid = false;
+    }
+
     if (hValid && addDate && height < 80) {
       dimErrorMsg = 'Height must be at least 80 px when Name / Date strip is enabled.';
       hErrorMsg = dimErrorMsg;
@@ -306,8 +316,8 @@
       dimError.textContent = msg;
       dimError.classList.remove('hidden');
     }
-    if (customWidthInput && (wErr || (!wErr && !hErr))) customWidthInput.classList.add('is-invalid');
-    if (customHeightInput && (hErr || (!wErr && !hErr))) customHeightInput.classList.add('is-invalid');
+    if (customWidthInput && (wErr || (!wErr && !hErr))) { customWidthInput.classList.add('is-invalid'); customWidthInput.setAttribute('aria-invalid', 'true'); }
+    if (customHeightInput && (hErr || (!wErr && !hErr))) { customHeightInput.classList.add('is-invalid'); customHeightInput.setAttribute('aria-invalid', 'true'); }
   }
 
   function showSizeError(msg) {
@@ -315,7 +325,7 @@
       sizeError.textContent = msg;
       sizeError.classList.remove('hidden');
     }
-    if (customMaxKBInput) customMaxKBInput.classList.add('is-invalid');
+    if (customMaxKBInput) { customMaxKBInput.classList.add('is-invalid'); customMaxKBInput.setAttribute('aria-invalid', 'true'); }
   }
 
   function hideErrors() {
@@ -324,7 +334,7 @@
     if (customWidthInput) customWidthInput.classList.remove('is-invalid');
     if (customHeightInput) customHeightInput.classList.remove('is-invalid');
     if (customMaxKBInput) customMaxKBInput.classList.remove('is-invalid');
-    if (processErrorBox) processErrorBox.classList.add('hidden');
+    [customWidthInput, customHeightInput, customMaxKBInput].forEach(input => { if (input) input.removeAttribute('aria-invalid'); });
   }
 
   /**
@@ -352,7 +362,7 @@
     if (specs.isValid) {
       if (specDims) specDims.textContent = `${specs.width} × ${specs.height} px`;
       if (specSize) specSize.textContent = `Under ${specs.maxKB} KB`;
-      if (btnProcess) btnProcess.disabled = !currentFile;
+      if (btnProcess) btnProcess.disabled = !cropperReady || processing;
     } else {
       if (specDims) specDims.textContent = 'Invalid dimensions';
       if (specSize) specSize.textContent = 'Invalid size limit';
@@ -421,6 +431,14 @@
    * Invalidate previous download and result
    */
   function invalidateResult() {
+    configRevision++;
+    if (processing) {
+      processing = false;
+      btnProcess.innerHTML = processLabel;
+      btnProcess.disabled = !cropperReady;
+      btnProcess.removeAttribute('aria-busy');
+    }
+    if (cropperReady && cropperActiveArea) cropperActiveArea.classList.remove('hidden');
     if (resultArea) resultArea.classList.add('hidden');
     if (btnDownload) {
       btnDownload.removeAttribute('href');
@@ -505,6 +523,7 @@
           const transparentOption = bgFillSelect.querySelector('option[value="transparent"]');
           if (transparentOption) {
             transparentOption.disabled = (val === 'image/jpeg');
+            if (val !== 'image/jpeg') bgFillSelect.value = 'transparent';
             if (val === 'image/jpeg' && bgFillSelect.value === 'transparent') {
               bgFillSelect.value = 'white';
             }
@@ -617,6 +636,19 @@
       });
     }
 
+    const cropSurface = imageToCrop.closest('.cropper-container-wrapper');
+    cropSurface.addEventListener('keydown', e => {
+      if (!cropperReady || !cropper || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','='].includes(e.key)) return;
+      e.preventDefault();
+      if (['+','-','='].includes(e.key)) cropper.zoom(e.key === '-' ? -.05 : .05);
+      else {
+        const box = cropper.getCropBoxData();
+        const step = e.shiftKey ? 10 : 2;
+        cropper.setCropBoxData({ left: box.left + (e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0), top: box.top + (e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0) });
+      }
+      invalidateResult();
+    });
+
     // Cropper Toolbar Controls
     btnRotateLeft.addEventListener('click', () => {
       if (cropper) {
@@ -668,10 +700,8 @@
    * Handle image selection and decode verification
    */
   function handleFileSelect(file) {
-    hideErrors();
-    invalidateResult();
-
     if (!file) return;
+    hideErrors();
 
     if (file.size === 0) {
       showProcessError('The selected file is empty (0 bytes). Please select a valid image.');
@@ -685,13 +715,15 @@
       return;
     }
 
-    if (!file.type.match(/^image\//) && !file.name.match(/\.(jpg|jpeg|png|webp|bmp|gif|avif)$/i)) {
+    if (!/^(image\/(jpeg|jpg|png|webp|bmp|gif|avif))$/i.test(file.type) && !(!file.type && /\.(jpg|jpeg|png|webp|bmp|gif|avif)$/i.test(file.name))) {
       showProcessError('Unsupported format. Please select a valid JPG, PNG, or WebP image.');
       return;
     }
 
+    removeUploadedImage();
     const opId = ++currentOpId;
     currentFile = file;
+    if (btnProcess) btnProcess.disabled = true;
 
     const reader = new FileReader();
     reader.onerror = function () {
@@ -774,8 +806,10 @@
           cropBoxResizable: true,
           toggleDragModeOnDblclick: false,
           ready: function () {
+            if (opId !== currentOpId) return;
+            cropperReady = true;
             updateCropperRatio();
-            cropperActiveArea.scrollIntoView({ behavior: 'smooth' });
+            if (window.innerWidth <= 760) cropperActiveArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
             const specs = getActiveSpecs();
             if (btnProcess) btnProcess.disabled = !specs.isValid;
           },
@@ -796,6 +830,7 @@
    */
   function removeUploadedImage() {
     currentOpId++;
+    cropperReady = false;
     if (cropper) {
       cropper.destroy();
       cropper = null;
@@ -819,6 +854,7 @@
     cropperPlaceholder.classList.remove('hidden');
     invalidateResult();
     hideErrors();
+    if (processErrorBox) processErrorBox.classList.add('hidden');
   }
 
   function showProcessError(msg) {
@@ -830,7 +866,7 @@
   }
 
   /**
-   * Format exam/print date
+   * Format an optional printed date
    */
   function formatAnnotationDate(dateStr) {
     if (!dateStr) return '';
@@ -871,6 +907,7 @@
 
       // Cropped canvas without forcing aspect distortion
       const croppedCanvas = cropper.getCroppedCanvas({
+        width: targetWidth, maxWidth: 8000, maxHeight: Math.min(8000, Math.floor(32000000 / targetWidth)),
         imageSmoothingEnabled: true,
         imageSmoothingQuality: 'high'
       });
@@ -923,13 +960,13 @@
       if (hasName && hasDate) {
         // Two lines: Candidate Name + Date
         let nameFontSize = Math.max(9, Math.round(stripHeight * 0.32));
-        ctx.font = `bold ${nameFontSize}px 'Inter', sans-serif`;
+        ctx.font = `bold ${nameFontSize}px 'Inter', 'ApplyReady Devanagari', sans-serif`;
 
         // Fit long or Unicode names without clipping
         const maxTextWidth = targetWidth * 0.92;
         while (ctx.measureText(candidateName).width > maxTextWidth && nameFontSize > 7) {
           nameFontSize -= 1;
-          ctx.font = `bold ${nameFontSize}px 'Inter', sans-serif`;
+          ctx.font = `bold ${nameFontSize}px 'Inter', 'ApplyReady Devanagari', sans-serif`;
         }
 
         let displayName = candidateName;
@@ -944,18 +981,19 @@
         ctx.textBaseline = 'middle';
         ctx.fillText(displayName, targetWidth / 2, photoHeight + (stripHeight * 0.35));
 
-        const dateFontSize = Math.max(8, Math.round(stripHeight * 0.28));
-        ctx.font = `600 ${dateFontSize}px 'Inter', sans-serif`;
+        let dateFontSize = Math.max(8, Math.round(stripHeight * 0.28));
+        ctx.font = `600 ${dateFontSize}px 'Inter', 'ApplyReady Devanagari', sans-serif`;
+        while (ctx.measureText(`DATE: ${formattedDate}`).width > targetWidth * .92 && dateFontSize > 7) { dateFontSize--; ctx.font = `600 ${dateFontSize}px 'Inter', 'ApplyReady Devanagari', sans-serif`; }
         ctx.fillText(`DATE: ${formattedDate}`, targetWidth / 2, photoHeight + (stripHeight * 0.75));
       } else if (hasName) {
         // Single centered candidate name
         let nameFontSize = Math.max(10, Math.round(stripHeight * 0.44));
-        ctx.font = `bold ${nameFontSize}px 'Inter', sans-serif`;
+        ctx.font = `bold ${nameFontSize}px 'Inter', 'ApplyReady Devanagari', sans-serif`;
 
         const maxTextWidth = targetWidth * 0.92;
         while (ctx.measureText(candidateName).width > maxTextWidth && nameFontSize > 7) {
           nameFontSize -= 1;
-          ctx.font = `bold ${nameFontSize}px 'Inter', sans-serif`;
+          ctx.font = `bold ${nameFontSize}px 'Inter', 'ApplyReady Devanagari', sans-serif`;
         }
 
         let displayName = candidateName;
@@ -971,14 +1009,16 @@
         ctx.fillText(displayName, targetWidth / 2, photoHeight + (stripHeight / 2));
       } else if (hasDate) {
         // Single centered date line
-        const fontSize = Math.max(10, Math.round(stripHeight * 0.44));
-        ctx.font = `bold ${fontSize}px 'Inter', sans-serif`;
+        let fontSize = Math.max(10, Math.round(stripHeight * 0.44));
+        ctx.font = `bold ${fontSize}px 'Inter', 'ApplyReady Devanagari', sans-serif`;
+        while (ctx.measureText(`DATE: ${formattedDate}`).width > targetWidth * .92 && fontSize > 7) { fontSize--; ctx.font = `bold ${fontSize}px 'Inter', 'ApplyReady Devanagari', sans-serif`; }
         ctx.textBaseline = 'middle';
         ctx.fillText(`DATE: ${formattedDate}`, targetWidth / 2, photoHeight + (stripHeight / 2));
       }
     } else {
       // Full canvas without strip
       const croppedCanvas = cropper.getCroppedCanvas({
+        width: targetWidth, maxWidth: 8000, maxHeight: Math.min(8000, Math.floor(32000000 / targetWidth)),
         imageSmoothingEnabled: true,
         imageSmoothingQuality: 'high'
       });
@@ -1014,93 +1054,64 @@
    * Never resolves oversized images as success!
    * Clearly handles PNG lossless limitation honestly.
    */
-  function compressStrictly(canvas, maxKB, mimeType) {
-    return new Promise((resolve, reject) => {
-      const maxBytes = maxKB * 1024; // 1 KB = 1024 Bytes
-
-      // For PNG: PNG is lossless. Canvas toBlob ignores quality parameter.
-      if (mimeType === 'image/png') {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error('Canvas conversion to PNG failed.'));
-            return;
-          }
-          if (blob.size <= maxBytes) {
-            resolve(blob);
-          } else {
-            const actualKB = (blob.size / 1024).toFixed(1);
-            reject({
-              code: 'PNG_OVERSIZED',
-              message: `PNG is a lossless format and generated ${actualKB} KB, which exceeds your target limit of ${maxKB} KB. Canvas cannot compress PNG lossily without reducing pixel dimensions. Please switch format to JPEG or WebP, or increase the target file size.`,
-              actualBytes: blob.size,
-              maxBytes
-            });
-          }
-        }, 'image/png');
-        return;
-      }
-
-      // For JPEG and WebP: Adaptive Quality Search
-      const qualitySteps = [0.95, 0.85, 0.75, 0.65, 0.50, 0.35, 0.20, 0.10, 0.05];
-      let stepIdx = 0;
-
-      function attempt(quality) {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            reject(new Error(`Failed to encode image in format ${mimeType}.`));
-            return;
-          }
-
-          if (blob.size <= maxBytes) {
-            // Succeeded within target byte limit!
-            resolve(blob);
-          } else if (stepIdx < qualitySteps.length - 1) {
-            // Try next lower quality step
-            stepIdx++;
-            attempt(qualitySteps[stepIdx]);
-          } else {
-            // Oversized even at lowest quality (0.05) - Reject honestly!
-            const actualKB = (blob.size / 1024).toFixed(1);
-            reject({
-              code: 'TARGET_EXCEEDED',
-              message: `Unable to compress to under ${maxKB} KB at current dimensions (${canvas.width} × ${canvas.height} px). At lowest quality, file size was ${actualKB} KB. Please increase your target file size, reduce image dimensions, or try WebP format.`,
-              actualBytes: blob.size,
-              maxBytes
-            });
-          }
+  async function compressStrictly(canvas, maxKB, mimeType) {
+    const maxBytes = maxKB * 1024;
+    const encode = quality => new Promise((resolve, reject) => {
+      try {
+        canvas.toBlob(blob => {
+          if (!blob) return reject(new Error('Image encoding failed. Try a smaller image.'));
+          if (blob.type !== mimeType) return reject(new Error('Your browser cannot export this format. Choose JPEG or PNG.'));
+          resolve(blob);
         }, mimeType, quality);
-      }
-
-      attempt(qualitySteps[0]);
+      } catch (error) { reject(error); }
     });
+    let best = await encode(0.95);
+    if (best.size <= maxBytes) return best;
+    if (mimeType === 'image/png') throw new Error(`PNG needs ${(best.size / 1024).toFixed(1)} KB at this size. Increase the file limit, reduce dimensions, or choose WebP or JPEG.`);
+    best = await encode(0.05);
+    if (best.size > maxBytes) throw new Error(`The smallest result is ${(best.size / 1024).toFixed(1)} KB. Increase the file limit or reduce the dimensions to preserve a usable image.`);
+    // Find the highest quality that really meets the byte limit.
+    let low = 0.05, high = 0.95;
+    for (let i = 0; i < 7; i++) {
+      const quality = (low + high) / 2;
+      const candidate = await encode(quality);
+      if (candidate.size <= maxBytes) { best = candidate; low = quality; }
+      else high = quality;
+    }
+    return best;
   }
 
   /**
    * Process & Compress Image with Strict Post-Validation
    */
   async function processImage() {
-    if (!cropper) return;
+    if (!cropper || !cropperReady || processing) return;
     hideErrors();
+    if (processErrorBox) processErrorBox.classList.add('hidden');
 
     const specs = getActiveSpecs();
     if (dimError && !dimError.classList.contains('hidden')) return;
     if (sizeError && !sizeError.classList.contains('hidden')) return;
 
     const opId = ++currentOpId;
-    const originalBtnHtml = btnProcess.innerHTML;
+    const revision = configRevision;
+    let validationUrl = null;
+    processing = true;
+    btnProcess.setAttribute('aria-busy', 'true');
     btnProcess.disabled = true;
     btnProcess.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing & Compressing...';
 
     try {
       const addDate = addDateCheckbox && addDateCheckbox.checked;
+      if (addDate && document.fonts) await document.fonts.ready;
 
       // 1. Generate Target Canvas
       const canvas = generateTargetCanvas(specs, addDate);
-      if (opId !== currentOpId) return;
+      if (opId !== currentOpId || revision !== configRevision) return;
 
       // 2. Strict Compression
       const compressedBlob = await compressStrictly(canvas, specs.maxKB, specs.mimeType);
-      if (opId !== currentOpId) return;
+      if (opId !== currentOpId || revision !== configRevision) return;
 
       // 3. Post-Compression Validation: Decode blob and check dimensions, bytes, and MIME
       if (compressedBlob.size > specs.maxKB * 1024) {
@@ -1113,7 +1124,7 @@
 
       // Decode blob back to verify integrity and exact pixel dimensions
       const validationImg = new Image();
-      const validationUrl = URL.createObjectURL(compressedBlob);
+      validationUrl = URL.createObjectURL(compressedBlob);
 
       await new Promise((resolveVal, rejectVal) => {
         validationImg.onload = () => {
@@ -1127,7 +1138,7 @@
         validationImg.src = validationUrl;
       });
 
-      if (opId !== currentOpId) {
+      if (opId !== currentOpId || revision !== configRevision) {
         URL.revokeObjectURL(validationUrl);
         return;
       }
@@ -1137,6 +1148,7 @@
         URL.revokeObjectURL(processedBlobUrl);
       }
       processedBlobUrl = validationUrl;
+      validationUrl = null;
 
       // Update Result UI
       resultImage.src = processedBlobUrl;
@@ -1188,17 +1200,21 @@
       // Switch views
       cropperActiveArea.classList.add('hidden');
       resultArea.classList.remove('hidden');
-      resultArea.scrollIntoView({ behavior: 'smooth' });
+      resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      btnDownload.focus();
 
     } catch (err) {
-      if (opId !== currentOpId) return;
-      console.error('Image Processing Error:', err);
+      if (opId !== currentOpId || revision !== configRevision) return;
+
       const msg = err && err.message ? err.message : 'An unexpected error occurred while processing the image.';
       showProcessError(msg);
     } finally {
-      if (opId === currentOpId) {
-        btnProcess.disabled = false;
-        btnProcess.innerHTML = originalBtnHtml;
+      if (validationUrl) URL.revokeObjectURL(validationUrl);
+      if (opId === currentOpId && revision === configRevision) {
+        processing = false;
+        btnProcess.disabled = !cropperReady || !getActiveSpecs().isValid;
+        btnProcess.innerHTML = processLabel;
+        btnProcess.removeAttribute('aria-busy');
       }
     }
   }

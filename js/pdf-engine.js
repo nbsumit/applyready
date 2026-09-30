@@ -21,68 +21,90 @@
   const LETTER_WIDTH = 612.00;
   const LETTER_HEIGHT = 792.00;
 
-  // Approximate character width ratios relative to font size (1000 units per em)
-  const HELVETICA_METRICS = {
-    avg: 550,
-    widths: {
-      ' ': 278, '!': 278, '"': 355, '#': 556, '$': 556, '%': 889, '&': 667, "'": 191,
-      '(': 333, ')': 333, '*': 389, '+': 584, ',': 278, '-': 333, '.': 278, '/': 278,
-      '0': 556, '1': 556, '2': 556, '3': 556, '4': 556, '5': 556, '6': 556, '7': 556,
-      '8': 556, '9': 556, ':': 278, ';': 278, '<': 584, '=': 584, '>': 584, '?': 556,
-      '@': 1015, 'A': 667, 'B': 667, 'C': 722, 'D': 722, 'E': 667, 'F': 611, 'G': 778,
-      'H': 722, 'I': 278, 'J': 500, 'K': 667, 'L': 556, 'M': 833, 'N': 722, 'O': 778,
-      'P': 667, 'Q': 778, 'R': 722, 'S': 667, 'T': 611, 'U': 722, 'V': 667, 'W': 944,
-      'X': 667, 'Y': 667, 'Z': 611, '[': 278, '\\': 278, ']': 278, '^': 469, '_': 556,
-      '`': 333, 'a': 556, 'b': 556, 'c': 500, 'd': 556, 'e': 556, 'f': 278, 'g': 556,
-      'h': 556, 'i': 222, 'j': 222, 'k': 500, 'l': 222, 'm': 833, 'n': 556, 'o': 556,
-      'p': 556, 'q': 556, 'r': 333, 's': 500, 't': 278, 'u': 556, 'v': 500, 'w': 722,
-      'x': 500, 'y': 500, 'z': 500, '{': 334, '|': 260, '}': 334, '~': 584
-    }
+  // Standard PDF font advances, indexed by WinAnsi byte minus 32.
+  // Normal, bold and italic have distinct widths; pagination must match the drawn font.
+  const FONT_WIDTHS = {
+    "Helvetica": [
+      278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,
+      1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,
+      333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,350,
+      556,350,222,556,333,1000,556,556,333,1000,667,333,1000,350,611,350,350,222,222,333,333,350,556,1000,333,1000,500,333,944,350,500,667,
+      278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,
+      667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,
+      556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500
+    ],
+    "Helvetica-Bold": [
+      278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,
+      975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,
+      333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,350,
+      556,350,278,556,500,1000,556,556,333,1000,667,333,1000,350,611,350,350,278,278,500,500,350,556,1000,333,1000,556,333,944,350,500,667,
+      278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,
+      722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,
+      556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556
+    ],
+    "Helvetica-Oblique": [
+      278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,
+      1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,
+      333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,350,
+      556,350,222,556,333,1000,556,556,333,1000,667,333,1000,350,611,350,350,222,222,333,333,350,556,1000,333,1000,500,333,944,350,500,667,
+      278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,
+      667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,
+      556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500
+    ],
+    "Times-Roman": [
+      250,333,408,500,500,833,778,180,333,333,500,564,250,333,250,278,500,500,500,500,500,500,500,500,500,500,278,278,564,564,564,444,
+      921,722,667,667,722,611,556,722,722,333,389,722,611,889,722,722,556,722,667,556,611,722,722,944,722,722,611,333,278,333,469,500,
+      333,444,500,444,500,444,333,500,500,278,278,500,278,778,500,500,500,500,333,389,278,500,500,722,500,500,444,480,200,480,541,350,
+      500,350,333,500,444,1000,500,500,333,1000,556,333,889,350,611,350,350,333,333,444,444,350,500,1000,333,980,389,333,722,350,444,722,
+      250,333,500,500,500,500,200,500,333,760,276,500,564,333,760,333,400,564,300,300,333,500,453,250,333,300,310,500,750,750,750,444,
+      722,722,722,722,722,722,889,667,611,611,611,611,333,333,333,333,722,722,722,722,722,722,722,564,722,722,722,722,722,722,556,500,
+      444,444,444,444,444,444,667,444,444,444,444,444,278,278,278,278,500,500,500,500,500,500,500,564,500,500,500,500,500,500,500,500
+    ],
+    "Times-Bold": [
+      250,333,555,500,500,1000,833,278,333,333,500,570,250,333,250,278,500,500,500,500,500,500,500,500,500,500,333,333,570,570,570,500,
+      930,722,667,722,722,667,611,778,778,389,500,778,667,944,722,778,611,778,722,556,667,722,722,1000,722,722,667,333,278,333,581,500,
+      333,500,556,444,556,444,333,500,556,278,333,556,278,833,556,500,556,556,444,389,333,556,500,722,500,500,444,394,220,394,520,350,
+      500,350,333,500,500,1000,500,500,333,1000,556,333,1000,350,667,350,350,333,333,500,500,350,500,1000,333,1000,389,333,722,350,444,722,
+      250,333,500,500,500,500,220,500,333,747,300,500,570,333,747,333,400,570,300,300,333,556,540,250,333,300,330,500,750,750,750,500,
+      722,722,722,722,722,722,1000,722,667,667,667,667,389,389,389,389,722,722,778,778,778,778,778,570,778,722,722,722,722,722,611,556,
+      500,500,500,500,500,500,722,444,444,444,444,444,278,278,278,278,500,556,500,500,500,500,500,570,500,556,556,556,556,500,556,500
+    ],
+    "Times-Italic": [
+      250,333,420,500,500,833,778,214,333,333,500,675,250,333,250,278,500,500,500,500,500,500,500,500,500,500,333,333,675,675,675,500,
+      920,611,611,667,722,611,611,722,722,333,444,667,556,833,667,722,611,722,611,500,556,722,611,833,611,556,556,389,278,389,422,500,
+      333,500,500,444,500,444,278,500,500,278,278,444,278,722,500,500,500,500,389,389,278,500,444,667,444,444,389,400,275,400,541,350,
+      500,350,333,500,556,889,500,500,333,1000,500,333,944,350,556,350,350,333,333,556,556,350,500,889,333,980,389,333,667,350,389,556,
+      250,389,500,500,500,500,275,500,333,760,276,500,675,333,760,333,400,675,300,300,333,500,523,250,333,300,310,500,750,750,750,500,
+      611,611,611,611,611,611,889,667,611,611,611,611,333,333,333,333,722,667,722,722,722,722,722,675,722,722,722,722,722,556,611,500,
+      500,500,500,500,500,500,667,444,444,444,444,444,278,278,278,278,500,500,500,500,500,500,500,675,500,500,500,500,500,444,500,444
+    ],
   };
 
-  const TIMES_METRICS = {
-    avg: 500,
-    widths: {
-      ' ': 250, '!': 333, '"': 408, '#': 500, '$': 500, '%': 833, '&': 778, "'": 180,
-      '(': 333, ')': 333, '*': 500, '+': 564, ',': 250, '-': 333, '.': 250, '/': 278,
-      '0': 500, '1': 500, '2': 500, '3': 500, '4': 500, '5': 500, '6': 500, '7': 500,
-      '8': 500, '9': 500, ':': 278, ';': 278, '<': 564, '=': 564, '>': 564, '?': 444,
-      '@': 921, 'A': 722, 'B': 667, 'C': 667, 'D': 722, 'E': 611, 'F': 556, 'G': 722,
-      'H': 722, 'I': 333, 'J': 389, 'K': 722, 'L': 611, 'M': 889, 'N': 722, 'O': 722,
-      'P': 556, 'Q': 722, 'R': 667, 'S': 556, 'T': 611, 'U': 722, 'V': 722, 'W': 944,
-      'X': 722, 'Y': 722, 'Z': 611, '[': 333, '\\': 278, ']': 333, '^': 469, '_': 500,
-      '`': 333, 'a': 444, 'b': 500, 'c': 444, 'd': 500, 'e': 444, 'f': 278, 'g': 500,
-      'h': 500, 'i': 278, 'j': 278, 'k': 500, 'l': 278, 'm': 778, 'n': 500, 'o': 500,
-      'p': 500, 'q': 500, 'r': 333, 's': 389, 't': 278, 'u': 500, 'v': 500, 'w': 722,
-      'x': 500, 'y': 500, 'z': 444, '{': 480, '|': 200, '}': 480, '~': 541
-    }
-  };
-
-  /**
-   * Measure text width in points
-   */
-  function measureTextWidth(text, fontSize, fontKey) {
+  function measureTextWidth(text, fontSize, fontKey, style = 'normal') {
     if (!text) return 0;
-    const metrics = (fontKey && fontKey.includes('Helvetica')) ? HELVETICA_METRICS : TIMES_METRICS;
-    let totalUnits = 0;
-    for (let i = 0; i < text.length; i++) {
-      const char = text[i];
-      const w = metrics.widths[char] || metrics.avg;
-      totalUnits += w;
+    const sans = /Helvetica|sans/i.test(fontKey || '');
+    const variant = style === 'bold' ? (sans ? 'Helvetica-Bold' : 'Times-Bold') : style === 'italic' ? (sans ? 'Helvetica-Oblique' : 'Times-Italic') : (sans ? 'Helvetica' : 'Times-Roman');
+    const widths = FONT_WIDTHS[variant];
+    let units = 0;
+    for (const char of String(text)) {
+      let code = char.codePointAt(0);
+      if (WINANSI_SPECIAL[code]) code = parseInt(WINANSI_SPECIAL[code].slice(1), 8);
+      if (/\s/.test(char)) code = 32;
+      units += widths[code - 32] || 500;
     }
-    return (totalUnits / 1000) * fontSize;
+    return units * fontSize / 1000;
   }
 
   /**
    * Break a word that exceeds maxWidth into sub-chunks that fit within maxWidth
    */
-  function breakLongWord(word, fontSize, maxWidth, fontKey) {
+  function breakLongWord(word, fontSize, maxWidth, fontKey, style = 'normal') {
     if (!word) return [];
     const chunks = [];
     let currentChunk = '';
     for (let i = 0; i < word.length; i++) {
       const testChunk = currentChunk + word[i];
-      if (measureTextWidth(testChunk, fontSize, fontKey) <= maxWidth) {
+      if (measureTextWidth(testChunk, fontSize, fontKey, style) <= maxWidth) {
         currentChunk = testChunk;
       } else {
         if (currentChunk) chunks.push(currentChunk);
@@ -96,7 +118,7 @@
   /**
    * Split string into lines that fit within maxWidth points, handling long unbroken tokens safely
    */
-  function splitTextToLines(text, fontSize, maxWidth, fontKey) {
+  function splitTextToLines(text, fontSize, maxWidth, fontKey, style = 'normal') {
     if (!text) return [];
     const paragraphs = String(text).replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
     const resultLines = [];
@@ -111,7 +133,7 @@
 
       for (let w = 0; w < words.length; w++) {
         const word = words[w];
-        const wordWidth = measureTextWidth(word, fontSize, fontKey);
+        const wordWidth = measureTextWidth(word, fontSize, fontKey, style);
 
         if (wordWidth > maxWidth) {
           // If currentLine is non-empty, flush it
@@ -119,7 +141,7 @@
             resultLines.push(currentLine);
             currentLine = '';
           }
-          const wordChunks = breakLongWord(word, fontSize, maxWidth, fontKey);
+          const wordChunks = breakLongWord(word, fontSize, maxWidth, fontKey, style);
           for (let c = 0; c < wordChunks.length - 1; c++) {
             resultLines.push(wordChunks[c]);
           }
@@ -131,7 +153,7 @@
           currentLine = word;
         } else {
           const testLine = currentLine + ' ' + word;
-          const width = measureTextWidth(testLine, fontSize, fontKey);
+          const width = measureTextWidth(testLine, fontSize, fontKey, style);
           if (width <= maxWidth) {
             currentLine = testLine;
           } else {
@@ -178,13 +200,6 @@
     376:  '\\237'  // Ÿ
   };
 
-  const LATIN_TRANSLITERATION = {
-    'Ł': 'L', 'ł': 'l', 'Đ': 'D', 'đ': 'd', 'Ħ': 'H', 'ħ': 'h',
-    'ı': 'i', 'İ': 'I', 'ĸ': 'k', 'ŉ': 'n', 'Ŋ': 'N', 'ŋ': 'n',
-    'Ŧ': 'T', 'ŧ': 't', 'ß': 'ss', 'Ø': '\\330', 'ø': '\\370',
-    'Æ': '\\306', 'æ': '\\346'
-  };
-
   /**
    * Escape text for PDF literal strings with true WinAnsi encoding and Unicode preservation
    */
@@ -209,40 +224,24 @@
         result += WINANSI_SPECIAL[code];
       } else if (code >= 160 && code <= 255) {
         result += '\\' + code.toString(8).padStart(3, '0');
-      } else if (LATIN_TRANSLITERATION[char]) {
-        result += LATIN_TRANSLITERATION[char];
+      } else if (/\s/.test(char)) {
+        result += ' ';
       } else {
-        const decomposed = char.normalize('NFKD');
-        let matched = false;
-        for (let d = 0; d < decomposed.length; d++) {
-          const dCode = decomposed.charCodeAt(d);
-          if (dCode >= 32 && dCode <= 126) {
-            if (decomposed[d] === '\\') result += '\\\\';
-            else if (decomposed[d] === '(') result += '\\(';
-            else if (decomposed[d] === ')') result += '\\)';
-            else result += decomposed[d];
-            matched = true;
-            break;
-          }
-        }
-        if (!matched) {
-          result += ' ';
-        }
+        const error = new Error('This text requires a Unicode font. Use Browser Print or Word to preserve it.');
+        error.code = 'UNSUPPORTED_PDF_TEXT';
+        throw error;
       }
     }
     return result;
   }
 
   function sanitizeUrl(raw) {
-    if (!raw) return '';
-    let url = String(raw).trim();
-    if (url.toLowerCase().startsWith('javascript:') || url.toLowerCase().startsWith('data:')) {
-      return '';
-    }
-    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('mailto:') && !url.startsWith('tel:')) {
-      url = 'https://' + url;
-    }
-    return url;
+    if (!raw || /[\u0000-\u001f]/.test(String(raw))) return '';
+    const clean = String(raw).trim();
+    try {
+      const url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(clean) ? clean : 'https://' + clean);
+      return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol) ? url.href : '';
+    } catch (e) { return ''; }
   }
 
   /**
@@ -455,13 +454,12 @@
 
     // Base font size configuration
     const fontSizeOpt = options.fontSize || (resumeData.design && resumeData.design.fontSize) || 'standard';
-    let baseFontSize = 9.5;
+    let baseFontSize = 11;
     if (fontSizeOpt === 'comfortable') {
-      baseFontSize = 10.0;
+      baseFontSize = 12;
     } else if (fontSizeOpt === 'compact') {
-      baseFontSize = 9.0;
-    } else if (isCompact) {
-      baseFontSize = 8.75;
+      baseFontSize = 10;
+
     }
 
     const doc = new VectorPDFDocument({
@@ -489,6 +487,27 @@
       return false;
     }
 
+    function drawWrapped(text, fontSize, style = 'normal', color = [0.15, 0.15, 0.15], align = 'left', url = '') {
+      const lines = splitTextToLines(text, fontSize, contentWidth - 8, fontKey, style);
+      for (const line of lines) {
+        ensureSpace(fontSize + 4);
+        const width = measureTextWidth(line, fontSize, fontKey, style);
+        const x = align === 'center' ? marginLeft + Math.max(0, (contentWidth - width) / 2) : marginLeft;
+        doc.drawText(line, x, currentY + fontSize, { fontSize, fontStyle: style, color });
+        if (url) doc.addLink(x, currentY, width, fontSize + 2, url);
+        currentY += fontSize + 4;
+      }
+    }
+    function drawBullet(text, fontSize) {
+      const lines = splitTextToLines(text, fontSize, contentWidth - 16, fontKey);
+      lines.forEach((line, index) => {
+        ensureSpace(fontSize + 4);
+        if (index === 0) doc.drawText('•', marginLeft + 2, currentY + fontSize, { fontSize });
+        doc.drawText(line, marginLeft + 12, currentY + fontSize, { fontSize });
+        currentY += fontSize + 4;
+      });
+    }
+
     // Determine header alignment
     const headerAlign = (templateId === 'classic-professional' || templateId === 'experienced-professional' || templateId === 'academic-cv')
       ? 'center'
@@ -498,25 +517,12 @@
     const rawFullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : 'FULL NAME').trim();
     const fullName = rawFullName.toUpperCase();
     const nameFontSize = isCompact ? 16 : 18;
-    const nameWidth = measureTextWidth(fullName, nameFontSize, fontKey);
-    const nameX = headerAlign === 'center'
-      ? Math.max(marginLeft, marginLeft + (contentWidth - nameWidth) / 2)
-      : marginLeft;
-
-    doc.drawText(fullName, nameX, currentY + nameFontSize, { fontSize: nameFontSize, fontStyle: 'bold', color: [0, 0, 0] });
-    currentY += nameFontSize + (isCompact ? 4 : 6);
-
-    // Target Role / Professional Headline
+    drawWrapped(fullName, nameFontSize, 'bold', [0, 0, 0], headerAlign);
+    currentY += 2;
     const targetTitle = (resumeData.personal && resumeData.personal.targetTitle ? resumeData.personal.targetTitle : '').trim();
     if (targetTitle) {
-      const titleFontSize = isCompact ? 9.5 : 10.5;
-      const titleWidth = measureTextWidth(targetTitle, titleFontSize, fontKey);
-      const titleX = headerAlign === 'center'
-        ? Math.max(marginLeft, marginLeft + (contentWidth - titleWidth) / 2)
-        : marginLeft;
-
-      doc.drawText(targetTitle, titleX, currentY + titleFontSize, { fontSize: titleFontSize, fontStyle: 'italic', color: [0.2, 0.25, 0.32] });
-      currentY += titleFontSize + (isCompact ? 4 : 5);
+      drawWrapped(targetTitle, baseFontSize, 'italic', [0.2, 0.25, 0.32], headerAlign);
+      currentY += 1;
     }
 
     // Contact Information Line
@@ -530,51 +536,33 @@
     if (personal.website && personal.website.trim()) contactParts.push({ text: personal.website.trim(), type: 'link', url: personal.website.trim() });
 
     if (contactParts.length > 0) {
-      const contactFontSize = isCompact ? 8.5 : 9;
-      const bulletSep = '  •  ';
-      const bulletWidth = measureTextWidth(bulletSep, contactFontSize, fontKey);
-
-      let totalLineWidth = 0;
-      for (let i = 0; i < contactParts.length; i++) {
-        totalLineWidth += measureTextWidth(contactParts[i].text, contactFontSize, fontKey);
-        if (i < contactParts.length - 1) totalLineWidth += bulletWidth;
-      }
-
-      let startX = headerAlign === 'center'
-        ? Math.max(marginLeft, marginLeft + (contentWidth - totalLineWidth) / 2)
-        : marginLeft;
-
-      for (let i = 0; i < contactParts.length; i++) {
-        const item = contactParts[i];
-        const itemWidth = measureTextWidth(item.text, contactFontSize, fontKey);
-
-        if (startX + itemWidth > pageWidth - marginRight && i > 0) {
-          currentY += contactFontSize + 3;
-          startX = marginLeft;
+      const contactFontSize = 9;
+      const separator = '  •  ';
+      const separatorWidth = measureTextWidth(separator, contactFontSize, fontKey);
+      const rows = [];
+      let row = [], rowWidth = 0;
+      for (const item of contactParts) {
+        for (const text of splitTextToLines(item.text, contactFontSize, contentWidth - 8, fontKey)) {
+          const width = measureTextWidth(text, contactFontSize, fontKey);
+          const needed = width + (row.length ? separatorWidth : 0);
+          if (row.length && rowWidth + needed > contentWidth - 8) { rows.push({ items: row, width: rowWidth }); row = []; rowWidth = 0; }
+          rowWidth += width + (row.length ? separatorWidth : 0);
+          row.push({ ...item, text, width });
         }
-
-        doc.drawText(item.text, startX, currentY + contactFontSize, {
-          fontSize: contactFontSize,
-          fontStyle: 'normal',
-          color: item.url ? [0.05, 0.35, 0.75] : [0.15, 0.18, 0.22]
+      }
+      if (row.length) rows.push({ items: row, width: rowWidth });
+      for (const row of rows) {
+        ensureSpace(contactFontSize + 4);
+        let x = headerAlign === 'center' ? marginLeft + (contentWidth - row.width) / 2 : marginLeft;
+        row.items.forEach((item, i) => {
+          if (i) { doc.drawText(separator, x, currentY + contactFontSize, { fontSize: contactFontSize, color: [0.4, 0.45, 0.5] }); x += separatorWidth; }
+          doc.drawText(item.text, x, currentY + contactFontSize, { fontSize: contactFontSize, color: item.url ? [0.05, 0.35, 0.75] : [0.15, 0.18, 0.22] });
+          if (item.url) doc.addLink(x, currentY, item.width, contactFontSize + 2, item.url);
+          x += item.width;
         });
-
-        if (item.url) {
-          doc.addLink(startX, currentY, itemWidth, contactFontSize + 2, item.url);
-        }
-
-        startX += itemWidth;
-
-        if (i < contactParts.length - 1) {
-          doc.drawText(bulletSep, startX, currentY + contactFontSize, {
-            fontSize: contactFontSize,
-            fontStyle: 'normal',
-            color: [0.4, 0.45, 0.5]
-          });
-          startX += bulletWidth;
-        }
+        currentY += contactFontSize + 4;
       }
-      currentY += contactFontSize + (isCompact ? 5 : 8);
+      currentY += 4;
     }
 
     // Top Header Divider
@@ -592,13 +580,16 @@
      */
     function renderSectionHeader(title) {
       ensureSpace(isCompact ? 48 : 65);
-      const headingFontSize = isCompact ? 9.5 : 10.5;
-      doc.drawText(title.toUpperCase(), marginLeft, currentY + headingFontSize, {
-        fontSize: headingFontSize,
-        fontStyle: 'bold',
-        color: [0, 0, 0]
-      });
-      currentY += headingFontSize + (isCompact ? 2 : 3);
+      const headingFontSize = baseFontSize + 0.5;
+      for (const line of splitTextToLines(title.toUpperCase(), headingFontSize, contentWidth - 8, fontKey, 'bold')) {
+        ensureSpace(headingFontSize + 4);
+        doc.drawText(line, marginLeft, currentY + headingFontSize, {
+          fontSize: headingFontSize,
+          fontStyle: 'bold',
+          color: [0, 0, 0]
+        });
+        currentY += headingFontSize + (isCompact ? 2 : 3);
+      }
 
       if (templateId !== 'modern-minimal') {
         doc.drawLine(marginLeft, currentY, pageWidth - marginRight, currentY, {
@@ -624,7 +615,7 @@
     };
 
     const sectionOrder = (resumeData.design && Array.isArray(resumeData.design.sectionOrder))
-      ? resumeData.design.sectionOrder
+      ? [...new Set([...resumeData.design.sectionOrder, 'summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'])]
       : (options.sectionOrder || ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic']);
 
     // --- SECTION RENDERERS ---
@@ -673,8 +664,8 @@
         const roleCompany = [exp.role, exp.company].filter(Boolean).join('  |  ');
         const roleFontSize = baseFontSize;
         const dateLoc = [exp.duration, exp.location].filter(Boolean).join('  •  ');
-        const dateWidth = dateLoc ? measureTextWidth(dateLoc, isCompact ? 8.5 : 9, fontKey) : 0;
-        const roleWidth = measureTextWidth(roleCompany, roleFontSize, fontKey);
+        const dateWidth = dateLoc ? measureTextWidth(dateLoc, isCompact ? 8.5 : 9, fontKey, 'italic') : 0;
+        const roleWidth = measureTextWidth(roleCompany, roleFontSize, fontKey, 'bold');
         const maxLeftWidth = dateWidth > 0 ? contentWidth - dateWidth - 12 : contentWidth;
 
         if (roleWidth <= maxLeftWidth) {
@@ -693,7 +684,7 @@
           }
           currentY += roleFontSize + (isCompact ? 3 : 4);
         } else {
-          const roleLines = splitTextToLines(roleCompany, roleFontSize, contentWidth, fontKey);
+          const roleLines = splitTextToLines(roleCompany, roleFontSize, contentWidth - 8, fontKey, 'bold');
           for (let rl = 0; rl < roleLines.length; rl++) {
             if (rl > 0) ensureSpace(roleFontSize + 2);
             doc.drawText(roleLines[rl], marginLeft, currentY + roleFontSize, {
@@ -705,12 +696,7 @@
           }
           if (dateLoc) {
             ensureSpace(12);
-            doc.drawText(dateLoc, marginLeft, currentY + 9, {
-              fontSize: isCompact ? 8.5 : 9,
-              fontStyle: 'italic',
-              color: [0.35, 0.4, 0.45]
-            });
-            currentY += 9 + 4;
+            drawWrapped(dateLoc, 9, 'italic', [0.35, 0.4, 0.45]);
           } else {
             currentY += 2;
           }
@@ -721,7 +707,7 @@
           const rawBullets = exp.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
           const bulletIndent = isCompact ? 10 : 12;
           const bulletTextWidth = contentWidth - bulletIndent;
-          const bulletFontSize = Math.max(8.0, baseFontSize - 0.5);
+          const bulletFontSize = baseFontSize;
 
           for (let b = 0; b < rawBullets.length; b++) {
             const bulletText = rawBullets[b].trim().replace(/^[-*•]\s*/, '');
@@ -729,7 +715,7 @@
 
             const bulletLines = splitTextToLines(bulletText, bulletFontSize, bulletTextWidth, fontKey);
             for (let bl = 0; bl < bulletLines.length; bl++) {
-              ensureSpace(isCompact ? 11 : 13);
+              ensureSpace(baseFontSize + 4);
               if (bl === 0) {
                 doc.drawText('•', marginLeft + 2, currentY + bulletFontSize, { fontSize: bulletFontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
               }
@@ -738,7 +724,7 @@
                 fontStyle: 'normal',
                 color: [0.15, 0.15, 0.15]
               });
-              currentY += (isCompact ? 11.5 : 12.5);
+              currentY += baseFontSize + (isCompact ? 3 : 4);
             }
           }
         }
@@ -771,8 +757,8 @@
         const degreeInst = [edu.degree, edu.institution].filter(Boolean).join('  —  ');
         const degFontSize = baseFontSize;
         const metaParts = [edu.duration, edu.location, edu.score].filter(Boolean).join('  •  ');
-        const metaWidth = metaParts ? measureTextWidth(metaParts, isCompact ? 8.5 : 9, fontKey) : 0;
-        const degWidth = measureTextWidth(degreeInst, degFontSize, fontKey);
+        const metaWidth = metaParts ? measureTextWidth(metaParts, isCompact ? 8.5 : 9, fontKey, 'italic') : 0;
+        const degWidth = measureTextWidth(degreeInst, degFontSize, fontKey, 'bold');
         const maxDegWidth = metaWidth > 0 ? contentWidth - metaWidth - 12 : contentWidth;
 
         if (degWidth <= maxDegWidth) {
@@ -791,7 +777,7 @@
           }
           currentY += degFontSize + (isCompact ? 4 : 6);
         } else {
-          const degLines = splitTextToLines(degreeInst, degFontSize, contentWidth, fontKey);
+          const degLines = splitTextToLines(degreeInst, degFontSize, contentWidth - 8, fontKey, 'bold');
           for (let dl = 0; dl < degLines.length; dl++) {
             if (dl > 0) ensureSpace(degFontSize + 2);
             doc.drawText(degLines[dl], marginLeft, currentY + degFontSize, {
@@ -803,12 +789,7 @@
           }
           if (metaParts) {
             ensureSpace(12);
-            doc.drawText(metaParts, marginLeft, currentY + 9, {
-              fontSize: isCompact ? 8.5 : 9,
-              fontStyle: 'italic',
-              color: [0.35, 0.4, 0.45]
-            });
-            currentY += 9 + 4;
+            drawWrapped(metaParts, 9, 'italic', [0.35, 0.4, 0.45]);
           } else {
             currentY += 2;
           }
@@ -841,74 +822,27 @@
 
         const projName = proj.name || 'Project';
         const projFontSize = baseFontSize;
-        const techText = (proj.tech && proj.tech.trim()) ? `|  ${proj.tech.trim()}` : '';
-        const nameTech = techText ? `${projName}  ${techText}` : projName;
-        const linkText = (proj.link && proj.link.trim()) ? proj.link.trim() : '';
-        const linkWidth = linkText ? measureTextWidth(linkText, isCompact ? 8 : 8.5, fontKey) : 0;
-        const nameTechWidth = measureTextWidth(nameTech, projFontSize, fontKey);
-        const maxProjLeftWidth = linkWidth > 0 ? contentWidth - linkWidth - 12 : contentWidth;
-
-        if (nameTechWidth <= maxProjLeftWidth && linkText) {
-          doc.drawText(projName, marginLeft, currentY + projFontSize, {
-            fontSize: projFontSize,
-            fontStyle: 'bold',
-            color: [0.05, 0.05, 0.05]
-          });
-          if (techText) {
-            const techStartX = marginLeft + measureTextWidth(projName, projFontSize, fontKey) + 6;
-            doc.drawText(techText, techStartX, currentY + (isCompact ? 8.5 : 9), {
-              fontSize: isCompact ? 8.5 : 9,
-              fontStyle: 'italic',
-              color: [0.35, 0.4, 0.45]
-            });
+        const techText = (proj.tech || '').trim();
+        const linkText = (proj.link || '').trim();
+        const techFontSize = isCompact ? 8.5 : 9;
+        const linkFontSize = 8.5;
+        const nameWidth = measureTextWidth(projName, projFontSize, fontKey, 'bold');
+        const techWidth = techText ? measureTextWidth('|  ' + techText, techFontSize, fontKey, 'italic') + 6 : 0;
+        const linkWidth = measureTextWidth(linkText, linkFontSize, fontKey);
+        const inlineWidth = nameWidth + techWidth + (linkText ? linkWidth + 12 : 0);
+        if (inlineWidth <= contentWidth - 8) {
+          doc.drawText(projName, marginLeft, currentY + projFontSize, { fontSize: projFontSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
+          if (techText) doc.drawText('|  ' + techText, marginLeft + nameWidth + 6, currentY + techFontSize, { fontSize: techFontSize, fontStyle: 'italic', color: [0.35, 0.4, 0.45] });
+          if (linkText) {
+            const linkX = pageWidth - marginRight - linkWidth;
+            doc.drawText(linkText, linkX, currentY + linkFontSize, { fontSize: linkFontSize, color: [0.05, 0.35, 0.75] });
+            doc.addLink(linkX, currentY, linkWidth, linkFontSize + 2, linkText);
           }
-          const linkX = pageWidth - marginRight - linkWidth;
-          doc.drawText(linkText, linkX, currentY + 8.5, {
-            fontSize: 8.5,
-            fontStyle: 'normal',
-            color: [0.05, 0.35, 0.75]
-          });
-          doc.addLink(linkX, currentY, linkWidth, 10, linkText);
           currentY += projFontSize + (isCompact ? 3 : 4);
         } else {
-          doc.drawText(projName, marginLeft, currentY + projFontSize, {
-            fontSize: projFontSize,
-            fontStyle: 'bold',
-            color: [0.05, 0.05, 0.05]
-          });
-          const afterNameX = marginLeft + measureTextWidth(projName, projFontSize, fontKey) + 6;
-          if (techText) {
-            const availableTechWidth = contentWidth - (afterNameX - marginLeft);
-            if (measureTextWidth(techText, 9, fontKey) <= availableTechWidth) {
-              doc.drawText(techText, afterNameX, currentY + 9, {
-                fontSize: 9,
-                fontStyle: 'italic',
-                color: [0.35, 0.4, 0.45]
-              });
-              currentY += projFontSize + 3;
-            } else {
-              currentY += projFontSize + 2;
-              doc.drawText(techText, marginLeft + 10, currentY + 9, {
-                fontSize: 9,
-                fontStyle: 'italic',
-                color: [0.35, 0.4, 0.45]
-              });
-              currentY += 9 + 3;
-            }
-          } else {
-            currentY += projFontSize + 3;
-          }
-
-          if (linkText) {
-            ensureSpace(12);
-            doc.drawText(linkText, marginLeft + 10, currentY + 8.5, {
-              fontSize: 8.5,
-              fontStyle: 'normal',
-              color: [0.05, 0.35, 0.75]
-            });
-            doc.addLink(marginLeft + 10, currentY, linkWidth, 10, linkText);
-            currentY += 8.5 + 4;
-          }
+          drawWrapped(projName, projFontSize, 'bold', [0.05, 0.05, 0.05]);
+          if (techText) drawWrapped(techText, techFontSize, 'italic', [0.35, 0.4, 0.45]);
+          if (linkText) drawWrapped(linkText, linkFontSize, 'normal', [0.05, 0.35, 0.75], 'left', linkText);
         }
 
         // Bullets
@@ -916,7 +850,7 @@
           const rawBullets = proj.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
           const bulletIndent = isCompact ? 10 : 12;
           const bulletTextWidth = contentWidth - bulletIndent;
-          const bulletFontSize = Math.max(8.0, baseFontSize - 0.5);
+          const bulletFontSize = baseFontSize;
 
           for (let b = 0; b < rawBullets.length; b++) {
             const bulletText = rawBullets[b].trim().replace(/^[-*•]\s*/, '');
@@ -924,7 +858,7 @@
 
             const bulletLines = splitTextToLines(bulletText, bulletFontSize, bulletTextWidth, fontKey);
             for (let bl = 0; bl < bulletLines.length; bl++) {
-              ensureSpace(isCompact ? 11 : 13);
+              ensureSpace(baseFontSize + 4);
               if (bl === 0) {
                 doc.drawText('•', marginLeft + 2, currentY + bulletFontSize, { fontSize: bulletFontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
               }
@@ -933,7 +867,7 @@
                 fontStyle: 'normal',
                 color: [0.15, 0.15, 0.15]
               });
-              currentY += (isCompact ? 11.5 : 12.5);
+              currentY += baseFontSize + (isCompact ? 3 : 4);
             }
           }
         }
@@ -951,10 +885,10 @@
             if (cat.name && cat.items) skillEntries.push({ label: cat.name, text: cat.items });
           }
         } else {
-          if (skills.languages && skills.languages.trim()) skillEntries.push({ label: 'Technical Skills / Languages', text: skills.languages.trim() });
-          if (skills.frameworks && skills.frameworks.trim()) skillEntries.push({ label: 'Frameworks & Libraries', text: skills.frameworks.trim() });
-          if (skills.tools && skills.tools.trim()) skillEntries.push({ label: 'Tools & Platforms', text: skills.tools.trim() });
-          if (skills.other && skills.other.trim()) skillEntries.push({ label: 'Core Competencies', text: skills.other.trim() });
+          if (skills.languages && skills.languages.trim()) skillEntries.push({ label: 'Core Competencies', text: skills.languages.trim() });
+          if (skills.frameworks && skills.frameworks.trim()) skillEntries.push({ label: 'Tools & Platforms', text: skills.frameworks.trim() });
+          if (skills.tools && skills.tools.trim()) skillEntries.push({ label: 'Technical & Data Skills', text: skills.tools.trim() });
+          if (skills.other && skills.other.trim()) skillEntries.push({ label: 'Professional Skills', text: skills.other.trim() });
         }
       }
 
@@ -962,27 +896,32 @@
 
       renderSectionHeader(resumeData.skillsTitle || 'Skills & Competencies');
 
-      const skillFontSize = Math.max(8.0, baseFontSize - 0.5);
+      const skillFontSize = baseFontSize;
       for (let i = 0; i < skillEntries.length; i++) {
         const item = skillEntries[i];
         ensureSpace(isCompact ? 12 : 14);
 
         const labelText = item.label + ':  ';
-        const labelWidth = measureTextWidth(labelText, skillFontSize, fontKey);
+        const labelWidth = measureTextWidth(labelText, skillFontSize, fontKey, 'bold');
 
+        if (labelWidth > contentWidth * 0.45) {
+          drawWrapped(labelText, skillFontSize, 'bold');
+          drawWrapped(item.text, skillFontSize);
+          continue;
+        }
         doc.drawText(labelText, marginLeft, currentY + skillFontSize, {
           fontSize: skillFontSize,
           fontStyle: 'bold',
           color: [0.1, 0.1, 0.1]
         });
 
-        const remainingWidth = contentWidth - labelWidth;
+        const remainingWidth = contentWidth - labelWidth - 8;
         const skillLines = splitTextToLines(item.text, skillFontSize, remainingWidth, fontKey);
 
         for (let sl = 0; sl < skillLines.length; sl++) {
           if (sl > 0) {
-            ensureSpace(isCompact ? 11 : 13);
-            currentY += (isCompact ? 11.5 : 12.5);
+            ensureSpace(baseFontSize + 4);
+            currentY += baseFontSize + (isCompact ? 3 : 4);
           }
           const lineX = marginLeft + labelWidth;
           doc.drawText(skillLines[sl], lineX, currentY + skillFontSize, {
@@ -996,161 +935,38 @@
     }
 
     function renderCertifications() {
-      const certs = resumeData.certifications;
-      if (!Array.isArray(certs) || certs.length === 0) return;
-
+      const certs = (resumeData.certifications || []).filter(c => c.name || c.title);
+      if (!certs.length) return;
       renderSectionHeader('Certifications & Credentials');
-      const fontSize = Math.max(8.0, baseFontSize - 0.5);
-
-      for (const cert of certs) {
-        const title = (cert.name || cert.title || '').trim();
-        const issuer = (cert.issuer || '').trim();
-        const year = (cert.year || cert.date || '').trim();
-        if (!title) continue;
-
-        ensureSpace(14);
-        const certText = `${title}${issuer ? ' — ' + issuer : ''}${year ? ' (' + year + ')' : ''}`;
-        doc.drawText('•', marginLeft + 2, currentY + fontSize, { fontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
-        doc.drawText(certText, marginLeft + 12, currentY + fontSize, {
-          fontSize,
-          fontStyle: 'normal',
-          color: [0.15, 0.15, 0.15]
-        });
-        currentY += fontSize + 4;
-      }
+      certs.forEach(c => drawBullet([c.name || c.title, c.issuer, c.year || c.date].filter(Boolean).join(' — '), baseFontSize));
     }
-
     function renderAchievements() {
-      const achs = resumeData.achievements;
-      if (!Array.isArray(achs) || achs.length === 0) return;
-
+      const texts = (resumeData.achievements || []).map(a => typeof a === 'string' ? a : a.title || a.text || '').filter(Boolean);
+      if (!texts.length) return;
       renderSectionHeader('Honors & Achievements');
-      const fontSize = Math.max(8.0, baseFontSize - 0.5);
-
-      for (const ach of achs) {
-        const text = (typeof ach === 'string' ? ach : (ach.title || ach.text || '')).trim();
-        if (!text) continue;
-
-        ensureSpace(14);
-        doc.drawText('•', marginLeft + 2, currentY + fontSize, { fontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
-        const lines = splitTextToLines(text, fontSize, contentWidth - 12, fontKey);
-        for (let l = 0; l < lines.length; l++) {
-          if (l > 0) ensureSpace(fontSize + 3);
-          doc.drawText(lines[l], marginLeft + 12, currentY + fontSize, {
-            fontSize,
-            fontStyle: 'normal',
-            color: [0.15, 0.15, 0.15]
-          });
-          currentY += fontSize + 3;
-        }
-      }
+      texts.forEach(text => drawBullet(text, baseFontSize));
     }
-
     function renderVolunteering() {
-      const vols = resumeData.volunteering;
-      if (!Array.isArray(vols) || vols.length === 0) return;
-
+      const texts = (resumeData.volunteering || []).map(v => [v.role, v.organization || v.org, v.duration].filter(Boolean).join(' — ')).filter(Boolean);
+      if (!texts.length) return;
       renderSectionHeader('Community & Leadership');
-      const fontSize = Math.max(8.0, baseFontSize - 0.5);
-
-      for (const vol of vols) {
-        const role = (vol.role || '').trim();
-        const org = (vol.organization || vol.org || '').trim();
-        const dur = (vol.duration || '').trim();
-        if (!role && !org) continue;
-
-        ensureSpace(14);
-        const volText = `${role}${org ? ', ' + org : ''}${dur ? ' (' + dur + ')' : ''}`;
-        doc.drawText('•', marginLeft + 2, currentY + fontSize, { fontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
-        doc.drawText(volText, marginLeft + 12, currentY + fontSize, {
-          fontSize,
-          fontStyle: 'normal',
-          color: [0.15, 0.15, 0.15]
-        });
-        currentY += fontSize + 4;
-      }
+      texts.forEach(text => drawBullet(text, baseFontSize));
     }
-
     function renderLanguages() {
-      const langs = resumeData.languages;
-      if (!Array.isArray(langs) || langs.length === 0) return;
-
+      const texts = (resumeData.languages || []).map(l => typeof l === 'string' ? l : [l.name, l.proficiency].filter(Boolean).join(' — ')).filter(Boolean);
+      if (!texts.length) return;
       renderSectionHeader('Languages');
-      const fontSize = Math.max(8.0, baseFontSize - 0.5);
-      const langStr = langs.map(l => typeof l === 'string' ? l : `${l.name || ''} (${l.proficiency || 'Fluent'})`).filter(Boolean).join('  •  ');
-      if (!langStr) return;
-
-      ensureSpace(14);
-      doc.drawText(langStr, marginLeft, currentY + fontSize, {
-        fontSize,
-        fontStyle: 'normal',
-        color: [0.15, 0.15, 0.15]
-      });
-      currentY += fontSize + 6;
+      drawWrapped(texts.join('  •  '), baseFontSize);
     }
-
     function renderAcademic() {
-      const acad = resumeData.academic;
-      if (!acad || typeof acad !== 'object') return;
-      const fontSize = Math.max(8.0, baseFontSize - 0.5);
-
-      if (Array.isArray(acad.publications) && acad.publications.length > 0) {
-        renderSectionHeader('Peer-Reviewed Publications');
-        for (const pub of acad.publications) {
-          const text = (pub.title || pub.citation || '').trim();
-          if (!text) continue;
-          ensureSpace(14);
-          doc.drawText('•', marginLeft + 2, currentY + fontSize, { fontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
-          const lines = splitTextToLines(text, fontSize, contentWidth - 12, fontKey);
-          for (let l = 0; l < lines.length; l++) {
-            if (l > 0) ensureSpace(fontSize + 3);
-            doc.drawText(lines[l], marginLeft + 12, currentY + fontSize, {
-              fontSize,
-              fontStyle: 'normal',
-              color: [0.15, 0.15, 0.15]
-            });
-            currentY += fontSize + 3;
-          }
-        }
-      }
-
-      if (Array.isArray(acad.teaching) && acad.teaching.length > 0) {
-        renderSectionHeader('Teaching Experience');
-        for (const t of acad.teaching) {
-          const role = (t.role || t.course || '').trim();
-          const inst = (t.institution || '').trim();
-          const term = (t.term || '').trim();
-          if (!role) continue;
-          ensureSpace(14);
-          const tText = `${role}${inst ? ' — ' + inst : ''}${term ? ' (' + term + ')' : ''}`;
-          doc.drawText('•', marginLeft + 2, currentY + fontSize, { fontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
-          doc.drawText(tText, marginLeft + 12, currentY + fontSize, {
-            fontSize,
-            fontStyle: 'normal',
-            color: [0.15, 0.15, 0.15]
-          });
-          currentY += fontSize + 4;
-        }
-      }
-
-      if (Array.isArray(acad.presentations) && acad.presentations.length > 0) {
-        renderSectionHeader('Conference Presentations');
-        for (const pr of acad.presentations) {
-          const text = (typeof pr === 'string' ? pr : (pr.title || pr.event || '')).trim();
-          if (!text) continue;
-          ensureSpace(14);
-          doc.drawText('•', marginLeft + 2, currentY + fontSize, { fontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
-          const lines = splitTextToLines(text, fontSize, contentWidth - 12, fontKey);
-          for (let l = 0; l < lines.length; l++) {
-            if (l > 0) ensureSpace(fontSize + 3);
-            doc.drawText(lines[l], marginLeft + 12, currentY + fontSize, {
-              fontSize,
-              fontStyle: 'normal',
-              color: [0.15, 0.15, 0.15]
-            });
-            currentY += fontSize + 3;
-          }
-        }
+      const acad = resumeData.academic || {};
+      for (const [key, title] of [['publications', 'Peer-Reviewed Publications'], ['teaching', 'Teaching Experience'], ['presentations', 'Conference Presentations'], ['grants', 'Research Grants']]) {
+        const texts = (acad[key] || []).map(item => typeof item === 'string' ? item : key === 'teaching'
+          ? [item.role || item.course, item.institution, item.term].filter(Boolean).join(' — ')
+          : key === 'grants' ? [item.title || item.name, item.funder, item.year].filter(Boolean).join(' — ') : item.title || item.citation || item.event || '').filter(Boolean);
+        if (!texts.length) continue;
+        renderSectionHeader(title);
+        texts.forEach(text => drawBullet(text, baseFontSize));
       }
     }
 
@@ -1200,7 +1016,7 @@
     };
 
     const sectionOrder = (resumeData.design && Array.isArray(resumeData.design.sectionOrder))
-      ? resumeData.design.sectionOrder
+      ? [...new Set([...resumeData.design.sectionOrder, 'summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'])]
       : ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
 
     function addHeader(title) {
@@ -1265,10 +1081,10 @@
       if (secKey === 'skills' && resumeData.skills) {
         const s = resumeData.skills;
         const entries = [];
-        if (s.languages && s.languages.trim()) entries.push(`Technical Skills / Languages: ${s.languages.trim()}`);
-        if (s.frameworks && s.frameworks.trim()) entries.push(`Frameworks & Libraries: ${s.frameworks.trim()}`);
-        if (s.tools && s.tools.trim()) entries.push(`Tools & Platforms: ${s.tools.trim()}`);
-        if (s.other && s.other.trim()) entries.push(`Core Competencies: ${s.other.trim()}`);
+        if (s.languages && s.languages.trim()) entries.push(`Core Competencies: ${s.languages.trim()}`);
+        if (s.frameworks && s.frameworks.trim()) entries.push(`Tools & Platforms: ${s.frameworks.trim()}`);
+        if (s.tools && s.tools.trim()) entries.push(`Technical & Data Skills: ${s.tools.trim()}`);
+        if (s.other && s.other.trim()) entries.push(`Professional Skills: ${s.other.trim()}`);
 
         if (entries.length > 0) {
           addHeader(resumeData.skillsTitle || 'Skills & Competencies');
@@ -1302,7 +1118,7 @@
 
       if (secKey === 'languages' && Array.isArray(resumeData.languages) && resumeData.languages.length > 0) {
         addHeader('Languages');
-        const langStr = resumeData.languages.map(l => typeof l === 'string' ? l : `${l.name || ''} (${l.proficiency || 'Fluent'})`).filter(Boolean).join(', ');
+        const langStr = resumeData.languages.map(l => typeof l === 'string' ? l : [l.name, l.proficiency].filter(Boolean).join(' — ')).filter(Boolean).join(', ');
         if (langStr) lines.push(langStr);
       }
 
@@ -1327,6 +1143,13 @@
           for (const pr of acad.presentations) {
             const line = typeof pr === 'string' ? pr : (pr.title || pr.event || '');
             if (line.trim()) lines.push(`* ${line.trim()}`);
+          }
+        }
+        if (Array.isArray(acad.grants) && acad.grants.length) {
+          addHeader('Research Grants');
+          for (const grant of acad.grants) {
+            const text = typeof grant === 'string' ? grant : [grant.title || grant.name, grant.funder, grant.year].filter(Boolean).join(' — ');
+            if (text) lines.push(`* ${text}`);
           }
         }
       }

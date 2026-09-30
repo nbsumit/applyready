@@ -230,10 +230,10 @@
 
     // Font size in half-points (dxa)
     const fontSizeOpt = options.fontSize || (resumeData.design && resumeData.design.fontSize) || 'standard';
-    let baseSzVal = 19;
-    if (fontSizeOpt === 'comfortable') baseSzVal = 20;
-    else if (fontSizeOpt === 'compact') baseSzVal = 18;
-    else if (isCompact) baseSzVal = 18;
+    let baseSzVal = 22;
+    if (fontSizeOpt === 'comfortable') baseSzVal = 24;
+    else if (fontSizeOpt === 'compact') baseSzVal = 20;
+
 
     // Track Hyperlinks for document.xml.rels
     const relationships = [];
@@ -241,7 +241,8 @@
     function registerHyperlink(targetUrl) {
       if (!targetUrl) return null;
       let safeUrl = targetUrl.trim();
-      if (!/^https?:\/\//i.test(safeUrl) && !/^mailto:/i.test(safeUrl)) {
+      if (/[\u0000-\u001f]/.test(safeUrl) || (/^[a-z][a-z0-9+.-]*:/i.test(safeUrl) && !/^(https?:|mailto:|tel:)/i.test(safeUrl))) return null;
+      if (!/^https?:\/\//i.test(safeUrl) && ! /^(mailto:|tel:)/i.test(safeUrl)) {
         safeUrl = 'https://' + safeUrl;
       }
       const rId = 'rId' + (++relIdCounter);
@@ -394,7 +395,7 @@
         if (i > 0) {
           contactRuns += `
             <w:r>
-              <w:rPr><w:sz w:val="18"/><w:color w:val="94A3B8"/></w:rPr>
+              <w:rPr><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="94A3B8"/></w:rPr>
               <w:t xml:space="preserve">  •  </w:t>
             </w:r>`;
         }
@@ -403,14 +404,14 @@
           contactRuns += `
             <w:hyperlink r:id="${item.rId}" w:history="1">
               <w:r>
-                <w:rPr><w:sz w:val="18"/><w:color w:val="2563EB"/><w:u w:val="none"/></w:rPr>
+                <w:rPr><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="2563EB"/><w:u w:val="none"/></w:rPr>
                 <w:t>${escapeXml(item.text)}</w:t>
               </w:r>
             </w:hyperlink>`;
         } else {
           contactRuns += `
             <w:r>
-              <w:rPr><w:sz w:val="18"/><w:color w:val="334155"/></w:rPr>
+              <w:rPr><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="334155"/></w:rPr>
               <w:t>${escapeXml(item.text)}</w:t>
             </w:r>`;
         }
@@ -456,7 +457,7 @@
     };
 
     const sectionOrder = (resumeData.design && Array.isArray(resumeData.design.sectionOrder))
-      ? resumeData.design.sectionOrder
+      ? [...new Set([...resumeData.design.sectionOrder, 'summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'])]
       : ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
 
     // Render sections by defined order
@@ -469,7 +470,7 @@
           <w:p>
             <w:pPr><w:spacing w:after="120"/><w:jc w:val="both"/></w:pPr>
             <w:r>
-              <w:rPr><w:sz w:val="19"/><w:color w:val="334155"/></w:rPr>
+              <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
               <w:t>${escapeXml(resumeData.summary.trim())}</w:t>
             </w:r>
           </w:p>`);
@@ -502,7 +503,7 @@
               </w:r>` : ''}
               ${dur ? `
               <w:r>
-                <w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="64748B"/></w:rPr>
+                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
                 <w:t xml:space="preserve">  (${escapeXml(dur)}${loc ? ', ' + escapeXml(loc) : ''})</w:t>
               </w:r>` : ''}
             </w:p>`);
@@ -517,7 +518,7 @@
                 <w:p>
                   <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
                   <w:r>
-                    <w:rPr><w:sz w:val="19"/><w:color w:val="334155"/></w:rPr>
+                    <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
                     <w:t xml:space="preserve">•  ${escapeXml(cleaned)}</w:t>
                   </w:r>
                 </w:p>`);
@@ -550,7 +551,7 @@
               </w:r>` : ''}
               ${dur ? `
               <w:r>
-                <w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="64748B"/></w:rPr>
+                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
                 <w:t xml:space="preserve">  (${escapeXml(dur)}${loc ? ', ' + escapeXml(loc) : ''})</w:t>
               </w:r>` : ''}
             </w:p>`);
@@ -560,7 +561,7 @@
               <w:p>
                 <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
                 <w:r>
-                  <w:rPr><w:sz w:val="18"/><w:color w:val="64748B"/></w:rPr>
+                  <w:rPr><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
                   <w:t xml:space="preserve">•  ${escapeXml(score)}</w:t>
                 </w:r>
               </w:p>`);
@@ -590,7 +591,7 @@
               </w:r>
               ${tech ? `
               <w:r>
-                <w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="64748B"/></w:rPr>
+                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
                 <w:t xml:space="preserve">  [${escapeXml(tech)}]</w:t>
               </w:r>` : ''}
               ${linkRId ? `
@@ -611,7 +612,7 @@
                 <w:p>
                   <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
                   <w:r>
-                    <w:rPr><w:sz w:val="19"/><w:color w:val="334155"/></w:rPr>
+                    <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
                     <w:t xml:space="preserve">•  ${escapeXml(cleaned)}</w:t>
                   </w:r>
                 </w:p>`);
@@ -625,8 +626,8 @@
         const skillEntries = [];
         if (s.languages && s.languages.trim()) skillEntries.push({ label: 'Core Competencies', text: s.languages.trim() });
         if (s.frameworks && s.frameworks.trim()) skillEntries.push({ label: 'Tools & Platforms', text: s.frameworks.trim() });
-        if (s.tools && s.tools.trim()) skillEntries.push({ label: 'Technical & Data', text: s.tools.trim() });
-        if (s.other && s.other.trim()) skillEntries.push({ label: 'Certifications & Methods', text: s.other.trim() });
+        if (s.tools && s.tools.trim()) skillEntries.push({ label: 'Technical & Data Skills', text: s.tools.trim() });
+        if (s.other && s.other.trim()) skillEntries.push({ label: 'Professional Skills', text: s.other.trim() });
 
         if (skillEntries.length > 0) {
           addSectionHeader(resumeData.skillsTitle || 'Skills & Competencies');
@@ -635,11 +636,11 @@
               <w:p>
                 <w:pPr><w:spacing w:after="40"/></w:pPr>
                 <w:r>
-                  <w:rPr><w:b/><w:sz w:val="19"/><w:color w:val="0F172A"/></w:rPr>
+                  <w:rPr><w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/></w:rPr>
                   <w:t xml:space="preserve">${escapeXml(item.label)}:  </w:t>
                 </w:r>
                 <w:r>
-                  <w:rPr><w:sz w:val="19"/><w:color w:val="334155"/></w:rPr>
+                  <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
                   <w:t>${escapeXml(item.text)}</w:t>
                 </w:r>
               </w:p>`);
@@ -659,17 +660,17 @@
             <w:p>
               <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
               <w:r>
-                <w:rPr><w:b/><w:sz w:val="19"/><w:color w:val="0F172A"/></w:rPr>
+                <w:rPr><w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/></w:rPr>
                 <w:t xml:space="preserve">•  ${escapeXml(title)}</w:t>
               </w:r>
               ${issuer ? `
               <w:r>
-                <w:rPr><w:sz w:val="19"/><w:color w:val="475569"/></w:rPr>
+                <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/></w:rPr>
                 <w:t xml:space="preserve"> — ${escapeXml(issuer)}</w:t>
               </w:r>` : ''}
               ${year ? `
               <w:r>
-                <w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="64748B"/></w:rPr>
+                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
                 <w:t xml:space="preserve"> (${escapeXml(year)})</w:t>
               </w:r>` : ''}
             </w:p>`);
@@ -686,7 +687,7 @@
             <w:p>
               <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
               <w:r>
-                <w:rPr><w:sz w:val="19"/><w:color w:val="334155"/></w:rPr>
+                <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
                 <w:t xml:space="preserve">•  ${escapeXml(text)}</w:t>
               </w:r>
             </w:p>`);
@@ -705,17 +706,17 @@
             <w:p>
               <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
               <w:r>
-                <w:rPr><w:b/><w:sz w:val="19"/><w:color w:val="0F172A"/></w:rPr>
+                <w:rPr><w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/></w:rPr>
                 <w:t xml:space="preserve">•  ${escapeXml(role)}</w:t>
               </w:r>
               ${org ? `
               <w:r>
-                <w:rPr><w:sz w:val="19"/><w:color w:val="475569"/></w:rPr>
+                <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/></w:rPr>
                 <w:t xml:space="preserve">, ${escapeXml(org)}</w:t>
               </w:r>` : ''}
               ${dur ? `
               <w:r>
-                <w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="64748B"/></w:rPr>
+                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
                 <w:t xml:space="preserve"> (${escapeXml(dur)})</w:t>
               </w:r>` : ''}
             </w:p>`);
@@ -725,13 +726,13 @@
       // Languages
       if (secKey === 'languages' && Array.isArray(resumeData.languages) && resumeData.languages.length > 0) {
         addSectionHeader('Languages');
-        const langStr = resumeData.languages.map(l => typeof l === 'string' ? l : `${l.name || ''} (${l.proficiency || 'Fluent'})`).filter(Boolean).join(', ');
+        const langStr = resumeData.languages.map(l => typeof l === 'string' ? l : [l.name, l.proficiency].filter(Boolean).join(' — ')).filter(Boolean).join(', ');
         if (langStr) {
           bodyXml.push(`
             <w:p>
               <w:pPr><w:spacing w:after="80"/></w:pPr>
               <w:r>
-                <w:rPr><w:sz w:val="19"/><w:color w:val="334155"/></w:rPr>
+                <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
                 <w:t>${escapeXml(langStr)}</w:t>
               </w:r>
             </w:p>`);
@@ -750,7 +751,7 @@
               <w:p>
                 <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
                 <w:r>
-                  <w:rPr><w:sz w:val="19"/><w:color w:val="334155"/></w:rPr>
+                  <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
                   <w:t xml:space="preserve">•  ${escapeXml(title)}</w:t>
                 </w:r>
               </w:p>`);
@@ -768,17 +769,17 @@
               <w:p>
                 <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
                 <w:r>
-                  <w:rPr><w:b/><w:sz w:val="19"/><w:color w:val="0F172A"/></w:rPr>
+                  <w:rPr><w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/></w:rPr>
                   <w:t xml:space="preserve">•  ${escapeXml(role)}</w:t>
                 </w:r>
                 ${inst ? `
                 <w:r>
-                  <w:rPr><w:sz w:val="19"/><w:color w:val="475569"/></w:rPr>
+                  <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/></w:rPr>
                   <w:t xml:space="preserve"> — ${escapeXml(inst)}</w:t>
                 </w:r>` : ''}
                 ${term ? `
                 <w:r>
-                  <w:rPr><w:i/><w:sz w:val="18"/><w:color w:val="64748B"/></w:rPr>
+                  <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
                   <w:t xml:space="preserve"> (${escapeXml(term)})</w:t>
                 </w:r>` : ''}
               </w:p>`);
@@ -794,10 +795,17 @@
               <w:p>
                 <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
                 <w:r>
-                  <w:rPr><w:sz w:val="19"/><w:color w:val="334155"/></w:rPr>
+                  <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
                   <w:t xml:space="preserve">•  ${escapeXml(text)}</w:t>
                 </w:r>
               </w:p>`);
+          }
+        }
+        if (Array.isArray(acad.grants) && acad.grants.length) {
+          addSectionHeader('Research Grants');
+          for (const grant of acad.grants) {
+            const text = typeof grant === 'string' ? grant : [grant.title || grant.name, grant.funder, grant.year].filter(Boolean).join(' — ');
+            if (text) bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="ListBullet"/></w:pPr><w:r><w:t>${escapeXml(text)}</w:t></w:r></w:p>`);
           }
         }
       }

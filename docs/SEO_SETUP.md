@@ -98,6 +98,6 @@ IndexNow is an open protocol that instantly alerts participating search engines 
 ## 4. Ongoing SEO Maintenance Checklist
 
 - [ ] **Monitor Indexing Coverage:** Review the "Pages" report in GSC monthly to resolve any 404s, redirect errors, or soft 404s.
-- [ ] **Audit Core Web Vitals:** Verify that Largest Contentful Paint (LCP) is under 2.5s and Cumulative Layout Shift (CLS) is near 0. Because ApplyReady does not load tracking scripts, Core Web Vitals are naturally near 100%.
+- [ ] **Audit Core Web Vitals:** Verify that Largest Contentful Paint (LCP) is under 2.5s and Cumulative Layout Shift (CLS) is near 0. Measure the deployed site; privacy and the absence of tracking do not guarantee good Core Web Vitals.
 - [ ] **Sitemap Updates:** When adding new guides or features, append the canonical URL and current `lastmod` date to `sitemap.xml`.
 - [ ] **Check Robots.txt:** Ensure `robots.txt` consistently permits crawling of public HTML, styles, and favicon assets while referencing the sitemap.

@@ -12,17 +12,20 @@
   <meta property="og:url" content="https://applyready.in/">
   <meta property="og:title" content="Free Image Resizer & Compressor | ApplyReady.in">
   <meta property="og:description" content="Resize, crop, and strictly compress images to exact dimensions and KB limits directly on your device. 100% private, client-side processing.">
-  <meta property="og:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+  <meta property="og:image" content="https://applyready.in/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ApplyReady: private image tools and professional resume builder">
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://applyready.in/">
   <meta name="twitter:title" content="Free Image Resizer & Compressor | ApplyReady.in">
   <meta name="twitter:description" content="Resize, crop, and strictly compress images to exact dimensions and KB limits directly on your device. 100% private, client-side processing.">
-  <meta name="twitter:image" content="https://applyready.in/favicon/android-chrome-512x512.png">
+  <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
-  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+
   <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
@@ -30,30 +33,17 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <!-- Early Theme Setter to prevent Flash of Wrong Theme -->
-  <script>
-    (function () {
-      try {
-        var savedTheme = localStorage.getItem('applyready_theme');
-        var theme = savedTheme || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.setAttribute('data-theme', theme);
-      } catch (e) {}
-    })();
-  </script>
-
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="js/theme.js"></script>
 
   <!-- Font Awesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/vendor/icons.min.css">
 
   <!-- Cropper.js CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+  <link rel="stylesheet" href="css/vendor/cropper.min.css">
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/workspace.css">
 
   <!-- Structured Data: WebSite & WebApplication -->
   <script type="application/ld+json">
@@ -85,90 +75,74 @@
   }
   </script>
 </head>
-<body>
+<body class="image-page">
 
   <!-- NAVIGATION -->
+  <a class="skip-link" href="#mainContent">Skip to content</a>
   <nav class="navbar" aria-label="Main Navigation">
     <div class="nav-container">
       <a href="index.html" class="brand-logo" aria-label="ApplyReady Home">
-        <img src="assets/icon.svg" alt="ApplyReady Logo" class="brand-img" width="32" height="32">
-        <span>ApplyReady</span>
-        <span class="brand-tag">.in</span>
+        <img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
+        <span>ApplyReady<span class="brand-dot">.</span></span>
       </a>
-
-      <div class="nav-links">
-        <a href="index.html" class="nav-link active" aria-current="page">
-          <i class="fa-solid fa-crop-simple"></i>
-          <span>Image Resizer</span>
-        </a>
-        <a href="resume.html" class="nav-link">
-          <i class="fa-regular fa-file-lines"></i>
-          <span>Resume Builder</span>
-        </a>
-        <a href="how-to-use.html" class="nav-link">
-          <i class="fa-solid fa-book-open"></i>
-          <span>Guides</span>
-        </a>
-        <a href="about.html" class="nav-link">
-          <i class="fa-solid fa-circle-info"></i>
-          <span>About</span>
-        </a>
-        <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="nav-support-link" aria-label="Support ApplyReady (opens in new tab)" title="Support ApplyReady">
-          <i class="fa-solid fa-mug-hot"></i>
-          <span>Support</span>
-        </a>
-        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch between light and dark theme" title="Toggle Theme">
-          <i class="fa-solid fa-moon"></i>
-        </button>
+      <div class="nav-links" id="navMenu"><a href="index.html" class="nav-link active" aria-current="page">Image tools</a><a href="resume.html" class="nav-link">Resume builder</a><a href="how-to-use.html" class="nav-link">Guides</a></div>
+      <div class="nav-actions">
+        <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="nav-support-link" aria-label="Support ApplyReady (opens in new tab)"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i><span>Support</span></a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="theme-toggle-btn nav-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navMenu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
     </div>
   </nav>
 
   <!-- MAIN CONTAINER -->
-  <main class="main-content">
-    
+  <noscript><p class="noscript-note">Enable JavaScript to use the tools. The guides remain available without it.</p></noscript>
+  <main id="mainContent" class="main-content">
+
     <!-- Hero Header -->
-    <header class="hero-header" style="margin-bottom: 1.25rem;">
-      <h1 class="hero-title">In-Browser Image Resizer & Strict Compressor</h1>
-      <p class="hero-subtitle">
-        Crop to exact pixel dimensions, resize cleanly, and strictly compress to target KB limits. 100% private, client-side processing with zero server uploads.
-      </p>
+    <header class="hero-header workspace-hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="status-dot"></span> YOUR EVERYDAY IMAGE WORKSPACE</div>
+        <h1 class="hero-title">Perfect dimensions.<br><span>Smaller files.</span></h1>
+        <p class="hero-subtitle">Crop, resize, and compress in one place. Get the exact pixels and file size you need, with your images staying on your device.</p>
+        <div class="trust-pills"><span><i class="fa-solid fa-lock" aria-hidden="true"></i> On-device processing</span><span><i class="fa-solid fa-check" aria-hidden="true"></i> Free downloads</span><span>No sign-up</span></div>
+      </div>
+      <a href="resume.html" class="sibling-tool"><span class="sibling-icon"><i class="fa-regular fa-file-lines" aria-hidden="true"></i></span><span><small>ALSO IN YOUR TOOLKIT</small><strong>A resume for your next move</strong><span>8 clean templates. PDF & Word export.</span></span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
     </header>
 
     <!-- Resizer Card Grid -->
     <div class="resizer-grid">
 
       <!-- Left Column: Controls & Upload -->
-      <section class="app-card" aria-labelledby="controlsHeading">
+      <section class="app-card image-controls" aria-labelledby="controlsHeading">
         <h2 id="controlsHeading" class="card-title">
-          <i class="fa-solid fa-cloud-arrow-up text-muted"></i>
-          <span>1. Select Image</span>
+          <i class="fa-solid fa-cloud-arrow-up text-muted" aria-hidden="true"></i>
+          <span>Upload an image</span><span class="step-number">01</span>
         </h2>
 
-        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload image area. Tap to choose image or drag and drop.">
-          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif" class="hidden" aria-hidden="true">
+        <div id="dropzone" class="dropzone" role="group" aria-label="Choose or drop an image">
+          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" aria-hidden="true">
           <div class="dropzone-icon">
-            <i class="fa-solid fa-image"></i>
+            <i class="fa-solid fa-image" aria-hidden="true"></i>
           </div>
-          <div class="dropzone-text">Tap to Choose Image or Drag & Drop</div>
-          <div class="dropzone-sub">Supports JPG, PNG, WEBP, BMP, AVIF (Smartphone camera photos welcome)</div>
+          <div class="dropzone-text">Drop your image here</div>
+          <div class="dropzone-sub">JPG, PNG, WebP, GIF, BMP or AVIF · up to 50 MB</div>
           <button type="button" id="btnBrowse" class="btn btn-secondary btn-sm mt-2">
-            <i class="fa-regular fa-folder-open"></i> Browse Files
+            <i class="fa-regular fa-folder-open" aria-hidden="true"></i> Choose image
           </button>
         </div>
 
         <!-- File Info Display -->
         <div id="fileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
-            <i class="fa-solid fa-file-image" style="color: var(--primary);"></i>
+            <i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i>
             <span id="fileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
           </div>
           <div style="display: flex; gap: 0.4rem;">
             <button type="button" id="btnReplaceFile" class="btn btn-secondary btn-sm" title="Select a different image">
-              <i class="fa-solid fa-arrow-right-arrow-left"></i> Replace
+              <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i> Replace
             </button>
             <button type="button" id="btnRemoveFile" class="btn btn-outline-danger btn-sm" title="Remove selected image">
-              <i class="fa-regular fa-trash-can"></i> Remove
+              <i class="fa-regular fa-trash-can" aria-hidden="true"></i> Remove
             </button>
           </div>
         </div>
@@ -176,15 +150,15 @@
         <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
 
         <h2 class="card-title">
-          <i class="fa-solid fa-sliders text-muted"></i>
-          <span>2. Output Dimensions & Target Size</span>
+          <i class="fa-solid fa-sliders text-muted" aria-hidden="true"></i>
+          <span>Make it the right size</span>
         </h2>
 
         <!-- Preset Dropdown -->
         <div class="form-group">
-          <label for="presetSelect" class="form-label">Dimensions & Size Preset:</label>
+          <label for="presetSelect" class="form-label">Start with a preset</label>
           <select id="presetSelect" class="form-select">
-            <option value="custom" selected>Custom Dimensions & Size Limit</option>
+            <option value="custom" selected>Custom size</option>
             <option value="avatar">Profile / Avatar (400 × 400 px, max 100 KB)</option>
             <option value="passport">ID / Passport Photo (350 × 450 px, max 50 KB)</option>
             <option value="signature">Signature / Stamp (300 × 100 px, max 30 KB)</option>
@@ -197,20 +171,20 @@
         <div id="customControls" class="custom-dims-row">
           <div>
             <label class="form-label" for="customWidth">Width (px)</label>
-            <input type="number" id="customWidth" class="form-control" value="350" min="20" max="8000" step="1">
+            <input type="number" id="customWidth" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000" step="1">
           </div>
           <div class="aspect-lock-wrap">
             <button type="button" id="btnLockAspect" class="btn-lock-aspect active" title="Aspect ratio locked (proportional width & height)" aria-label="Toggle aspect ratio lock" aria-pressed="true">
-              <i class="fa-solid fa-lock"></i>
+              <i class="fa-solid fa-lock" aria-hidden="true"></i>
             </button>
           </div>
           <div>
             <label class="form-label" for="customHeight">Height (px)</label>
-            <input type="number" id="customHeight" class="form-control" value="350" min="20" max="8000" step="1">
+            <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000" step="1">
           </div>
           <div>
-            <label class="form-label" for="customMaxKB">Max Size (KB)</label>
-            <input type="number" id="customMaxKB" class="form-control" value="50" min="5" max="20000" step="1">
+            <label class="form-label" for="customMaxKB">File limit (KB)</label>
+            <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="50" min="5" max="20000" step="1">
           </div>
         </div>
         <span id="dimError" class="field-error hidden" role="alert"></span>
@@ -219,7 +193,7 @@
         <!-- Output Format & Aspect Ratio -->
         <div class="form-row-2" style="margin-top: 1rem;">
           <div class="form-group">
-            <label for="formatSelect" class="form-label">Output Format:</label>
+            <label for="formatSelect" class="form-label">File format</label>
             <select id="formatSelect" class="form-select">
               <option value="image/jpeg" selected>JPEG (.jpg)</option>
               <option value="image/png">PNG (.png)</option>
@@ -227,10 +201,10 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="aspectRatioSelect" class="form-label">Crop Aspect Ratio:</label>
+            <label for="aspectRatioSelect" class="form-label">Crop ratio</label>
             <select id="aspectRatioSelect" class="form-select">
-              <option value="target" selected>Match Target Dimensions Ratio</option>
-              <option value="original">Keep Original Image Ratio</option>
+              <option value="target" selected>Match output size</option>
+              <option value="original">Original proportions</option>
               <option value="1:1">Square (1:1)</option>
               <option value="4:3">Standard (4:3)</option>
               <option value="16:9">Widescreen (16:9)</option>
@@ -258,8 +232,8 @@
         <!-- Advanced Options Disclosure: Background Fill & Annotations -->
         <details class="advanced-disclosure">
           <summary>
-            <i class="fa-solid fa-sliders"></i>
-            <span>Advanced Options (Background Fill & Annotations)</span>
+            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+            <span>Background & text strip</span>
           </summary>
           <div class="advanced-disclosure-body">
             <div class="form-group">
@@ -287,7 +261,7 @@
                 <div class="mt-2">
                   <label for="candidateNameInput" class="form-label text-sm">Printed Name / Label (Optional):</label>
                   <input type="text" id="candidateNameInput" class="form-control" placeholder="e.g. John Doe">
-                  <p class="form-hint">Text is dynamically scaled to fit the annotation strip without distortion.</p>
+                  <p class="form-hint">Text scales to fit the strip. Very long labels may be shortened.</p>
                 </div>
               </div>
             </div>
@@ -297,54 +271,55 @@
       </section>
 
       <!-- Right Column: Cropping & Result Preview -->
-      <section class="app-card" aria-labelledby="cropHeading">
+      <section class="app-card image-stage" aria-labelledby="cropHeading">
         <h2 id="cropHeading" class="card-title">
-          <i class="fa-solid fa-crop text-muted"></i>
-          <span>3. Crop, Adjust & Export</span>
+          <i class="fa-solid fa-crop text-muted" aria-hidden="true"></i>
+          <span>Your image workspace</span><span class="step-number">02</span>
         </h2>
 
         <!-- Process Error Alert Box -->
         <div id="processErrorBox" class="alert-box alert-box-danger hidden" role="alert">
-          <i class="fa-solid fa-triangle-exclamation" style="margin-top: 0.15rem;"></i>
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true" style="margin-top: 0.15rem;"></i>
           <span id="processErrorMessage"></span>
         </div>
 
         <!-- Empty State Placeholder -->
-        <div id="cropperPlaceholder" class="text-center" style="padding: 3rem 1rem; color: var(--text-muted);">
-          <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 3rem; margin-bottom: 1rem; color: var(--border-color-dark);"></i>
-          <p style="font-weight: 600; font-size: 1.1rem; color: var(--text-heading);">No image uploaded yet</p>
-          <p class="text-sm mt-2">Select an image on the left to start cropping and resizing.</p>
+        <div id="cropperPlaceholder" class="crop-empty">
+          <div class="empty-art" aria-hidden="true"><div class="art-image"><svg viewBox="0 0 160 120" fill="none"><circle cx="112" cy="32" r="12" fill="currentColor" opacity=".35"/><path d="M8 104L48 57L82 92L105 68L152 104" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><span class="art-dimension">350 × 350 px</span><span class="art-file"><i class="fa-solid fa-check"></i> Under your file limit</span></div>
+          <h3>A fresh canvas for your image</h3><p>Choose an image to start. Your crop and final result will appear here.</p>
+          <div class="empty-steps"><span><b>1</b> Choose image</span><span><b>2</b> Adjust crop</span><span><b>3</b> Download</span></div>
         </div>
 
         <!-- Active Cropper Area -->
         <div id="cropperActiveArea" class="hidden">
-          <div class="cropper-container-wrapper checkerboard-pattern">
+          <div class="cropper-container-wrapper checkerboard-pattern" tabindex="0" role="group" aria-label="Image crop. Arrow keys move the crop selection; plus and minus zoom.">
             <img id="imageToCrop" src="" alt="Cropper source preview">
           </div>
 
+          <p class="form-hint">Drag to position your crop. Arrow keys move the selection; + and − zoom.</p>
           <!-- Cropper Controls Toolbar -->
           <div class="cropper-toolbar" role="toolbar" aria-label="Crop adjustment tools">
             <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="Rotate Left 90 degrees">
-              <i class="fa-solid fa-rotate-left"></i> -90°
+              <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> -90°
             </button>
             <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="Rotate Right 90 degrees">
-              <i class="fa-solid fa-rotate-right"></i> +90°
+              <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> +90°
             </button>
             <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="Reset Crop Selection">
-              <i class="fa-solid fa-arrow-rotate-back"></i> Reset
+              <i class="fa-solid fa-arrow-rotate-back" aria-hidden="true"></i> Reset
             </button>
             <button type="button" id="btnZoomIn" class="btn btn-secondary btn-sm" title="Zoom In" aria-label="Zoom In">
-              <i class="fa-solid fa-magnifying-glass-plus"></i>
+              <i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i>
             </button>
             <button type="button" id="btnZoomOut" class="btn btn-secondary btn-sm" title="Zoom Out" aria-label="Zoom Out">
-              <i class="fa-solid fa-magnifying-glass-minus"></i>
+              <i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i>
             </button>
           </div>
 
           <!-- Process Button -->
           <div class="mt-4">
             <button type="button" id="btnProcess" class="btn btn-primary btn-block">
-              <i class="fa-solid fa-bolt"></i> Process & Compress Image
+              <i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize & compress
             </button>
           </div>
         </div>
@@ -353,16 +328,16 @@
         <div id="resultArea" class="preview-result-card hidden" aria-live="polite">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
             <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading); margin: 0;">
-              <i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i> Processed Image Ready
+              <i class="fa-solid fa-circle-check" aria-hidden="true" style="color: var(--accent-green);"></i> Ready to download
             </h3>
-            
+
             <!-- Before / After Comparison Toggle -->
             <div class="comparison-view-toggle" role="group" aria-label="Image comparison view">
               <button type="button" id="btnViewProcessed" class="btn active" aria-pressed="true">
-                <i class="fa-solid fa-circle-check"></i> Processed (<span id="compProcessedKB">—</span>)
+                <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Result (<span id="compProcessedKB">—</span>)
               </button>
               <button type="button" id="btnViewOriginal" class="btn" aria-pressed="false">
-                <i class="fa-solid fa-image"></i> Original (<span id="compOriginalKB">—</span>)
+                <i class="fa-solid fa-image" aria-hidden="true"></i> Original (<span id="compOriginalKB">—</span>)
               </button>
             </div>
           </div>
@@ -405,10 +380,10 @@
 
           <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             <a id="btnDownload" class="btn btn-success btn-block" download="ApplyReady_Image.jpg">
-              <i class="fa-solid fa-download"></i> Download Image
+              <i class="fa-solid fa-download" aria-hidden="true"></i> Download Image
             </a>
             <button type="button" id="btnCropAgain" class="btn btn-secondary btn-block">
-              <i class="fa-solid fa-sliders"></i> Re-adjust Crop
+              <i class="fa-solid fa-sliders" aria-hidden="true"></i> Edit crop
             </button>
           </div>
         </div>
@@ -420,7 +395,7 @@
     <!-- Practical Resizing Guide Card -->
     <section class="app-card" style="margin-top: 1rem;" aria-labelledby="guideHeading">
       <h3 id="guideHeading" style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-heading);">
-        <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> Practical Image Sizing & Optimization Guide
+        <i class="fa-solid fa-circle-info" aria-hidden="true" style="color: var(--primary);"></i> A little guidance, when you need it
       </h3>
       <div class="guide-card-grid">
         <a href="guides/image-dimensions-vs-file-size.html" class="guide-card">
@@ -443,70 +418,26 @@
   <!-- FOOTER -->
   <footer class="site-footer">
     <div class="footer-content">
-      <div class="footer-brand">
-        <img src="assets/icon.svg" alt="ApplyReady" class="brand-img" width="24" height="24">
-        <span>ApplyReady.in</span>
-        <span style="font-weight: 400; color: var(--text-muted); font-size: 0.825rem;">— Free & Private In-Browser Document Tools</span>
+      <div class="footer-brand-block">
+        <a href="index.html" class="brand-logo"><img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+        <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
       </div>
       <nav class="footer-links" aria-label="Footer Links">
-        <a href="index.html" class="footer-link">Image Resizer</a>
-        <a href="resume.html" class="footer-link">Resume Builder</a>
-        <a href="how-to-use.html" class="footer-link">How to Use</a>
+        <a href="index.html" class="footer-link">Image tools</a>
+        <a href="resume.html" class="footer-link">Resume builder</a>
+        <a href="how-to-use.html" class="footer-link">Guides</a>
         <a href="about.html" class="footer-link">About</a>
-        <a href="privacy.html" class="footer-link">Privacy Policy</a>
-        <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="footer-link" style="color: #0B72E7; font-weight: 600;">
-          <i class="fa-solid fa-mug-hot"></i> Support
-        </a>
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="footer-link">Support ApplyReady <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
       </nav>
     </div>
+    <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
-  <!-- Theme Switcher Script -->
-  <script>
-    (function () {
-      var themeToggle = document.getElementById('themeToggle');
-      function updateIcon(theme) {
-        if (!themeToggle) return;
-        var icon = themeToggle.querySelector('i');
-        if (!icon) return;
-        if (theme === 'dark') {
-          icon.className = 'fa-solid fa-sun';
-          themeToggle.setAttribute('aria-label', 'Switch to light theme');
-        } else {
-          icon.className = 'fa-solid fa-moon';
-          themeToggle.setAttribute('aria-label', 'Switch to dark theme');
-        }
-      }
-
-      var current = document.documentElement.getAttribute('data-theme') || 'light';
-      updateIcon(current);
-
-      if (themeToggle) {
-        themeToggle.addEventListener('click', function () {
-          var active = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-          document.documentElement.setAttribute('data-theme', active);
-          try {
-            localStorage.setItem('applyready_theme', active);
-          } catch (e) {}
-          updateIcon(active);
-        });
-      }
-
-      // Listen for system theme changes if user hasn't explicitly set preference
-      try {
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-          if (!localStorage.getItem('applyready_theme')) {
-            var newTheme = e.matches ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            updateIcon(newTheme);
-          }
-        });
-      } catch (e) {}
-    })();
-  </script>
+  <script src="js/site.js"></script>
 
   <!-- DEPENDENCIES (CDN) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <script src="js/vendor/cropper.min.js"></script>
 
   <!-- Application Logic -->
   <script src="js/resizer.js"></script>

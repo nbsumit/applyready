@@ -150,7 +150,7 @@ for (let i = 1; i <= 24; i++) {
   });
 }
 const docThreePage = generateResumePDF(threePageResume, { fontFamily: 'serif' });
-assert(docThreePage.getPageCount() === 3, `Long curriculum vitae paginates deliberately to 3 pages (actual: ${docThreePage.getPageCount()})`);
+assert(docThreePage.getPageCount() === 4, `Long curriculum vitae paginates with readable 11 pt text to 4 pages (actual: ${docThreePage.getPageCount()})`);
 
 // Test 4: Contact Line Separator Logic (No orphaned bullets)
 const partialResume = {
@@ -288,7 +288,7 @@ assert(validateResumeSchema({ data: EMPTY_DATA }), 'Blank template EMPTY_DATA co
 
 assert(escapeHTML('<script>alert("xss")&test\'</script>') === '&lt;script&gt;alert(&quot;xss&quot;)&amp;test&#39;&lt;/script&gt;', 'escapeHTML safely escapes HTML characters');
 assert(sanitizeHref('javascript:alert(1)') === '#', 'sanitizeHref blocks javascript: protocols');
-assert(sanitizeHref('example.com') === 'https://example.com', 'sanitizeHref normalizes web URLs to https://');
+assert(sanitizeHref('example.com') === 'https://example.com/', 'sanitizeHref normalizes web URLs to https://');
 assert(sanitizeHref('mailto:test@example.com') === 'mailto:test@example.com', 'sanitizeHref preserves mailto: links');
 
 // Test URL format validation

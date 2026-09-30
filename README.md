@@ -40,7 +40,7 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
   - `Academic / Research CV`: Optional research, publications, teaching, and presentations for longer CVs.
 - **Accessible Template Gallery**: Full preview modal with demonstration data and focus management before applying templates.
 - **Multi-Format Document Exports**:
-  - `Vector PDF`: True vector text (selectable, searchable), standard fonts (Times and Helvetica), clickable hyperlinks, and deliberate pagination (A4 and US Letter).
+  - `Vector PDF`: Selectable, searchable text, standard fonts (Times and Helvetica), clickable hyperlinks, and deliberate pagination (A4 and US Letter). Text outside WinAnsi uses the browser's **Save as PDF** dialog to preserve the characters.
   - `Editable DOCX`: Pure client-side Open Packaging Conventions (OPC) OOXML document generator with template-specific margins and heading alignments.
   - `Plain Text (.txt)`: Clean formatted text for application form text-areas.
 - **Transparent Review Panel**: Real diagnostic checks evaluating contact completeness, role clarity, action verbs, quantifiable metrics, and bullet balance. Zero fake ATS scores or arbitrary percentages.
@@ -49,7 +49,7 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
 
 ### 3. Responsive Design and Accessible Themes
 - **Light and Dark Themes**: System-driven with manual toggle, persisted in local storage with zero theme flash.
-- **WCAG AA Compliance**: High-contrast status badges, buttons, and text meeting WCAG contrast criteria (contrast ratio >= 4.5:1).
+- **Accessibility**: High-contrast themes, visible focus, keyboard controls, and automated WCAG accessibility checks. Physical-device and assistive-technology testing remain useful.
 - **Mobile First**: Clean split view on desktop and dedicated Edit / Preview tab navigation on mobile screens.
 
 ---
@@ -113,7 +113,11 @@ A comprehensive test suite is included in `tests/run_tests.js` covering 14 test 
 - Sitemap XML validity, canonical link consistency, and robots.txt rules.
 - Responsive styling, focus preservation, and WCAG AA color contrast ratios.
 
-To run the verification suite:
+For the workspace changes and current verification workflow, see [docs/WORKSPACE_REFRESH.md](docs/WORKSPACE_REFRESH.md). The additional behavior and browser suites validate actual exports, draft recovery, responsive layouts, and accessibility.
+
+Run the complete checks with `npm ci`, `npm test`, `npx playwright install chromium`, and `npm run test:browser`. Browser verification requires Poppler (`pdftotext`, `pdfinfo`) and `unzip`; CI installs these and retains screenshots and exported documents. This includes 32 long PDF cases across all templates, paper sizes, and font families.
+
+To run the original verification suite:
 ```bash
 node tests/run_tests.js
 ```

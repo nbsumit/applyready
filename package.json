@@ -1,0 +1,14 @@
+{
+  "name": "applyready",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Private in-browser image tools and resume builder",
+  "scripts": {
+    "test": "node tests/run_tests.js && node tests/regression_tests.js",
+    "test:browser": "node tests/browser_tests.js"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1",
+    "@axe-core/playwright": "4.10.2"
+  }
+}

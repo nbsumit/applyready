@@ -574,77 +574,9 @@
    * Preserves ALL user fields, IDs, entries, visibility, and custom values.
    */
   function migrateResumeSchema(raw) {
-    const src = (raw && typeof raw === 'object') ? (raw.data ? raw.data : raw) : {};
-
-    const templateId = (src.design && src.design.templateId) || (src.template && TEMPLATES[src.template] ? src.template : null) || 'classic-professional';
-
-    const v2 = {
-      schemaVersion: 2,
-      version: 2,
-      app: 'ApplyReady',
-      updatedAt: new Date().toISOString(),
-      template: templateId,
-      design: {
-        templateId: templateId,
-        fontFamily: (src.design && src.design.fontFamily) || src.fontFamily || 'serif',
-        fontSize: (src.design && src.design.fontSize) || 'standard',
-        density: (src.design && src.design.density) || 'standard',
-        pageSize: (src.design && src.design.pageSize) || 'a4',
-        accentColor: (src.design && src.design.accentColor) || 'navy',
-        sectionOrder: (src.design && Array.isArray(src.design.sectionOrder))
-          ? [...src.design.sectionOrder]
-          : ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic']
-      },
-      sectionVisibility: Object.assign({
-        summary: true,
-        experience: true,
-        education: true,
-        projects: true,
-        skills: true,
-        certifications: false,
-        achievements: false,
-        volunteering: false,
-        languages: false,
-        academic: false
-      }, src.sectionVisibility || {}),
-      personal: Object.assign({
-        fullName: '',
-        targetTitle: '',
-        email: '',
-        phone: '',
-        location: '',
-        linkedin: '',
-        github: '',
-        website: ''
-      }, src.personal || {}),
-      summaryTitle: src.summaryTitle || 'Professional Summary',
-      summary: src.summary || '',
-      experienceTitle: src.experienceTitle || 'Work Experience',
-      experience: Array.isArray(src.experience) ? JSON.parse(JSON.stringify(src.experience)) : [],
-      educationTitle: src.educationTitle || 'Education',
-      education: Array.isArray(src.education) ? JSON.parse(JSON.stringify(src.education)) : [],
-      projectsTitle: src.projectsTitle || 'Key Projects & Initiatives',
-      projects: Array.isArray(src.projects) ? JSON.parse(JSON.stringify(src.projects)) : [],
-      skillsTitle: src.skillsTitle || 'Skills & Competencies',
-      skills: Object.assign({
-        languages: '',
-        frameworks: '',
-        tools: '',
-        other: ''
-      }, src.skills || {}),
-      certifications: Array.isArray(src.certifications) ? JSON.parse(JSON.stringify(src.certifications)) : [],
-      achievements: Array.isArray(src.achievements) ? JSON.parse(JSON.stringify(src.achievements)) : [],
-      volunteering: Array.isArray(src.volunteering) ? JSON.parse(JSON.stringify(src.volunteering)) : [],
-      languages: Array.isArray(src.languages) ? JSON.parse(JSON.stringify(src.languages)) : [],
-      academic: Object.assign({
-        publications: [],
-        teaching: [],
-        presentations: [],
-        grants: []
-      }, src.academic || {})
-    };
-
-    return v2;
+    const schema = typeof ApplyReadySchema !== 'undefined' ? ApplyReadySchema
+      : (typeof require === 'function' ? require('./resume-schema.js') : null);
+    return schema ? schema.migrate(raw) : raw;
   }
 
   return {
