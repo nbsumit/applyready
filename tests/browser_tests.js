@@ -54,13 +54,15 @@ const server = http.createServer((req,res) => {
         if(file==='resume.html' && width<950) {
           await page.locator('#tabPreview').click();
           ok(!await overflow(),`Resume preview overflows at ${width}`);
-          const bounds=await page.evaluate(()=>{const sheet=document.getElementById('resumeSheet').getBoundingClientRect(),outer=document.getElementById('resumePreviewOuter').getBoundingClientRect();return {left:sheet.left,right:sheet.right,outerLeft:outer.left,outerRight:outer.right};});
-          ok(bounds.left>=bounds.outerLeft-1 && bounds.right<=bounds.outerRight+1,`Resume paper is clipped at ${width}`);
+          const bounds=await page.evaluate(()=>{const sheet=document.querySelector('#resumeVisualPages .resume-visual-page').getBoundingClientRect(),outer=document.getElementById('resumePreviewOuter').getBoundingClientRect();return {left:sheet.left,right:sheet.right,outerLeft:outer.left,outerRight:outer.right};});
+          ok(bounds.left>=bounds.outerLeft-1 && bounds.right<=bounds.outerRight+1,`Visible resume paper is clipped at ${width}`);
           await page.locator('#tabEdit').click();
         }
         if([320,1440].includes(width))await page.screenshot({path:path.join(output,`${file}-${theme}-${width}.png`),fullPage:true});
       }
-      await page.setViewportSize({width:1440,height:1000});await audit(`${file}-${theme}`);
+      await page.setViewportSize({width:1440,height:1000});
+      ok(await page.locator('#themeToggle i.fa-circle-half-stroke').count()===1,`${file}/${theme}: neutral theme icon is rendered`);
+      await audit(`${file}-${theme}`);
     }
   }
   console.log('✓ Responsive layouts, both themes, and initial accessibility');
@@ -128,6 +130,9 @@ const server = http.createServer((req,res) => {
     const bbox=execFileSync('pdftotext',['-bbox',filename,'-'],{encoding:'utf8'});
     for(const match of bbox.matchAll(/<word xMin="([\d.-]+)" yMin="([\d.-]+)" xMax="([\d.-]+)" yMax="([\d.-]+)"/g))ok(+match[1]>=20 && +match[3]<=590 && +match[2]>=10 && +match[4]<=832,`${template}: text falls outside safe paper bounds`);
     const info=execFileSync('pdfinfo',[filename],{encoding:'utf8'});const pages=Number(info.match(/Pages:\s+(\d+)/)[1]);ok((await page.locator('#pageCountPill').textContent()).startsWith(String(pages)),'Displayed PDF page count agrees with downloaded file');
+    ok(await page.locator('#resumeVisualPages .resume-visual-page').count()===pages,`${template}: visible preview page count agrees with downloaded PDF`);
+    ok(await page.locator('#resumeVisualPages .resume-visual-page').evaluateAll(nodes=>nodes.every(node=>node.scrollHeight<=node.clientHeight+2)),`${template}: visible preview pages do not overflow their paper bounds`);
+    ok(await page.locator('#resumeSheet').evaluate(el=>getComputedStyle(el).visibility==='hidden'),`${template}: export source remains hidden on screen`);
   }
   // Modal controls and focus restoration on the phone-sized gallery.
   await page.setViewportSize({width:320,height:800});await page.locator('#tabEdit').click();await page.locator('#tabDesign').click();
