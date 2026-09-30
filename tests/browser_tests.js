@@ -149,13 +149,24 @@ const server = http.createServer((req,res) => {
     if(ext==='docx'){execFileSync('unzip',['-t',target]);const xml=execFileSync('unzip',['-p',target,'word/document.xml'],{encoding:'utf8'});ok(xml.includes('GRANT_MARKER') && xml.includes('VOLUNTEER_MARKER'),'Downloaded Word archive retains all optional content');}
     else ok(fs.readFileSync(target,'utf8').includes('GRANT_MARKER'),'Downloaded plain text retains all optional content');
   }
-  // Unicode uses browser print, avoiding silent loss from the standard PDF fonts.
+  // Unicode uses browser print. It must print the exact same paginated pages shown on screen.
+  await page.locator('#tabDesign').click();await page.locator('#pageSizeSelect').selectOption('letter');
   await page.locator('#tabContent').click();await page.locator('#fullName').fill('सुमित');
   await page.evaluate(()=>{window.print=()=>{window.__printCalled=true;};});
   await page.locator('#btnQuickPDF').click();await page.waitForFunction(()=>window.__printCalled);ok(await page.evaluate(()=>window.__printCalled),'Unicode PDF uses browser print to preserve the characters');
-  ok((await page.locator('#resumeSheet').textContent()).includes('सुमित'),'Unicode is preserved in preview');
+  ok((await page.locator('#resumeVisualPages').textContent()).includes('सुमित'),'Unicode is preserved in the visible paginated preview');
+  const visiblePrintPages=await page.locator('#resumeVisualPages .resume-visual-page').count();
+  await page.emulateMedia({media:'print'});
+  ok(await page.locator('#resumeVisualPages').evaluate(el=>getComputedStyle(el).display!=='none'),'Browser print keeps the visible preview pages');
+  ok(await page.locator('#resumeSheet').evaluate(el=>getComputedStyle(el).display==='none'),'Browser print does not use the hidden continuous source');
+  await page.emulateMedia({media:'screen'});
   const unicodePdf=path.join(output,'unicode-browser.pdf');await page.pdf({path:unicodePdf,preferCSSPageSize:true});
-  ok(execFileSync('pdftotext',[unicodePdf,'-'],{encoding:'utf8'}).includes('सुमित'),'Browser PDF contains selectable Unicode text');
+  const unicodeInfo=execFileSync('pdfinfo',[unicodePdf],{encoding:'utf8'});
+  const browserPages=Number(unicodeInfo.match(/Pages:\s+(\d+)/)[1]);
+  ok(browserPages===visiblePrintPages,`Browser print page count matches preview (${browserPages} PDF vs ${visiblePrintPages} preview)`);
+  ok(/Page size:\s+612 x 792 pts/i.test(unicodeInfo),'Browser print respects the selected Letter paper size');
+  const unicodeText=execFileSync('pdftotext',[unicodePdf,'-'],{encoding:'utf8'});
+  for(const marker of ['सुमित','VOLUNTEER_MARKER','PUBLICATION_MARKER','GRANT_MARKER'])ok(unicodeText.includes(marker),`Browser print retains preview content: ${marker}`);
   console.log('✓ Draft recovery, malformed imports, all templates, PDF/Word/text downloads, and modal focus');
 
   await visit('index.html');await page.setViewportSize({width:390,height:844});

@@ -356,11 +356,74 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 }
 
 @media print {
-  .skip-link, .hero-export, .task-notification, .template-preview-backdrop, .preview-empty-note, .resume-visual-pages { display: none !important; }
-  .resume-preview-outer { max-height: none !important; overflow: visible !important; border: 0 !important; }
-  .resume-preview-wrapper { height: auto !important; }
-  .resume-source-sheet { position: static !important; visibility: visible !important; pointer-events: auto !important; }
-  .ats-resume-sheet { min-height: 0 !important; height: auto !important; color-scheme: light; }
+  /* Print the exact physical pages used by the live preview. */
+  .skip-link, .hero-export, .task-notification, .template-preview-backdrop, .preview-empty-note, .resume-source-sheet { display: none !important; }
+
+  html, body {
+    width: auto !important;
+    min-height: 0 !important;
+    background: #fff !important;
+  }
+
+  .resume-preview-outer {
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .resume-preview-wrapper {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+  }
+
+  .resume-visual-pages {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    gap: 0 !important;
+    transform: none !important;
+  }
+
+  .resume-visual-page {
+    display: block !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    transform: none !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+    color-scheme: light;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .resume-visual-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .resume-visual-page.page-a4 {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    height: 297mm !important;
+    padding: 14mm 16mm !important;
+  }
+
+  .resume-visual-page.page-letter {
+    width: 8.5in !important;
+    min-height: 11in !important;
+    height: 11in !important;
+    padding: 14mm 16mm !important;
+  }
+
+  .resume-visual-page.density-compact {
+    padding: 10mm 12mm !important;
+  }
+
   .resume-header { break-inside: avoid; }
   .resume-section { break-inside: auto; }
   .resume-section-title { break-after: avoid; }

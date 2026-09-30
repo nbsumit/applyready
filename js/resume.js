@@ -2609,9 +2609,13 @@
    * Export to True Vector PDF (Searchable text, A4 / Letter)
    */
   function printResume() {
+    // Browser print must use the exact same paginated DOM shown in the preview.
+    // The resume pages already contain their own document padding, so @page
+    // margins stay at zero to avoid shrinking/reflowing the printed version.
+    renderResumePreview();
     let style = getEl('printPageSize');
     if (!style) { style = document.createElement('style'); style.id = 'printPageSize'; document.head.appendChild(style); }
-    style.textContent = `@media print { @page { size: ${resumeData.design.pageSize === 'letter' ? 'Letter' : 'A4'} portrait; margin: 12mm; } }`;
+    style.textContent = `@media print { @page { size: ${resumeData.design.pageSize === 'letter' ? 'Letter' : 'A4'} portrait; margin: 0; } }`;
     document.fonts.ready.then(() => window.print());
   }
 
