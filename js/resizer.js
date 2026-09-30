@@ -62,63 +62,66 @@
   let processedBlobUrl = null;
   let currentOpId = 0;
 
-  // DOM Elements
-  const presetSelect = document.getElementById('presetSelect');
-  const customControls = document.getElementById('customControls');
-  const customWidthInput = document.getElementById('customWidth');
-  const customHeightInput = document.getElementById('customHeight');
-  const customMaxKBInput = document.getElementById('customMaxKB');
-  const formatSelect = document.getElementById('formatSelect');
-  const bgFillSelect = document.getElementById('bgFillSelect');
-  const aspectRatioSelect = document.getElementById('aspectRatioSelect');
+  // DOM Elements (safe for Node test environments)
+  const doc = typeof document !== 'undefined' ? document : null;
+  const getEl = (id) => doc ? doc.getElementById(id) : null;
 
-  const dimError = document.getElementById('dimError');
-  const sizeError = document.getElementById('sizeError');
-  const processErrorBox = document.getElementById('processErrorBox');
-  const processErrorMessage = document.getElementById('processErrorMessage');
+  const presetSelect = getEl('presetSelect');
+  const customControls = getEl('customControls');
+  const customWidthInput = getEl('customWidth');
+  const customHeightInput = getEl('customHeight');
+  const customMaxKBInput = getEl('customMaxKB');
+  const formatSelect = getEl('formatSelect');
+  const bgFillSelect = getEl('bgFillSelect');
+  const aspectRatioSelect = getEl('aspectRatioSelect');
 
-  const specDims = document.getElementById('specDims');
-  const specSize = document.getElementById('specSize');
-  const specFormat = document.getElementById('specFormat');
+  const dimError = getEl('dimError');
+  const sizeError = getEl('sizeError');
+  const processErrorBox = getEl('processErrorBox');
+  const processErrorMessage = getEl('processErrorMessage');
+
+  const specDims = getEl('specDims');
+  const specSize = getEl('specSize');
+  const specFormat = getEl('specFormat');
 
   // Annotation Elements
-  const dateOptionsBox = document.getElementById('dateOptionsBox');
-  const addDateCheckbox = document.getElementById('addDateCheckbox');
-  const dateInputGroup = document.getElementById('dateInputGroup');
-  const examDateInput = document.getElementById('examDateInput');
-  const btnTodayDate = document.getElementById('btnTodayDate');
-  const candidateNameInput = document.getElementById('candidateNameInput');
+  const dateOptionsBox = getEl('dateOptionsBox');
+  const addDateCheckbox = getEl('addDateCheckbox');
+  const dateInputGroup = getEl('dateInputGroup');
+  const annotationDateInput = getEl('annotationDateInput') || getEl('examDateInput');
+  const btnTodayDate = getEl('btnTodayDate');
+  const candidateNameInput = getEl('candidateNameInput');
 
   // Upload Elements
-  const dropzone = document.getElementById('dropzone');
-  const fileInput = document.getElementById('fileInput');
-  const btnBrowse = document.getElementById('btnBrowse');
-  const fileInfoBox = document.getElementById('fileInfoBox');
-  const fileInfoText = document.getElementById('fileInfoText');
-  const btnRemoveFile = document.getElementById('btnRemoveFile');
+  const dropzone = getEl('dropzone');
+  const fileInput = getEl('fileInput');
+  const btnBrowse = getEl('btnBrowse');
+  const fileInfoBox = getEl('fileInfoBox');
+  const fileInfoText = getEl('fileInfoText');
+  const btnRemoveFile = getEl('btnRemoveFile');
 
   // Cropper Elements
-  const cropperPlaceholder = document.getElementById('cropperPlaceholder');
-  const cropperActiveArea = document.getElementById('cropperActiveArea');
-  const imageToCrop = document.getElementById('imageToCrop');
+  const cropperPlaceholder = getEl('cropperPlaceholder');
+  const cropperActiveArea = getEl('cropperActiveArea');
+  const imageToCrop = getEl('imageToCrop');
 
   // Cropper Toolbar Controls
-  const btnRotateLeft = document.getElementById('btnRotateLeft');
-  const btnRotateRight = document.getElementById('btnRotateRight');
-  const btnResetCrop = document.getElementById('btnResetCrop');
-  const btnZoomIn = document.getElementById('btnZoomIn');
-  const btnZoomOut = document.getElementById('btnZoomOut');
-  const btnProcess = document.getElementById('btnProcess');
+  const btnRotateLeft = getEl('btnRotateLeft');
+  const btnRotateRight = getEl('btnRotateRight');
+  const btnResetCrop = getEl('btnResetCrop');
+  const btnZoomIn = getEl('btnZoomIn');
+  const btnZoomOut = getEl('btnZoomOut');
+  const btnProcess = getEl('btnProcess');
 
   // Result Elements
-  const resultArea = document.getElementById('resultArea');
-  const resultImage = document.getElementById('resultImage');
-  const resultDims = document.getElementById('resultDims');
-  const resultFileSize = document.getElementById('resultFileSize');
-  const resultFormat = document.getElementById('resultFormat');
-  const resultStatus = document.getElementById('resultStatus');
-  const btnDownload = document.getElementById('btnDownload');
-  const btnCropAgain = document.getElementById('btnCropAgain');
+  const resultArea = getEl('resultArea');
+  const resultImage = getEl('resultImage');
+  const resultDims = getEl('resultDims');
+  const resultFileSize = getEl('resultFileSize');
+  const resultFormat = getEl('resultFormat');
+  const resultStatus = getEl('resultStatus');
+  const btnDownload = getEl('btnDownload');
+  const btnCropAgain = getEl('btnCropAgain');
 
   /**
    * Initialize Resizer Module
@@ -130,12 +133,84 @@
   }
 
   function setTodayDate() {
-    if (!examDateInput) return;
+    if (!annotationDateInput) return;
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
-    examDateInput.value = `${yyyy}-${mm}-${dd}`;
+    annotationDateInput.value = `${yyyy}-${mm}-${dd}`;
+  }
+
+  /**
+   * Pure Dimension & File Size Validator
+   * Validates custom dimensions, Megapixel ceiling, and size limits
+   */
+  function validateDimensionSpecs(rawWStr, rawHStr, rawKBStr) {
+    const isInteger = (s) => /^\d+$/.test(String(s || '').trim());
+    let width = 350;
+    let height = 350;
+    let maxKB = 50;
+    let isValid = true;
+    let dimErrorMsg = null;
+    let sizeErrorMsg = null;
+
+    let wValid = false;
+    let hValid = false;
+
+    if (!isInteger(rawWStr)) {
+      dimErrorMsg = 'Width must be a positive integer.';
+      isValid = false;
+    } else {
+      const wVal = Number(rawWStr);
+      if (!Number.isFinite(wVal) || !Number.isInteger(wVal) || wVal < 20 || wVal > 8000) {
+        dimErrorMsg = 'Width must be an integer between 20 and 8,000 px.';
+        isValid = false;
+      } else {
+        width = wVal;
+        wValid = true;
+      }
+    }
+
+    if (!isInteger(rawHStr)) {
+      dimErrorMsg = dimErrorMsg || 'Height must be a positive integer.';
+      isValid = false;
+    } else {
+      const hVal = Number(rawHStr);
+      if (!Number.isFinite(hVal) || !Number.isInteger(hVal) || hVal < 20 || hVal > 8000) {
+        dimErrorMsg = dimErrorMsg || 'Height must be an integer between 20 and 8,000 px.';
+        isValid = false;
+      } else {
+        height = hVal;
+        hValid = true;
+      }
+    }
+
+    if (wValid && hValid && (width * height > 32000000)) {
+      dimErrorMsg = 'Total image pixels exceed safe limit (32 Megapixels).';
+      isValid = false;
+    }
+
+    if (!isInteger(rawKBStr)) {
+      sizeErrorMsg = 'Max file size must be a positive integer.';
+      isValid = false;
+    } else {
+      const kbVal = Number(rawKBStr);
+      if (!Number.isFinite(kbVal) || !Number.isInteger(kbVal) || kbVal < 5 || kbVal > 20000) {
+        sizeErrorMsg = 'Max file size must be between 5 and 20,000 KB.';
+        isValid = false;
+      } else {
+        maxKB = kbVal;
+      }
+    }
+
+    return {
+      isValid,
+      width,
+      height,
+      maxKB,
+      dimErrorMsg,
+      sizeErrorMsg
+    };
   }
 
   /**
@@ -151,59 +226,21 @@
     let isValid = true;
 
     if (isCustom) {
-      const rawWStr = (customWidthInput ? customWidthInput.value : '').trim();
-      const rawHStr = (customHeightInput ? customHeightInput.value : '').trim();
-      const rawKBStr = (customMaxKBInput ? customMaxKBInput.value : '').trim();
+      const rawWStr = customWidthInput ? customWidthInput.value : '';
+      const rawHStr = customHeightInput ? customHeightInput.value : '';
+      const rawKBStr = customMaxKBInput ? customMaxKBInput.value : '';
 
-      const isInteger = (s) => /^\d+$/.test(s);
+      const validation = validateDimensionSpecs(rawWStr, rawHStr, rawKBStr);
+      width = validation.width;
+      height = validation.height;
+      maxKB = validation.maxKB;
+      isValid = validation.isValid;
 
-      let wValid = false;
-      let hValid = false;
-
-      if (!isInteger(rawWStr)) {
-        showDimError('Width must be a positive integer.');
-        isValid = false;
-      } else {
-        const wVal = Number(rawWStr);
-        if (!Number.isFinite(wVal) || !Number.isInteger(wVal) || wVal < 20 || wVal > 8000) {
-          showDimError('Width must be an integer between 20 and 8,000 px.');
-          isValid = false;
-        } else {
-          width = wVal;
-          wValid = true;
-        }
+      if (validation.dimErrorMsg) {
+        showDimError(validation.dimErrorMsg);
       }
-
-      if (!isInteger(rawHStr)) {
-        showDimError('Height must be a positive integer.');
-        isValid = false;
-      } else {
-        const hVal = Number(rawHStr);
-        if (!Number.isFinite(hVal) || !Number.isInteger(hVal) || hVal < 20 || hVal > 8000) {
-          showDimError('Height must be an integer between 20 and 8,000 px.');
-          isValid = false;
-        } else {
-          height = hVal;
-          hValid = true;
-        }
-      }
-
-      if (wValid && hValid && (width * height > 32000000)) {
-        showDimError('Total image pixels exceed safe limit (32 Megapixels).');
-        isValid = false;
-      }
-
-      if (!isInteger(rawKBStr)) {
-        showSizeError('Max file size must be a positive integer.');
-        isValid = false;
-      } else {
-        const kbVal = Number(rawKBStr);
-        if (!Number.isFinite(kbVal) || !Number.isInteger(kbVal) || kbVal < 5 || kbVal > 20000) {
-          showSizeError('Max file size must be between 5 and 20,000 KB.');
-          isValid = false;
-        } else {
-          maxKB = kbVal;
-        }
+      if (validation.sizeErrorMsg) {
+        showSizeError(validation.sizeErrorMsg);
       }
 
       prefix = 'Custom';
@@ -724,7 +761,7 @@
 
       // Render Text
       const candidateName = candidateNameInput ? candidateNameInput.value.trim().toUpperCase() : '';
-      const rawDate = examDateInput ? examDateInput.value : '';
+      const rawDate = annotationDateInput ? annotationDateInput.value : '';
       const formattedDate = formatAnnotationDate(rawDate);
 
       ctx.fillStyle = '#000000';
@@ -982,7 +1019,18 @@
     }
   }
 
-  // Initialize on DOM ready
-  document.addEventListener('DOMContentLoaded', init);
+  // Initialize on DOM ready (browser only)
+  if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', init);
+  }
+
+  // Export for testing
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      PRESETS,
+      formatAnnotationDate,
+      validateDimensionSpecs
+    };
+  }
 
 })();

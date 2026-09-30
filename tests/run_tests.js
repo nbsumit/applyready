@@ -1,12 +1,15 @@
 /**
  * ApplyReady.in - Comprehensive Verification & Test Suite
- * Runs automated regression checks across PDF engine, SEO metadata,
- * sitemap validity, asset links, and contrast ratios.
+ * Runs automated regression checks across PDF engine, Resizer validator,
+ * Resume backup schema, SEO metadata, sitemap validity, asset links,
+ * and WCAG AA contrast ratios.
  */
 
 const fs = require('fs');
 const path = require('path');
 const { generateResumePDF, measureTextWidth, splitTextToLines, escapePdfText } = require('../js/pdf-engine.js');
+const { validateResumeSchema, SAMPLE_DATA, EMPTY_DATA, escapeHTML, sanitizeHref } = require('../js/resume.js');
+const { PRESETS, formatAnnotationDate, validateDimensionSpecs } = require('../js/resizer.js');
 
 let totalTests = 0;
 let passedTests = 0;
@@ -147,8 +150,6 @@ for (let i = 1; i <= 24; i++) {
 const docThreePage = generateResumePDF(threePageResume, { fontFamily: 'serif' });
 assert(docThreePage.getPageCount() === 3, `Long curriculum vitae paginates deliberately to 3 pages (actual: ${docThreePage.getPageCount()})`);
 
-
-
 // Test 4: Contact Line Separator Logic (No orphaned bullets)
 const partialResume = {
   personal: {
@@ -177,21 +178,67 @@ assert(escaped.includes('\\225'), 'Bullet point escaped to octal 225');
 const wrapped = splitTextToLines('This is a test of the line wrapping algorithm that splits words gracefully without breaking tokens.', 10, 150, 'Helvetica');
 assert(wrapped.length > 1, `Text correctly wraps into ${wrapped.length} lines for narrow margins`);
 
+// Test 7: Real PDF Stream Text Extraction & Reading Order Verification
+function extractTextFromPdf(pdfString) {
+  const streamRegex = /stream\r?\n([\s\S]*?)endstream/g;
+  let match;
+  const extractedTokens = [];
+
+  while ((match = streamRegex.exec(pdfString)) !== null) {
+    const streamContent = match[1];
+    const tjRegex = /\(((?:\\\(|\\\)|\\\\|[^\)])*)\)\s*Tj/g;
+    let tjMatch;
+    while ((tjMatch = tjRegex.exec(streamContent)) !== null) {
+      let rawText = tjMatch[1];
+      rawText = rawText.replace(/\\([0-7]{3})/g, (_, oct) => String.fromCharCode(parseInt(oct, 8)));
+      rawText = rawText.replace(/\\([()\\])/g, '$1');
+      extractedTokens.push(rawText);
+    }
+  }
+  return extractedTokens;
+}
+
+const extractedWords = extractTextFromPdf(pdfData1);
+const fullExtractedText = extractedWords.join(' ');
+
+const nameIdx = fullExtractedText.indexOf('JANE DOE, PMP');
+const titleIdx = fullExtractedText.indexOf('Senior Operations Director');
+const contactIdx = fullExtractedText.indexOf('jane.doe@example.com');
+const summaryHeadingIdx = fullExtractedText.indexOf('EXECUTIVE SUMMARY');
+const summaryTextIdx = fullExtractedText.indexOf('Experienced executive with 10+ years');
+const expHeadingIdx = fullExtractedText.indexOf('PROFESSIONAL EXPERIENCE');
+const expRoleIdx = fullExtractedText.indexOf('Director of Global Operations');
+const expBulletIdx = fullExtractedText.indexOf('Orchestrated workflow optimization');
+const eduHeadingIdx = fullExtractedText.indexOf('ACADEMIC BACKGROUND');
+const eduInstIdx = fullExtractedText.indexOf('Stanford Graduate School of Business');
+const projHeadingIdx = fullExtractedText.indexOf('KEY INITIATIVES');
+const projNameIdx = fullExtractedText.indexOf('Global Supply Chain Transformation');
+const skillsHeadingIdx = fullExtractedText.indexOf('CORE CAPABILITIES');
+const skillsTextIdx = fullExtractedText.indexOf('Strategic Planning');
+
+assert(nameIdx !== -1 && titleIdx !== -1 && contactIdx !== -1, 'Extracted candidate header elements from PDF stream');
+assert(summaryHeadingIdx !== -1 && expHeadingIdx !== -1 && eduHeadingIdx !== -1 && projHeadingIdx !== -1 && skillsHeadingIdx !== -1, 'All section headings extracted from PDF text stream');
+assert(nameIdx < titleIdx && titleIdx < contactIdx && contactIdx < summaryHeadingIdx && summaryHeadingIdx < summaryTextIdx, 'Header and summary appear in logical top-to-bottom reading order');
+assert(summaryTextIdx < expHeadingIdx && expHeadingIdx < expRoleIdx && expRoleIdx < expBulletIdx, 'Experience section and bullet points appear in logical reading order');
+assert(expBulletIdx < eduHeadingIdx && eduHeadingIdx < eduInstIdx && eduInstIdx < projHeadingIdx && projHeadingIdx < projNameIdx && projNameIdx < skillsHeadingIdx && skillsHeadingIdx < skillsTextIdx, 'Education, projects, and skills sections follow strict sequential order');
+
+// Test 8: Unicode Names in Both Serif and Sans Fonts
+const unicodeResume = JSON.parse(JSON.stringify(sampleResume));
+unicodeResume.personal.fullName = 'Renée Müller, Ph.D.';
+const docUnicodeSerif = generateResumePDF(unicodeResume, { fontFamily: 'serif' });
+const docUnicodeSans = generateResumePDF(unicodeResume, { fontFamily: 'sans' });
+const textUnicodeSerif = extractTextFromPdf(docUnicodeSerif.build()).join(' ');
+const textUnicodeSans = extractTextFromPdf(docUnicodeSans.build()).join(' ');
+
+assert(textUnicodeSerif.includes('RENÉE MÜLLER, PH.D.'), 'Unicode accented name "RENÉE MÜLLER" extracted cleanly in Serif font');
+assert(textUnicodeSans.includes('RENÉE MÜLLER, PH.D.'), 'Unicode accented name "RENÉE MÜLLER" extracted cleanly in Sans font');
+
 console.log('');
 
 // ------------------------------------------------------------------
-// SUITE 2: JSON Backup & Schema Validation Tests
+// SUITE 2: Client-Side Resume Builder & Schema Validation Tests
 // ------------------------------------------------------------------
-console.log('SUITE 2: JSON Backup & Schema Validation Tests');
-
-function validateResumeSchema(payload) {
-  if (!payload || typeof payload !== 'object') return false;
-  if (!payload.data || typeof payload.data !== 'object') return false;
-  const d = payload.data;
-  if (!d.personal || typeof d.personal !== 'object') return false;
-  if (!Array.isArray(d.experience) || !Array.isArray(d.education) || !Array.isArray(d.projects)) return false;
-  return true;
-}
+console.log('SUITE 2: Client-Side Resume Builder & Schema Validation Tests');
 
 const validBackup = {
   version: 1,
@@ -207,12 +254,59 @@ assert(!validateResumeSchema(invalidBackup1), 'Invalid backup with string payloa
 const invalidBackup2 = { version: 1, data: { personal: "bad" } };
 assert(!validateResumeSchema(invalidBackup2), 'Invalid backup missing required arrays is rejected');
 
+assert(validateResumeSchema({ data: SAMPLE_DATA }), 'General-purpose SAMPLE_DATA conforms to schema');
+assert(validateResumeSchema({ data: EMPTY_DATA }), 'Blank template EMPTY_DATA conforms to schema');
+
+assert(escapeHTML('<script>alert("xss")&test\'</script>') === '&lt;script&gt;alert(&quot;xss&quot;)&amp;test&#39;&lt;/script&gt;', 'escapeHTML safely escapes HTML characters');
+assert(sanitizeHref('javascript:alert(1)') === '#', 'sanitizeHref blocks javascript: protocols');
+assert(sanitizeHref('example.com') === 'https://example.com', 'sanitizeHref normalizes web URLs to https://');
+assert(sanitizeHref('mailto:test@example.com') === 'mailto:test@example.com', 'sanitizeHref preserves mailto: links');
+
 console.log('');
 
 // ------------------------------------------------------------------
-// SUITE 3: Sitemap, Robots & Link Consistency Tests
+// SUITE 3: Image Resizer & Strict Compressor Unit Tests
 // ------------------------------------------------------------------
-console.log('SUITE 3: Sitemap, Robots & Link Consistency Tests');
+console.log('SUITE 3: Image Resizer & Strict Compressor Unit Tests');
+
+// Test dimension validation
+const v1 = validateDimensionSpecs('350', '450', '50');
+assert(v1.isValid && v1.width === 350 && v1.height === 450 && v1.maxKB === 50, 'Valid custom dimensions (350x450, 50KB) pass validation');
+
+const vNonInt = validateDimensionSpecs('350.5', '450', '50');
+assert(!vNonInt.isValid && vNonInt.dimErrorMsg.includes('positive integer'), 'Decimal dimension is rejected as non-integer');
+
+const vTooSmall = validateDimensionSpecs('10', '450', '50');
+assert(!vTooSmall.isValid && vTooSmall.dimErrorMsg.includes('between 20 and 8,000'), 'Under-bounds width (< 20px) is rejected with clear error');
+
+const vTooLarge = validateDimensionSpecs('9000', '450', '50');
+assert(!vTooLarge.isValid && vTooLarge.dimErrorMsg.includes('between 20 and 8,000'), 'Over-bounds width (> 8,000px) is rejected with clear error');
+
+const vHugeMP = validateDimensionSpecs('7000', '5000', '50');
+assert(!vHugeMP.isValid && vHugeMP.dimErrorMsg.includes('32 Megapixels'), 'Dimensions exceeding 32 Megapixels ceiling are rejected to protect device memory');
+
+const vSizeTooSmall = validateDimensionSpecs('350', '450', '2');
+assert(!vSizeTooSmall.isValid && vSizeTooSmall.sizeErrorMsg.includes('between 5 and 20,000 KB'), 'Target size below 5 KB is rejected');
+
+const vSizeTooLarge = validateDimensionSpecs('350', '450', '30000');
+assert(!vSizeTooLarge.isValid && vSizeTooLarge.sizeErrorMsg.includes('between 5 and 20,000 KB'), 'Target size above 20,000 KB is rejected');
+
+// Test date formatting
+assert(formatAnnotationDate('2026-09-30') === '30-09-2026', 'formatAnnotationDate converts YYYY-MM-DD to DD-MM-YYYY');
+assert(formatAnnotationDate('') === '', 'formatAnnotationDate handles empty string cleanly');
+assert(formatAnnotationDate(null) === '', 'formatAnnotationDate handles null cleanly');
+
+// Test presets completeness
+assert(PRESETS.passport && PRESETS.avatar && PRESETS.signature && PRESETS['web-banner'] && PRESETS.document, 'All 5 standard dimension presets are defined');
+assert(PRESETS.passport.width === 350 && PRESETS.passport.height === 450 && PRESETS.passport.maxKB === 50, 'Passport preset has correct dimensions (350x450, 50KB)');
+assert(PRESETS.signature.width === 300 && PRESETS.signature.height === 100 && PRESETS.signature.maxKB === 30, 'Signature preset has correct dimensions (300x100, 30KB)');
+
+console.log('');
+
+// ------------------------------------------------------------------
+// SUITE 4: Sitemap, Robots & Link Consistency Tests
+// ------------------------------------------------------------------
+console.log('SUITE 4: Sitemap, Robots & Link Consistency Tests');
 
 const repoRoot = path.resolve(__dirname, '..');
 
@@ -242,9 +336,9 @@ locMatches.forEach(match => {
 console.log('');
 
 // ------------------------------------------------------------------
-// SUITE 4: HTML Pages Metadata, Canonical & Asset Verification
+// SUITE 5: HTML Pages Metadata, Canonical & Asset Verification
 // ------------------------------------------------------------------
-console.log('SUITE 4: HTML Pages Metadata & Favicon Verification');
+console.log('SUITE 5: HTML Pages Metadata & Favicon Verification');
 
 const htmlFiles = [
   'index.html',
@@ -285,9 +379,9 @@ htmlFiles.forEach(file => {
 console.log('');
 
 // ------------------------------------------------------------------
-// SUITE 5: Favicon & Brand Asset Integrity
+// SUITE 6: Favicon & Brand Asset Integrity
 // ------------------------------------------------------------------
-console.log('SUITE 5: Favicon & Brand Asset Integrity');
+console.log('SUITE 6: Favicon & Brand Asset Integrity');
 
 const faviconDir = path.join(repoRoot, 'favicon');
 assert(fs.existsSync(faviconDir), 'favicon folder exists in repository');
@@ -316,9 +410,9 @@ assert(Array.isArray(manifestContent.icons) && manifestContent.icons.length >= 2
 console.log('');
 
 // ------------------------------------------------------------------
-// SUITE 6: Accessibility & Color Contrast Verification (WCAG AA)
+// SUITE 7: Accessibility & Color Contrast Verification (WCAG AA)
 // ------------------------------------------------------------------
-console.log('SUITE 6: Accessibility & WCAG AA Color Contrast Verification');
+console.log('SUITE 7: Accessibility & WCAG AA Color Contrast Verification');
 
 // Relative Luminance calculation for sRGB
 function getRelativeLuminance(r, g, b) {
@@ -350,6 +444,26 @@ const primaryContrast = getContrastRatio(primaryBlueRGB, whiteRGB);
 assert(oldContrast < 3.0, `Confirmed old green (#10B981) had insufficient contrast: ${oldContrast.toFixed(2)}:1 (Fails WCAG AA)`);
 assert(newContrast >= 4.5, `New green button color (#047857) satisfies WCAG AA normal text criteria: ${newContrast.toFixed(2)}:1 (>= 4.5:1)`);
 assert(primaryContrast >= 4.0, `Primary button color (#2563EB) satisfies UI component contrast: ${primaryContrast.toFixed(2)}:1 (>= 3:1)`);
+
+console.log('');
+
+// ------------------------------------------------------------------
+// SUITE 8: Zero-Emoji Compliance & Documentation Verification
+// ------------------------------------------------------------------
+console.log('SUITE 8: Zero-Emoji Compliance & Documentation Verification');
+
+const readmePath = path.join(repoRoot, 'README.md');
+assert(fs.existsSync(readmePath), 'README.md exists at repository root');
+const readmeContent = fs.readFileSync(readmePath, 'utf8');
+const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+const readmeEmojiMatch = readmeContent.match(emojiRegex);
+assert(!readmeEmojiMatch, 'README.md contains zero emoji characters');
+
+const seoSetupDocPath = path.join(repoRoot, 'docs', 'SEO_SETUP.md');
+assert(fs.existsSync(seoSetupDocPath), 'docs/SEO_SETUP.md exists');
+const seoDocContent = fs.readFileSync(seoSetupDocPath, 'utf8');
+assert(seoDocContent.includes('Google Search Console') && seoDocContent.includes('Bing Webmaster Tools'), 'SEO_SETUP.md documents Google and Bing submission');
+assert(seoDocContent.includes('IndexNow'), 'SEO_SETUP.md documents owner-controlled IndexNow submission');
 
 console.log('');
 console.log('====================================================');

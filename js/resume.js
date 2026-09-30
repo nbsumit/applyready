@@ -106,78 +106,81 @@
   // Current Resume State
   let resumeData = JSON.parse(JSON.stringify(SAMPLE_DATA));
 
-  // DOM Elements
-  const btnLoadSample = document.getElementById('btnLoadSample');
-  const btnClearForm = document.getElementById('btnClearForm');
-  const btnDownloadPDF = document.getElementById('btnDownloadPDF');
-  const btnPrintPDF = document.getElementById('btnPrintPDF');
-  const btnExportJSON = document.getElementById('btnExportJSON');
-  const btnImportJSON = document.getElementById('btnImportJSON');
-  const fileImportInput = document.getElementById('fileImportInput');
+  // DOM Elements (safe for Node test environments)
+  const doc = typeof document !== 'undefined' ? document : null;
+  const getEl = (id) => doc ? doc.getElementById(id) : null;
+
+  const btnLoadSample = getEl('btnLoadSample');
+  const btnClearForm = getEl('btnClearForm');
+  const btnDownloadPDF = getEl('btnDownloadPDF');
+  const btnPrintPDF = getEl('btnPrintPDF');
+  const btnExportJSON = getEl('btnExportJSON');
+  const btnImportJSON = getEl('btnImportJSON');
+  const fileImportInput = getEl('fileImportInput');
 
   // Draft Elements
-  const chkSaveDraft = document.getElementById('chkSaveDraft');
-  const draftStatusText = document.getElementById('draftStatusText');
-  const btnDeleteDraft = document.getElementById('btnDeleteDraft');
+  const chkSaveDraft = getEl('chkSaveDraft');
+  const draftStatusText = getEl('draftStatusText');
+  const btnDeleteDraft = getEl('btnDeleteDraft');
 
   // Mobile Tabs
-  const tabEdit = document.getElementById('tabEdit');
-  const tabPreview = document.getElementById('tabPreview');
-  const resumeAppLayout = document.getElementById('resumeAppLayout');
+  const tabEdit = getEl('tabEdit');
+  const tabPreview = getEl('tabPreview');
+  const resumeAppLayout = getEl('resumeAppLayout');
 
   // Font Selection
-  const fontSelect = document.getElementById('fontSelect');
-  const resumeSheet = document.getElementById('resumeSheet');
-  const previewWrapper = document.getElementById('previewWrapper');
-  const resumePreviewOuter = document.getElementById('resumePreviewOuter');
+  const fontSelect = getEl('fontSelect');
+  const resumeSheet = getEl('resumeSheet');
+  const previewWrapper = getEl('previewWrapper');
+  const resumePreviewOuter = getEl('resumePreviewOuter');
 
   // Inputs
-  const fullNameInp = document.getElementById('fullName');
-  const targetTitleInp = document.getElementById('targetTitle');
-  const emailInp = document.getElementById('email');
-  const phoneInp = document.getElementById('phone');
-  const locationInp = document.getElementById('location');
-  const linkedinInp = document.getElementById('linkedin');
-  const githubInp = document.getElementById('github');
-  const websiteInp = document.getElementById('website');
-  const summaryInp = document.getElementById('summaryText');
+  const fullNameInp = getEl('fullName');
+  const targetTitleInp = getEl('targetTitle');
+  const emailInp = getEl('email');
+  const phoneInp = getEl('phone');
+  const locationInp = getEl('location');
+  const linkedinInp = getEl('linkedin');
+  const githubInp = getEl('github');
+  const websiteInp = getEl('website');
+  const summaryInp = getEl('summaryText');
 
-  const skillLanguagesInp = document.getElementById('skillLanguages');
-  const skillFrameworksInp = document.getElementById('skillFrameworks');
-  const skillToolsInp = document.getElementById('skillTools');
-  const skillOtherInp = document.getElementById('skillOther');
+  const skillLanguagesInp = getEl('skillLanguages');
+  const skillFrameworksInp = getEl('skillFrameworks');
+  const skillToolsInp = getEl('skillTools');
+  const skillOtherInp = getEl('skillOther');
 
   // Dynamic Lists
-  const educationList = document.getElementById('educationList');
-  const btnAddEducation = document.getElementById('btnAddEducation');
-  const experienceList = document.getElementById('experienceList');
-  const btnAddExperience = document.getElementById('btnAddExperience');
-  const projectsList = document.getElementById('projectsList');
-  const btnAddProject = document.getElementById('btnAddProject');
+  const educationList = getEl('educationList');
+  const btnAddEducation = getEl('btnAddEducation');
+  const experienceList = getEl('experienceList');
+  const btnAddExperience = getEl('btnAddExperience');
+  const projectsList = getEl('projectsList');
+  const btnAddProject = getEl('btnAddProject');
 
   // Preview Elements
-  const prevFullName = document.getElementById('prevFullName');
-  const prevTargetTitle = document.getElementById('prevTargetTitle');
-  const prevContactLine = document.getElementById('prevContactLine');
-  const prevSectionSummary = document.getElementById('prevSectionSummary');
-  const prevSummaryTitle = document.getElementById('prevSummaryTitle');
-  const prevSummary = document.getElementById('prevSummary');
+  const prevFullName = getEl('prevFullName');
+  const prevTargetTitle = getEl('prevTargetTitle');
+  const prevContactLine = getEl('prevContactLine');
+  const prevSectionSummary = getEl('prevSectionSummary');
+  const prevSummaryTitle = getEl('prevSummaryTitle');
+  const prevSummary = getEl('prevSummary');
 
-  const prevSectionEducation = document.getElementById('prevSectionEducation');
-  const prevEducationTitle = document.getElementById('prevEducationTitle');
-  const prevEducationList = document.getElementById('prevEducationList');
+  const prevSectionEducation = getEl('prevSectionEducation');
+  const prevEducationTitle = getEl('prevEducationTitle');
+  const prevEducationList = getEl('prevEducationList');
 
-  const prevSectionExperience = document.getElementById('prevSectionExperience');
-  const prevExperienceTitle = document.getElementById('prevExperienceTitle');
-  const prevExperienceList = document.getElementById('prevExperienceList');
+  const prevSectionExperience = getEl('prevSectionExperience');
+  const prevExperienceTitle = getEl('prevExperienceTitle');
+  const prevExperienceList = getEl('prevExperienceList');
 
-  const prevSectionProjects = document.getElementById('prevSectionProjects');
-  const prevProjectsTitle = document.getElementById('prevProjectsTitle');
-  const prevProjectsList = document.getElementById('prevProjectsList');
+  const prevSectionProjects = getEl('prevSectionProjects');
+  const prevProjectsTitle = getEl('prevProjectsTitle');
+  const prevProjectsList = getEl('prevProjectsList');
 
-  const prevSectionSkills = document.getElementById('prevSectionSkills');
-  const prevSkillsTitle = document.getElementById('prevSkillsTitle');
-  const prevSkillsList = document.getElementById('prevSkillsList');
+  const prevSectionSkills = getEl('prevSectionSkills');
+  const prevSkillsTitle = getEl('prevSkillsTitle');
+  const prevSkillsList = getEl('prevSkillsList');
 
   /**
    * Initialize Builder
@@ -648,6 +651,19 @@
   }
 
   /**
+   * Validate ApplyReady Resume Backup Schema
+   */
+  function validateResumeSchema(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+    if (!payload.data || typeof payload.data !== 'object') return false;
+    const d = payload.data;
+    if (!d.personal || typeof d.personal !== 'object') return false;
+    if (!Array.isArray(d.experience) || !Array.isArray(d.education) || !Array.isArray(d.projects)) return false;
+    if (d.skills && typeof d.skills !== 'object') return false;
+    return true;
+  }
+
+  /**
    * Attach Event Listeners
    */
   function attachEventListeners() {
@@ -845,24 +861,6 @@
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     });
-
-  /**
-   * Validate ApplyReady Resume Backup Schema
-   */
-  function validateResumeSchema(payload) {
-    if (!payload || typeof payload !== 'object') return false;
-    if (!payload.data || typeof payload.data !== 'object') return false;
-    const d = payload.data;
-    if (!d.personal || typeof d.personal !== 'object') return false;
-    if (!Array.isArray(d.experience) || !Array.isArray(d.education) || !Array.isArray(d.projects)) return false;
-    if (d.skills && typeof d.skills !== 'object') return false;
-    return true;
-  }
-
-  // Expose for automated testing
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { validateResumeSchema };
-  }
 
   // JSON Import
   btnImportJSON.addEventListener('click', () => fileImportInput.click());
@@ -1122,7 +1120,20 @@
     }
   }
 
-  // Initialize on DOM Ready
-  document.addEventListener('DOMContentLoaded', init);
+  // Initialize on DOM Ready (browser only)
+  if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', init);
+  }
+
+  // Export for testing
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      validateResumeSchema,
+      SAMPLE_DATA,
+      EMPTY_DATA,
+      escapeHTML,
+      sanitizeHref
+    };
+  }
 
 })();
