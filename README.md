@@ -75,4 +75,5 @@ Hosted as a static site on GitHub Pages with custom domain `applyready.in`.
 
 ## ☕ Support
 If ApplyReady saved you a trip to the cyber cafe, consider buying me a chai:
-👉 [https://razorpay.com/@nbsumit](https://razorpay.com/@nbsumit)
+👉 [https://razorpay.me/@nbsumit](https://razorpay.me/@nbsumit)
+
