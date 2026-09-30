@@ -209,6 +209,16 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 .ats-resume-sheet .resume-entry-header span { min-width: 0; overflow-wrap: anywhere; }
 .ats-resume-sheet .resume-contact-item { white-space: normal; overflow-wrap: anywhere; }
 .ats-resume-sheet .resume-section-title { font-size: calc(var(--document-size) + .5pt) !important; }
+/* Match the live paper's vertical rhythm to the vector PDF renderer. */
+.ats-resume-sheet { line-height: 1.36 !important; }
+.ats-resume-sheet .resume-header { margin-bottom: 4pt; padding-bottom: 4pt; }
+.ats-resume-sheet .resume-section { margin-top: 3pt; }
+.ats-resume-sheet .resume-section-title { line-height: 1.2; padding-bottom: 1.5pt; margin-bottom: 4pt; }
+.ats-resume-sheet .resume-entry { margin-bottom: 2pt; line-height: 1.35; }
+.ats-resume-sheet .resume-bullets li { margin-bottom: 0; line-height: 1.35; }
+.ats-resume-sheet .resume-skills-row { margin-bottom: 2pt; line-height: 1.35; }
+.ats-resume-sheet.density-compact .resume-section { margin-top: 2pt; }
+.ats-resume-sheet.density-compact .resume-entry { margin-bottom: 1pt; }
 .ats-resume-sheet.font-serif { font-family: 'Times New Roman', Times, 'ApplyReady Devanagari', serif !important; }
 .ats-resume-sheet.font-sans { font-family: Arial, Helvetica, 'ApplyReady Devanagari', sans-serif !important; }
 .preview-empty-note { color: var(--text-muted); font-size: .78rem; line-height: 1.6; padding: .6rem .8rem; margin-bottom: .6rem; }
