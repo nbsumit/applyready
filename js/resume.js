@@ -651,7 +651,53 @@
     sheet.innerHTML = renderResumeDataToHTML(data, templateId);
   }
 
-  function renderPaginatedPreview(source, expectedPages) {
+  // Share PDF line positions and page breaks with the live preview. SVG text
+  // stays selectable and prints sharply, with no browser-dependent reflow.
+  function renderVectorPreview(doc, source) {
+    const target = getEl('resumeVisualPages');
+    target.replaceChildren();
+    const ns = 'http://www.w3.org/2000/svg';
+    const pageClass = Array.from(source.classList).filter(name => name !== 'resume-source-sheet').join(' ');
+    doc.pages.forEach((layout, index) => {
+      const page = document.createElement('article');
+      page.className = `${pageClass} resume-visual-page resume-vector-page`;
+      page.dataset.previewPage = String(index + 1);
+      page.setAttribute('aria-label', `Resume page ${index + 1} of ${doc.pages.length}`);
+      const svg = document.createElementNS(ns, 'svg');
+      svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+      svg.style.fontFamily = doc.fontFamily === 'sans' ? 'Arial, Helvetica, sans-serif' : '"Times New Roman", Times, serif';
+      layout.elements.forEach(item => {
+        const node = document.createElementNS(ns, item.type === 'text' ? 'text' : 'line');
+        const color = `rgb(${item.color.map(value => Math.round(value * 255)).join(',')})`;
+        if (item.type === 'text') {
+          node.textContent = item.text;
+          for (const attr of ['x', 'y']) node.setAttribute(attr, item[attr]);
+          node.setAttribute('font-size', item.fontSize);
+          node.setAttribute('font-weight', item.fontStyle === 'bold' ? '700' : '400');
+          node.setAttribute('font-style', item.fontStyle === 'italic' ? 'italic' : 'normal');
+          node.setAttribute('fill', color);
+          node.setAttribute('xml:space', 'preserve');
+          if (item.width > 0) {
+            node.setAttribute('textLength', item.width);
+            node.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+          }
+        } else {
+          for (const attr of ['x1', 'y1', 'x2', 'y2']) node.setAttribute(attr, item[attr]);
+          node.setAttribute('stroke', color);
+          node.setAttribute('stroke-width', item.lineWidth);
+        }
+        svg.appendChild(node);
+      });
+      page.appendChild(svg);
+      target.appendChild(page);
+    });
+    target.dataset.pageCount = String(doc.pages.length);
+    return doc.pages.length;
+  }
+
+  function renderPaginatedPreview(source) {
     const target = getEl('resumeVisualPages');
     if (!source || !target) return 1;
     target.innerHTML = '';
@@ -662,7 +708,6 @@
     const sourceSections = sectionsRoot
       ? Array.from(sectionsRoot.children).filter(node => node.classList && node.classList.contains('resume-section'))
       : [];
-    const wantedPages = Math.max(1, Number(expectedPages) || 1);
     const pages = [];
 
     function createPage(includeHeader) {
@@ -763,19 +808,6 @@
       current.sections.removeChild(whole);
       appendSplitSection(section);
     });
-
-    // The vector PDF engine is authoritative for the document page count.
-    // Browser text metrics can be slightly tighter; in that case spread the
-    // final sections so the preview exposes the same number of physical sheets.
-    while (pages.length < wantedPages) {
-      const donor = pages[pages.length - 1];
-      const donorSections = Array.from(donor.sections.children);
-      if (donorSections.length < 2) break;
-      const splitAt = Math.ceil(donorSections.length / 2);
-      const next = createPage(false);
-      donorSections.slice(splitAt).forEach(node => next.sections.appendChild(node));
-    }
-    while (pages.length < wantedPages) createPage(false);
 
     pages.forEach((record, index) => {
       record.page.setAttribute('aria-label', `Resume page ${index + 1} of ${pages.length}`);
@@ -1598,9 +1630,13 @@
     const note = getEl('previewEmptyNote');
     if (note) note.classList.toggle('hidden', !isDocumentEmpty());
     try {
-      pdfPageCount = window.ApplyReadyPDF.generateResumePDF(resumeData).getPageCount();
-    } catch (e) { pdfPageCount = null; }
-    visualPageCount = renderPaginatedPreview(sheet, pdfPageCount);
+      const doc = window.ApplyReadyPDF.generateResumePDF(resumeData);
+      pdfPageCount = doc.getPageCount();
+      visualPageCount = renderVectorPreview(doc, sheet);
+    } catch (e) {
+      pdfPageCount = null;
+      visualPageCount = renderPaginatedPreview(sheet);
+    }
     saveDraftToStorage();
     updatePreviewScale();
   }

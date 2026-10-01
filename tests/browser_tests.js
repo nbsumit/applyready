@@ -167,6 +167,32 @@ const server = http.createServer((req,res) => {
   ok(/Page size:\s+612 x 792 pts/i.test(unicodeInfo),'Browser print respects the selected Letter paper size');
   const unicodeText=execFileSync('pdftotext',[unicodePdf,'-'],{encoding:'utf8'});
   for(const marker of ['सुमित','VOLUNTEER_MARKER','PUBLICATION_MARKER','GRANT_MARKER'])ok(unicodeText.includes(marker),`Browser print retains preview content: ${marker}`);
+  // The real sample must fit, and the preview must use the same lines as the download.
+  await page.locator('#btnLoadSample').click();
+  await page.locator('#tabDesign').click();
+  await page.locator('#pageSizeSelect').selectOption('a4');
+  await page.locator('#fontSelect').selectOption('serif');
+  await page.locator('[data-template-id="classic-professional"] .btn-select-template').click();
+  ok(await page.locator('#resumeVisualPages .resume-visual-page').count()===1, 'Default sample stays on one preview page');
+  ok((await page.locator('#resumeVisualPages').textContent()).includes('Operational Excellence Award'), 'Sample retains its final achievement in the preview');
+  const sampleDownload = page.waitForEvent('download');
+  await page.locator('#btnQuickPDF').click();
+  const sampleFile = path.join(output, 'sample-resume.pdf');
+  await (await sampleDownload).saveAs(sampleFile);
+  ok(/Pages:\s+1\b/.test(execFileSync('pdfinfo',[sampleFile],{encoding:'utf8'})), 'Sample PDF uses one page');
+  ok(execFileSync('pdftotext',[sampleFile,'-'],{encoding:'utf8'}).includes('Operational Excellence Award'), 'Sample PDF retains its final achievement');
+  await page.screenshot({path:path.join(output,'sample-preview-desktop.png'),fullPage:true});
+  await page.setViewportSize({width:320,height:800});
+  await page.locator('#tabEdit').click();
+  await page.locator('#tabReview').click();
+  for (const id of ['btnDownloadPDF','btnDownloadDOCX','btnDownloadText','btnPrintPDF']) {
+    ok(await page.locator('#'+id).evaluate(el=>{
+      const style=getComputedStyle(el);
+      return parseFloat(style.paddingLeft)>=12 && parseFloat(style.paddingRight)>=12 && el.scrollWidth<=el.clientWidth+1;
+    }), `${id}: mobile export label has padding and fits its button`);
+  }
+  ok(!await overflow(), 'Mobile export controls fit a 320px screen');
+  await page.screenshot({path:path.join(output,'resume-mobile-export.png'),fullPage:true});
   console.log('✓ Draft recovery, malformed imports, all templates, PDF/Word/text downloads, and modal focus');
 
   await visit('index.html');await page.setViewportSize({width:390,height:844});

@@ -429,3 +429,22 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .resume-section-title { break-after: avoid; }
   .resume-bullets li { break-inside: avoid; }
 }
+
+/* PDF coordinates already include safe paper margins. */
+.ats-resume-sheet.resume-vector-page { padding: 0 !important; }
+.resume-vector-page > svg { display: block; overflow: hidden; }
+@media screen and (max-width: 760px) {
+  .btn, .btn-sm { padding: .7rem 1rem; line-height: 1.4; }
+  .btn > i { flex-shrink: 0; }
+  .editor-action-group { flex-wrap: wrap; }
+  .template-card-actions { flex-direction: column; }
+  .template-card-actions .btn { flex: auto; width: 100%; padding: .65rem .75rem; }
+  .dynamic-item-actions .btn { padding: .5rem; min-width: 36px; }
+  .backup-actions .btn { flex: 1 1 130px; }
+  #btnDeleteDraft { min-height: 44px !important; padding: .6rem .85rem !important; }
+  #viewReview .form-row-2 { grid-template-columns: minmax(0, 1fr); }
+}
+@media screen and (max-width: 400px) {
+  .editor-tabs-nav { gap: .25rem; }
+  .editor-tab-btn { padding: .7rem .6rem; line-height: 1.4; }
+}

@@ -264,6 +264,7 @@
         width: this.pageWidth,
         height: this.pageHeight,
         commands: [],
+        elements: [],
         annotations: []
       };
       this.pages.push(page);
@@ -295,6 +296,7 @@
 
       const cmd = `BT /${fontKey} ${fontSize} Tf ${r} ${g} ${b} rg 1 0 0 1 ${x.toFixed(2)} ${pdfY.toFixed(2)} Tm (${escaped}) Tj ET\n`;
       this.currentPage.commands.push(cmd);
+      this.currentPage.elements.push({ type: 'text', text, x, y: topY, fontSize, fontStyle, color, width: measureTextWidth(text, fontSize, this.fontFamily === 'sans' ? 'Helvetica' : 'Times', fontStyle) });
     }
 
     drawLine(x1, topY1, x2, topY2, options = {}) {
@@ -309,6 +311,7 @@
 
       const cmd = `q ${lineWidth.toFixed(2)} w ${r} ${g} ${b} RG ${x1.toFixed(2)} ${y1.toFixed(2)} m ${x2.toFixed(2)} ${y2.toFixed(2)} l S Q\n`;
       this.currentPage.commands.push(cmd);
+      this.currentPage.elements.push({ type: 'line', x1, y1: topY1, x2, y2: topY2, lineWidth, color });
     }
 
     addLink(x, topY, width, height, url) {
@@ -579,9 +582,12 @@
      * Render Section Header
      */
     function renderSectionHeader(title) {
-      ensureSpace(isCompact ? 48 : 65);
       const headingFontSize = baseFontSize + 0.5;
-      for (const line of splitTextToLines(title.toUpperCase(), headingFontSize, contentWidth - 8, fontKey, 'bold')) {
+      const headingLines = splitTextToLines(title.toUpperCase(), headingFontSize, contentWidth - 8, fontKey, 'bold');
+      // Reserve the actual heading plus two body lines, not a fixed 65pt block.
+      // Short final sections can then use the available space on this page.
+      ensureSpace(headingLines.length * (headingFontSize + (isCompact ? 2 : 3)) + (isCompact ? 5 : 8) + 2 * (baseFontSize + 4));
+      for (const line of headingLines) {
         ensureSpace(headingFontSize + 4);
         doc.drawText(line, marginLeft, currentY + headingFontSize, {
           fontSize: headingFontSize,
@@ -920,8 +926,8 @@
 
         for (let sl = 0; sl < skillLines.length; sl++) {
           if (sl > 0) {
-            ensureSpace(baseFontSize + 4);
             currentY += baseFontSize + (isCompact ? 3 : 4);
+            ensureSpace(baseFontSize + 4);
           }
           const lineX = marginLeft + labelWidth;
           doc.drawText(skillLines[sl], lineX, currentY + skillFontSize, {

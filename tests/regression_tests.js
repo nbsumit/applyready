@@ -86,4 +86,26 @@ check('No missing language proficiency is invented as Fluent',()=>{
   const d=resumeFixture();d.languages=[{name:'English'}];
   assert(!pdf.generateResumeText(d).includes('Fluent')); assert(!pdf.generateResumePDF(d).build().includes('Fluent'));
 });
+check('Default sample uses the available first page without losing its final section', () => {
+  const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../js/resume.js'), 'utf8');
+  const sample = require('node:vm').runInNewContext('(' + source.match(/const SAMPLE_DATA = ([\s\S]*?);\n\n  \/\/ Blank/)[1] + ')');
+  const document = pdf.generateResumePDF(schema.migrate(sample));
+  assert.equal(document.getPageCount(), 1);
+  const lines = document.pages[0].elements.filter(item => item.type === 'text');
+  assert(lines.some(item => item.text.includes('Operational Excellence Award')));
+  assert(lines.at(-1).y > document.pageHeight - 90);
+  assert(lines.every(item => item.y <= document.pageHeight - 36));
+});
+check('Long skills wrap safely inside every physical page', () => {
+  const data = resumeFixture();
+  data.skills = { categories: [{ name: 'Skills', items: 'Operational planning and delivery, '.repeat(600) }] };
+  for (const pageSize of ['a4', 'letter']) {
+    data.design.pageSize = pageSize;
+    const doc = pdf.generateResumePDF(data);
+    assert(doc.getPageCount() > 2);
+    for (const page of doc.pages) for (const item of page.elements) {
+      if (item.type === 'text') assert(item.y <= page.height - 36, 'Skills extend into the bottom margin');
+    }
+  }
+});
 console.log(`\n${checks} behavior regression checks passed.`);
