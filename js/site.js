@@ -23,7 +23,9 @@
     try { localStorage.setItem('applyready_theme', theme); } catch (e) {}
     setTheme(theme);
   });
-  media.addEventListener('change', e => { if (!explicitTheme) setTheme(e.matches ? 'dark' : 'light'); });
+  const onSchemeChange = e => { if (!explicitTheme) setTheme(e.matches ? 'dark' : 'light'); };
+  if (media.addEventListener) media.addEventListener('change', onSchemeChange);
+  else if (media.addListener) media.addListener(onSchemeChange);
 
   const menuButton = document.getElementById('navMenuToggle');
   const menu = document.getElementById('navMenu');

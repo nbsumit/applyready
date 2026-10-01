@@ -477,6 +477,6 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 @media (max-width: 480px) { .skill-row-inputs { grid-template-columns: minmax(0, 1fr); } }
 .section-title-group { margin-bottom: .85rem; }
 .template-filter-bar { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .9rem; }
-.template-filter-bar .btn[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+.template-filter-bar .btn[aria-pressed="true"], .template-filter-bar .btn[aria-pressed="true"]:hover { background: var(--button-primary); border-color: var(--button-primary); color: #fff; }
 .template-card[hidden] { display: none !important; }
 #skillLabelHint { margin: -.35rem 0 .85rem; }

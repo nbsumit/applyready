@@ -64,6 +64,7 @@
   let configRevision = 0;
   let cropperReady = false;
   let processing = false;
+  let bgFillChosen = false;
   const processLabel = '<i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize & compress';
 
   // DOM Elements (safe for Node test environments)
@@ -591,7 +592,8 @@
           const transparentOption = bgFillSelect.querySelector('option[value="transparent"]');
           if (transparentOption) {
             transparentOption.disabled = (val === 'image/jpeg');
-            if (val !== 'image/jpeg') bgFillSelect.value = 'transparent';
+            // Keep transparency by default, but never override a fill the person chose.
+            if (val !== 'image/jpeg' && !bgFillChosen) bgFillSelect.value = 'transparent';
             if (val === 'image/jpeg' && bgFillSelect.value === 'transparent') {
               bgFillSelect.value = 'white';
             }
@@ -602,7 +604,10 @@
     }
 
     if (bgFillSelect) {
-      bgFillSelect.addEventListener('change', invalidateResult);
+      bgFillSelect.addEventListener('change', () => {
+        bgFillChosen = true;
+        invalidateResult();
+      });
     }
 
     if (aspectRatioSelect) {
