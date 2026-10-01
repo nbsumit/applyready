@@ -91,7 +91,9 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
 |   |-- resume.js       # Form state, live preview and draft management
 |   |-- templates.js    # 15 template styles, labels and SVG thumbnails
 |   |-- pdf-engine.js   # Client-side vector text PDF generator
-|   `-- docx-engine.js  # Pure client-side OOXML DOCX document generator
+|   |-- docx-engine.js  # Pure client-side OOXML DOCX document generator
+|   |-- keywords.js     # On-device job description keyword matching
+|   `-- resume-schema.js # Backup validation and lossless migration
 |-- favicon/            # Brand favicons, touch icons, and webmanifest
 |-- assets/             # Brand vector SVG assets
 |-- guides/             # In-depth workflow optimization guides
