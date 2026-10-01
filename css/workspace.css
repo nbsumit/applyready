@@ -320,7 +320,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .editor-tab-btn { font-size: .75rem; padding-inline: .4rem; }
   .editor-tab-btn > i { display: none; }
   .form-row-3 { grid-template-columns: minmax(0,1fr); }
-  .template-card-actions { flex-direction: column; }
+  .template-card-actions { grid-template-columns: minmax(0, 1fr); }
   .template-thumb-wrap { height: 125px; }
 }
 /* Polished surfaces, motion, content pages, and true paginated resume preview. */
@@ -438,7 +438,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .btn, .btn-sm { padding: .7rem 1rem; line-height: 1.4; }
   .btn > i { flex-shrink: 0; }
   .editor-action-group { flex-wrap: wrap; }
-  .template-card-actions { flex-direction: column; }
+  .template-card-actions { grid-template-columns: minmax(0, 1fr); }
   .template-card-actions .btn { flex: auto; width: 100%; padding: .65rem .75rem; }
   .dynamic-item-actions .btn { padding: .5rem; min-width: 36px; }
   .backup-actions .btn { flex: 1 1 130px; }
@@ -480,3 +480,6 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 .template-filter-bar .btn[aria-pressed="true"], .template-filter-bar .btn[aria-pressed="true"]:hover { background: var(--button-primary); border-color: var(--button-primary); color: #fff; }
 .template-card[hidden] { display: none !important; }
 #skillLabelHint { margin: -.35rem 0 .85rem; }
+/* Card buttons wrap instead of spilling out of narrow gallery cards. */
+.template-card-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr)); }
+.template-card-actions .btn { min-width: 0; white-space: nowrap; }

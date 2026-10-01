@@ -203,6 +203,12 @@ const server = http.createServer((req,res) => {
   await audit('resume-design-tab');
   await page.getByRole('button',{name:/^All \(\d+\)$/}).click();
   ok(await page.locator('#templateGalleryGrid .template-card:visible').count()===Object.keys(TEMPLATES).length,'All filter restores every template');
+  for(const width of [320,360,390,768,1024,1440]) {
+    await page.setViewportSize({width,height:900});
+    const spilled=await page.evaluate(()=>[...document.querySelectorAll('#templateGalleryGrid .template-card')].flatMap(card=>[...card.querySelectorAll('.btn')].filter(btn=>{const b=btn.getBoundingClientRect(),c=card.getBoundingClientRect();return b.right>c.right+1||b.left<c.left-1||btn.scrollWidth>btn.clientWidth+1;})).length);
+    ok(spilled===0,`Template card buttons stay inside their cards at ${width}px`);
+  }
+  await page.setViewportSize({width:1440,height:1000});
   await page.locator('[data-template-id="ats-strict"] .btn-preview-template').click();
   ok(await page.locator('#tmplModalPreviewSheet svg text').count()>20,'Template preview is drawn by the export engine');
   ok(await page.locator('#tmplModalPreviewSheet svg line').count()===0,'ATS Plain preview has no ruled lines');

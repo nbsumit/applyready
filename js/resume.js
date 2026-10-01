@@ -1079,7 +1079,8 @@
       const input = document.querySelector(`.skill-label-input[data-skill="${key}"]`);
       if (input) {
         if (document.activeElement !== input) input.value = custom[key] || '';
-        input.placeholder = defaults[key];
+        input.placeholder = 'Rename label (optional)';
+        input.title = `Leave empty to use “${defaults[key]}”`;
         input.setAttribute('aria-label', `Row label, currently ${labels[key]}`);
       }
     });
