@@ -47,6 +47,8 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
   - `Editable DOCX`: Pure client-side Open Packaging Conventions (OPC) OOXML generator with real Word bullet lists, right-aligned date tab stops, Heading styles, document properties, and removal of control characters that Word rejects.
   - `Plain Text (.txt)`: Clean formatted text for application form text-areas.
 - **Transparent Review Panel**: Explainable checks for contact details, missing dates and job titles, measurable results, passive openers ("Responsible for"), first-person wording, bullet length and count, empty skills, placeholders and page count. Zero fake ATS scores or arbitrary percentages.
+- **Job Description Comparison**: Paste a job advert in the Download tab to see which of its key terms (including multi-word names such as *Power BI* or *Lean Six Sigma*) already appear in your resume and which are missing. Matching handles word forms (*reports* / *reporting*), runs entirely on the device, and the advert is never stored.
+- **Unsaved-Work Protection**: With device saving off, the page asks before closing or reloading over edits that have not been downloaded or backed up.
 - **Structured 3-Tab Editor**: Content editing, Design & Templates, and Review & Export tabs with bounded undo/redo (up to 30 states) and focus restoration.
 - **Draft Persistence and JSON Backup**: Local device saving (`localStorage`) with deletion controls and versioned JSON backup and restore with schema migration.
 

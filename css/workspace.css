@@ -483,3 +483,11 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 /* Card buttons wrap instead of spilling out of narrow gallery cards. */
 .template-card-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr)); }
 .template-card-actions .btn { min-width: 0; white-space: nowrap; }
+.keyword-match-result { margin-top: .75rem; font-size: .875rem; }
+.keyword-match-result:empty { display: none; }
+.keyword-summary { margin-bottom: .5rem; }
+.keyword-heading { font-size: .8rem; font-weight: 700; margin: .6rem 0 .35rem; color: var(--text-heading); }
+.keyword-chips { display: flex; flex-wrap: wrap; gap: .35rem; list-style: none; margin: 0; padding: 0; }
+.keyword-chips li { padding: .2rem .55rem; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-card-subtle); color: var(--text-main); font-size: .78rem; overflow-wrap: anywhere; }
+.keyword-chips.is-missing li { border-color: var(--accent-warning-border); background: var(--accent-warning-bg); color: var(--accent-warning-text); }
+.keyword-chips.is-found li { border-color: var(--accent-green-border); background: var(--accent-green-bg); color: var(--accent-green-text); }

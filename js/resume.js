@@ -1811,6 +1811,7 @@
       pageEstPill.textContent = pdfPageCount ? `${pdfPageCount} PDF page${pdfPageCount > 1 ? 's' : ''}` : 'Browser PDF';
     }
 
+    renderKeywordMatch();
     checklist.innerHTML = '';
     if (issues.length === 0) {
       checklist.innerHTML = `
@@ -1898,6 +1899,28 @@
     return `${name || 'Candidate'}_${suffix}`;
   }
 
+  // Job-description comparison: lists the advert's key terms found in, and
+  // missing from, the resume text. Nothing is stored or sent anywhere.
+  function renderKeywordMatch() {
+    const input = getEl('jobDescriptionInput');
+    const out = getEl('keywordMatchResult');
+    if (!input || !out || !window.ApplyReadyKeywords || !window.ApplyReadyPDF) return;
+    const job = input.value.trim();
+    if (job.split(/\s+/).length < 8) {
+      out.replaceChildren();
+      if (job) out.textContent = 'Paste a little more of the job description to compare.';
+      return;
+    }
+    const result = window.ApplyReadyKeywords.matchKeywords(job, window.ApplyReadyPDF.generateResumeText(resumeData), 30);
+    if (!result.keywords.length) { out.textContent = 'No distinctive terms found in this text.'; return; }
+    const list = (terms, cls) => `<ul class="keyword-chips ${cls}">${terms.map(term => `<li>${escapeHTML(term)}</li>`).join('')}</ul>`;
+    out.innerHTML = `
+      <p class="keyword-summary"><strong>${result.found.length} of ${result.keywords.length}</strong> key terms from this advert appear in your resume.</p>
+      ${result.missing.length ? `<h4 class="keyword-heading">Not in your resume yet</h4>${list(result.missing, 'is-missing')}
+      <p class="form-hint">Add the ones that genuinely describe your experience, in your skills or bullet points, using the advert's wording. Never add skills you do not have.</p>` : ''}
+      ${result.found.length ? `<h4 class="keyword-heading">Already covered</h4>${list(result.found, 'is-found')}` : ''}`;
+  }
+
   /**
    * Attach All Event Listeners
    */
@@ -1905,7 +1928,7 @@
     // Dirty flag on typing
     let lastTypingField, lastTypingAt = 0;
     document.addEventListener('input', e => {
-      if (!e.target.closest('#formPanel')) return;
+      if (!e.target.closest('#formPanel') || e.target.id === 'jobDescriptionInput') return;
       const now = Date.now();
       if (e.target !== lastTypingField || now - lastTypingAt > 1000) pushHistoryState();
       lastTypingField = e.target; lastTypingAt = now;
@@ -1925,6 +1948,12 @@
         performRedo();
       }
     });
+
+    const jobInput = getEl('jobDescriptionInput');
+    if (jobInput) {
+      let keywordTimer;
+      jobInput.addEventListener('input', () => { clearTimeout(keywordTimer); keywordTimer = setTimeout(renderKeywordMatch, 200); });
+    }
 
     // Undo / Redo buttons
     const btnUndo = getEl('btnUndo');

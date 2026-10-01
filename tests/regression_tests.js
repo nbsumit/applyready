@@ -219,4 +219,16 @@ check('Invisible pasted characters do not force the browser-print fallback', () 
   d.personal.fullName = 'Zoë 李';
   assert.throws(() => pdf.generateResumePDF(d), e => e.code === 'UNSUPPORTED_PDF_TEXT', 'Visible non-Latin text must still use browser print');
 });
+const keywords = require('../js/keywords');
+check('Job-description matching finds real terms, ignores filler, and matches word forms', () => {
+  const job = 'We are looking for a Senior Data Analyst with strong SQL and Python skills. Experience with Power BI and stakeholder management required. Build dashboards in Power BI and automate reporting with Python. C++ or C# a plus. EHR (Epic) exposure.';
+  const terms = keywords.extractKeywords(job);
+  for (const term of ['SQL', 'Power BI', 'Python', 'C++', 'C#', 'Epic', 'dashboards']) assert(terms.includes(term), `missing ${term}`);
+  for (const filler of ['looking', 'strong', 'skills', 'experience', 'required', 'build', 'plus']) assert(!terms.map(t => t.toLowerCase()).includes(filler), `filler ${filler}`);
+  const result = keywords.matchKeywords(job, 'Automated weekly reports in SQL; built a Tableau dashboard for stakeholders.');
+  for (const term of ['SQL', 'automate', 'reporting', 'dashboards', 'stakeholder']) assert(result.found.includes(term), `should match ${term}`);
+  for (const term of ['Power BI', 'Python', 'C++']) assert(result.missing.includes(term), `should miss ${term}`);
+  assert.equal(result.found.length + result.missing.length, result.keywords.length);
+  assert.deepEqual(keywords.matchKeywords('', 'anything').keywords, []);
+});
 console.log(`\n${checks} behavior regression checks passed.`);

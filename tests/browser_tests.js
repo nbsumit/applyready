@@ -216,6 +216,13 @@ const server = http.createServer((req,res) => {
   await page.keyboard.press('Escape');
   await page.locator('#tabReview').click();
   ok(await page.locator('#reviewChecklist .review-item').count()>=1,'Review panel lists its checks');
+  await page.locator('#jobDescriptionInput').fill('Operations Manager role. We need Jira, Smartsheet and Salesforce CRM experience, vendor management, Kubernetes and Terraform. Kubernetes is used daily; Terraform for infrastructure. Six Sigma preferred.');
+  await page.locator('#keywordMatchResult .keyword-summary').waitFor();
+  const missingTerms=await page.locator('#keywordMatchResult .is-missing li').allTextContents();
+  const foundTerms=await page.locator('#keywordMatchResult .is-found li').allTextContents();
+  ok(missingTerms.includes('Kubernetes') && missingTerms.includes('Terraform'),'Job description terms absent from the resume are listed');
+  ok(foundTerms.includes('Jira') && foundTerms.includes('Smartsheet'),'Job description terms already in the resume are recognised');
+  ok(await page.evaluate(()=>!JSON.stringify(localStorage).includes('Kubernetes')),'Pasted job description is never stored');
   await audit('resume-review-tab');
   await page.setViewportSize({width:320,height:800});
   await page.locator('#tabEdit').click();

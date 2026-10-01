@@ -561,6 +561,16 @@
             </div>
           </div>
 
+          <!-- Job Description Keyword Match (on-device, never stored) -->
+          <section class="review-panel-card keyword-match-card" aria-labelledby="keywordMatchHeading">
+            <h3 id="keywordMatchHeading" style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.35rem;">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true" style="color: var(--primary);"></i> Compare with a job description
+            </h3>
+            <p class="text-sm text-muted" style="margin-bottom: 0.75rem;">Paste the job advert to see which of its key terms your resume already uses. It is checked on this device and never saved.</p>
+            <label class="form-label" for="jobDescriptionInput">Job description</label>
+            <textarea id="jobDescriptionInput" class="form-control" rows="5" placeholder="Paste the full job description here" autocomplete="off" spellcheck="false"></textarea>
+            <div id="keywordMatchResult" class="keyword-match-result" aria-live="polite"></div>
+          </section>
           <!-- Document Export Actions -->
           <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.75rem;">
             <i class="fa-solid fa-file-arrow-down" aria-hidden="true" style="color: var(--primary);"></i> Export Document
@@ -773,6 +783,8 @@
   <!-- Pure Client-Side OOXML DOCX Generator Engine -->
   <script src="js/docx-engine.js?v=20261001-2"></script>
 
+  <!-- On-device job description keyword matching -->
+  <script src="js/keywords.js?v=20261001-2"></script>
   <!-- Resume Builder Logic -->
   <script src="js/resume.js?v=20261001-2"></script>
 </body>
