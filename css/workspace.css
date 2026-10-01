@@ -433,6 +433,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 /* PDF coordinates already include safe paper margins. */
 .ats-resume-sheet.resume-vector-page { padding: 0 !important; }
 .resume-vector-page > svg { display: block; overflow: hidden; }
+.resume-vector-page text { white-space: pre; }
 @media screen and (max-width: 760px) {
   .btn, .btn-sm { padding: .7rem 1rem; line-height: 1.4; }
   .btn > i { flex-shrink: 0; }
