@@ -12,19 +12,10 @@
     : (typeof require === 'function' ? require('./resume-schema.js') : null);
   const notify = (message, error = false) => { if (window.ApplyReadyUI) window.ApplyReadyUI.notify(message, error); };
 
-  // Templates catalogue fallback (if templates.js is loaded, it provides ApplyReadyTemplates)
-  const TEMPLATES = (typeof ApplyReadyTemplates !== 'undefined' && ApplyReadyTemplates.TEMPLATES)
-    ? ApplyReadyTemplates.TEMPLATES
-    : {
-      'classic-professional': { id: 'classic-professional', name: 'Classic Professional', fontFamily: 'serif', category: 'Broad Professional', badge: 'Default', description: 'Restrained serif typography with clear section rules and reverse-chronological emphasis.', recommendedOrder: ['summary', 'experience', 'education', 'projects', 'skills'] },
-      'modern-minimal': { id: 'modern-minimal', name: 'Modern Minimal', fontFamily: 'sans', category: 'Broad Professional', badge: 'Clean Sans', description: 'Clean sans-serif typography, open spacing, and minimal decorative rules with high-contrast hierarchy.', recommendedOrder: ['summary', 'experience', 'education', 'projects', 'skills'] },
-      'graduate-early-career': { id: 'graduate-early-career', name: 'Graduate / Early Career', fontFamily: 'sans', category: 'Students & Entry Level', badge: 'Entry Level', description: 'Education, academic projects, and campus leadership prominent; no mandatory work-experience requirement.', recommendedOrder: ['education', 'projects', 'experience', 'skills', 'achievements'] },
-      'experienced-professional': { id: 'experienced-professional', name: 'Experienced Professional', fontFamily: 'serif', category: 'Senior & Executive', badge: 'Executive', description: 'Experience and leadership achievements prominent with concise education; tailored for multi-page documents.', recommendedOrder: ['summary', 'experience', 'skills', 'education', 'projects'] },
-      'project-focused': { id: 'project-focused', name: 'Project Focused', fontFamily: 'sans', category: 'Technical & Portfolio', badge: 'Portfolio', description: 'Projects and case studies prominent with readable links and clear contribution descriptions for technical disciplines.', recommendedOrder: ['summary', 'projects', 'experience', 'skills', 'education'] },
-      'career-transition': { id: 'career-transition', name: 'Career Transition', fontFamily: 'sans', category: 'Career Change', badge: 'Pivot', description: 'Short summary and transferable skills prominent at the top, supported by a complete dated work-history section.', recommendedOrder: ['summary', 'skills', 'experience', 'projects', 'education'] },
-      'compact-professional': { id: 'compact-professional', name: 'Compact Professional', fontFamily: 'sans', category: 'Condensed', badge: 'Dense', description: 'Efficient spacing and restrained hierarchy to fit rich qualifications into a dense, readable layout.', recommendedOrder: ['summary', 'experience', 'education', 'skills', 'projects'] },
-      'academic-cv': { id: 'academic-cv', name: 'Academic / Research CV', fontFamily: 'serif', category: 'Academia & Research', badge: 'Multi-Page CV', description: 'Structured for scholarly curriculum vitae. Includes publications, teaching, research appointments, grants, and awards.', recommendedOrder: ['summary', 'education', 'academic', 'experience', 'projects', 'skills'] }
-    };
+  // Template catalogue, visual rules and labels shared with the export engines.
+  const TPL = typeof ApplyReadyTemplates !== 'undefined' ? ApplyReadyTemplates
+    : (typeof require === 'function' ? require('./templates.js') : null);
+  const TEMPLATES = TPL.TEMPLATES;
 
   // Demonstration Sample Data
   const SAMPLE_DATA = {
@@ -116,12 +107,18 @@
     achievements: [
       'Recipient of Apex Logistics Operational Excellence Award (2023) for supply chain automation leadership'
     ],
-    volunteering: [],
-    languages: [],
+    volunteering: [
+      { id: 'vol-1', role: 'Volunteer Logistics Coordinator', organization: 'Greater Chicago Food Network', duration: '2020 - Present' }
+    ],
+    languages: [
+      { id: 'lang-1', name: 'English', proficiency: 'Native' },
+      { id: 'lang-2', name: 'Spanish', proficiency: 'Professional working' }
+    ],
     academic: {
       publications: [],
       teaching: [],
-      presentations: []
+      presentations: [],
+      grants: []
     }
   };
 
@@ -453,186 +450,86 @@
   }
 
   function renderResumeDataToHTML(data, templateId) {
-    const tmpl = TEMPLATES[templateId] || TEMPLATES['classic-professional'];
     const p = data.personal || {};
+    const style = TPL.getTemplateStyle(templateId);
+    const pdfApi = typeof window !== 'undefined' && window.ApplyReadyPDF;
+    const bulletLines = pdfApi ? pdfApi.bulletLines : text => String(text || '').split(/\r?\n|\r/).map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
+    const optionalEntries = pdfApi ? pdfApi.optionalEntries : () => [];
+    const vis = data.sectionVisibility || {};
+    const visible = key => vis[key] !== false;
+    const t = value => (typeof value === 'string' ? value.trim() : '');
+    const heading = text => `<h3 class="resume-section-title">${escapeHTML(text)}</h3>`;
+    const bulletList = items => items.length ? `<ul class="resume-bullets">${items.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>` : '';
+    const entryHeader = (left, right) => `<div class="resume-entry-header"><span>${left}</span>${right ? `<span class="resume-entry-meta">${right}</span>` : ''}</div>`;
 
     const contactItems = [];
-    if (p.phone && p.phone.trim()) contactItems.push({ text: p.phone.trim(), href: 'tel:' + p.phone.trim().replace(/\s+/g, '') });
-    if (p.email && p.email.trim()) contactItems.push({ text: p.email.trim(), href: 'mailto:' + p.email.trim() });
-    if (p.location && p.location.trim()) contactItems.push({ text: p.location.trim() });
-    if (p.linkedin && p.linkedin.trim()) contactItems.push({ text: p.linkedin.trim(), href: sanitizeHref(p.linkedin.trim()) });
-    if (p.github && p.github.trim()) contactItems.push({ text: p.github.trim(), href: sanitizeHref(p.github.trim()) });
-    if (p.website && p.website.trim()) contactItems.push({ text: p.website.trim(), href: sanitizeHref(p.website.trim()) });
+    if (t(p.phone)) contactItems.push({ text: t(p.phone), href: 'tel:' + t(p.phone).replace(/[^\d+]/g, '') });
+    if (t(p.email)) contactItems.push({ text: t(p.email), href: 'mailto:' + t(p.email) });
+    if (t(p.location)) contactItems.push({ text: t(p.location) });
+    for (const key of ['linkedin', 'github', 'website']) if (t(p[key])) contactItems.push({ text: t(p[key]), href: sanitizeHref(t(p[key])) });
 
-    let contactHtml = contactItems.map((item, idx) => {
-      const inner = item.href ? `<a href="${escapeHTML(item.href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.text)}</a>` : escapeHTML(item.text);
-      return `<span class="resume-contact-item">${inner}</span>` + (idx < contactItems.length - 1 ? '<span style="color: #94A3B8; margin: 0 0.35rem;">•</span>' : '');
+    const contactHtml = contactItems.map((item, idx) => {
+      const inner = item.href && item.href !== '#' ? `<a href="${escapeHTML(item.href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.text)}</a>` : escapeHTML(item.text);
+      return `<span class="resume-contact-item">${inner}</span>` + (idx < contactItems.length - 1 ? `<span class="resume-contact-sep" aria-hidden="true">${escapeHTML(style.contactSeparator)}</span>` : '');
     }).join('');
 
     const sections = {};
-
-    const summaryText = (data.summary || '').trim();
-    if (summaryText && (!data.sectionVisibility || data.sectionVisibility.summary !== false)) {
-      sections['summary'] = `
-        <section class="resume-section">
-          <h3 class="resume-section-title">${escapeHTML(data.summaryTitle || 'PROFESSIONAL SUMMARY')}</h3>
-          <p style="font-size: 9.5pt; line-height: 1.4; text-align: justify; margin: 0;">${escapeHTML(summaryText)}</p>
-        </section>`;
+    const summaryText = t(data.summary);
+    if (summaryText && visible('summary')) {
+      sections.summary = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'summary'))}<p class="resume-summary">${escapeHTML(summaryText)}</p></section>`;
     }
 
-    const exp = (data.experience || []).filter(x => x.role || x.company || x.bulletsText);
-    if (exp.length > 0 && (!data.sectionVisibility || data.sectionVisibility.experience !== false)) {
-      let expItems = exp.map(item => {
-        const roleComp = [item.role, item.company].filter(Boolean).join(' | ');
-        const durLoc = [item.duration, item.location].filter(Boolean).join(' • ');
-        let bHtml = '';
-        if (item.bulletsText && item.bulletsText.trim()) {
-          const lines = item.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-          const clean = lines.map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
-          if (clean.length > 0) {
-            bHtml = `<ul class="resume-bullets">${clean.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>`;
-          }
-        }
-        return `
-          <div class="resume-entry">
-            <div class="resume-entry-header">
-              <span>${escapeHTML(roleComp)}</span>
-              <span style="font-weight: normal; font-style: italic; font-size: 9pt;">${escapeHTML(durLoc)}</span>
-            </div>
-            ${bHtml}
-          </div>`;
-      }).join('');
-      sections['experience'] = `
-        <section class="resume-section">
-          <h3 class="resume-section-title">${escapeHTML(data.experienceTitle || 'WORK EXPERIENCE')}</h3>
-          <div>${expItems}</div>
-        </section>`;
+    const exp = (data.experience || []).filter(x => x && (t(x.role) || t(x.company) || bulletLines(x.bulletsText).length));
+    if (exp.length && visible('experience')) {
+      const items = exp.map(item => `<div class="resume-entry">${entryHeader(escapeHTML([t(item.role), t(item.company)].filter(Boolean).join(' | ')), escapeHTML([t(item.duration), t(item.location)].filter(Boolean).join(' • ')))}${bulletList(bulletLines(item.bulletsText))}</div>`).join('');
+      sections.experience = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'experience'))}<div>${items}</div></section>`;
     }
 
-    const edu = (data.education || []).filter(x => x.degree || x.institution);
-    if (edu.length > 0 && (!data.sectionVisibility || data.sectionVisibility.education !== false)) {
-      let eduItems = edu.map(item => {
-        const degInst = [item.degree, item.institution].filter(Boolean).join(' — ');
-        const durLocScore = [item.duration, item.location, item.score].filter(Boolean).join(' • ');
-        return `
-          <div class="resume-entry">
-            <div class="resume-entry-header">
-              <span>${escapeHTML(degInst)}</span>
-              <span style="font-weight: normal; font-style: italic; font-size: 9pt;">${escapeHTML(durLocScore)}</span>
-            </div>
-          </div>`;
-      }).join('');
-      sections['education'] = `
-        <section class="resume-section">
-          <h3 class="resume-section-title">${escapeHTML(data.educationTitle || 'EDUCATION')}</h3>
-          <div>${eduItems}</div>
-        </section>`;
+    const edu = (data.education || []).filter(x => x && (t(x.degree) || t(x.institution)));
+    if (edu.length && visible('education')) {
+      const items = edu.map(item => `<div class="resume-entry">${entryHeader(escapeHTML([t(item.degree), t(item.institution)].filter(Boolean).join(' — ')), escapeHTML([t(item.duration), t(item.location), t(item.score)].filter(Boolean).join(' • ')))}</div>`).join('');
+      sections.education = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'education'))}<div>${items}</div></section>`;
     }
 
-    const proj = (data.projects || []).filter(x => x.name || x.tech || x.bulletsText);
-    if (proj.length > 0 && (!data.sectionVisibility || data.sectionVisibility.projects !== false)) {
-      let projItems = proj.map(item => {
-        const tech = item.tech ? `| ${item.tech}` : '';
-        const link = item.link ? `<a href="${escapeHTML(sanitizeHref(item.link))}" target="_blank" rel="noopener noreferrer" style="color: #1D4ED8; font-weight: normal; font-size: 8.5pt;">${escapeHTML(item.link)}</a>` : '';
-        let bHtml = '';
-        if (item.bulletsText && item.bulletsText.trim()) {
-          const lines = item.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-          const clean = lines.map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
-          if (clean.length > 0) {
-            bHtml = `<ul class="resume-bullets">${clean.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>`;
-          }
-        }
-        return `
-          <div class="resume-entry">
-            <div class="resume-entry-header">
-              <span>${escapeHTML(item.name)} <span style="font-style: italic; font-weight: normal; color: #4B5563;">${escapeHTML(tech)}</span></span>
-              <span>${link}</span>
-            </div>
-            ${bHtml}
-          </div>`;
+    const proj = (data.projects || []).filter(x => x && (t(x.name) || t(x.tech) || bulletLines(x.bulletsText).length));
+    if (proj.length && visible('projects')) {
+      const items = proj.map(item => {
+        const href = sanitizeHref(t(item.link));
+        const link = t(item.link) ? (href !== '#' ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(t(item.link))}</a>` : escapeHTML(t(item.link))) : '';
+        const tech = t(item.tech) ? ` <span class="resume-entry-tech">| ${escapeHTML(t(item.tech))}</span>` : '';
+        return `<div class="resume-entry">${entryHeader(escapeHTML(t(item.name) || 'Project') + tech, link)}${bulletList(bulletLines(item.bulletsText))}</div>`;
       }).join('');
-      sections['projects'] = `
-        <section class="resume-section">
-          <h3 class="resume-section-title">${escapeHTML(data.projectsTitle || 'KEY PROJECTS & INITIATIVES')}</h3>
-          <div>${projItems}</div>
-        </section>`;
+      sections.projects = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'projects'))}<div>${items}</div></section>`;
     }
 
     const s = data.skills || {};
-    const skillRows = [];
-    if (s.languages && s.languages.trim()) skillRows.push({ label: 'Core Competencies', val: s.languages.trim() });
-    if (s.frameworks && s.frameworks.trim()) skillRows.push({ label: 'Tools & Platforms', val: s.frameworks.trim() });
-    if (s.tools && s.tools.trim()) skillRows.push({ label: 'Technical & Data Skills', val: s.tools.trim() });
-    if (s.other && s.other.trim()) skillRows.push({ label: 'Professional Skills', val: s.other.trim() });
-    if (skillRows.length > 0 && (!data.sectionVisibility || data.sectionVisibility.skills !== false)) {
-      let sHtml = skillRows.map(r => `
-        <div class="resume-skills-row">
-          <span class="skills-category">${escapeHTML(r.label)}: </span><span>${escapeHTML(r.val)}</span>
-        </div>`).join('');
-      sections['skills'] = `
-        <section class="resume-section">
-          <h3 class="resume-section-title">${escapeHTML(data.skillsTitle || 'SKILLS & COMPETENCIES')}</h3>
-          <div>${sHtml}</div>
-        </section>`;
+    const skillLabels = TPL.getSkillLabels(templateId);
+    const skillRows = ['languages', 'frameworks', 'tools', 'other'].filter(key => t(s[key])).map(key => ({ label: skillLabels[key], val: t(s[key]) }));
+    if (skillRows.length && visible('skills')) {
+      sections.skills = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'skills'))}<div>${skillRows.map(r => `<div class="resume-skills-row"><span class="skills-category">${escapeHTML(r.label)}: </span><span>${escapeHTML(r.val)}</span></div>`).join('')}</div></section>`;
     }
 
-    const certs = data.certifications || [];
-    if (certs.length > 0 && data.sectionVisibility && data.sectionVisibility.certifications) {
-      let cHtml = certs.map(c => `
-        <div class="resume-entry">
-          <strong>${escapeHTML(c.name || c.title)}</strong> ${c.issuer ? ' — ' + escapeHTML(c.issuer) : ''} ${c.year ? '(' + escapeHTML(c.year) + ')' : ''}
-        </div>`).join('');
-      sections['certifications'] = `
-        <section class="resume-section">
-          <h3 class="resume-section-title">CERTIFICATIONS & CREDENTIALS</h3>
-          <div>${cHtml}</div>
-        </section>`;
+    for (const key of ['certifications', 'achievements', 'volunteering']) {
+      const lines = optionalEntries(data, key);
+      if (lines.length && visible(key)) sections[key] = `<section class="resume-section">${heading(TPL.getSectionLabel(templateId, key))}<div>${lines.map(line => `<div class="resume-entry resume-list-entry">${escapeHTML(line)}</div>`).join('')}</div></section>`;
     }
-
-    const achs = data.achievements || [];
-    if (achs.length > 0 && data.sectionVisibility && data.sectionVisibility.achievements) {
-      let aHtml = achs.map(a => {
-        const text = typeof a === 'string' ? a : (a.title || a.text || '');
-        return `<div class="resume-entry">• ${escapeHTML(text)}</div>`;
+    const langs = optionalEntries(data, 'languages');
+    if (langs.length && visible('languages')) sections.languages = `<section class="resume-section">${heading(TPL.getSectionLabel(templateId, 'languages'))}<p class="resume-summary">${escapeHTML(langs.join(' • '))}</p></section>`;
+    if (visible('academic')) {
+      sections.academic = ['publications', 'teaching', 'presentations', 'grants'].map(key => {
+        const lines = optionalEntries(data, key);
+        return lines.length ? `<section class="resume-section">${heading(TPL.getSectionLabel(templateId, key))}<div>${lines.map(line => `<div class="resume-entry resume-list-entry">${escapeHTML(line)}</div>`).join('')}</div></section>` : '';
       }).join('');
-      sections['achievements'] = `
-        <section class="resume-section">
-          <h3 class="resume-section-title">HONORS & ACHIEVEMENTS</h3>
-          <div>${aHtml}</div>
-        </section>`;
     }
 
-    const addTextSection = (key, title, lines) => {
-      if (data.sectionVisibility && data.sectionVisibility[key] === false) return;
-      const content = lines.filter(Boolean);
-      if (content.length) sections[key] = `<section class="resume-section"><h3 class="resume-section-title">${escapeHTML(title)}</h3><div>${content.map(line => `<div class="resume-entry">${escapeHTML(line)}</div>`).join('')}</div></section>`;
-    };
-    addTextSection('volunteering', 'Community & Leadership', (data.volunteering || []).map(v => [v.role, v.organization || v.org, v.duration].filter(Boolean).join(' — ')));
-    addTextSection('languages', 'Languages', (data.languages || []).map(l => typeof l === 'string' ? l : [l.name, l.proficiency].filter(Boolean).join(' — ')));
-    const acad = data.academic || {};
-    if (!data.sectionVisibility || data.sectionVisibility.academic !== false) {
-      let html = '';
-      for (const [key, title] of [['publications', 'Peer-Reviewed Publications'], ['teaching', 'Teaching Experience'], ['presentations', 'Conference Presentations'], ['grants', 'Research Grants']]) {
-        const lines = (acad[key] || []).map(item => typeof item === 'string' ? item : key === 'teaching'
-          ? [item.role || item.course, item.institution, item.term].filter(Boolean).join(' — ')
-          : key === 'grants' ? [item.title || item.name, item.funder, item.year].filter(Boolean).join(' — ') : item.title || item.citation || item.event || '').filter(Boolean);
-        if (lines.length) html += `<section class="resume-section"><h3 class="resume-section-title">${escapeHTML(title)}</h3>${lines.map(line => `<div class="resume-entry">${escapeHTML(line)}</div>`).join('')}</section>`;
-      }
-      if (html) sections.academic = html;
-    }
     const order = SCHEMA.normalizeSectionOrder(data.design && data.design.sectionOrder);
-    let orderedHtml = '';
-    order.forEach(k => {
-      if (sections[k]) orderedHtml += sections[k];
-    });
-    Object.keys(sections).forEach(k => {
-      if (!order.includes(k) && sections[k]) orderedHtml += sections[k];
-    });
+    const orderedHtml = order.map(k => sections[k] || '').join('');
+    const name = t(p.fullName) || 'YOUR NAME';
 
     return `
       <header class="resume-header">
-        <h1 class="resume-name">${escapeHTML((p.fullName || 'YOUR NAME').toUpperCase())}</h1>
-        ${p.targetTitle ? `<div class="resume-target-title">${escapeHTML(p.targetTitle)}</div>` : ''}
+        <h1 class="resume-name">${escapeHTML(style.nameCase === 'upper' ? name.toUpperCase() : name)}</h1>
+        ${t(p.targetTitle) ? `<div class="resume-target-title">${escapeHTML(t(p.targetTitle))}</div>` : ''}
         <div class="resume-contact-line">${contactHtml}</div>
       </header>
       <div>${orderedHtml}</div>
@@ -641,56 +538,67 @@
 
   function renderTemplateIntoContainer(sheet, templateId, data) {
     const tmpl = TEMPLATES[templateId] || TEMPLATES['classic-professional'];
+    const style = TPL.getTemplateStyle(templateId);
     const fontClass = ((data.design && data.design.fontFamily) || tmpl.fontFamily) === 'sans' ? 'font-sans' : 'font-serif';
     const density = (data.design && data.design.density) || tmpl.density || 'standard';
     const fontSize = (data.design && data.design.fontSize) || 'standard';
     const pageSize = (data.design && data.design.pageSize) || 'a4';
     const sourceClass = sheet.id === 'resumeSheet' ? ' resume-source-sheet' : '';
+    const styleClasses = [`header-${style.headerAlign}`, `header-rule-${style.headerRule}`, `heading-rule-${style.headingRule}`, `dates-${style.datePlacement}`].join(' ');
 
-    sheet.className = `ats-resume-sheet template-${templateId} page-${pageSize} density-${density} font-size-${fontSize} ${fontClass}${sourceClass}`;
+    sheet.className = `ats-resume-sheet template-${templateId} page-${pageSize} density-${density} font-size-${fontSize} ${fontClass} ${styleClasses}${sourceClass}`;
+    sheet.style.setProperty('--resume-heading-color', '#' + style.headingHex);
+    sheet.style.setProperty('--resume-rule-color', '#' + style.ruleHex);
+    sheet.style.setProperty('--resume-header-rule-color', '#' + style.headerRuleHex);
+    sheet.style.setProperty('--resume-link-color', '#' + style.linkHex);
+    sheet.style.setProperty('--resume-meta-color', '#' + style.metaHex);
     sheet.innerHTML = renderResumeDataToHTML(data, templateId);
   }
 
   // Share PDF line positions and page breaks with the live preview. SVG text
   // stays selectable and prints sharply, with no browser-dependent reflow.
+  function buildVectorPage(layout, fontFamily) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.style.fontFamily = fontFamily === 'sans' ? 'Arial, Helvetica, sans-serif' : '"Times New Roman", Times, serif';
+    layout.elements.forEach(item => {
+      const node = document.createElementNS(ns, item.type === 'text' ? 'text' : 'line');
+      const color = `rgb(${item.color.map(value => Math.round(value * 255)).join(',')})`;
+      if (item.type === 'text') {
+        node.textContent = item.text;
+        for (const attr of ['x', 'y']) node.setAttribute(attr, item[attr]);
+        node.setAttribute('font-size', item.fontSize);
+        node.setAttribute('font-weight', item.fontStyle === 'bold' ? '700' : '400');
+        node.setAttribute('font-style', item.fontStyle === 'italic' ? 'italic' : 'normal');
+        node.setAttribute('fill', color);
+        node.setAttribute('xml:space', 'preserve');
+        if (item.width > 0) {
+          node.setAttribute('textLength', item.width);
+          node.setAttribute('lengthAdjust', 'spacingAndGlyphs');
+        }
+      } else {
+        for (const attr of ['x1', 'y1', 'x2', 'y2']) node.setAttribute(attr, item[attr]);
+        node.setAttribute('stroke', color);
+        node.setAttribute('stroke-width', item.lineWidth);
+      }
+      svg.appendChild(node);
+    });
+    return svg;
+  }
+
   function renderVectorPreview(doc, source) {
     const target = getEl('resumeVisualPages');
     target.replaceChildren();
-    const ns = 'http://www.w3.org/2000/svg';
     const pageClass = Array.from(source.classList).filter(name => name !== 'resume-source-sheet').join(' ');
     doc.pages.forEach((layout, index) => {
       const page = document.createElement('article');
       page.className = `${pageClass} resume-visual-page resume-vector-page`;
       page.dataset.previewPage = String(index + 1);
       page.setAttribute('aria-label', `Resume page ${index + 1} of ${doc.pages.length}`);
-      const svg = document.createElementNS(ns, 'svg');
-      svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
-      svg.setAttribute('width', '100%');
-      svg.setAttribute('height', '100%');
-      svg.style.fontFamily = doc.fontFamily === 'sans' ? 'Arial, Helvetica, sans-serif' : '"Times New Roman", Times, serif';
-      layout.elements.forEach(item => {
-        const node = document.createElementNS(ns, item.type === 'text' ? 'text' : 'line');
-        const color = `rgb(${item.color.map(value => Math.round(value * 255)).join(',')})`;
-        if (item.type === 'text') {
-          node.textContent = item.text;
-          for (const attr of ['x', 'y']) node.setAttribute(attr, item[attr]);
-          node.setAttribute('font-size', item.fontSize);
-          node.setAttribute('font-weight', item.fontStyle === 'bold' ? '700' : '400');
-          node.setAttribute('font-style', item.fontStyle === 'italic' ? 'italic' : 'normal');
-          node.setAttribute('fill', color);
-          node.setAttribute('xml:space', 'preserve');
-          if (item.width > 0) {
-            node.setAttribute('textLength', item.width);
-            node.setAttribute('lengthAdjust', 'spacingAndGlyphs');
-          }
-        } else {
-          for (const attr of ['x1', 'y1', 'x2', 'y2']) node.setAttribute(attr, item[attr]);
-          node.setAttribute('stroke', color);
-          node.setAttribute('stroke-width', item.lineWidth);
-        }
-        svg.appendChild(node);
-      });
-      page.appendChild(svg);
+      page.appendChild(buildVectorPage(layout, doc.fontFamily));
       target.appendChild(page);
     });
     target.dataset.pageCount = String(doc.pages.length);
@@ -831,10 +739,23 @@
     }
 
     const sample = SCHEMA.migrate(SAMPLE_DATA);
+    sample.template = templateId;
+    sample.design.templateId = templateId;
     sample.design.fontFamily = tmpl.fontFamily;
     sample.design.density = tmpl.density || 'standard';
+    sample.design.pageSize = resumeData.design.pageSize || 'a4';
     sample.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
-    renderTemplateIntoContainer(sheet, templateId, sample);
+    Object.assign(sample.sectionVisibility, tmpl.defaultVisibility || {});
+    // Draw the first page with the export engine so the preview is the download.
+    try {
+      const doc = window.ApplyReadyPDF.generateResumePDF(sample);
+      sheet.className = `ats-resume-sheet page-${sample.design.pageSize} resume-vector-page template-modal-page`;
+      sheet.style.height = sample.design.pageSize === 'letter' ? '11in' : '297mm';
+      sheet.replaceChildren(buildVectorPage(doc.pages[0], doc.fontFamily));
+    } catch (e) {
+      sheet.style.height = '';
+      renderTemplateIntoContainer(sheet, templateId, sample);
+    }
 
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -1075,6 +996,7 @@
     });
 
     updateDesignControlsFromState();
+    updateTemplateFieldLabels();
     renderResumePreview();
     runResumeReview();
   }
@@ -1099,6 +1021,23 @@
     if (getEl('skillFrameworks')) getEl('skillFrameworks').value = s.frameworks || '';
     if (getEl('skillTools')) getEl('skillTools').value = s.tools || '';
     if (getEl('skillOther')) getEl('skillOther').value = s.other || '';
+    updateTemplateFieldLabels();
+  }
+
+  // Section headings and skill row labels follow the active template unless
+  // the person has typed their own heading.
+  function updateTemplateFieldLabels() {
+    ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => {
+      const input = getEl(key + 'TitleInput');
+      if (!input || document.activeElement === input) return;
+      input.value = TPL.getSectionTitle(resumeData, resumeData.template, key);
+      input.placeholder = TPL.getSectionLabel(resumeData.template, key);
+    });
+    const labels = TPL.getSkillLabels(resumeData.template);
+    Object.keys(labels).forEach(key => {
+      const label = getEl('skill-label-' + key);
+      if (label) label.textContent = labels[key];
+    });
   }
 
   /**
@@ -1274,7 +1213,7 @@
   }
 
   function labelOptionalFields() {
-    const labels = { 'item-cert-name': 'Certification name', 'item-cert-issuer': 'Issuing body', 'item-cert-year': 'Certification year', 'item-ach-text': 'Achievement', 'item-vol-role': 'Volunteer role', 'item-vol-org': 'Volunteer organization', 'item-vol-dur': 'Volunteer dates', 'item-lang-name': 'Language', 'item-lang-prof': 'Language proficiency', 'item-pub-text': 'Publication citation', 'item-teach-role': 'Teaching role or course', 'item-teach-inst': 'Teaching institution', 'item-teach-term': 'Teaching term' };
+    const labels = { 'item-cert-name': 'Certification name', 'item-cert-issuer': 'Issuing body', 'item-cert-year': 'Certification year', 'item-ach-text': 'Achievement', 'item-vol-role': 'Volunteer role', 'item-vol-org': 'Volunteer organization', 'item-vol-dur': 'Volunteer dates', 'item-lang-name': 'Language', 'item-lang-prof': 'Language proficiency', 'item-pub-text': 'Publication citation', 'item-teach-role': 'Teaching role or course', 'item-teach-inst': 'Teaching institution', 'item-teach-term': 'Teaching term', 'item-pres-title': 'Presentation title', 'item-pres-event': 'Presentation event', 'item-grant-title': 'Grant title', 'item-grant-funder': 'Grant funding body', 'item-grant-year': 'Grant year' };
     document.querySelectorAll('#optionalSectionsArea .form-control').forEach(input => {
       const key = Object.keys(labels).find(key => input.classList.contains(key));
       if (key) {
@@ -1320,7 +1259,7 @@
               </div>
               <div style="flex: 1;">
                 <label class="form-label text-sm">Year</label>
-                <input type="text" class="form-control item-cert-year" value="${escapeHTML(c.year)}" data-index="${idx}">
+                <input type="text" class="form-control item-cert-year" value="${escapeHTML(c.year || c.date)}" data-index="${idx}">
               </div>
             </div>
           `;
@@ -1451,6 +1390,51 @@
             </div>
           `;
           teachList.appendChild(item);
+        });
+      }
+
+      const presList = getEl('academicPresentationsList');
+      if (presList) {
+        presList.innerHTML = '';
+        ((resumeData.academic && resumeData.academic.presentations) || []).forEach((pr, idx) => {
+          const item = document.createElement('div');
+          item.className = 'dynamic-item';
+          item.innerHTML = `
+            <div class="dynamic-item-header">
+              <strong style="font-size: 0.85rem;">Presentation</strong>
+              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-pres" data-index="${idx}">
+                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
+            <div class="form-row-2">
+              <input type="text" class="form-control item-pres-title" placeholder="Talk or poster title" value="${escapeHTML(typeof pr === 'string' ? pr : pr.title)}" data-index="${idx}">
+              <input type="text" class="form-control item-pres-event" placeholder="Conference, place, year" value="${escapeHTML(typeof pr === 'string' ? '' : pr.event)}" data-index="${idx}">
+            </div>
+          `;
+          presList.appendChild(item);
+        });
+      }
+
+      const grantList = getEl('academicGrantsList');
+      if (grantList) {
+        grantList.innerHTML = '';
+        ((resumeData.academic && resumeData.academic.grants) || []).forEach((g, idx) => {
+          const item = document.createElement('div');
+          item.className = 'dynamic-item';
+          item.innerHTML = `
+            <div class="dynamic-item-header">
+              <strong style="font-size: 0.85rem;">Grant</strong>
+              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-grant" data-index="${idx}">
+                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
+              </button>
+            </div>
+            <div class="form-row-3">
+              <input type="text" class="form-control item-grant-title" placeholder="Grant or award title" value="${escapeHTML(typeof g === 'string' ? g : (g.title || g.name))}" data-index="${idx}">
+              <input type="text" class="form-control item-grant-funder" placeholder="Funding body" value="${escapeHTML(typeof g === 'string' ? '' : g.funder)}" data-index="${idx}">
+              <input type="text" class="form-control item-grant-year" placeholder="Year" value="${escapeHTML(typeof g === 'string' ? '' : g.year)}" data-index="${idx}">
+            </div>
+          `;
+          grantList.appendChild(item);
         });
       }
     }
@@ -1677,111 +1661,73 @@
   /**
    * Actionable Resume Review Checklist Generator
    */
-  function generateReviewReport(data) {
+  function generateReviewReport(data, pageCount) {
     const issues = [];
     const p = data.personal || {};
+    const t = value => (typeof value === 'string' ? value.trim() : '');
+    const vis = data.sectionVisibility || {};
+    const shown = key => vis[key] !== false;
+    const tmpl = TEMPLATES[data.template] || {};
+    const add = (type, message, section, targetField) => issues.push({ type, message, section, targetField });
+    const splitBullets = text => String(text || '').split(/\r?\n|\r/).map(line => line.trim().replace(/^[-*•▪◦·]\s*/, '').trim()).filter(Boolean);
 
-    // 1. Critical: Full Name
-    if (!p.fullName || !p.fullName.trim()) {
-      issues.push({
-        type: 'error',
-        message: 'Full Name is missing. Required to identify your resume document.',
-        section: 'personal',
-        targetField: 'fullName'
-      });
-    }
-
-    // 2. Email validation
-    if (!p.email || !p.email.trim()) {
-      issues.push({
-        type: 'warning',
-        message: 'Email address not provided. Recommended so recruiters can contact you.',
-        section: 'personal',
-        targetField: 'email'
-      });
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim())) {
-      issues.push({
-        type: 'error',
-        message: `Email "${p.email}" format looks incomplete or malformed.`,
-        section: 'personal',
-        targetField: 'email'
-      });
+    // Contact details
+    if (!t(p.fullName)) add('error', 'Full name is missing. Recruiters and applicant tracking systems use it to identify your file.', 'personal', 'fullName');
+    if (!t(p.email)) add('warning', 'Email address not provided. Add one so recruiters can contact you.', 'personal', 'email');
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(t(p.email))) add('error', `Email "${t(p.email)}" looks incomplete or malformed.`, 'personal', 'email');
+    if (!t(p.phone)) add('warning', 'Phone number not provided. Most application portals expect one.', 'personal', 'phone');
+    else if (t(p.phone).replace(/\D/g, '').length < 7) add('error', `Phone "${t(p.phone)}" has too few digits.`, 'personal', 'phone');
+    if (!t(p.location)) add('info', 'Add a city and country or state. Many recruiters filter candidates by location.', 'personal', 'location');
+    for (const [key, name] of [['linkedin', 'LinkedIn URL'], ['website', 'Website URL'], ['github', 'GitHub URL']]) {
+      if (t(p[key]) && !isValidUrlFormat(p[key])) add('error', `${name} "${t(p[key])}" appears malformed.`, 'personal', key);
     }
 
-    // 3. URLs
-    if (p.linkedin && !isValidUrlFormat(p.linkedin)) {
-      issues.push({
-        type: 'error',
-        message: `LinkedIn URL "${p.linkedin}" appears malformed.`,
-        section: 'personal',
-        targetField: 'linkedin'
-      });
-    }
-    if (p.website && !isValidUrlFormat(p.website)) {
-      issues.push({
-        type: 'error',
-        message: `Website URL "${p.website}" appears malformed.`,
-        section: 'personal',
-        targetField: 'website'
-      });
-    }
-    if (p.github && !isValidUrlFormat(p.github)) {
-      issues.push({
-        type: 'error',
-        message: `GitHub URL "${p.github}" appears malformed.`,
-        section: 'personal',
-        targetField: 'github'
-      });
-    }
+    // Summary
+    const summary = t(data.summary);
+    if (shown('summary') && !summary && tmpl.defaultVisibility && tmpl.defaultVisibility.summary) add('info', 'Professional summary is empty. Two or three lines about your focus and strongest results help a recruiter scan quickly.', 'summary', 'summaryText');
+    if (summary && summary.split(/\s+/).length > 90) add('info', `Summary is ${summary.split(/\s+/).length} words. Around 40 to 80 words is easier to scan.`, 'summary', 'summaryText');
 
-    // 4. Content Completeness
-    if (!data.summary || !data.summary.trim()) {
-      issues.push({
-        type: 'info',
-        message: 'Professional Summary is currently empty.',
-        section: 'summary',
-        targetField: 'summaryText'
-      });
-    }
+    // Experience
+    const experience = (data.experience || []).filter(x => x && (t(x.role) || t(x.company) || splitBullets(x.bulletsText).length));
+    const studentTemplate = ['graduate-early-career', 'campus-fresher', 'ivy-classic', 'academic-cv'].includes(data.template);
+    if (!experience.length && shown('experience') && !studentTemplate) add('info', 'No work experience added yet. Internships, freelance and volunteer roles count.', 'experience');
+    experience.forEach((exp, index) => {
+      const label = t(exp.role) || t(exp.company) || `Entry ${index + 1}`;
+      if (!t(exp.role)) add('warning', `Experience "${label}" has no job title.`, 'experience');
+      if (!t(exp.company)) add('info', `Experience "${label}" has no company or organisation.`, 'experience');
+      if (!t(exp.duration)) add('warning', `Experience "${label}" has no dates. Applicant tracking systems use dates to calculate experience.`, 'experience');
+      if (!splitBullets(exp.bulletsText).length) add('info', `Experience "${label}" has no bullet points describing your work.`, 'experience');
+      if (splitBullets(exp.bulletsText).length > 8) add('info', `Experience "${label}" has ${splitBullets(exp.bulletsText).length} bullets. Keep the strongest 3 to 6.`, 'experience');
+    });
 
-    const exp = data.experience || [];
-    if (exp.length === 0) {
-      if (data.template !== 'graduate-early-career') {
-        issues.push({
-          type: 'info',
-          message: 'No Work Experience entries added yet.',
-          section: 'experience'
-        });
-      }
+    // Bullet quality across experience and projects
+    const bullets = [...experience, ...(data.projects || [])].flatMap(item => splitBullets(item && item.bulletsText));
+    if (bullets.length >= 3) {
+      const measured = bullets.filter(b => /\d/.test(b)).length;
+      if (measured / bullets.length < 0.3) add('info', `Only ${measured} of ${bullets.length} bullets include a number. Add measurable results such as %, time saved, revenue, or team size where you can.`, 'experience');
     }
+    const weak = bullets.filter(b => /^(responsible for|worked on|helped|assisted( with)?|duties included|tasked with|involved in|in charge of)\b/i.test(b));
+    if (weak.length) add('info', `${weak.length} bullet${weak.length > 1 ? 's start' : ' starts'} with a passive phrase such as "${weak[0].split(/\s+/).slice(0, 2).join(' ')}". Start with an action verb such as Led, Built, Reduced, or Delivered.`, 'experience');
+    const firstPerson = bullets.filter(b => /\b(I|me|my|mine|we|our)\b/.test(b));
+    if (firstPerson.length) add('info', `${firstPerson.length} bullet${firstPerson.length > 1 ? 's use' : ' uses'} first-person words (I, my, we). Resumes conventionally omit them.`, 'experience');
+    const long = bullets.filter(b => b.split(/\s+/).length > 40);
+    if (long.length) add('info', `${long.length} bullet${long.length > 1 ? 's are' : ' is'} longer than 40 words. Split long points so each fits in about two lines.`, 'experience');
 
-    const edu = data.education || [];
-    if (edu.length === 0) {
-      issues.push({
-        type: 'warning',
-        message: 'Education history is empty.',
-        section: 'education'
-      });
-    }
+    // Education and skills
+    const education = (data.education || []).filter(x => x && (t(x.degree) || t(x.institution)));
+    if (!education.length && shown('education')) add('warning', 'Education history is empty.', 'education');
+    education.forEach(edu => { if (!t(edu.duration)) add('info', `Education "${t(edu.degree) || t(edu.institution)}" has no dates or graduation year.`, 'education'); });
+    const skills = data.skills || {};
+    if (shown('skills') && !['languages', 'frameworks', 'tools', 'other'].some(key => t(skills[key]))) add('warning', 'Skills section is empty. Applicant tracking systems match job keywords against it.', 'skills', 'skillLanguages');
 
-    // 5. Placeholder detection
+    // Placeholders and document length
     const strPayload = JSON.stringify(data).toLowerCase();
-    if (strPayload.includes('lorem ipsum') || strPayload.includes('[company name]')) {
-      issues.push({
-        type: 'warning',
-        message: 'Placeholder text detected (e.g. "[Company Name]" or "Lorem ipsum"). Check your draft before final export.',
-        section: 'summary'
-      });
-    }
+    if (/lorem ipsum|\[company name\]|\[your name\]|xxx|todo:/.test(strPayload)) add('warning', 'Placeholder text detected (for example "[Company Name]" or "Lorem ipsum"). Replace it before you send the file.', 'summary');
+    if (pageCount && pageCount > 2 && data.template !== 'academic-cv') add('warning', `Your PDF is ${pageCount} pages. Most employers expect one or two pages; consider trimming older roles.`, 'experience');
+    else if (pageCount === 2 && experience.length <= 1 && education.length <= 2) add('info', 'Your PDF runs to two pages with little experience. Try the Compact density or 10 pt text to fit one page.', 'experience');
+    if (!pageCount) add('info', 'Some characters need a Unicode font, so PDF download uses your browser\'s Save as PDF. Word and text downloads keep every character.', 'personal');
 
-    // 6. Template specific check
-    if (data.template === 'academic-cv') {
-      issues.push({
-        type: 'info',
-        message: 'Academic / Research CV is designed for comprehensive multi-page dossiers with publications and teaching.',
-        section: 'academic'
-      });
-    }
+    if (data.template === 'academic-cv') add('info', 'Academic / Research CV is designed for comprehensive multi-page dossiers with publications and teaching.', 'academic');
 
     return issues;
   }
@@ -1794,7 +1740,7 @@
     const pageEstPill = getEl('reviewPageEstimatePill');
 
     if (!checklist) return;
-    const issues = generateReviewReport(resumeData);
+    const issues = generateReviewReport(resumeData, pdfPageCount);
 
     const hasErrors = issues.some(x => x.type === 'error');
     const hasWarnings = issues.some(x => x.type === 'warning');
@@ -1818,8 +1764,6 @@
     // Page count estimate
     const sheet = getEl('resumeSheet');
     if (sheet && pageEstPill) {
-      const pageHeightPx = (resumeData.design.pageSize === 'letter') ? 1056 : 1123;
-      const estPages = Math.max(1, Math.ceil(sheet.scrollHeight / pageHeightPx));
       pageEstPill.textContent = pdfPageCount ? `${pdfPageCount} PDF page${pdfPageCount > 1 ? 's' : ''}` : 'Browser PDF';
     }
 
@@ -1883,6 +1827,31 @@
 
       checklist.appendChild(item);
     });
+  }
+
+  // New content keeps the chosen template, paper and typography; replacing
+  // them silently left the gallery showing a template that was not in use.
+  function withCurrentDesign(next, sectionVisibility) {
+    next.template = resumeData.template;
+    next.design = Object.assign({}, JSON.parse(JSON.stringify(resumeData.design)), { templateId: resumeData.template });
+    next.design.sectionOrder = SCHEMA.normalizeSectionOrder((TEMPLATES[resumeData.template] || {}).recommendedOrder || next.design.sectionOrder);
+    next.sectionVisibility = Object.assign({}, sectionVisibility);
+    return next;
+  }
+
+  function refreshWholeEditor() {
+    populateAllFormFields();
+    renderAllDynamicLists();
+    updateDesignControlsFromState();
+    setupTemplateGallery();
+    renderResumePreview();
+    runResumeReview();
+  }
+
+  function downloadName(suffix) {
+    const name = ((resumeData.personal && resumeData.personal.fullName) || '').trim().normalize('NFC')
+      .replace(/[^\p{L}\p{M}\p{N}_-]+/gu, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 60);
+    return `${name || 'Candidate'}_${suffix}`;
   }
 
   /**
@@ -1963,6 +1932,12 @@
     bindInput('website', v => { resumeData.personal.website = v; });
     bindInput('summaryText', v => { resumeData.summary = v; });
 
+    ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => {
+      bindInput(key + 'TitleInput', v => { resumeData[key + 'Title'] = v.trim() ? v : TPL.getSectionLabel(resumeData.template, key); });
+      const input = getEl(key + 'TitleInput');
+      if (input) input.addEventListener('blur', updateTemplateFieldLabels);
+    });
+
     bindInput('skillLanguages', v => { resumeData.skills.languages = v; });
     bindInput('skillFrameworks', v => { resumeData.skills.frameworks = v; });
     bindInput('skillTools', v => { resumeData.skills.tools = v; });
@@ -2018,6 +1993,28 @@
       teachList.addEventListener('input', handleTeachInput);
       teachList.addEventListener('click', handleTeachAction);
     }
+    const presList = getEl('academicPresentationsList');
+    if (presList) {
+      presList.addEventListener('input', e => handleAcademicInput(e, 'presentations', { 'item-pres-title': 'title', 'item-pres-event': 'event' }));
+      presList.addEventListener('click', e => handleAcademicRemove(e, 'presentations', 'remove-pres', 'academicPresentationsList', 'btnAddPresentation'));
+    }
+    const grantList = getEl('academicGrantsList');
+    if (grantList) {
+      grantList.addEventListener('input', e => handleAcademicInput(e, 'grants', { 'item-grant-title': 'title', 'item-grant-funder': 'funder', 'item-grant-year': 'year' }));
+      grantList.addEventListener('click', e => handleAcademicRemove(e, 'grants', 'remove-grant', 'academicGrantsList', 'btnAddGrant'));
+    }
+    [['btnAddPresentation', 'presentations', { title: '', event: '' }], ['btnAddGrant', 'grants', { title: '', funder: '', year: '' }]].forEach(([id, key, blank]) => {
+      const btn = getEl(id);
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        pushHistoryState();
+        if (!resumeData.academic) resumeData.academic = {};
+        if (!Array.isArray(resumeData.academic[key])) resumeData.academic[key] = [];
+        resumeData.academic[key].push(Object.assign({ id: newEntryId(key) }, blank));
+        renderOptionalSections();
+        renderResumePreview();
+      });
+    });
 
     // Add Entry buttons
     const btnAddExp = getEl('btnAddExperience');
@@ -2179,13 +2176,9 @@
           if (!confirm('Populate the editor with demonstration sample data? This will overwrite your current fields.')) return;
         }
         pushHistoryState();
-        resumeData = JSON.parse(JSON.stringify(SAMPLE_DATA));
+        resumeData = withCurrentDesign(SCHEMA.migrate(SAMPLE_DATA), SAMPLE_DATA.sectionVisibility);
         isDirty = false;
-        populateAllFormFields();
-        renderAllDynamicLists();
-        updateDesignControlsFromState();
-        renderResumePreview();
-        runResumeReview();
+        refreshWholeEditor();
       });
     }
 
@@ -2195,13 +2188,9 @@
       btnClearForm.addEventListener('click', () => {
         if (!confirm('Are you sure you want to clear all resume fields?')) return;
         pushHistoryState();
-        resumeData = JSON.parse(JSON.stringify(EMPTY_DATA));
+        resumeData = withCurrentDesign(SCHEMA.migrate(EMPTY_DATA), EMPTY_DATA.sectionVisibility);
         isDirty = false;
-        populateAllFormFields();
-        renderAllDynamicLists();
-        updateDesignControlsFromState();
-        renderResumePreview();
-        runResumeReview();
+        refreshWholeEditor();
       });
     }
 
@@ -2245,9 +2234,8 @@
         const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const safeName = (resumeData.personal.fullName || 'Candidate').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
         a.href = url;
-        a.download = `${safeName}_Resume_Backup.json`;
+        a.download = downloadName('Resume_Backup.json');
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
       });
@@ -2630,6 +2618,27 @@
     restoreRemoveFocus('academicTeachingList', idx, 'btnAddTeaching');
   }
 
+  function handleAcademicInput(e, key, fields) {
+    const idx = parseInt(e.target.dataset.index, 10);
+    const list = resumeData.academic && resumeData.academic[key];
+    if (!list || list[idx] === undefined) return;
+    if (typeof list[idx] === 'string') list[idx] = { title: list[idx] };
+    const cls = Object.keys(fields).find(name => e.target.classList.contains(name));
+    if (!cls) return;
+    list[idx][fields[cls]] = e.target.value;
+    renderResumePreview();
+  }
+  function handleAcademicRemove(e, key, action, listId, addBtnId) {
+    const btn = e.target.closest(`button[data-action="${action}"]`);
+    if (!btn) return;
+    const idx = parseInt(btn.dataset.index, 10);
+    pushHistoryState();
+    resumeData.academic[key].splice(idx, 1);
+    renderOptionalSections();
+    renderResumePreview();
+    restoreRemoveFocus(listId, idx, addBtnId);
+  }
+
   function setupAccordions() {
     document.querySelectorAll('.accordion-header').forEach(header => {
       header.addEventListener('click', () => {
@@ -2695,11 +2704,10 @@
       });
 
       const blob = doc.toBlob();
-      const safeName = fullName.replace(/[^a-zA-Z0-9_-]/g, '_');
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${safeName}_ATS_Resume.pdf`;
+      a.download = downloadName('Resume.pdf');
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -2753,11 +2761,10 @@
       });
 
       const blob = zip.toBlob();
-      const safeName = fullName.replace(/[^a-zA-Z0-9_-]/g, '_');
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${safeName}_ATS_Resume.docx`;
+      a.download = downloadName('Resume.docx');
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -2781,14 +2788,12 @@
       return;
     }
 
-    const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
     const textContent = window.ApplyReadyPDF.generateResumeText(resumeData);
     const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-    const safeName = (fullName || 'Candidate').replace(/[^a-zA-Z0-9_-]/g, '_');
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${safeName}_ATS_Resume.txt`;
+    a.download = downloadName('Resume.txt');
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

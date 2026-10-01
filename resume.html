@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Free ATS-Friendly Resume Builder | ApplyReady.in</title>
-  <meta name="description" content="Build clean, single-column ATS resumes with 8 distinct professional templates, real-time preview, vector PDF, editable DOCX, and plain-text export. 100% private.">
+  <meta name="description" content="Build clean, single-column ATS resumes with 15 professional ATS-friendly templates, real-time preview, vector PDF, editable DOCX, and plain-text export. 100% private.">
   <link rel="canonical" href="https://applyready.in/resume.html">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://applyready.in/resume.html">
   <meta property="og:title" content="Free ATS-Friendly Resume Builder | ApplyReady.in">
-  <meta property="og:description" content="Create single-column ATS resumes with 8 distinct templates and standard typography. 100% private client-side vector PDF and DOCX export.">
+  <meta property="og:description" content="Create single-column ATS resumes with 15 ATS-friendly templates and standard typography. 100% private client-side vector PDF and DOCX export.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -21,7 +21,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://applyready.in/resume.html">
   <meta name="twitter:title" content="Free ATS-Friendly Resume Builder | ApplyReady.in">
-  <meta name="twitter:description" content="Create single-column ATS resumes with 8 distinct templates and standard typography. 100% private client-side vector PDF and DOCX export.">
+  <meta name="twitter:description" content="Create single-column ATS resumes with 15 ATS-friendly templates and standard typography. 100% private client-side vector PDF and DOCX export.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -39,8 +39,8 @@
   <link rel="stylesheet" href="css/vendor/icons.min.css">
 
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/workspace.css?v=20261001-1">
+  <link rel="stylesheet" href="css/style.css?v=20261001-2">
+  <link rel="stylesheet" href="css/workspace.css?v=20261001-2">
 
   <!-- Structured Data: WebApplication -->
   <script type="application/ld+json">
@@ -49,7 +49,7 @@
     "@type": "WebApplication",
     "name": "ApplyReady ATS Resume Builder",
     "url": "https://applyready.in/resume.html",
-    "description": "Client-side ATS-friendly resume builder with 8 distinct templates, live real-time preview, vector PDF, and editable DOCX export.",
+    "description": "Client-side ATS-friendly resume builder with 15 ATS-friendly templates, live real-time preview, vector PDF, and editable DOCX export.",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "All modern browsers",
     "browserRequirements": "Requires JavaScript",
@@ -88,7 +88,7 @@
     <header class="hero-header workspace-hero resume-hero">
       <div class="hero-copy"><div class="eyebrow">TOOLS FOR YOUR NEXT APPLICATION</div>
         <h1 class="hero-title">Resume builder</h1>
-        <p class="hero-subtitle">Your experience, clearly presented. Eight templates. Free PDF and Word downloads.</p></div>
+        <p class="hero-subtitle">Your experience, clearly presented. Fifteen ATS-friendly templates. Free PDF and Word downloads.</p></div>
       <div class="hero-export"><button type="button" id="btnOpenExport" class="btn btn-primary"><i class="fa-solid fa-download" aria-hidden="true"></i> Review & download</button><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Your details stay on this device</span></div>
     </header>
 
@@ -215,6 +215,7 @@
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-summary">
+                <div class="form-group section-title-group"><label class="form-label text-sm" for="summaryTitleInput">Section heading on resume</label><input type="text" id="summaryTitleInput" class="form-control section-title-input" data-section="summary" maxlength="60" autocomplete="off"></div>
                 <div class="form-group" style="margin-bottom: 0;">
                   <label class="form-label" for="summaryText">Summary / Career Objective</label>
                   <textarea id="summaryText" class="form-control" rows="4" placeholder="Brief summary highlighting your core background, achievements, and capabilities..."></textarea>
@@ -230,6 +231,7 @@
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-experience">
+                <div class="form-group section-title-group"><label class="form-label text-sm" for="experienceTitleInput">Section heading on resume</label><input type="text" id="experienceTitleInput" class="form-control section-title-input" data-section="experience" maxlength="60" autocomplete="off"></div>
                 <div id="experienceList"></div>
                 <button type="button" id="btnAddExperience" class="btn btn-outline-primary btn-sm btn-block mt-2">
                   <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Work Experience
@@ -244,6 +246,7 @@
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-education">
+                <div class="form-group section-title-group"><label class="form-label text-sm" for="educationTitleInput">Section heading on resume</label><input type="text" id="educationTitleInput" class="form-control section-title-input" data-section="education" maxlength="60" autocomplete="off"></div>
                 <div id="educationList"></div>
                 <button type="button" id="btnAddEducation" class="btn btn-outline-primary btn-sm btn-block mt-2">
                   <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Education Entry
@@ -258,6 +261,7 @@
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-projects">
+                <div class="form-group section-title-group"><label class="form-label text-sm" for="projectsTitleInput">Section heading on resume</label><input type="text" id="projectsTitleInput" class="form-control section-title-input" data-section="projects" maxlength="60" autocomplete="off"></div>
                 <div id="projectsList"></div>
                 <button type="button" id="btnAddProject" class="btn btn-outline-primary btn-sm btn-block mt-2">
                   <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Project Entry
@@ -272,23 +276,24 @@
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-skills">
+                <div class="form-group section-title-group"><label class="form-label text-sm" for="skillsTitleInput">Section heading on resume</label><input type="text" id="skillsTitleInput" class="form-control section-title-input" data-section="skills" maxlength="60" autocomplete="off"></div>
                 <div class="form-group">
-                  <label class="form-label" for="skillLanguages">Core Competencies / Domain Expertise</label>
+                  <label class="form-label" id="skill-label-languages" for="skillLanguages">Core Competencies / Domain Expertise</label>
                   <input type="text" id="skillLanguages" class="form-control" placeholder="e.g. Project Management, Budgeting, Risk Assessment, Lean Six Sigma">
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="skillFrameworks">Tools, Software & Platforms</label>
+                  <label class="form-label" id="skill-label-frameworks" for="skillFrameworks">Tools, Software & Platforms</label>
                   <input type="text" id="skillFrameworks" class="form-control" placeholder="e.g. Jira, Smartsheet, Microsoft Project, SAP ERP, Salesforce">
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="skillTools">Technical & Data Skills</label>
+                  <label class="form-label" id="skill-label-tools" for="skillTools">Technical & Data Skills</label>
                   <input type="text" id="skillTools" class="form-control" placeholder="e.g. Advanced Excel, SQL, Tableau, Power BI, Google Workspace">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label class="form-label" for="skillOther">Methodologies & Standards</label>
+                  <label class="form-label" id="skill-label-other" for="skillOther">Methodologies & Standards</label>
                   <input type="text" id="skillOther" class="form-control" placeholder="e.g. Agile/Scrum, PMP Candidate, Six Sigma Green Belt">
                 </div>
               </div>
@@ -368,8 +373,18 @@
 
                   <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.5rem;">Teaching Experience</h4>
                   <div id="academicTeachingList"></div>
-                  <button type="button" id="btnAddTeaching" class="btn btn-outline-primary btn-sm btn-block mt-2">
+                  <button type="button" id="btnAddTeaching" class="btn btn-outline-primary btn-sm btn-block mt-2 mb-3">
                     <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Teaching Entry
+                  </button>
+                  <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.5rem;">Conference Presentations</h4>
+                  <div id="academicPresentationsList"></div>
+                  <button type="button" id="btnAddPresentation" class="btn btn-outline-primary btn-sm btn-block mt-2 mb-3">
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Presentation
+                  </button>
+                  <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.5rem;">Research Grants &amp; Funding</h4>
+                  <div id="academicGrantsList"></div>
+                  <button type="button" id="btnAddGrant" class="btn btn-outline-primary btn-sm btn-block mt-2">
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Grant
                   </button>
                 </div>
               </div>
@@ -433,7 +448,7 @@
         <div id="viewDesign" class="editor-tab-pane" role="tabpanel" aria-labelledby="tabDesign">
 
           <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.5rem;">
-            <i class="fa-solid fa-layer-group" aria-hidden="true" style="color: var(--primary);"></i> 8 Professional ATS Templates
+            <i class="fa-solid fa-layer-group" aria-hidden="true" style="color: var(--primary);"></i> 15 ATS-Friendly Templates
           </h3>
           <p class="text-sm text-muted" style="margin-bottom: 1rem;">
             Switching templates preserves all your entered content, section ordering, and saved drafts.
@@ -734,17 +749,17 @@
     </div>
   </div>
 
-  <!-- 8 Resume Templates Engine -->
-  <script src="js/resume-schema.js"></script>
-  <script src="js/templates.js"></script>
+  <!-- Resume template catalogue -->
+  <script src="js/resume-schema.js?v=20261001-2"></script>
+  <script src="js/templates.js?v=20261001-2"></script>
 
   <!-- Vector Text PDF Generator Engine -->
-  <script src="js/pdf-engine.js?v=20261001-1"></script>
+  <script src="js/pdf-engine.js?v=20261001-2"></script>
 
   <!-- Pure Client-Side OOXML DOCX Generator Engine -->
-  <script src="js/docx-engine.js"></script>
+  <script src="js/docx-engine.js?v=20261001-2"></script>
 
   <!-- Resume Builder Logic -->
-  <script src="js/resume.js?v=20261001-1"></script>
+  <script src="js/resume.js?v=20261001-2"></script>
 </body>
 </html>

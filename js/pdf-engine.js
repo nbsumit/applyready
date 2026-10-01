@@ -235,6 +235,13 @@
     return result;
   }
 
+  // PDF text string for the document information dictionary (UTF-16BE, BOM).
+  function pdfTextString(value) {
+    let hexOut = 'FEFF';
+    for (let i = 0; i < value.length; i++) hexOut += value.charCodeAt(i).toString(16).padStart(4, '0').toUpperCase();
+    return `<${hexOut}>`;
+  }
+
   function sanitizeUrl(raw) {
     if (!raw || /[\u0000-\u001f]/.test(String(raw))) return '';
     const clean = String(raw).trim();
@@ -256,7 +263,12 @@
       this.pages = [];
       this.currentPage = null;
       this.objects = [];
+      this.metadata = {};
       this.addPage();
+    }
+
+    setMetadata(meta = {}) {
+      this.metadata = Object.assign({}, this.metadata, meta);
     }
 
     addPage() {
@@ -399,6 +411,14 @@
       // Update Pages Root Object (id 2)
       objects[1].content = `<< /Type /Pages /Kids [ ${pageObjectIds.join(' ')} ] /Count ${pageObjectIds.length} >>`;
 
+      // Document information: PDF readers and applicant tracking systems show
+      // the title and author. UTF-16BE keeps any script intact.
+      const infoEntries = [['Title', this.metadata.title], ['Author', this.metadata.author], ['Subject', this.metadata.subject], ['Keywords', this.metadata.keywords]]
+        .filter(([, value]) => typeof value === 'string' && value.trim())
+        .map(([key, value]) => `/${key} ${pdfTextString(value.trim())}`);
+      infoEntries.push(`/Creator ${pdfTextString('ApplyReady.in Resume Builder')}`, `/Producer ${pdfTextString('ApplyReady.in')}`);
+      const infoId = addObject(`<< ${infoEntries.join(' ')} >>`);
+
       // Construct final output with xref table
       let pdfOutput = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
 
@@ -416,7 +436,7 @@
         pdfOutput += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
       }
 
-      pdfOutput += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+      pdfOutput += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R /Info ${infoId} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
       return pdfOutput;
     }
 
@@ -430,9 +450,88 @@
     }
   }
 
+  function templatesApi() {
+    if (typeof ApplyReadyTemplates !== 'undefined') return ApplyReadyTemplates;
+    if (typeof require === 'function') { try { return require('./templates.js'); } catch (e) { /* standalone use */ } }
+    return null;
+  }
+
+  // Resolve the template, its visual rules, and its labels once per export.
+  function resolveLayout(resumeData, options) {
+    const api = templatesApi();
+    const templateId = api ? api.resolveTemplateId(resumeData, options) : (options.template || resumeData.template || 'classic-professional');
+    const fallbackStyle = {
+      headerAlign: ['classic-professional', 'experienced-professional', 'academic-cv'].includes(templateId) ? 'center' : 'left',
+      nameCase: 'upper', nameSize: null, headerRule: templateId === 'experienced-professional' ? 'double' : 'single',
+      headerRuleColor: [0.1, 0.1, 0.1], headerRuleWidth: 1.2, headingRule: templateId === 'modern-minimal' ? 'none' : 'line',
+      headingColor: [0, 0, 0], ruleColor: [0.65, 0.7, 0.75], ruleWidth: 0.6, datePlacement: 'right', contactSeparator: '•',
+      linkColor: [0.05, 0.35, 0.75], metaColor: [0.35, 0.4, 0.45]
+    };
+    const fallbackLabels = { summary: 'Professional Summary', experience: 'Work Experience', education: 'Education', projects: 'Key Projects', skills: 'Skills & Competencies', certifications: 'Certifications & Credentials', achievements: 'Honors & Achievements', volunteering: 'Community & Leadership', languages: 'Languages', publications: 'Peer-Reviewed Publications', teaching: 'Teaching Experience', presentations: 'Conference Presentations', grants: 'Research Grants' };
+    const tmpl = api ? api.getTemplate(templateId) : {};
+    return {
+      templateId,
+      template: tmpl,
+      style: api ? api.getTemplateStyle(templateId) : fallbackStyle,
+      label: key => api ? api.getSectionLabel(templateId, key) : fallbackLabels[key],
+      title: key => api ? api.getSectionTitle(resumeData, templateId, key) : ((resumeData[key + 'Title'] || '').trim() || fallbackLabels[key]),
+      skillLabels: api ? api.getSkillLabels(templateId) : { languages: 'Core Competencies', frameworks: 'Tools & Platforms', tools: 'Technical & Data Skills', other: 'Professional Skills' }
+    };
+  }
+
+  const ALL_SECTIONS = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
+
+  function orderedSections(resumeData, options) {
+    const order = (resumeData.design && Array.isArray(resumeData.design.sectionOrder)) ? resumeData.design.sectionOrder
+      : (Array.isArray(options.sectionOrder) ? options.sectionOrder : []);
+    return [...new Set([...order.filter(key => ALL_SECTIONS.includes(key)), ...ALL_SECTIONS])];
+  }
+
+  function visibility(resumeData, options) {
+    const vis = resumeData.sectionVisibility || options.sectionVisibility;
+    if (vis) return vis;
+    const all = {};
+    ALL_SECTIONS.forEach(key => { all[key] = true; });
+    return all;
+  }
+
+  const clean = value => (typeof value === 'string' ? value.trim() : '');
+  function bulletLines(text) {
+    return String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+      .map(line => line.trim().replace(/^[-*•▪◦·]\s*/, '').trim()).filter(Boolean);
+  }
+  // One display line per entry, shared by PDF and text exports.
+  function optionalEntries(resumeData, key) {
+    const join = parts => parts.map(clean).filter(Boolean).join(' — ');
+    const text = item => typeof item === 'string' ? item.trim() : '';
+    if (key === 'certifications') return (resumeData.certifications || []).map(c => typeof c === 'string' ? text(c) : (clean(c.name || c.title) ? join([c.name || c.title, c.issuer, c.year || c.date]) : '')).filter(Boolean);
+    if (key === 'achievements') return (resumeData.achievements || []).map(a => typeof a === 'string' ? text(a) : clean(a.title || a.text)).filter(Boolean);
+    if (key === 'volunteering') return (resumeData.volunteering || []).map(v => typeof v === 'string' ? text(v) : join([v.role, v.organization || v.org, v.duration])).filter(Boolean);
+    if (key === 'languages') return (resumeData.languages || []).map(l => typeof l === 'string' ? text(l) : (clean(l.name) ? join([l.name, l.proficiency]) : '')).filter(Boolean);
+    const acad = resumeData.academic || {};
+    if (key === 'publications') return (acad.publications || []).map(p => typeof p === 'string' ? text(p) : clean(p.title || p.citation)).filter(Boolean);
+    if (key === 'teaching') return (acad.teaching || []).map(t => typeof t === 'string' ? text(t) : join([t.role || t.course, t.institution, t.term])).filter(Boolean);
+    if (key === 'presentations') return (acad.presentations || []).map(p => typeof p === 'string' ? text(p) : join([p.title, p.event])).filter(Boolean);
+    if (key === 'grants') return (acad.grants || []).map(g => typeof g === 'string' ? text(g) : join([g.title || g.name, g.funder, g.year])).filter(Boolean);
+    return [];
+  }
+
+  function skillEntriesFor(resumeData, labels) {
+    const skills = resumeData.skills || {};
+    const entries = [];
+    if (skills && typeof skills === 'object') {
+      if (Array.isArray(skills.categories)) {
+        for (const cat of skills.categories) if (cat && clean(cat.name) && clean(cat.items)) entries.push({ label: clean(cat.name), text: clean(cat.items) });
+      } else {
+        for (const key of ['languages', 'frameworks', 'tools', 'other']) if (clean(skills[key])) entries.push({ label: labels[key], text: clean(skills[key]) });
+      }
+    }
+    return entries;
+  }
+
   /**
    * Resume Layout & Pagination Engine
-   * Supports all 8 ATS templates, A4 and Letter page sizes,
+   * Supports every catalogue template, A4 and Letter page sizes,
    * customizable section ordering, visibility, and density.
    */
   function generateResumePDF(resumeData, options = {}) {
@@ -441,18 +540,16 @@
     const pageWidth = isLetter ? LETTER_WIDTH : A4_WIDTH;
     const pageHeight = isLetter ? LETTER_HEIGHT : A4_HEIGHT;
 
-    const templateId = options.template || resumeData.template || 'classic-professional';
+    const layout = resolveLayout(resumeData, options);
+    const style = layout.style;
+    const templateId = layout.templateId;
 
     // Determine font family
     let fontFamily = options.fontFamily || (resumeData.design && resumeData.design.fontFamily);
-    if (!fontFamily) {
-      fontFamily = (templateId === 'classic-professional' || templateId === 'experienced-professional' || templateId === 'academic-cv')
-        ? 'serif'
-        : 'sans';
-    }
+    if (!fontFamily) fontFamily = layout.template.fontFamily || (style.headerAlign === 'center' ? 'serif' : 'sans');
     const fontKey = fontFamily === 'sans' ? 'Helvetica' : 'Times';
 
-    const density = options.density || (resumeData.design && resumeData.design.density) || (templateId === 'compact-professional' ? 'compact' : 'standard');
+    const density = options.density || (resumeData.design && resumeData.design.density) || layout.template.density || (templateId === 'compact-professional' ? 'compact' : 'standard');
     const isCompact = density === 'compact';
 
     // Base font size configuration
@@ -462,7 +559,6 @@
       baseFontSize = 12;
     } else if (fontSizeOpt === 'compact') {
       baseFontSize = 10;
-
     }
 
     const doc = new VectorPDFDocument({
@@ -478,6 +574,12 @@
     const marginBottom = isCompact ? 30 : 36;
     const contentWidth = pageWidth - marginLeft - marginRight;
     const pageBottom = pageHeight - marginBottom;
+    const metaColor = style.metaColor;
+    const metaSize = isCompact ? 8.5 : 9;
+    const datesInline = style.datePlacement !== 'below';
+    // Space after list-style sections so the next heading is not crowded.
+    const sectionGap = isCompact ? 3 : 5;
+    let pendingGap = 0;
 
     let currentY = marginTop;
 
@@ -511,36 +613,31 @@
       });
     }
 
-    // Determine header alignment
-    const headerAlign = (templateId === 'classic-professional' || templateId === 'experienced-professional' || templateId === 'academic-cv')
-      ? 'center'
-      : 'left';
+    const headerAlign = style.headerAlign === 'center' ? 'center' : 'left';
+    const personal = resumeData.personal || {};
 
     // 1. Header: Full Name
-    const rawFullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : 'FULL NAME').trim();
-    const fullName = rawFullName.toUpperCase();
-    const nameFontSize = isCompact ? 16 : 18;
+    const rawFullName = (clean(personal.fullName) || 'FULL NAME');
+    const fullName = style.nameCase === 'upper' ? rawFullName.toUpperCase() : rawFullName;
+    const nameFontSize = style.nameSize ? (isCompact ? style.nameSize - 2 : style.nameSize) : (isCompact ? 16 : 18);
     drawWrapped(fullName, nameFontSize, 'bold', [0, 0, 0], headerAlign);
     currentY += 2;
-    const targetTitle = (resumeData.personal && resumeData.personal.targetTitle ? resumeData.personal.targetTitle : '').trim();
+    const targetTitle = clean(personal.targetTitle);
     if (targetTitle) {
       drawWrapped(targetTitle, baseFontSize, 'italic', [0.2, 0.25, 0.32], headerAlign);
       currentY += 1;
     }
 
     // Contact Information Line
-    const personal = resumeData.personal || {};
     const contactParts = [];
-    if (personal.phone && personal.phone.trim()) contactParts.push({ text: personal.phone.trim(), type: 'phone', url: 'tel:' + personal.phone.trim().replace(/\s+/g, '') });
-    if (personal.email && personal.email.trim()) contactParts.push({ text: personal.email.trim(), type: 'email', url: 'mailto:' + personal.email.trim() });
-    if (personal.location && personal.location.trim()) contactParts.push({ text: personal.location.trim(), type: 'text' });
-    if (personal.linkedin && personal.linkedin.trim()) contactParts.push({ text: personal.linkedin.trim(), type: 'link', url: personal.linkedin.trim() });
-    if (personal.github && personal.github.trim()) contactParts.push({ text: personal.github.trim(), type: 'link', url: personal.github.trim() });
-    if (personal.website && personal.website.trim()) contactParts.push({ text: personal.website.trim(), type: 'link', url: personal.website.trim() });
+    if (clean(personal.phone)) contactParts.push({ text: clean(personal.phone), type: 'phone', url: 'tel:' + clean(personal.phone).replace(/[^\d+]/g, '') });
+    if (clean(personal.email)) contactParts.push({ text: clean(personal.email), type: 'email', url: 'mailto:' + clean(personal.email) });
+    if (clean(personal.location)) contactParts.push({ text: clean(personal.location), type: 'text' });
+    for (const key of ['linkedin', 'github', 'website']) if (clean(personal[key])) contactParts.push({ text: clean(personal[key]), type: 'link', url: clean(personal[key]) });
 
     if (contactParts.length > 0) {
       const contactFontSize = 9;
-      const separator = '  •  ';
+      const separator = `  ${style.contactSeparator}  `;
       const separatorWidth = measureTextWidth(separator, contactFontSize, fontKey);
       const rows = [];
       let row = [], rowWidth = 0;
@@ -559,7 +656,7 @@
         let x = headerAlign === 'center' ? marginLeft + (contentWidth - row.width) / 2 : marginLeft;
         row.items.forEach((item, i) => {
           if (i) { doc.drawText(separator, x, currentY + contactFontSize, { fontSize: contactFontSize, color: [0.4, 0.45, 0.5] }); x += separatorWidth; }
-          doc.drawText(item.text, x, currentY + contactFontSize, { fontSize: contactFontSize, color: item.url ? [0.05, 0.35, 0.75] : [0.15, 0.18, 0.22] });
+          doc.drawText(item.text, x, currentY + contactFontSize, { fontSize: contactFontSize, color: item.url ? style.linkColor : [0.15, 0.18, 0.22] });
           if (item.url) doc.addLink(x, currentY, item.width, contactFontSize + 2, item.url);
           x += item.width;
         });
@@ -569,68 +666,106 @@
     }
 
     // Top Header Divider
-    if (templateId === 'experienced-professional') {
-      doc.drawLine(marginLeft, currentY, pageWidth - marginRight, currentY, { lineWidth: 1.2, color: [0.1, 0.1, 0.1] });
-      doc.drawLine(marginLeft, currentY + 2.5, pageWidth - marginRight, currentY + 2.5, { lineWidth: 0.5, color: [0.1, 0.1, 0.1] });
+    if (style.headerRule === 'double') {
+      doc.drawLine(marginLeft, currentY, pageWidth - marginRight, currentY, { lineWidth: 1.2, color: style.headerRuleColor });
+      doc.drawLine(marginLeft, currentY + 2.5, pageWidth - marginRight, currentY + 2.5, { lineWidth: 0.5, color: style.headerRuleColor });
       currentY += 8;
+    } else if (style.headerRule === 'none') {
+      currentY += (isCompact ? 2 : 4);
     } else {
-      doc.drawLine(marginLeft, currentY, pageWidth - marginRight, currentY, { lineWidth: 1.2, color: [0.1, 0.1, 0.1] });
+      doc.drawLine(marginLeft, currentY, pageWidth - marginRight, currentY, { lineWidth: style.headerRuleWidth, color: style.headerRuleColor });
       currentY += (isCompact ? 7 : 10);
     }
 
     /**
      * Render Section Header
      */
-    function renderSectionHeader(title) {
+    function renderSectionHeader(title, reserveLines = 2) {
+      currentY += pendingGap;
+      pendingGap = 0;
       const headingFontSize = baseFontSize + 0.5;
-      const headingLines = splitTextToLines(title.toUpperCase(), headingFontSize, contentWidth - 8, fontKey, 'bold');
+      const headingText = style.headingCase === 'asis' ? title : title.toUpperCase();
+      const headingLines = splitTextToLines(headingText, headingFontSize, contentWidth - 8, fontKey, 'bold');
       // Reserve the actual heading plus two body lines, not a fixed 65pt block.
       // Short final sections can then use the available space on this page.
-      ensureSpace(headingLines.length * (headingFontSize + (isCompact ? 2 : 3)) + (isCompact ? 5 : 8) + 2 * (baseFontSize + 4));
+      ensureSpace(headingLines.length * (headingFontSize + (isCompact ? 2 : 3)) + (isCompact ? 5 : 8) + reserveLines * (baseFontSize + 4));
       for (const line of headingLines) {
         ensureSpace(headingFontSize + 4);
         doc.drawText(line, marginLeft, currentY + headingFontSize, {
           fontSize: headingFontSize,
           fontStyle: 'bold',
-          color: [0, 0, 0]
+          color: style.headingColor
         });
         currentY += headingFontSize + (isCompact ? 2 : 3);
       }
 
-      if (templateId !== 'modern-minimal') {
-        doc.drawLine(marginLeft, currentY, pageWidth - marginRight, currentY, {
-          lineWidth: 0.6,
-          color: [0.65, 0.7, 0.75]
-        });
+      if (style.headingRule === 'thick') {
+        doc.drawLine(marginLeft, currentY, pageWidth - marginRight, currentY, { lineWidth: 1.4, color: style.ruleColor });
+      } else if (style.headingRule !== 'none') {
+        doc.drawLine(marginLeft, currentY, pageWidth - marginRight, currentY, { lineWidth: style.ruleWidth, color: style.ruleColor });
       }
       currentY += (isCompact ? 5 : 8);
     }
 
-    // Section Visibility & Order Setup
-    const vis = resumeData.sectionVisibility || options.sectionVisibility || {
-      summary: true,
-      experience: true,
-      education: true,
-      projects: true,
-      skills: true,
-      certifications: true,
-      achievements: true,
-      volunteering: true,
-      languages: true,
-      academic: true
-    };
+    // Two-part entry heading: bold title on the left, italic dates/location on
+    // the right (or on the next line when it does not fit or the template
+    // keeps every detail in reading order).
+    function renderEntryHeading(title, meta, gapAfterInline) {
+      const titleSize = baseFontSize;
+      const metaWidth = meta ? measureTextWidth(meta, metaSize, fontKey, 'italic') : 0;
+      const titleWidth = measureTextWidth(title, titleSize, fontKey, 'bold');
+      const maxTitleWidth = metaWidth > 0 ? contentWidth - metaWidth - 12 : contentWidth;
+      if (datesInline && titleWidth <= maxTitleWidth) {
+        doc.drawText(title, marginLeft, currentY + titleSize, { fontSize: titleSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
+        if (meta) doc.drawText(meta, pageWidth - marginRight - metaWidth, currentY + metaSize, { fontSize: metaSize, fontStyle: 'italic', color: metaColor });
+        currentY += titleSize + gapAfterInline;
+        return;
+      }
+      const lines = splitTextToLines(title, titleSize, contentWidth - 8, fontKey, 'bold');
+      for (let i = 0; i < lines.length; i++) {
+        if (i > 0) ensureSpace(titleSize + 2);
+        doc.drawText(lines[i], marginLeft, currentY + titleSize, { fontSize: titleSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
+        currentY += titleSize + 2;
+      }
+      if (meta) {
+        ensureSpace(12);
+        drawWrapped(meta, 9, 'italic', metaColor);
+      } else {
+        currentY += 2;
+      }
+    }
 
-    const sectionOrder = (resumeData.design && Array.isArray(resumeData.design.sectionOrder))
-      ? [...new Set([...resumeData.design.sectionOrder, 'summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'])]
-      : (options.sectionOrder || ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic']);
+    function renderBullets(text) {
+      const bulletIndent = isCompact ? 10 : 12;
+      const bulletTextWidth = contentWidth - bulletIndent;
+      const bulletFontSize = baseFontSize;
+      for (const bulletText of bulletLines(text)) {
+        const lines = splitTextToLines(bulletText, bulletFontSize, bulletTextWidth, fontKey);
+        for (let bl = 0; bl < lines.length; bl++) {
+          ensureSpace(baseFontSize + 4);
+          if (bl === 0) {
+            doc.drawText('•', marginLeft + 2, currentY + bulletFontSize, { fontSize: bulletFontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
+          }
+          doc.drawText(lines[bl], marginLeft + bulletIndent, currentY + bulletFontSize, {
+            fontSize: bulletFontSize,
+            fontStyle: 'normal',
+            color: [0.15, 0.15, 0.15]
+          });
+          currentY += baseFontSize + (isCompact ? 3 : 4);
+        }
+      }
+    }
+
+    const vis = visibility(resumeData, options);
+    const sectionOrder = orderedSections(resumeData, options);
 
     // --- SECTION RENDERERS ---
 
     function renderSummary() {
-      const summary = (resumeData.summary || '').trim();
+      const summary = clean(resumeData.summary);
       if (!summary) return;
 
-      renderSectionHeader(resumeData.summaryTitle || 'Professional Summary');
+      renderSectionHeader(layout.title('summary'));
       const bodyFontSize = baseFontSize;
       const summaryLines = splitTextToLines(summary, bodyFontSize, contentWidth, fontKey);
 
@@ -647,260 +782,83 @@
     }
 
     function renderExperience() {
-      const experience = resumeData.experience || [];
-      if (!Array.isArray(experience) || experience.length === 0) return;
+      const experience = (Array.isArray(resumeData.experience) ? resumeData.experience : []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || bulletLines(exp.bulletsText).length));
+      if (!experience.length) return;
 
-      let hasExp = false;
+      renderSectionHeader(layout.title('experience'));
+
       for (const exp of experience) {
-        if (exp.role || exp.company || exp.bulletsText) {
-          hasExp = true;
-          break;
-        }
-      }
-      if (!hasExp) return;
-
-      renderSectionHeader(resumeData.experienceTitle || 'Work Experience');
-
-      for (let i = 0; i < experience.length; i++) {
-        const exp = experience[i];
-        if (!exp.role && !exp.company && !exp.bulletsText) continue;
-
         ensureSpace(isCompact ? 20 : 28);
-
-        const roleCompany = [exp.role, exp.company].filter(Boolean).join('  |  ');
-        const roleFontSize = baseFontSize;
-        const dateLoc = [exp.duration, exp.location].filter(Boolean).join('  •  ');
-        const dateWidth = dateLoc ? measureTextWidth(dateLoc, isCompact ? 8.5 : 9, fontKey, 'italic') : 0;
-        const roleWidth = measureTextWidth(roleCompany, roleFontSize, fontKey, 'bold');
-        const maxLeftWidth = dateWidth > 0 ? contentWidth - dateWidth - 12 : contentWidth;
-
-        if (roleWidth <= maxLeftWidth) {
-          doc.drawText(roleCompany, marginLeft, currentY + roleFontSize, {
-            fontSize: roleFontSize,
-            fontStyle: 'bold',
-            color: [0.05, 0.05, 0.05]
-          });
-          if (dateLoc) {
-            const dateX = pageWidth - marginRight - dateWidth;
-            doc.drawText(dateLoc, dateX, currentY + (isCompact ? 8.5 : 9), {
-              fontSize: isCompact ? 8.5 : 9,
-              fontStyle: 'italic',
-              color: [0.35, 0.4, 0.45]
-            });
-          }
-          currentY += roleFontSize + (isCompact ? 3 : 4);
-        } else {
-          const roleLines = splitTextToLines(roleCompany, roleFontSize, contentWidth - 8, fontKey, 'bold');
-          for (let rl = 0; rl < roleLines.length; rl++) {
-            if (rl > 0) ensureSpace(roleFontSize + 2);
-            doc.drawText(roleLines[rl], marginLeft, currentY + roleFontSize, {
-              fontSize: roleFontSize,
-              fontStyle: 'bold',
-              color: [0.05, 0.05, 0.05]
-            });
-            currentY += roleFontSize + 2;
-          }
-          if (dateLoc) {
-            ensureSpace(12);
-            drawWrapped(dateLoc, 9, 'italic', [0.35, 0.4, 0.45]);
-          } else {
-            currentY += 2;
-          }
-        }
-
-        // Bullets
-        if (exp.bulletsText && exp.bulletsText.trim()) {
-          const rawBullets = exp.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-          const bulletIndent = isCompact ? 10 : 12;
-          const bulletTextWidth = contentWidth - bulletIndent;
-          const bulletFontSize = baseFontSize;
-
-          for (let b = 0; b < rawBullets.length; b++) {
-            const bulletText = rawBullets[b].trim().replace(/^[-*•]\s*/, '');
-            if (!bulletText) continue;
-
-            const bulletLines = splitTextToLines(bulletText, bulletFontSize, bulletTextWidth, fontKey);
-            for (let bl = 0; bl < bulletLines.length; bl++) {
-              ensureSpace(baseFontSize + 4);
-              if (bl === 0) {
-                doc.drawText('•', marginLeft + 2, currentY + bulletFontSize, { fontSize: bulletFontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
-              }
-              doc.drawText(bulletLines[bl], marginLeft + bulletIndent, currentY + bulletFontSize, {
-                fontSize: bulletFontSize,
-                fontStyle: 'normal',
-                color: [0.15, 0.15, 0.15]
-              });
-              currentY += baseFontSize + (isCompact ? 3 : 4);
-            }
-          }
-        }
+        const roleCompany = [clean(exp.role), clean(exp.company)].filter(Boolean).join('  |  ');
+        const dateLoc = [clean(exp.duration), clean(exp.location)].filter(Boolean).join('  •  ');
+        if (roleCompany || dateLoc) renderEntryHeading(roleCompany, dateLoc, isCompact ? 3 : 4);
+        renderBullets(exp.bulletsText);
         currentY += (isCompact ? 3 : 4);
       }
       currentY += (isCompact ? 2 : 4);
     }
 
     function renderEducation() {
-      const education = resumeData.education || [];
-      if (!Array.isArray(education) || education.length === 0) return;
+      const education = (Array.isArray(resumeData.education) ? resumeData.education : []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution)));
+      if (!education.length) return;
 
-      let hasEdu = false;
+      renderSectionHeader(layout.title('education'));
+
       for (const edu of education) {
-        if (edu.degree || edu.institution) {
-          hasEdu = true;
-          break;
-        }
-      }
-      if (!hasEdu) return;
-
-      renderSectionHeader(resumeData.educationTitle || 'Education');
-
-      for (let i = 0; i < education.length; i++) {
-        const edu = education[i];
-        if (!edu.degree && !edu.institution) continue;
-
         ensureSpace(isCompact ? 18 : 24);
-
-        const degreeInst = [edu.degree, edu.institution].filter(Boolean).join('  —  ');
-        const degFontSize = baseFontSize;
-        const metaParts = [edu.duration, edu.location, edu.score].filter(Boolean).join('  •  ');
-        const metaWidth = metaParts ? measureTextWidth(metaParts, isCompact ? 8.5 : 9, fontKey, 'italic') : 0;
-        const degWidth = measureTextWidth(degreeInst, degFontSize, fontKey, 'bold');
-        const maxDegWidth = metaWidth > 0 ? contentWidth - metaWidth - 12 : contentWidth;
-
-        if (degWidth <= maxDegWidth) {
-          doc.drawText(degreeInst, marginLeft, currentY + degFontSize, {
-            fontSize: degFontSize,
-            fontStyle: 'bold',
-            color: [0.05, 0.05, 0.05]
-          });
-          if (metaParts) {
-            const metaX = pageWidth - marginRight - metaWidth;
-            doc.drawText(metaParts, metaX, currentY + (isCompact ? 8.5 : 9), {
-              fontSize: isCompact ? 8.5 : 9,
-              fontStyle: 'italic',
-              color: [0.35, 0.4, 0.45]
-            });
-          }
-          currentY += degFontSize + (isCompact ? 4 : 6);
-        } else {
-          const degLines = splitTextToLines(degreeInst, degFontSize, contentWidth - 8, fontKey, 'bold');
-          for (let dl = 0; dl < degLines.length; dl++) {
-            if (dl > 0) ensureSpace(degFontSize + 2);
-            doc.drawText(degLines[dl], marginLeft, currentY + degFontSize, {
-              fontSize: degFontSize,
-              fontStyle: 'bold',
-              color: [0.05, 0.05, 0.05]
-            });
-            currentY += degFontSize + 2;
-          }
-          if (metaParts) {
-            ensureSpace(12);
-            drawWrapped(metaParts, 9, 'italic', [0.35, 0.4, 0.45]);
-          } else {
-            currentY += 2;
-          }
-        }
+        const degreeInst = [clean(edu.degree), clean(edu.institution)].filter(Boolean).join('  —  ');
+        const metaParts = [clean(edu.duration), clean(edu.location), clean(edu.score)].filter(Boolean).join('  •  ');
+        renderEntryHeading(degreeInst, metaParts, isCompact ? 4 : 6);
         currentY += (isCompact ? 2 : 4);
       }
       currentY += (isCompact ? 2 : 4);
     }
 
     function renderProjects() {
-      const projects = resumeData.projects || [];
-      if (!Array.isArray(projects) || projects.length === 0) return;
+      const projects = (Array.isArray(resumeData.projects) ? resumeData.projects : []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || bulletLines(proj.bulletsText).length));
+      if (!projects.length) return;
 
-      let hasProj = false;
+      renderSectionHeader(layout.title('projects'));
+
       for (const proj of projects) {
-        if (proj.name || proj.tech || proj.bulletsText) {
-          hasProj = true;
-          break;
-        }
-      }
-      if (!hasProj) return;
-
-      renderSectionHeader(resumeData.projectsTitle || 'Key Projects');
-
-      for (let i = 0; i < projects.length; i++) {
-        const proj = projects[i];
-        if (!proj.name && !proj.tech && !proj.bulletsText) continue;
-
         ensureSpace(isCompact ? 20 : 28);
 
-        const projName = proj.name || 'Project';
+        const projName = clean(proj.name) || 'Project';
         const projFontSize = baseFontSize;
-        const techText = (proj.tech || '').trim();
-        const linkText = (proj.link || '').trim();
+        const techText = clean(proj.tech);
+        const linkText = clean(proj.link);
         const techFontSize = isCompact ? 8.5 : 9;
         const linkFontSize = 8.5;
         const nameWidth = measureTextWidth(projName, projFontSize, fontKey, 'bold');
         const techWidth = techText ? measureTextWidth('|  ' + techText, techFontSize, fontKey, 'italic') + 6 : 0;
         const linkWidth = measureTextWidth(linkText, linkFontSize, fontKey);
         const inlineWidth = nameWidth + techWidth + (linkText ? linkWidth + 12 : 0);
-        if (inlineWidth <= contentWidth - 8) {
+        if (datesInline && inlineWidth <= contentWidth - 8) {
           doc.drawText(projName, marginLeft, currentY + projFontSize, { fontSize: projFontSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
-          if (techText) doc.drawText('|  ' + techText, marginLeft + nameWidth + 6, currentY + techFontSize, { fontSize: techFontSize, fontStyle: 'italic', color: [0.35, 0.4, 0.45] });
+          if (techText) doc.drawText('|  ' + techText, marginLeft + nameWidth + 6, currentY + techFontSize, { fontSize: techFontSize, fontStyle: 'italic', color: metaColor });
           if (linkText) {
             const linkX = pageWidth - marginRight - linkWidth;
-            doc.drawText(linkText, linkX, currentY + linkFontSize, { fontSize: linkFontSize, color: [0.05, 0.35, 0.75] });
+            doc.drawText(linkText, linkX, currentY + linkFontSize, { fontSize: linkFontSize, color: style.linkColor });
             doc.addLink(linkX, currentY, linkWidth, linkFontSize + 2, linkText);
           }
           currentY += projFontSize + (isCompact ? 3 : 4);
         } else {
           drawWrapped(projName, projFontSize, 'bold', [0.05, 0.05, 0.05]);
-          if (techText) drawWrapped(techText, techFontSize, 'italic', [0.35, 0.4, 0.45]);
-          if (linkText) drawWrapped(linkText, linkFontSize, 'normal', [0.05, 0.35, 0.75], 'left', linkText);
+          if (techText) drawWrapped(techText, techFontSize, 'italic', metaColor);
+          if (linkText) drawWrapped(linkText, linkFontSize, 'normal', style.linkColor, 'left', linkText);
         }
 
-        // Bullets
-        if (proj.bulletsText && proj.bulletsText.trim()) {
-          const rawBullets = proj.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-          const bulletIndent = isCompact ? 10 : 12;
-          const bulletTextWidth = contentWidth - bulletIndent;
-          const bulletFontSize = baseFontSize;
-
-          for (let b = 0; b < rawBullets.length; b++) {
-            const bulletText = rawBullets[b].trim().replace(/^[-*•]\s*/, '');
-            if (!bulletText) continue;
-
-            const bulletLines = splitTextToLines(bulletText, bulletFontSize, bulletTextWidth, fontKey);
-            for (let bl = 0; bl < bulletLines.length; bl++) {
-              ensureSpace(baseFontSize + 4);
-              if (bl === 0) {
-                doc.drawText('•', marginLeft + 2, currentY + bulletFontSize, { fontSize: bulletFontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
-              }
-              doc.drawText(bulletLines[bl], marginLeft + bulletIndent, currentY + bulletFontSize, {
-                fontSize: bulletFontSize,
-                fontStyle: 'normal',
-                color: [0.15, 0.15, 0.15]
-              });
-              currentY += baseFontSize + (isCompact ? 3 : 4);
-            }
-          }
-        }
+        renderBullets(proj.bulletsText);
         currentY += (isCompact ? 3 : 4);
       }
       currentY += (isCompact ? 2 : 4);
     }
 
     function renderSkills() {
-      const skills = resumeData.skills || {};
-      const skillEntries = [];
-      if (typeof skills === 'object') {
-        if (Array.isArray(skills.categories)) {
-          for (const cat of skills.categories) {
-            if (cat.name && cat.items) skillEntries.push({ label: cat.name, text: cat.items });
-          }
-        } else {
-          if (skills.languages && skills.languages.trim()) skillEntries.push({ label: 'Core Competencies', text: skills.languages.trim() });
-          if (skills.frameworks && skills.frameworks.trim()) skillEntries.push({ label: 'Tools & Platforms', text: skills.frameworks.trim() });
-          if (skills.tools && skills.tools.trim()) skillEntries.push({ label: 'Technical & Data Skills', text: skills.tools.trim() });
-          if (skills.other && skills.other.trim()) skillEntries.push({ label: 'Professional Skills', text: skills.other.trim() });
-        }
-      }
-
+      const skillEntries = skillEntriesFor(resumeData, layout.skillLabels);
       if (skillEntries.length === 0) return;
 
-      renderSectionHeader(resumeData.skillsTitle || 'Skills & Competencies');
+      renderSectionHeader(layout.title('skills'));
 
       const skillFontSize = baseFontSize;
       for (let i = 0; i < skillEntries.length; i++) {
@@ -938,42 +896,26 @@
         }
         currentY += skillFontSize + (isCompact ? 3.5 : 4.5);
       }
+      pendingGap = sectionGap;
     }
 
-    function renderCertifications() {
-      const certs = (resumeData.certifications || []).filter(c => c.name || c.title);
-      if (!certs.length) return;
-      renderSectionHeader('Certifications & Credentials');
-      certs.forEach(c => drawBullet([c.name || c.title, c.issuer, c.year || c.date].filter(Boolean).join(' — '), baseFontSize));
-    }
-    function renderAchievements() {
-      const texts = (resumeData.achievements || []).map(a => typeof a === 'string' ? a : a.title || a.text || '').filter(Boolean);
+    function renderBulletSection(key) {
+      const texts = optionalEntries(resumeData, key);
       if (!texts.length) return;
-      renderSectionHeader('Honors & Achievements');
+      // Keep the heading with its first entry; reserve only the lines it needs.
+      renderSectionHeader(layout.label(key), Math.min(2, splitTextToLines(texts[0], baseFontSize, contentWidth - 16, fontKey).length));
       texts.forEach(text => drawBullet(text, baseFontSize));
-    }
-    function renderVolunteering() {
-      const texts = (resumeData.volunteering || []).map(v => [v.role, v.organization || v.org, v.duration].filter(Boolean).join(' — ')).filter(Boolean);
-      if (!texts.length) return;
-      renderSectionHeader('Community & Leadership');
-      texts.forEach(text => drawBullet(text, baseFontSize));
+      pendingGap = sectionGap;
     }
     function renderLanguages() {
-      const texts = (resumeData.languages || []).map(l => typeof l === 'string' ? l : [l.name, l.proficiency].filter(Boolean).join(' — ')).filter(Boolean);
+      const texts = optionalEntries(resumeData, 'languages');
       if (!texts.length) return;
-      renderSectionHeader('Languages');
+      renderSectionHeader(layout.label('languages'), Math.min(2, splitTextToLines(texts.join('  •  '), baseFontSize, contentWidth - 8, fontKey).length));
       drawWrapped(texts.join('  •  '), baseFontSize);
+      pendingGap = sectionGap;
     }
     function renderAcademic() {
-      const acad = resumeData.academic || {};
-      for (const [key, title] of [['publications', 'Peer-Reviewed Publications'], ['teaching', 'Teaching Experience'], ['presentations', 'Conference Presentations'], ['grants', 'Research Grants']]) {
-        const texts = (acad[key] || []).map(item => typeof item === 'string' ? item : key === 'teaching'
-          ? [item.role || item.course, item.institution, item.term].filter(Boolean).join(' — ')
-          : key === 'grants' ? [item.title || item.name, item.funder, item.year].filter(Boolean).join(' — ') : item.title || item.citation || item.event || '').filter(Boolean);
-        if (!texts.length) continue;
-        renderSectionHeader(title);
-        texts.forEach(text => drawBullet(text, baseFontSize));
-      }
+      for (const key of ['publications', 'teaching', 'presentations', 'grants']) renderBulletSection(key);
     }
 
     // Render sections in configured order
@@ -984,13 +926,17 @@
       else if (secKey === 'education') renderEducation();
       else if (secKey === 'projects') renderProjects();
       else if (secKey === 'skills') renderSkills();
-      else if (secKey === 'certifications') renderCertifications();
-      else if (secKey === 'achievements') renderAchievements();
-      else if (secKey === 'volunteering') renderVolunteering();
       else if (secKey === 'languages') renderLanguages();
       else if (secKey === 'academic') renderAcademic();
+      else renderBulletSection(secKey);
     }
 
+    doc.setMetadata({
+      title: rawFullName === 'FULL NAME' ? 'Resume' : `${rawFullName} - Resume`,
+      author: rawFullName === 'FULL NAME' ? '' : rawFullName,
+      subject: targetTitle,
+      keywords: skillEntriesFor(resumeData, layout.skillLabels).map(item => item.text).join(', ').slice(0, 1000)
+    });
     return doc;
   }
 
@@ -999,169 +945,106 @@
    * Formats the resume cleanly for ATS text parsing and easy clipboard reuse.
    */
   function generateResumeText(resumeData, options = {}) {
+    const layout = resolveLayout(resumeData, options);
     const lines = [];
     const p = resumeData.personal || {};
 
-    const fullName = (p.fullName || 'RESUME').trim().toUpperCase();
+    const fullName = (clean(p.fullName) || 'RESUME').toUpperCase();
     lines.push('='.repeat(72));
     lines.push(fullName);
-    if (p.targetTitle && p.targetTitle.trim()) {
-      lines.push(p.targetTitle.trim());
-    }
+    if (clean(p.targetTitle)) lines.push(clean(p.targetTitle));
 
-    const contact = [p.email, p.phone, p.location, p.linkedin, p.github, p.website].filter(Boolean).map(s => s.trim()).filter(Boolean);
-    if (contact.length > 0) {
-      lines.push(contact.join(' | '));
-    }
+    const contact = [p.email, p.phone, p.location, p.linkedin, p.github, p.website].map(clean).filter(Boolean);
+    if (contact.length > 0) lines.push(contact.join(' | '));
     lines.push('='.repeat(72));
-    lines.push('');
 
-    const vis = resumeData.sectionVisibility || {
-      summary: true, experience: true, education: true, projects: true, skills: true,
-      certifications: true, achievements: true, volunteering: true, languages: true, academic: true
-    };
-
-    const sectionOrder = (resumeData.design && Array.isArray(resumeData.design.sectionOrder))
-      ? [...new Set([...resumeData.design.sectionOrder, 'summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'])]
-      : ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
+    const vis = visibility(resumeData, options);
+    const sectionOrder = orderedSections(resumeData, options);
 
     function addHeader(title) {
       lines.push('');
       lines.push(title.toUpperCase());
       lines.push('-'.repeat(title.length));
     }
+    function addBulletSection(title, texts) {
+      if (!texts.length) return;
+      addHeader(title);
+      texts.forEach(text => lines.push(`* ${text}`));
+    }
 
     for (const secKey of sectionOrder) {
       if (vis[secKey] === false) continue;
 
-      if (secKey === 'summary' && resumeData.summary && resumeData.summary.trim()) {
-        addHeader(resumeData.summaryTitle || 'Professional Summary');
-        lines.push(resumeData.summary.trim());
+      if (secKey === 'summary' && clean(resumeData.summary)) {
+        addHeader(layout.title('summary'));
+        lines.push(clean(resumeData.summary));
       }
 
-      if (secKey === 'experience' && Array.isArray(resumeData.experience) && resumeData.experience.length > 0) {
-        addHeader(resumeData.experienceTitle || 'Work Experience');
-        for (const exp of resumeData.experience) {
-          const roleComp = [exp.role, exp.company].filter(Boolean).join(' | ');
-          const dateLoc = [exp.duration, exp.location].filter(Boolean).join(' | ');
-          if (roleComp) lines.push(roleComp);
-          if (dateLoc) lines.push(dateLoc);
-          if (exp.bulletsText && exp.bulletsText.trim()) {
-            const rawBullets = exp.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-            for (const b of rawBullets) {
-              const cleaned = b.trim().replace(/^[-*•]\s*/, '');
-              if (cleaned) lines.push(`* ${cleaned}`);
-            }
-          }
-          lines.push('');
+      if (secKey === 'experience') {
+        const entries = (resumeData.experience || []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || bulletLines(exp.bulletsText).length));
+        if (entries.length) {
+          addHeader(layout.title('experience'));
+          entries.forEach((exp, index) => {
+            if (index) lines.push('');
+            const roleComp = [exp.role, exp.company].map(clean).filter(Boolean).join(' | ');
+            const dateLoc = [exp.duration, exp.location].map(clean).filter(Boolean).join(' | ');
+            if (roleComp) lines.push(roleComp);
+            if (dateLoc) lines.push(dateLoc);
+            bulletLines(exp.bulletsText).forEach(b => lines.push(`* ${b}`));
+          });
         }
       }
 
-      if (secKey === 'education' && Array.isArray(resumeData.education) && resumeData.education.length > 0) {
-        addHeader(resumeData.educationTitle || 'Education');
-        for (const edu of resumeData.education) {
-          const degInst = [edu.degree, edu.institution].filter(Boolean).join(' | ');
-          const meta = [edu.duration, edu.location, edu.score].filter(Boolean).join(' | ');
-          if (degInst) lines.push(degInst);
-          if (meta) lines.push(meta);
-          lines.push('');
+      if (secKey === 'education') {
+        const entries = (resumeData.education || []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution)));
+        if (entries.length) {
+          addHeader(layout.title('education'));
+          entries.forEach((edu, index) => {
+            if (index) lines.push('');
+            lines.push([edu.degree, edu.institution].map(clean).filter(Boolean).join(' | '));
+            const meta = [edu.duration, edu.location, edu.score].map(clean).filter(Boolean).join(' | ');
+            if (meta) lines.push(meta);
+          });
         }
       }
 
-      if (secKey === 'projects' && Array.isArray(resumeData.projects) && resumeData.projects.length > 0) {
-        addHeader(resumeData.projectsTitle || 'Key Projects');
-        for (const proj of resumeData.projects) {
-          const header = [proj.name, proj.tech ? `[${proj.tech}]` : '', proj.link ? `(${proj.link})` : ''].filter(Boolean).join(' ');
-          if (header) lines.push(header);
-          if (proj.bulletsText && proj.bulletsText.trim()) {
-            const rawBullets = proj.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-            for (const b of rawBullets) {
-              const cleaned = b.trim().replace(/^[-*•]\s*/, '');
-              if (cleaned) lines.push(`* ${cleaned}`);
-            }
-          }
-          lines.push('');
+      if (secKey === 'projects') {
+        const entries = (resumeData.projects || []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || bulletLines(proj.bulletsText).length));
+        if (entries.length) {
+          addHeader(layout.title('projects'));
+          entries.forEach((proj, index) => {
+            if (index) lines.push('');
+            const header = [clean(proj.name) || 'Project', clean(proj.tech) ? `[${clean(proj.tech)}]` : '', clean(proj.link) ? `(${clean(proj.link)})` : ''].filter(Boolean).join(' ');
+            lines.push(header);
+            bulletLines(proj.bulletsText).forEach(b => lines.push(`* ${b}`));
+          });
         }
       }
 
-      if (secKey === 'skills' && resumeData.skills) {
-        const s = resumeData.skills;
-        const entries = [];
-        if (s.languages && s.languages.trim()) entries.push(`Core Competencies: ${s.languages.trim()}`);
-        if (s.frameworks && s.frameworks.trim()) entries.push(`Tools & Platforms: ${s.frameworks.trim()}`);
-        if (s.tools && s.tools.trim()) entries.push(`Technical & Data Skills: ${s.tools.trim()}`);
-        if (s.other && s.other.trim()) entries.push(`Professional Skills: ${s.other.trim()}`);
-
-        if (entries.length > 0) {
-          addHeader(resumeData.skillsTitle || 'Skills & Competencies');
-          for (const ent of entries) lines.push(ent);
+      if (secKey === 'skills') {
+        const entries = skillEntriesFor(resumeData, layout.skillLabels);
+        if (entries.length) {
+          addHeader(layout.title('skills'));
+          entries.forEach(entry => lines.push(`${entry.label}: ${entry.text}`));
         }
       }
 
-      if (secKey === 'certifications' && Array.isArray(resumeData.certifications) && resumeData.certifications.length > 0) {
-        addHeader('Certifications & Credentials');
-        for (const c of resumeData.certifications) {
-          const line = `${c.name || c.title || ''}${c.issuer ? ' - ' + c.issuer : ''}${c.year ? ' (' + c.year + ')' : ''}`;
-          if (line.trim()) lines.push(`* ${line.trim()}`);
+      if (['certifications', 'achievements', 'volunteering'].includes(secKey)) addBulletSection(layout.label(secKey), optionalEntries(resumeData, secKey));
+
+      if (secKey === 'languages') {
+        const langs = optionalEntries(resumeData, 'languages');
+        if (langs.length) {
+          addHeader(layout.label('languages'));
+          lines.push(langs.join(', '));
         }
       }
 
-      if (secKey === 'achievements' && Array.isArray(resumeData.achievements) && resumeData.achievements.length > 0) {
-        addHeader('Honors & Achievements');
-        for (const a of resumeData.achievements) {
-          const text = typeof a === 'string' ? a : (a.title || a.text || '');
-          if (text.trim()) lines.push(`* ${text.trim()}`);
-        }
-      }
-
-      if (secKey === 'volunteering' && Array.isArray(resumeData.volunteering) && resumeData.volunteering.length > 0) {
-        addHeader('Community & Leadership');
-        for (const v of resumeData.volunteering) {
-          const line = `${v.role || ''}${v.organization ? ', ' + v.organization : ''}${v.duration ? ' (' + v.duration + ')' : ''}`;
-          if (line.trim()) lines.push(`* ${line.trim()}`);
-        }
-      }
-
-      if (secKey === 'languages' && Array.isArray(resumeData.languages) && resumeData.languages.length > 0) {
-        addHeader('Languages');
-        const langStr = resumeData.languages.map(l => typeof l === 'string' ? l : [l.name, l.proficiency].filter(Boolean).join(' — ')).filter(Boolean).join(', ');
-        if (langStr) lines.push(langStr);
-      }
-
-      if (secKey === 'academic' && resumeData.academic) {
-        const acad = resumeData.academic;
-        if (Array.isArray(acad.publications) && acad.publications.length > 0) {
-          addHeader('Peer-Reviewed Publications');
-          for (const pub of acad.publications) {
-            const line = pub.title || pub.citation || '';
-            if (line.trim()) lines.push(`* ${line.trim()}`);
-          }
-        }
-        if (Array.isArray(acad.teaching) && acad.teaching.length > 0) {
-          addHeader('Teaching Experience');
-          for (const t of acad.teaching) {
-            const line = `${t.role || t.course || ''}${t.institution ? ' — ' + t.institution : ''}${t.term ? ' (' + t.term + ')' : ''}`;
-            if (line.trim()) lines.push(`* ${line.trim()}`);
-          }
-        }
-        if (Array.isArray(acad.presentations) && acad.presentations.length > 0) {
-          addHeader('Conference Presentations');
-          for (const pr of acad.presentations) {
-            const line = typeof pr === 'string' ? pr : (pr.title || pr.event || '');
-            if (line.trim()) lines.push(`* ${line.trim()}`);
-          }
-        }
-        if (Array.isArray(acad.grants) && acad.grants.length) {
-          addHeader('Research Grants');
-          for (const grant of acad.grants) {
-            const text = typeof grant === 'string' ? grant : [grant.title || grant.name, grant.funder, grant.year].filter(Boolean).join(' — ');
-            if (text) lines.push(`* ${text}`);
-          }
-        }
+      if (secKey === 'academic') {
+        for (const key of ['publications', 'teaching', 'presentations', 'grants']) addBulletSection(layout.label(key), optionalEntries(resumeData, key));
       }
     }
 
-    return lines.join('\n');
+    return lines.join('\n') + '\n';
   }
 
   return {
@@ -1172,6 +1055,8 @@
     splitTextToLines,
     escapePdfText,
     sanitizeUrl,
+    bulletLines,
+    optionalEntries,
     A4_WIDTH,
     A4_HEIGHT,
     LETTER_WIDTH,

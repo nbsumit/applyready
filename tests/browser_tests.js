@@ -242,7 +242,7 @@ const server = http.createServer((req,res) => {
   await audit('404-phone');
   ok(external.length===0,`Unexpected third-party requests: ${external.join(', ')}`);
   ok(errors.length===0,`Browser errors: ${errors.join(', ')}`);
-  ok(checkLongDocuments(output)===32, 'All templates retain long content inside both paper sizes and font families');
+  ok(checkLongDocuments(output)===Object.keys(TEMPLATES).length*4, 'All templates retain long content inside both paper sizes and font families');
   console.log(`\n${checks} browser assertions passed. Screenshots and real downloads: ${output}`);
   await browser.close();await new Promise(resolve=>server.close(resolve));
 })().catch(error=>{console.error(error);server.close();process.exit(1);});

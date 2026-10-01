@@ -5,7 +5,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
   const sections = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
-  const templates = ['classic-professional', 'modern-minimal', 'graduate-early-career', 'experienced-professional', 'project-focused', 'career-transition', 'compact-professional', 'academic-cv'];
+  const templates = ['classic-professional', 'modern-minimal', 'graduate-early-career', 'experienced-professional', 'project-focused', 'career-transition', 'compact-professional', 'academic-cv', 'ivy-classic', 'software-engineer', 'campus-fresher', 'ats-strict', 'executive-impact', 'healthcare-licensed', 'finance-consulting'];
   const personalFields = ['fullName', 'targetTitle', 'email', 'phone', 'location', 'linkedin', 'github', 'website'];
   const skillFields = ['languages', 'frameworks', 'tools', 'other'];
   const entries = {
@@ -97,5 +97,5 @@
     for (const key of ['publications', 'teaching', 'presentations', 'grants']) result.academic[key] = list(acad[key], entries[key]);
     return result;
   }
-  return { validate, migrate, normalizeSectionOrder, sections };
+  return { validate, migrate, normalizeSectionOrder, sections, templates };
 });

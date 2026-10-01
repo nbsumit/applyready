@@ -1,5 +1,5 @@
 /**
- * ApplyReady.in - 8 Distinct ATS-Friendly Resume Templates
+ * ApplyReady.in - ATS-Friendly Resume Template Catalogue
  * Shared configuration, metadata, visual hierarchy definitions,
  * and precomputed thumbnail SVGs.
  * 100% Client-Side & Node.js Compatible.
@@ -39,6 +39,7 @@
         languages: false,
         academic: false
       },
+      style: { headerAlign: 'center', docxRule: { val: 'single', sz: 8, color: '0F172A' } },
       cssClass: 'template-classic-professional',
       svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Classic Professional template thumbnail">
         <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
@@ -108,6 +109,7 @@
         languages: false,
         academic: false
       },
+      style: { headingRule: 'none', docxRule: null },
       cssClass: 'template-modern-minimal',
       svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Modern Minimal template thumbnail">
         <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
@@ -172,6 +174,7 @@
         languages: false,
         academic: false
       },
+      style: {},
       cssClass: 'template-graduate-early-career',
       svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Graduate Early Career template thumbnail">
         <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
@@ -244,6 +247,7 @@
         languages: false,
         academic: false
       },
+      style: { headerAlign: 'center', headerRule: 'double', docxRule: { val: 'double', sz: 12, color: '0F172A' } },
       cssClass: 'template-experienced-professional',
       svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Experienced Professional template thumbnail">
         <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
@@ -315,6 +319,7 @@
         languages: false,
         academic: false
       },
+      style: {},
       cssClass: 'template-project-focused',
       svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Project Focused template thumbnail">
         <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
@@ -383,6 +388,7 @@
         languages: false,
         academic: false
       },
+      style: { docxRule: { val: 'single', sz: 6, color: '047857' } },
       cssClass: 'template-career-transition',
       svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Career Transition template thumbnail">
         <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
@@ -449,6 +455,7 @@
         languages: false,
         academic: false
       },
+      style: {},
       cssClass: 'template-compact-professional',
       svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Compact Professional template thumbnail">
         <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
@@ -523,6 +530,7 @@
         languages: true,
         academic: true
       },
+      style: { headerAlign: 'center' },
       cssClass: 'template-academic-cv',
       svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Academic Research CV template thumbnail">
         <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
@@ -566,8 +574,282 @@
         <circle cx="20" cy="182" r="1.2" fill="#475569"/>
         <rect x="25" y="180.5" width="110" height="3" rx="0.5" fill="#94A3B8"/>
       </svg>`
+    },
+
+    'ivy-classic': {
+      id: 'ivy-classic',
+      name: 'Ivy Classic',
+      category: 'Students & Professionals',
+      badge: 'Traditional',
+      description: 'The university career-office format: centred name in normal case, serif type, full-width dark rules, and education first.',
+      fontFamily: 'serif',
+      headerAlign: 'center',
+      headingAccent: 'dark-rule',
+      density: 'standard',
+      isAcademicCV: false,
+      recommendedOrder: ['education', 'experience', 'projects', 'skills', 'achievements'],
+      defaultVisibility: { summary: false, experience: true, education: true, projects: true, skills: true, certifications: false, achievements: true, volunteering: false, languages: false, academic: false },
+      style: { headerAlign: 'center', nameCase: 'asis', nameSize: 20, ruleColor: [0.1, 0.1, 0.1], ruleWidth: 0.8, headerRule: 'none', docxRule: { val: 'single', sz: 8, color: '111111' } },
+      skillLabels: { languages: 'Skills', frameworks: 'Software', tools: 'Technical', other: 'Interests' },
+      cssClass: 'template-ivy-classic'
+    },
+
+    'software-engineer': {
+      id: 'software-engineer',
+      name: 'Software Engineer',
+      category: 'Technology',
+      badge: 'Tech',
+      description: 'Technical skills directly under the summary, then experience and projects with readable repository links. Built for developer, data, and DevOps roles.',
+      fontFamily: 'sans',
+      headerAlign: 'left',
+      headingAccent: 'accent-rule',
+      density: 'standard',
+      isAcademicCV: false,
+      recommendedOrder: ['summary', 'skills', 'experience', 'projects', 'education', 'certifications'],
+      defaultVisibility: { summary: true, experience: true, education: true, projects: true, skills: true, certifications: false, achievements: false, volunteering: false, languages: false, academic: false },
+      style: { headingColor: [0.07, 0.2, 0.4], ruleColor: [0.07, 0.2, 0.4], ruleWidth: 0.8, contactSeparator: '|', docxRule: { val: 'single', sz: 6, color: '12336B' } },
+      skillLabels: { languages: 'Languages', frameworks: 'Frameworks & Libraries', tools: 'Tools & Platforms', other: 'Practices' },
+      sectionLabels: { certifications: 'Certifications' },
+      cssClass: 'template-software-engineer'
+    },
+
+    'campus-fresher': {
+      id: 'campus-fresher',
+      name: 'Campus Placement / Fresher',
+      category: 'Students & Entry Level',
+      badge: 'Fresher',
+      description: 'Campus-placement layout: education with CGPA or percentage first, then projects, internships, certifications, achievements, and positions of responsibility.',
+      fontFamily: 'sans',
+      headerAlign: 'center',
+      headingAccent: 'bottom-rule',
+      density: 'standard',
+      isAcademicCV: false,
+      recommendedOrder: ['education', 'projects', 'experience', 'skills', 'certifications', 'achievements', 'volunteering'],
+      defaultVisibility: { summary: false, experience: true, education: true, projects: true, skills: true, certifications: true, achievements: true, volunteering: true, languages: false, academic: false },
+      style: { headerAlign: 'center', headingColor: [0.1, 0.16, 0.3], docxRule: { val: 'single', sz: 6, color: '94A3B8' } },
+      skillLabels: { languages: 'Programming & Core', frameworks: 'Tools & Software', tools: 'Coursework', other: 'Soft Skills' },
+      sectionLabels: { achievements: 'Achievements & Awards', volunteering: 'Positions of Responsibility', certifications: 'Certifications & Courses' },
+      cssClass: 'template-campus-fresher'
+    },
+
+    'ats-strict': {
+      id: 'ats-strict',
+      name: 'ATS Plain (Maximum Compatibility)',
+      category: 'Maximum Compatibility',
+      badge: 'Safest',
+      description: 'No lines, colours, or right-aligned dates. Every detail reads top to bottom for older applicant tracking systems and government or bank job portals.',
+      fontFamily: 'sans',
+      headerAlign: 'left',
+      headingAccent: 'none',
+      density: 'standard',
+      isAcademicCV: false,
+      recommendedOrder: ['summary', 'experience', 'education', 'skills', 'projects', 'certifications'],
+      defaultVisibility: { summary: true, experience: true, education: true, projects: true, skills: true, certifications: false, achievements: false, volunteering: false, languages: false, academic: false },
+      style: { nameCase: 'asis', headerRule: 'none', headingRule: 'none', datePlacement: 'below', contactSeparator: '|', linkColor: [0, 0, 0], metaColor: [0.15, 0.15, 0.15], docxRule: null },
+      cssClass: 'template-ats-strict'
+    },
+
+    'executive-impact': {
+      id: 'executive-impact',
+      name: 'Executive Impact',
+      category: 'Senior & Executive',
+      badge: 'Leadership',
+      description: 'Selected achievements before the career history, a strong navy rule, and core competencies for director, VP, and C-level applications.',
+      fontFamily: 'sans',
+      headerAlign: 'left',
+      headingAccent: 'thick-rule',
+      density: 'standard',
+      isAcademicCV: false,
+      recommendedOrder: ['summary', 'achievements', 'experience', 'skills', 'education', 'certifications'],
+      defaultVisibility: { summary: true, experience: true, education: true, projects: false, skills: true, certifications: true, achievements: true, volunteering: false, languages: false, academic: false },
+      style: { nameSize: 20, headingColor: [0.06, 0.16, 0.33], headingRule: 'thick', ruleColor: [0.06, 0.16, 0.33], headerRuleColor: [0.06, 0.16, 0.33], headerRuleWidth: 2, docxRule: { val: 'single', sz: 12, color: '0F2A54' } },
+      skillLabels: { languages: 'Leadership', frameworks: 'Functional Expertise', tools: 'Systems & Tools', other: 'Industry Knowledge' },
+      sectionLabels: { achievements: 'Selected Achievements', skills: 'Core Competencies' },
+      cssClass: 'template-executive-impact'
+    },
+
+    'healthcare-licensed': {
+      id: 'healthcare-licensed',
+      name: 'Healthcare & Licensed Roles',
+      category: 'Healthcare & Licensed',
+      badge: 'Licensed',
+      description: 'Licences and certifications near the top, followed by clinical or professional experience. Suits nursing, pharmacy, teaching, law, and accountancy.',
+      fontFamily: 'sans',
+      headerAlign: 'left',
+      headingAccent: 'accent-rule',
+      density: 'standard',
+      isAcademicCV: false,
+      recommendedOrder: ['summary', 'certifications', 'experience', 'education', 'skills', 'languages', 'volunteering'],
+      defaultVisibility: { summary: true, experience: true, education: true, projects: false, skills: true, certifications: true, achievements: false, volunteering: false, languages: true, academic: false },
+      style: { headingColor: [0.0, 0.3, 0.3], ruleColor: [0.0, 0.3, 0.3], ruleWidth: 0.8, docxRule: { val: 'single', sz: 6, color: '004D4D' } },
+      skillLabels: { languages: 'Clinical / Core Skills', frameworks: 'Systems & Equipment', tools: 'Compliance & Procedures', other: 'Professional Skills' },
+      sectionLabels: { certifications: 'Licences & Certifications' },
+      cssClass: 'template-healthcare-licensed'
+    },
+
+    'finance-consulting': {
+      id: 'finance-consulting',
+      name: 'Finance & Consulting',
+      category: 'Finance & Consulting',
+      badge: 'One Page',
+      description: 'Dense one-page serif format used in banking, consulting, and accounting: experience first, no summary by default, and dates aligned right.',
+      fontFamily: 'serif',
+      headerAlign: 'left',
+      headingAccent: 'dark-rule',
+      density: 'compact',
+      isAcademicCV: false,
+      recommendedOrder: ['experience', 'education', 'skills', 'certifications', 'achievements', 'summary'],
+      defaultVisibility: { summary: false, experience: true, education: true, projects: false, skills: true, certifications: true, achievements: true, volunteering: false, languages: false, academic: false },
+      style: { nameCase: 'asis', ruleColor: [0.1, 0.1, 0.1], ruleWidth: 0.8, headerRule: 'none', docxRule: { val: 'single', sz: 8, color: '111111' } },
+      skillLabels: { languages: 'Financial Skills', frameworks: 'Software', tools: 'Data & Analytics', other: 'Languages & Interests' },
+      sectionLabels: { certifications: 'Certifications & Licences', achievements: 'Awards' },
+      cssClass: 'template-finance-consulting'
     }
   };
+
+  // Shared visual defaults. These reproduce the original rendering exactly, so
+  // a template only lists what makes it different.
+  const DEFAULT_STYLE = {
+    headerAlign: 'left',          // 'left' | 'center'
+    nameCase: 'upper',            // 'upper' | 'asis'
+    nameSize: null,               // points; null = 18 (16 compact)
+    headerRule: 'single',         // 'single' | 'double' | 'none'
+    headerRuleColor: [0.1, 0.1, 0.1],
+    headerRuleWidth: 1.2,
+    headingRule: 'line',          // 'line' | 'thick' | 'none'
+    headingColor: [0, 0, 0],
+    ruleColor: [0.65, 0.7, 0.75],
+    ruleWidth: 0.6,
+    datePlacement: 'right',       // 'right' | 'below' (dates on their own line)
+    contactSeparator: '•',
+    linkColor: [0.05, 0.35, 0.75],
+    metaColor: [0.35, 0.4, 0.45],
+    docxRule: { val: 'single', sz: 6, color: 'CBD5E1' }
+  };
+
+  const SECTION_LABELS = {
+    summary: 'Professional Summary',
+    experience: 'Work Experience',
+    education: 'Education',
+    projects: 'Key Projects',
+    skills: 'Skills & Competencies',
+    certifications: 'Certifications & Credentials',
+    achievements: 'Honors & Achievements',
+    volunteering: 'Community & Leadership',
+    languages: 'Languages',
+    publications: 'Peer-Reviewed Publications',
+    teaching: 'Teaching Experience',
+    presentations: 'Conference Presentations',
+    grants: 'Research Grants'
+  };
+
+  const SKILL_LABELS = {
+    languages: 'Core Competencies',
+    frameworks: 'Tools & Platforms',
+    tools: 'Technical & Data Skills',
+    other: 'Professional Skills'
+  };
+
+  const hex = rgb => rgb.map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('').toUpperCase();
+
+  function getTemplate(id) {
+    return TEMPLATES[id] || TEMPLATES['classic-professional'];
+  }
+
+  function getTemplateStyle(id) {
+    const tmpl = getTemplate(id);
+    const style = Object.assign({}, DEFAULT_STYLE, { headerAlign: tmpl.headerAlign || DEFAULT_STYLE.headerAlign }, tmpl.style || {});
+    style.headingHex = hex(style.headingColor);
+    style.ruleHex = hex(style.ruleColor);
+    style.linkHex = hex(style.linkColor);
+    style.metaHex = hex(style.metaColor);
+    style.headerRuleHex = hex(style.headerRuleColor);
+    return style;
+  }
+
+  // Fixed headings for sections without a user-editable title.
+  function getSectionLabel(id, key) {
+    const tmpl = getTemplate(id);
+    return (tmpl.sectionLabels && tmpl.sectionLabels[key]) || SECTION_LABELS[key] || key;
+  }
+
+  // Heading for a section the user can rename; an untouched default title
+  // follows the template's own wording.
+  function getSectionTitle(data, id, key) {
+    const custom = data && typeof data[key + 'Title'] === 'string' ? data[key + 'Title'].trim() : '';
+    const legacyDefaults = { summary: ['Professional Summary'], experience: ['Work Experience'], education: ['Education'], projects: ['Projects', 'Key Projects', 'Key Projects & Initiatives'], skills: ['Skills', 'Skills & Competencies'] };
+    if (custom && !(legacyDefaults[key] || []).includes(custom)) return custom;
+    const tmpl = getTemplate(id);
+    if (tmpl.sectionLabels && tmpl.sectionLabels[key]) return tmpl.sectionLabels[key];
+    return custom || SECTION_LABELS[key];
+  }
+
+  function getSkillLabels(id) {
+    const tmpl = getTemplate(id);
+    return Object.assign({}, SKILL_LABELS, tmpl.skillLabels || {});
+  }
+
+  function resolveTemplateId(data, options) {
+    const opts = options || {};
+    const candidates = [opts.template, opts.templateId, data && data.template, data && data.design && data.design.templateId];
+    return candidates.find(id => typeof id === 'string' && TEMPLATES[id]) || 'classic-professional';
+  }
+
+  // Thumbnails for newer templates are drawn from the same style rules that
+  // drive the PDF, so the gallery cannot drift from the download.
+  function buildThumbnail(tmpl) {
+    const style = getTemplateStyle(tmpl.id);
+    const center = style.headerAlign === 'center';
+    const ink = '#0F172A', grey = '#94A3B8', light = '#CBD5E1';
+    const head = '#' + style.headingHex, rule = '#' + style.ruleHex;
+    const parts = [`<rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>`];
+    const bar = (x, y, w, h, fill) => parts.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="0.6" fill="${fill}"/>`);
+    const x0 = 16, width = 128;
+    const at = w => center ? (160 - w) / 2 : x0;
+    const nameW = style.nameCase === 'upper' ? 78 : 64;
+    bar(at(nameW), 14, nameW, style.nameSize && style.nameSize > 18 ? 8 : 7, ink);
+    bar(at(56), 25, 56, 3.5, '#64748B');
+    bar(at(100), 32, 100, 2.6, grey);
+    let y = 39;
+    if (style.headerRule === 'double') {
+      parts.push(`<line x1="16" y1="${y}" x2="144" y2="${y}" stroke="${ink}" stroke-width="1"/>`, `<line x1="16" y1="${y + 2}" x2="144" y2="${y + 2}" stroke="${ink}" stroke-width="0.5"/>`);
+      y += 7;
+    } else if (style.headerRule === 'single') {
+      parts.push(`<line x1="16" y1="${y}" x2="144" y2="${y}" stroke="#${style.headerRuleHex}" stroke-width="${style.headerRuleWidth > 1.5 ? 1.6 : 1}"/>`);
+      y += 6;
+    } else y += 3;
+    const order = tmpl.recommendedOrder.filter(key => tmpl.defaultVisibility[key] !== false).slice(0, 5);
+    for (const key of order) {
+      if (y > 196) break;
+      bar(x0, y, key === 'experience' ? 46 : 38, 3.6, head);
+      y += 5.5;
+      if (style.headingRule !== 'none') {
+        parts.push(`<line x1="16" y1="${y}" x2="144" y2="${y}" stroke="${rule}" stroke-width="${style.headingRule === 'thick' ? 1.3 : 0.6}"/>`);
+        y += 3.5;
+      } else y += 1;
+      const entries = ['experience', 'education', 'projects'].includes(key) ? 2 : 1;
+      for (let e = 0; e < entries && y < 205; e++) {
+        if (['experience', 'education', 'projects'].includes(key)) {
+          bar(x0, y, 52, 3, '#334155');
+          if (style.datePlacement === 'right') bar(144 - 24, y, 24, 2.6, grey);
+          else { y += 4.5; bar(x0, y, 30, 2.4, grey); }
+          y += 5;
+        }
+        const lines = key === 'summary' ? 3 : key === 'experience' ? 2 : 2;
+        for (let l = 0; l < lines && y < 208; l++) {
+          const bullet = ['experience', 'projects'].includes(key);
+          if (bullet) parts.push(`<circle cx="${x0 + 2}" cy="${y + 1.2}" r="1" fill="#475569"/>`);
+          bar(bullet ? x0 + 6 : x0, y, (bullet ? width - 6 : width) - (l === lines - 1 ? 22 : 0), 2.4, light);
+          y += 4.4;
+        }
+        y += 1.5;
+      }
+      y += 3;
+    }
+    return `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${tmpl.name.replace(/[&<>"]/g, '')} template thumbnail">${parts.join('')}</svg>`;
+  }
+
+  Object.values(TEMPLATES).forEach(tmpl => { if (!tmpl.svgThumbnail) tmpl.svgThumbnail = buildThumbnail(tmpl); });
 
   /**
    * Migrate any v1 or unversioned resume data safely into v2 schema
@@ -581,6 +863,15 @@
 
   return {
     TEMPLATES,
+    DEFAULT_STYLE,
+    SECTION_LABELS,
+    SKILL_LABELS,
+    getTemplate,
+    getTemplateStyle,
+    getSectionLabel,
+    getSectionTitle,
+    getSkillLabels,
+    resolveTemplateId,
     migrateResumeSchema
   };
 });
