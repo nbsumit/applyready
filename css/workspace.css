@@ -320,7 +320,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .editor-tab-btn { font-size: .75rem; padding-inline: .4rem; }
   .editor-tab-btn > i { display: none; }
   .form-row-3 { grid-template-columns: minmax(0,1fr); }
-  .template-card-actions { flex-direction: column; }
+  .template-card-actions { grid-template-columns: minmax(0, 1fr); }
   .template-thumb-wrap { height: 125px; }
 }
 /* Polished surfaces, motion, content pages, and true paginated resume preview. */
@@ -438,7 +438,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .btn, .btn-sm { padding: .7rem 1rem; line-height: 1.4; }
   .btn > i { flex-shrink: 0; }
   .editor-action-group { flex-wrap: wrap; }
-  .template-card-actions { flex-direction: column; }
+  .template-card-actions { grid-template-columns: minmax(0, 1fr); }
   .template-card-actions .btn { flex: auto; width: 100%; padding: .65rem .75rem; }
   .dynamic-item-actions .btn { padding: .5rem; min-width: 36px; }
   .backup-actions .btn { flex: 1 1 130px; }
@@ -449,3 +449,45 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .editor-tabs-nav { gap: .25rem; }
   .editor-tab-btn { padding: .7rem .6rem; line-height: 1.4; }
 }
+
+/* Template visual rules for the HTML document (non-Latin print fallback).
+   Classes and colours come from the same template style as the PDF. */
+.ats-resume-sheet .resume-name { text-transform: none; }
+.ats-resume-sheet.header-left .resume-header { text-align: left; }
+.ats-resume-sheet.header-left .resume-contact-line { justify-content: flex-start; }
+.ats-resume-sheet.header-center .resume-header { text-align: center; }
+.ats-resume-sheet.header-center .resume-contact-line { justify-content: center; }
+.ats-resume-sheet.header-rule-single .resume-header { border-bottom: 1.2pt solid var(--resume-header-rule-color, #1a1a1a); }
+.ats-resume-sheet.header-rule-double .resume-header { border-bottom: 2.5pt double var(--resume-header-rule-color, #1a1a1a); }
+.ats-resume-sheet.header-rule-none .resume-header { border-bottom: 0; }
+.ats-resume-sheet .resume-section-title { color: var(--resume-heading-color, #000) !important; }
+.ats-resume-sheet.heading-rule-line .resume-section-title { border-bottom: .6pt solid var(--resume-rule-color, #a6b3bf); }
+.ats-resume-sheet.heading-rule-thick .resume-section-title { border-bottom: 1.4pt solid var(--resume-rule-color, #0f2a54); }
+.ats-resume-sheet.heading-rule-none .resume-section-title { border-bottom: 0; }
+.ats-resume-sheet .resume-entry-meta { font-weight: 400; font-style: italic; font-size: 9pt; color: var(--resume-meta-color, #5a6673); }
+.ats-resume-sheet .resume-entry-tech { font-weight: 400; font-style: italic; color: var(--resume-meta-color, #5a6673); }
+.ats-resume-sheet .resume-entry-header a, .ats-resume-sheet .resume-contact-item a { color: var(--resume-link-color, #1d4ed8); font-weight: 400; text-decoration: none; }
+.ats-resume-sheet.dates-below .resume-entry-header { display: block; }
+.ats-resume-sheet.dates-below .resume-entry-header > span { display: block; }
+.ats-resume-sheet .resume-contact-sep { color: #94a3b8; margin: 0 .35rem; }
+.ats-resume-sheet .resume-summary { margin: 0; line-height: 1.4; }
+.ats-resume-sheet .resume-list-entry { padding-left: 12pt; text-indent: -9pt; }
+.ats-resume-sheet .resume-list-entry::before { content: "\2022\00a0\00a0"; }
+.skill-row-inputs { display: grid; grid-template-columns: minmax(7.5rem, 32%) minmax(0, 1fr); gap: .5rem; }
+@media (max-width: 480px) { .skill-row-inputs { grid-template-columns: minmax(0, 1fr); } }
+.section-title-group { margin-bottom: .85rem; }
+.template-filter-bar { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .9rem; }
+.template-filter-bar .btn[aria-pressed="true"], .template-filter-bar .btn[aria-pressed="true"]:hover { background: var(--button-primary); border-color: var(--button-primary); color: #fff; }
+.template-card[hidden] { display: none !important; }
+#skillLabelHint { margin: -.35rem 0 .85rem; }
+/* Card buttons wrap instead of spilling out of narrow gallery cards. */
+.template-card-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.75rem, 1fr)); }
+.template-card-actions .btn { min-width: 0; white-space: nowrap; }
+.keyword-match-result { margin-top: .75rem; font-size: .875rem; }
+.keyword-match-result:empty { display: none; }
+.keyword-summary { margin-bottom: .5rem; }
+.keyword-heading { font-size: .8rem; font-weight: 700; margin: .6rem 0 .35rem; color: var(--text-heading); }
+.keyword-chips { display: flex; flex-wrap: wrap; gap: .35rem; list-style: none; margin: 0; padding: 0; }
+.keyword-chips li { padding: .2rem .55rem; border-radius: 999px; border: 1px solid var(--border-color); background: var(--bg-card-subtle); color: var(--text-main); font-size: .78rem; overflow-wrap: anywhere; }
+.keyword-chips.is-missing li { border-color: var(--accent-warning-border); background: var(--accent-warning-bg); color: var(--accent-warning-text); }
+.keyword-chips.is-found li { border-color: var(--accent-green-border); background: var(--accent-green-bg); color: var(--accent-green-text); }

@@ -175,9 +175,13 @@
     }
   }
 
+  // XML 1.0 forbids most C0 control characters (form feeds and vertical tabs
+  // are common when text is pasted from PDFs); Word refuses such a file.
   function escapeXml(unsafe) {
     if (!unsafe) return '';
     return String(unsafe)
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
+      .replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -185,16 +189,41 @@
       .replace(/'/g, '&apos;');
   }
 
+  function templatesApi() {
+    if (typeof ApplyReadyTemplates !== 'undefined') return ApplyReadyTemplates;
+    if (typeof require === 'function') { try { return require('./templates.js'); } catch (e) { /* standalone use */ } }
+    return null;
+  }
+  function pdfApi() {
+    if (typeof ApplyReadyPDF !== 'undefined') return ApplyReadyPDF;
+    if (typeof require === 'function') { try { return require('./pdf-engine.js'); } catch (e) { /* standalone use */ } }
+    return null;
+  }
+
+  const clean = value => (typeof value === 'string' ? value.trim() : '');
+  const SECTIONS = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
+  const FALLBACK_LABELS = { summary: 'Professional Summary', experience: 'Work Experience', education: 'Education', projects: 'Key Projects', skills: 'Skills & Competencies', certifications: 'Certifications & Credentials', achievements: 'Honors & Achievements', volunteering: 'Community & Leadership', languages: 'Languages', publications: 'Peer-Reviewed Publications', teaching: 'Teaching Experience', presentations: 'Conference Presentations', grants: 'Research Grants' };
+
   /**
    * Generate complete editable DOCX file from resume model
    */
   function generateResumeDOCX(resumeData, options = {}) {
     const zip = new SimpleZip();
+    const api = templatesApi();
+    const pdf = pdfApi();
     const pageSize = (options.pageSize || (resumeData.design && resumeData.design.pageSize) || 'a4').toLowerCase();
     const isLetter = pageSize === 'letter';
 
-    const templateId = options.template || (resumeData.design && resumeData.design.templateId) || resumeData.template || 'classic-professional';
-    const density = options.density || (resumeData.design && resumeData.design.density) || (templateId === 'compact-professional' ? 'compact' : 'standard');
+    const templateId = api ? api.resolveTemplateId(resumeData, options) : (options.template || resumeData.template || 'classic-professional');
+    const tmpl = api ? api.getTemplate(templateId) : {};
+    const style = api ? api.getTemplateStyle(templateId) : { headerAlign: 'left', nameCase: 'upper', headingHex: '0F172A', linkHex: '2563EB', metaHex: '64748B', datePlacement: 'right', headingRule: 'line', headerRule: 'single', headerRuleHex: '1A1A1A', contactSeparator: '•', docxRule: { val: 'single', sz: 6, color: 'CBD5E1' } };
+    const label = key => api ? api.getSectionLabel(templateId, key) : FALLBACK_LABELS[key];
+    const title = key => api ? api.getSectionTitle(resumeData, templateId, key) : (clean(resumeData[key + 'Title']) || FALLBACK_LABELS[key]);
+    const skillLabels = api ? api.getSkillLabels(templateId, resumeData) : { languages: 'Core Competencies', frameworks: 'Tools & Platforms', tools: 'Technical & Data Skills', other: 'Professional Skills' };
+    const bulletLines = pdf ? pdf.bulletLines : text => String(text || '').split(/\r?\n|\r/).map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
+    const optionalEntries = pdf ? pdf.optionalEntries : () => [];
+
+    const density = options.density || (resumeData.design && resumeData.design.density) || tmpl.density || 'standard';
     const isCompact = density === 'compact';
 
     // A4: 11906 x 16838 dxa (210mm x 297mm)
@@ -202,47 +231,32 @@
     const pageW = isLetter ? 12240 : 11906;
     const pageH = isLetter ? 15840 : 16838;
     const marginDxa = isCompact ? 720 : 1080; // 0.5 in for compact, 0.75 in for standard
+    const textWidth = pageW - 2 * marginDxa;
 
-    let fontFamily = options.fontFamily || (resumeData.design && resumeData.design.fontFamily);
-    if (!fontFamily) {
-      fontFamily = (templateId === 'classic-professional' || templateId === 'experienced-professional' || templateId === 'academic-cv')
-        ? 'serif'
-        : 'sans';
-    }
+    let fontFamily = options.fontFamily || (resumeData.design && resumeData.design.fontFamily) || tmpl.fontFamily;
+    if (!fontFamily) fontFamily = style.headerAlign === 'center' ? 'serif' : 'sans';
     const fontName = fontFamily === 'serif' ? 'Times New Roman' : 'Arial';
+    const headerAlign = style.headerAlign === 'center' ? 'center' : 'left';
+    const datesInline = style.datePlacement !== 'below';
 
-    // Header alignment
-    const headerAlign = (templateId === 'classic-professional' || templateId === 'experienced-professional' || templateId === 'academic-cv')
-      ? 'center'
-      : 'left';
+    const rule = style.headingRule === 'none' ? null : style.docxRule;
+    const headingBorderXml = rule ? `<w:bottom w:val="${rule.val}" w:sz="${rule.sz}" w:space="2" w:color="${rule.color}"/>` : '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>';
 
-    // Heading border in styles
-    let headingBorderXml = '<w:bottom w:val="single" w:sz="6" w:space="2" w:color="CBD5E1"/>';
-    if (templateId === 'modern-minimal') {
-      headingBorderXml = '<w:bottom w:val="none"/>';
-    } else if (templateId === 'experienced-professional') {
-      headingBorderXml = '<w:bottom w:val="double" w:sz="12" w:space="3" w:color="0F172A"/>';
-    } else if (templateId === 'classic-professional') {
-      headingBorderXml = '<w:bottom w:val="single" w:sz="8" w:space="2" w:color="0F172A"/>';
-    } else if (templateId === 'career-transition') {
-      headingBorderXml = '<w:bottom w:val="single" w:sz="6" w:space="2" w:color="047857"/>';
-    }
-
-    // Font size in half-points (dxa)
+    // Font size in half-points
     const fontSizeOpt = options.fontSize || (resumeData.design && resumeData.design.fontSize) || 'standard';
     let baseSzVal = 22;
     if (fontSizeOpt === 'comfortable') baseSzVal = 24;
     else if (fontSizeOpt === 'compact') baseSzVal = 20;
-
+    const metaSz = Math.max(18, baseSzVal - 2);
 
     // Track Hyperlinks for document.xml.rels
     const relationships = [];
-    let relIdCounter = 1;
+    let relIdCounter = 3; // rId1 styles, rId2 numbering, rId3 settings
     function registerHyperlink(targetUrl) {
       if (!targetUrl) return null;
       let safeUrl = targetUrl.trim();
-      if (/[\u0000-\u001f]/.test(safeUrl) || (/^[a-z][a-z0-9+.-]*:/i.test(safeUrl) && !/^(https?:|mailto:|tel:)/i.test(safeUrl))) return null;
-      if (!/^https?:\/\//i.test(safeUrl) && ! /^(mailto:|tel:)/i.test(safeUrl)) {
+      if (/[\u0000-\u001f\s]/.test(safeUrl) || (/^[a-z][a-z0-9+.-]*:/i.test(safeUrl) && !/^(https?:|mailto:|tel:)/i.test(safeUrl))) return null;
+      if (!/^https?:\/\//i.test(safeUrl) && !/^(mailto:|tel:)/i.test(safeUrl)) {
         safeUrl = 'https://' + safeUrl;
       }
       const rId = 'rId' + (++relIdCounter);
@@ -255,558 +269,287 @@
       return rId;
     }
 
+    const p = resumeData.personal || {};
+    const fullName = clean(p.fullName) || 'Resume';
+    const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+
     // 1. [Content_Types].xml
-    const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    zip.addFile('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
   <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
-</Types>`;
-    zip.addFile('[Content_Types].xml', contentTypesXml);
+  <Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>
+  <Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+</Types>`);
 
     // 2. _rels/.rels
-    const relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    zip.addFile('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
-</Relationships>`;
-    zip.addFile('_rels/.rels', relsXml);
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>`);
 
-    // 3. word/styles.xml
+    // 3. Document properties (title and author are shown by Word and many ATS)
+    zip.addFile('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>${escapeXml(clean(p.fullName) ? fullName + ' - Resume' : 'Resume')}</dc:title>
+  <dc:subject>${escapeXml(clean(p.targetTitle))}</dc:subject>
+  <dc:creator>${escapeXml(clean(p.fullName))}</dc:creator>
+  <cp:lastModifiedBy>${escapeXml(clean(p.fullName))}</cp:lastModifiedBy>
+  <dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${now}</dcterms:modified>
+</cp:coreProperties>`);
+    zip.addFile('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>ApplyReady.in Resume Builder</Application>
+</Properties>`);
+
+    // 4. word/styles.xml
     const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:docDefaults>
     <w:rPrDefault>
       <w:rPr>
-        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:cs="${fontName}"/>
+        <w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}" w:eastAsia="${fontName}" w:cs="${fontName}"/>
         <w:sz w:val="${baseSzVal}"/>
+        <w:szCs w:val="${baseSzVal}"/>
         <w:color w:val="1F2937"/>
         <w:lang w:val="en-US"/>
       </w:rPr>
     </w:rPrDefault>
+    <w:pPrDefault>
+      <w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>
+    </w:pPrDefault>
   </w:docDefaults>
   <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
     <w:name w:val="Normal"/>
+    <w:qFormat/>
     <w:pPr>
       <w:spacing w:after="${isCompact ? '40' : '80'}" w:line="${isCompact ? '220' : '240'}" w:lineRule="auto"/>
     </w:pPr>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="Title">
+    <w:name w:val="Title"/>
+    <w:basedOn w:val="Normal"/>
+    <w:next w:val="Normal"/>
+    <w:qFormat/>
+    <w:pPr><w:jc w:val="${headerAlign}"/><w:spacing w:before="0" w:after="40"/></w:pPr>
+    <w:rPr><w:b/>${style.nameCase === 'upper' ? '<w:caps/>' : ''}<w:sz w:val="${style.nameSize ? style.nameSize * 2 : 32}"/><w:color w:val="0F172A"/></w:rPr>
   </w:style>
   <w:style w:type="paragraph" w:styleId="Heading1">
     <w:name w:val="heading 1"/>
     <w:basedOn w:val="Normal"/>
     <w:next w:val="Normal"/>
+    <w:qFormat/>
     <w:pPr>
       <w:keepNext/>
       <w:spacing w:before="${isCompact ? '160' : '240'}" w:after="${isCompact ? '40' : '80'}"/>
       <w:pBdr>
         ${headingBorderXml}
       </w:pBdr>
+      <w:outlineLvl w:val="0"/>
     </w:pPr>
     <w:rPr>
       <w:b/>
-      <w:caps/>
-      <w:sz w:val="${baseSzVal + 3}"/>
-      <w:color w:val="0F172A"/>
+      ${style.headingCase === 'asis' ? '' : '<w:caps/>'}
+      <w:sz w:val="${baseSzVal + 1}"/>
+      <w:color w:val="${style.headingHex}"/>
     </w:rPr>
   </w:style>
   <w:style w:type="paragraph" w:styleId="ListBullet">
     <w:name w:val="List Bullet"/>
     <w:basedOn w:val="Normal"/>
     <w:pPr>
+      <w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>
       <w:spacing w:after="${isCompact ? '20' : '40'}" w:line="${isCompact ? '210' : '230'}" w:lineRule="auto"/>
       <w:ind w:left="360" w:hanging="240"/>
     </w:pPr>
   </w:style>
+  <w:style w:type="character" w:styleId="Hyperlink">
+    <w:name w:val="Hyperlink"/>
+    <w:rPr><w:color w:val="${style.linkHex === '000000' ? '000000' : '1D4ED8'}"/></w:rPr>
+  </w:style>
 </w:styles>`;
     zip.addFile('word/styles.xml', stylesXml);
 
-    // 4. Construct word/document.xml content
-    const p = resumeData.personal || {};
+    // 5. Real Word bullet list so bullets stay editable and parse as list items.
+    zip.addFile('word/numbering.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:abstractNum w:abstractNumId="0">
+    <w:multiLevelType w:val="singleLevel"/>
+    <w:lvl w:ilvl="0">
+      <w:start w:val="1"/>
+      <w:numFmt w:val="bullet"/>
+      <w:lvlText w:val="•"/>
+      <w:lvlJc w:val="left"/>
+      <w:pPr><w:ind w:left="360" w:hanging="240"/></w:pPr>
+      <w:rPr><w:rFonts w:ascii="${fontName}" w:hAnsi="${fontName}"/></w:rPr>
+    </w:lvl>
+  </w:abstractNum>
+  <w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>
+</w:numbering>`);
+    zip.addFile('word/settings.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:defaultTabStop w:val="720"/>
+  <w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="15"/></w:compat>
+</w:settings>`);
+
+    // 6. Construct word/document.xml content
     const bodyXml = [];
+    const run = (text, props = '') => text ? `<w:r>${props ? `<w:rPr>${props}</w:rPr>` : ''}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>` : '';
+    const linkRun = (text, rId, props = '') => rId
+      ? `<w:hyperlink r:id="${rId}" w:history="1"><w:r><w:rPr><w:rStyle w:val="Hyperlink"/>${props}</w:rPr><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:hyperlink>`
+      : run(text, props);
+    const bodyProps = `<w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/>`;
+    const metaProps = `<w:i/><w:sz w:val="${metaSz}"/><w:color w:val="${style.metaHex}"/>`;
+    const strongProps = `<w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/>`;
 
     // Header: Full Name
-    const fullName = (p.fullName || 'RESUME').trim();
-    bodyXml.push(`
-      <w:p>
-        <w:pPr>
-          <w:jc w:val="${headerAlign}"/>
-          <w:spacing w:before="0" w:after="40"/>
-        </w:pPr>
-        <w:r>
-          <w:rPr>
-            <w:b/>
-            <w:sz w:val="32"/>
-            <w:color w:val="0F172A"/>
-          </w:rPr>
-          <w:t>${escapeXml(fullName)}</w:t>
-        </w:r>
-      </w:p>`);
+    bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${run(fullName)}</w:p>`);
 
     // Target Title / Headline
-    if (p.targetTitle && p.targetTitle.trim()) {
-      bodyXml.push(`
-        <w:p>
-          <w:pPr>
-            <w:jc w:val="${headerAlign}"/>
-            <w:spacing w:before="0" w:after="80"/>
-          </w:pPr>
-          <w:r>
-            <w:rPr>
-              <w:sz w:val="20"/>
-              <w:color w:val="475569"/>
-            </w:rPr>
-            <w:t>${escapeXml(p.targetTitle.trim())}</w:t>
-          </w:r>
-        </w:p>`);
+    if (clean(p.targetTitle)) {
+      bodyXml.push(`<w:p><w:pPr><w:jc w:val="${headerAlign}"/><w:spacing w:before="0" w:after="80"/></w:pPr>${run(clean(p.targetTitle), `<w:i/><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`)}</w:p>`);
     }
 
     // Contact Information Line
     const contactParts = [];
-    if (p.email && p.email.trim()) {
-      const email = p.email.trim();
-      const rId = registerHyperlink('mailto:' + email);
-      contactParts.push({ text: email, rId });
-    }
-    if (p.phone && p.phone.trim()) {
-      contactParts.push({ text: p.phone.trim() });
-    }
-    if (p.location && p.location.trim()) {
-      contactParts.push({ text: p.location.trim() });
-    }
-    if (p.linkedin && p.linkedin.trim()) {
-      const link = p.linkedin.trim();
-      const rId = registerHyperlink(link);
-      contactParts.push({ text: link.replace(/^https?:\/\//, ''), rId });
-    }
-    if (p.github && p.github.trim()) {
-      const link = p.github.trim();
-      const rId = registerHyperlink(link);
-      contactParts.push({ text: link.replace(/^https?:\/\//, ''), rId });
-    }
-    if (p.website && p.website.trim()) {
-      const link = p.website.trim();
-      const rId = registerHyperlink(link);
-      contactParts.push({ text: link.replace(/^https?:\/\//, ''), rId });
+    if (clean(p.phone)) contactParts.push({ text: clean(p.phone) });
+    if (clean(p.email)) contactParts.push({ text: clean(p.email), rId: registerHyperlink('mailto:' + clean(p.email)) });
+    if (clean(p.location)) contactParts.push({ text: clean(p.location) });
+    for (const key of ['linkedin', 'github', 'website']) {
+      const link = clean(p[key]);
+      if (link) contactParts.push({ text: link.replace(/^https?:\/\//i, '').replace(/\/$/, ''), rId: registerHyperlink(link) });
     }
 
     if (contactParts.length > 0) {
-      let contactRuns = '';
-      for (let i = 0; i < contactParts.length; i++) {
-        if (i > 0) {
-          contactRuns += `
-            <w:r>
-              <w:rPr><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="94A3B8"/></w:rPr>
-              <w:t xml:space="preserve">  •  </w:t>
-            </w:r>`;
-        }
-        const item = contactParts[i];
-        if (item.rId) {
-          contactRuns += `
-            <w:hyperlink r:id="${item.rId}" w:history="1">
-              <w:r>
-                <w:rPr><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="2563EB"/><w:u w:val="none"/></w:rPr>
-                <w:t>${escapeXml(item.text)}</w:t>
-              </w:r>
-            </w:hyperlink>`;
-        } else {
-          contactRuns += `
-            <w:r>
-              <w:rPr><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="334155"/></w:rPr>
-              <w:t>${escapeXml(item.text)}</w:t>
-            </w:r>`;
-        }
-      }
-
-      bodyXml.push(`
-        <w:p>
-          <w:pPr>
-            <w:jc w:val="${headerAlign}"/>
-            <w:spacing w:before="0" w:after="160"/>
-          </w:pPr>
-          ${contactRuns}
-        </w:p>`);
+      const contactProps = `<w:sz w:val="${metaSz}"/>`;
+      const contactRuns = contactParts.map((item, i) => (i ? run(`  ${style.contactSeparator}  `, `<w:sz w:val="${metaSz}"/><w:color w:val="94A3B8"/>`) : '')
+        + (item.rId ? linkRun(item.text, item.rId, contactProps) : run(item.text, `${contactProps}<w:color w:val="334155"/>`))).join('');
+      const headerBorder = style.headerRule === 'none' ? ''
+        : `<w:pBdr><w:bottom w:val="${style.headerRule === 'double' ? 'double' : 'single'}" w:sz="${style.headerRule === 'double' ? 6 : Math.round((style.headerRuleWidth || 1.2) * 8)}" w:space="6" w:color="${style.headerRuleHex}"/></w:pBdr>`;
+      bodyXml.push(`<w:p><w:pPr>${headerBorder}<w:jc w:val="${headerAlign}"/><w:spacing w:before="0" w:after="${style.headerRule === 'none' ? 120 : 160}"/></w:pPr>${contactRuns}</w:p>`);
     }
 
     // Helper: Add Section Header
-    function addSectionHeader(title) {
-      bodyXml.push(`
-        <w:p>
-          <w:pPr>
-            <w:pStyle w:val="Heading1"/>
-            <w:spacing w:before="240" w:after="80"/>
-          </w:pPr>
-          <w:r>
-            <w:rPr><w:b/><w:caps/><w:sz w:val="22"/><w:color w:val="0F172A"/></w:rPr>
-            <w:t>${escapeXml(title)}</w:t>
-          </w:r>
-        </w:p>`);
+    function addSectionHeader(text) {
+      bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr>${run(text)}</w:p>`);
+    }
+    function addBullet(text, props = bodyProps) {
+      bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="ListBullet"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>${run(text, props)}</w:p>`);
+    }
+    // Entry heading with dates on a right tab stop, or on their own line.
+    function addEntryHeading(titleRuns, meta, before) {
+      if (datesInline && meta) {
+        bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:tabs><w:tab w:val="right" w:pos="${textWidth}"/></w:tabs><w:spacing w:before="${before}" w:after="30"/></w:pPr>${titleRuns}<w:r><w:tab/></w:r>${run(meta, metaProps)}</w:p>`);
+        return;
+      }
+      bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="${before}" w:after="${meta ? 0 : 30}"/></w:pPr>${titleRuns}</w:p>`);
+      if (meta) bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="30"/></w:pPr>${run(meta, metaProps)}</w:p>`);
     }
 
     // Section Visibility & Order
-    const vis = resumeData.sectionVisibility || {
-      summary: true,
-      experience: true,
-      education: true,
-      projects: true,
-      skills: true,
-      certifications: true,
-      achievements: true,
-      volunteering: true,
-      languages: true,
-      academic: true
-    };
+    const vis = resumeData.sectionVisibility || options.sectionVisibility || {};
+    const savedOrder = (resumeData.design && Array.isArray(resumeData.design.sectionOrder)) ? resumeData.design.sectionOrder : (options.sectionOrder || []);
+    const sectionOrder = [...new Set([...savedOrder.filter(key => SECTIONS.includes(key)), ...SECTIONS])];
 
-    const sectionOrder = (resumeData.design && Array.isArray(resumeData.design.sectionOrder))
-      ? [...new Set([...resumeData.design.sectionOrder, 'summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'])]
-      : ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
-
-    // Render sections by defined order
     for (const secKey of sectionOrder) {
       if (vis[secKey] === false) continue;
 
-      if (secKey === 'summary' && resumeData.summary && resumeData.summary.trim()) {
-        addSectionHeader(resumeData.summaryTitle || 'Professional Summary');
-        bodyXml.push(`
-          <w:p>
-            <w:pPr><w:spacing w:after="120"/><w:jc w:val="both"/></w:pPr>
-            <w:r>
-              <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
-              <w:t>${escapeXml(resumeData.summary.trim())}</w:t>
-            </w:r>
-          </w:p>`);
+      if (secKey === 'summary' && clean(resumeData.summary)) {
+        addSectionHeader(title('summary'));
+        clean(resumeData.summary).split(/\r?\n+/).map(clean).filter(Boolean).forEach(paragraph => {
+          bodyXml.push(`<w:p><w:pPr><w:spacing w:after="120"/></w:pPr>${run(paragraph, bodyProps)}</w:p>`);
+        });
       }
 
-      if (secKey === 'experience' && Array.isArray(resumeData.experience) && resumeData.experience.length > 0) {
-        addSectionHeader(resumeData.experienceTitle || 'Work Experience');
-        for (const exp of resumeData.experience) {
-          const role = (exp.role || '').trim();
-          const comp = (exp.company || '').trim();
-          const dur = (exp.duration || '').trim();
-          const loc = (exp.location || '').trim();
-          if (!role && !comp) continue;
-
-          // Role and Duration line
-          bodyXml.push(`
-            <w:p>
-              <w:pPr>
-                <w:keepNext/>
-                <w:spacing w:before="120" w:after="30"/>
-              </w:pPr>
-              <w:r>
-                <w:rPr><w:b/><w:sz w:val="20"/><w:color w:val="0F172A"/></w:rPr>
-                <w:t>${escapeXml(role)}</w:t>
-              </w:r>
-              ${comp ? `
-              <w:r>
-                <w:rPr><w:sz w:val="20"/><w:color w:val="475569"/></w:rPr>
-                <w:t xml:space="preserve">  |  ${escapeXml(comp)}</w:t>
-              </w:r>` : ''}
-              ${dur ? `
-              <w:r>
-                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
-                <w:t xml:space="preserve">  (${escapeXml(dur)}${loc ? ', ' + escapeXml(loc) : ''})</w:t>
-              </w:r>` : ''}
-            </w:p>`);
-
-          // Bullets
-          if (exp.bulletsText && exp.bulletsText.trim()) {
-            const lines = exp.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-            for (const line of lines) {
-              const cleaned = line.trim().replace(/^[-*•]\s*/, '');
-              if (!cleaned) continue;
-              bodyXml.push(`
-                <w:p>
-                  <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
-                  <w:r>
-                    <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
-                    <w:t xml:space="preserve">•  ${escapeXml(cleaned)}</w:t>
-                  </w:r>
-                </w:p>`);
-            }
+      if (secKey === 'experience') {
+        const entries = (resumeData.experience || []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || bulletLines(exp.bulletsText).length));
+        if (entries.length) {
+          addSectionHeader(title('experience'));
+          for (const exp of entries) {
+            const role = clean(exp.role), comp = clean(exp.company);
+            const meta = [clean(exp.duration), clean(exp.location)].filter(Boolean).join(', ');
+            if (role || comp || meta) addEntryHeading(run(role, strongProps) + (comp ? run((role ? '  |  ' : '') + comp, `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : ''), meta, 120);
+            bulletLines(exp.bulletsText).forEach(line => addBullet(line));
           }
         }
       }
 
-      if (secKey === 'education' && Array.isArray(resumeData.education) && resumeData.education.length > 0) {
-        addSectionHeader(resumeData.educationTitle || 'Education');
-        for (const edu of resumeData.education) {
-          const deg = (edu.degree || '').trim();
-          const inst = (edu.institution || '').trim();
-          const dur = (edu.duration || '').trim();
-          const loc = (edu.location || '').trim();
-          const score = (edu.score || '').trim();
-          if (!deg && !inst) continue;
-
-          bodyXml.push(`
-            <w:p>
-              <w:pPr><w:keepNext/><w:spacing w:before="100" w:after="20"/></w:pPr>
-              <w:r>
-                <w:rPr><w:b/><w:sz w:val="20"/><w:color w:val="0F172A"/></w:rPr>
-                <w:t>${escapeXml(deg)}</w:t>
-              </w:r>
-              ${inst ? `
-              <w:r>
-                <w:rPr><w:sz w:val="20"/><w:color w:val="475569"/></w:rPr>
-                <w:t xml:space="preserve">  |  ${escapeXml(inst)}</w:t>
-              </w:r>` : ''}
-              ${dur ? `
-              <w:r>
-                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
-                <w:t xml:space="preserve">  (${escapeXml(dur)}${loc ? ', ' + escapeXml(loc) : ''})</w:t>
-              </w:r>` : ''}
-            </w:p>`);
-
-          if (score) {
-            bodyXml.push(`
-              <w:p>
-                <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
-                <w:r>
-                  <w:rPr><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
-                  <w:t xml:space="preserve">•  ${escapeXml(score)}</w:t>
-                </w:r>
-              </w:p>`);
+      if (secKey === 'education') {
+        const entries = (resumeData.education || []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution)));
+        if (entries.length) {
+          addSectionHeader(title('education'));
+          for (const edu of entries) {
+            const deg = clean(edu.degree), inst = clean(edu.institution);
+            const meta = [clean(edu.duration), clean(edu.location)].filter(Boolean).join(', ');
+            addEntryHeading(run(deg, strongProps) + (inst ? run((deg ? '  |  ' : '') + inst, `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : ''), meta, 100);
+            if (clean(edu.score)) bodyXml.push(`<w:p><w:pPr><w:spacing w:after="40"/></w:pPr>${run(clean(edu.score), `<w:sz w:val="${metaSz}"/><w:color w:val="475569"/>`)}</w:p>`);
           }
         }
       }
 
-      if (secKey === 'projects' && Array.isArray(resumeData.projects) && resumeData.projects.length > 0) {
-        addSectionHeader(resumeData.projectsTitle || 'Key Projects');
-        for (const proj of resumeData.projects) {
-          const name = (proj.name || '').trim();
-          const tech = (proj.tech || '').trim();
-          const link = (proj.link || '').trim();
-          if (!name) continue;
-
-          let linkRId = null;
-          if (link) {
-            linkRId = registerHyperlink(link);
-          }
-
-          bodyXml.push(`
-            <w:p>
-              <w:pPr><w:keepNext/><w:spacing w:before="120" w:after="30"/></w:pPr>
-              <w:r>
-                <w:rPr><w:b/><w:sz w:val="20"/><w:color w:val="0F172A"/></w:rPr>
-                <w:t>${escapeXml(name)}</w:t>
-              </w:r>
-              ${tech ? `
-              <w:r>
-                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
-                <w:t xml:space="preserve">  [${escapeXml(tech)}]</w:t>
-              </w:r>` : ''}
-              ${linkRId ? `
-              <w:hyperlink r:id="${linkRId}" w:history="1">
-                <w:r>
-                  <w:rPr><w:sz w:val="17"/><w:color w:val="2563EB"/></w:rPr>
-                  <w:t xml:space="preserve">  (${escapeXml(link)})</w:t>
-                </w:r>
-              </w:hyperlink>` : ''}
-            </w:p>`);
-
-          if (proj.bulletsText && proj.bulletsText.trim()) {
-            const lines = proj.bulletsText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-            for (const line of lines) {
-              const cleaned = line.trim().replace(/^[-*•]\s*/, '');
-              if (!cleaned) continue;
-              bodyXml.push(`
-                <w:p>
-                  <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
-                  <w:r>
-                    <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
-                    <w:t xml:space="preserve">•  ${escapeXml(cleaned)}</w:t>
-                  </w:r>
-                </w:p>`);
+      if (secKey === 'projects') {
+        const entries = (resumeData.projects || []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || bulletLines(proj.bulletsText).length));
+        if (entries.length) {
+          addSectionHeader(title('projects'));
+          for (const proj of entries) {
+            const name = clean(proj.name) || 'Project';
+            const tech = clean(proj.tech);
+            const link = clean(proj.link);
+            const linkRId = link ? registerHyperlink(link) : null;
+            const titleRuns = run(name, strongProps) + (tech ? run('  |  ' + tech, metaProps) : '');
+            if (datesInline && link) {
+              bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:tabs><w:tab w:val="right" w:pos="${textWidth}"/></w:tabs><w:spacing w:before="120" w:after="30"/></w:pPr>${titleRuns}<w:r><w:tab/></w:r>${linkRun(link, linkRId, `<w:sz w:val="${metaSz}"/>`)}</w:p>`);
+            } else {
+              bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="120" w:after="${link ? 0 : 30}"/></w:pPr>${titleRuns}</w:p>`);
+              if (link) bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="30"/></w:pPr>${linkRun(link, linkRId, `<w:sz w:val="${metaSz}"/>`)}</w:p>`);
             }
+            bulletLines(proj.bulletsText).forEach(line => addBullet(line));
           }
         }
       }
 
       if (secKey === 'skills' && resumeData.skills) {
         const s = resumeData.skills;
-        const skillEntries = [];
-        if (s.languages && s.languages.trim()) skillEntries.push({ label: 'Core Competencies', text: s.languages.trim() });
-        if (s.frameworks && s.frameworks.trim()) skillEntries.push({ label: 'Tools & Platforms', text: s.frameworks.trim() });
-        if (s.tools && s.tools.trim()) skillEntries.push({ label: 'Technical & Data Skills', text: s.tools.trim() });
-        if (s.other && s.other.trim()) skillEntries.push({ label: 'Professional Skills', text: s.other.trim() });
-
-        if (skillEntries.length > 0) {
-          addSectionHeader(resumeData.skillsTitle || 'Skills & Competencies');
-          for (const item of skillEntries) {
-            bodyXml.push(`
-              <w:p>
-                <w:pPr><w:spacing w:after="40"/></w:pPr>
-                <w:r>
-                  <w:rPr><w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/></w:rPr>
-                  <w:t xml:space="preserve">${escapeXml(item.label)}:  </w:t>
-                </w:r>
-                <w:r>
-                  <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
-                  <w:t>${escapeXml(item.text)}</w:t>
-                </w:r>
-              </w:p>`);
+        const entries = Array.isArray(s.categories)
+          ? s.categories.filter(c => c && clean(c.name) && clean(c.items)).map(c => ({ label: clean(c.name), text: clean(c.items) }))
+          : ['languages', 'frameworks', 'tools', 'other'].filter(key => clean(s[key])).map(key => ({ label: skillLabels[key], text: clean(s[key]) }));
+        if (entries.length > 0) {
+          addSectionHeader(title('skills'));
+          for (const item of entries) {
+            bodyXml.push(`<w:p><w:pPr><w:spacing w:after="40"/></w:pPr>${run(item.label + ': ', strongProps)}${run(item.text, bodyProps)}</w:p>`);
           }
         }
       }
 
-      // Certifications
-      if (secKey === 'certifications' && Array.isArray(resumeData.certifications) && resumeData.certifications.length > 0) {
-        addSectionHeader('Certifications & Credentials');
-        for (const cert of resumeData.certifications) {
-          const title = (cert.name || cert.title || '').trim();
-          const issuer = (cert.issuer || '').trim();
-          const year = (cert.year || cert.date || '').trim();
-          if (!title) continue;
-          bodyXml.push(`
-            <w:p>
-              <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
-              <w:r>
-                <w:rPr><w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/></w:rPr>
-                <w:t xml:space="preserve">•  ${escapeXml(title)}</w:t>
-              </w:r>
-              ${issuer ? `
-              <w:r>
-                <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/></w:rPr>
-                <w:t xml:space="preserve"> — ${escapeXml(issuer)}</w:t>
-              </w:r>` : ''}
-              ${year ? `
-              <w:r>
-                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
-                <w:t xml:space="preserve"> (${escapeXml(year)})</w:t>
-              </w:r>` : ''}
-            </w:p>`);
+      if (['certifications', 'achievements', 'volunteering'].includes(secKey)) {
+        const texts = optionalEntries(resumeData, secKey);
+        if (texts.length) {
+          addSectionHeader(label(secKey));
+          texts.forEach(text => addBullet(text));
         }
       }
 
-      // Achievements / Awards
-      if (secKey === 'achievements' && Array.isArray(resumeData.achievements) && resumeData.achievements.length > 0) {
-        addSectionHeader('Honors & Achievements');
-        for (const ach of resumeData.achievements) {
-          const text = (typeof ach === 'string' ? ach : (ach.title || ach.text || '')).trim();
-          if (!text) continue;
-          bodyXml.push(`
-            <w:p>
-              <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
-              <w:r>
-                <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
-                <w:t xml:space="preserve">•  ${escapeXml(text)}</w:t>
-              </w:r>
-            </w:p>`);
+      if (secKey === 'languages') {
+        const langs = optionalEntries(resumeData, 'languages');
+        if (langs.length) {
+          addSectionHeader(label('languages'));
+          bodyXml.push(`<w:p><w:pPr><w:spacing w:after="80"/></w:pPr>${run(langs.join(', '), bodyProps)}</w:p>`);
         }
       }
 
-      // Volunteering
-      if (secKey === 'volunteering' && Array.isArray(resumeData.volunteering) && resumeData.volunteering.length > 0) {
-        addSectionHeader('Community & Leadership');
-        for (const vol of resumeData.volunteering) {
-          const role = (vol.role || '').trim();
-          const org = (vol.organization || vol.org || '').trim();
-          const dur = (vol.duration || '').trim();
-          if (!role && !org) continue;
-          bodyXml.push(`
-            <w:p>
-              <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
-              <w:r>
-                <w:rPr><w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/></w:rPr>
-                <w:t xml:space="preserve">•  ${escapeXml(role)}</w:t>
-              </w:r>
-              ${org ? `
-              <w:r>
-                <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/></w:rPr>
-                <w:t xml:space="preserve">, ${escapeXml(org)}</w:t>
-              </w:r>` : ''}
-              ${dur ? `
-              <w:r>
-                <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
-                <w:t xml:space="preserve"> (${escapeXml(dur)})</w:t>
-              </w:r>` : ''}
-            </w:p>`);
-        }
-      }
-
-      // Languages
-      if (secKey === 'languages' && Array.isArray(resumeData.languages) && resumeData.languages.length > 0) {
-        addSectionHeader('Languages');
-        const langStr = resumeData.languages.map(l => typeof l === 'string' ? l : [l.name, l.proficiency].filter(Boolean).join(' — ')).filter(Boolean).join(', ');
-        if (langStr) {
-          bodyXml.push(`
-            <w:p>
-              <w:pPr><w:spacing w:after="80"/></w:pPr>
-              <w:r>
-                <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
-                <w:t>${escapeXml(langStr)}</w:t>
-              </w:r>
-            </w:p>`);
-        }
-      }
-
-      // Academic Sections (Publications, Teaching, Presentations, Grants)
-      if (secKey === 'academic' && resumeData.academic) {
-        const acad = resumeData.academic;
-        if (Array.isArray(acad.publications) && acad.publications.length > 0) {
-          addSectionHeader('Peer-Reviewed Publications');
-          for (const pub of acad.publications) {
-            const title = (pub.title || pub.citation || '').trim();
-            if (!title) continue;
-            bodyXml.push(`
-              <w:p>
-                <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
-                <w:r>
-                  <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
-                  <w:t xml:space="preserve">•  ${escapeXml(title)}</w:t>
-                </w:r>
-              </w:p>`);
-          }
-        }
-
-        if (Array.isArray(acad.teaching) && acad.teaching.length > 0) {
-          addSectionHeader('Teaching Experience');
-          for (const t of acad.teaching) {
-            const role = (t.role || t.course || '').trim();
-            const inst = (t.institution || '').trim();
-            const term = (t.term || '').trim();
-            if (!role) continue;
-            bodyXml.push(`
-              <w:p>
-                <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
-                <w:r>
-                  <w:rPr><w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/></w:rPr>
-                  <w:t xml:space="preserve">•  ${escapeXml(role)}</w:t>
-                </w:r>
-                ${inst ? `
-                <w:r>
-                  <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/></w:rPr>
-                  <w:t xml:space="preserve"> — ${escapeXml(inst)}</w:t>
-                </w:r>` : ''}
-                ${term ? `
-                <w:r>
-                  <w:rPr><w:i/><w:sz w:val="${Math.max(18, baseSzVal - 2)}"/><w:color w:val="64748B"/></w:rPr>
-                  <w:t xml:space="preserve"> (${escapeXml(term)})</w:t>
-                </w:r>` : ''}
-              </w:p>`);
-          }
-        }
-
-        if (Array.isArray(acad.presentations) && acad.presentations.length > 0) {
-          addSectionHeader('Conference Presentations');
-          for (const pr of acad.presentations) {
-            const text = (typeof pr === 'string' ? pr : (pr.title || pr.event || '')).trim();
-            if (!text) continue;
-            bodyXml.push(`
-              <w:p>
-                <w:pPr><w:pStyle w:val="ListBullet"/></w:pPr>
-                <w:r>
-                  <w:rPr><w:sz w:val="${baseSzVal}"/><w:color w:val="334155"/></w:rPr>
-                  <w:t xml:space="preserve">•  ${escapeXml(text)}</w:t>
-                </w:r>
-              </w:p>`);
-          }
-        }
-        if (Array.isArray(acad.grants) && acad.grants.length) {
-          addSectionHeader('Research Grants');
-          for (const grant of acad.grants) {
-            const text = typeof grant === 'string' ? grant : [grant.title || grant.name, grant.funder, grant.year].filter(Boolean).join(' — ');
-            if (text) bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="ListBullet"/></w:pPr><w:r><w:t>${escapeXml(text)}</w:t></w:r></w:p>`);
-          }
+      if (secKey === 'academic') {
+        for (const key of ['publications', 'teaching', 'presentations', 'grants']) {
+          const texts = optionalEntries(resumeData, key);
+          if (!texts.length) continue;
+          addSectionHeader(label(key));
+          texts.forEach(text => addBullet(text));
         }
       }
     }
@@ -821,23 +564,24 @@
     const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
   <w:body>
-    ${bodyXml.join('\n')}
+    ${bodyXml.join('\n    ')}
     ${sectPrXml}
   </w:body>
 </w:document>`;
     zip.addFile('word/document.xml', documentXml);
 
-    // 5. word/_rels/document.xml.rels (Include styles and external hyperlinks)
+    // 7. word/_rels/document.xml.rels (styles, numbering, settings and external hyperlinks)
     const relItemsXml = [
       '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>',
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>',
+      '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>',
       ...relationships.map(rel => `<Relationship Id="${rel.id}" Type="${rel.type}" Target="${rel.target}" TargetMode="${rel.targetMode}"/>`)
     ].join('\n  ');
 
-    const docRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    zip.addFile('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   ${relItemsXml}
-</Relationships>`;
-    zip.addFile('word/_rels/document.xml.rels', docRelsXml);
+</Relationships>`);
 
     return zip;
   }

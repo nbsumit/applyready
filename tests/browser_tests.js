@@ -182,6 +182,48 @@ const server = http.createServer((req,res) => {
   ok(/Pages:\s+1\b/.test(execFileSync('pdfinfo',[sampleFile],{encoding:'utf8'})), 'Sample PDF uses one page');
   ok(execFileSync('pdftotext',[sampleFile,'-'],{encoding:'utf8'}).includes('Operational Excellence Award'), 'Sample PDF retains its final achievement');
   await page.screenshot({path:path.join(output,'sample-preview-desktop.png'),fullPage:true});
+  // Sample content keeps the chosen template, and the gallery agrees with the preview.
+  await page.locator('[data-template-id="software-engineer"] .btn-select-template').click();
+  await page.locator('#tabContent').click();await page.locator('#btnLoadSample').click();
+  ok((await page.locator('#prevTemplateBadge').textContent()).trim()==='Software Engineer','Loading the sample keeps the selected template');
+  ok(await page.locator('[data-template-id="software-engineer"] .btn-select-template').getAttribute('aria-pressed')==='true','Gallery still marks the template in use after loading the sample');
+  ok((await page.locator('#resumeVisualPages').textContent()).includes('Frameworks & Libraries:'),'Template skill labels reach the preview');
+  const openSection=async id=>{const header=page.locator(`#${id} .accordion-header`);if(await header.getAttribute('aria-expanded')!=='true')await header.click();};
+  await openSection('sec-experience');await page.locator('#experienceTitleInput').fill('Internships');
+  ok((await page.locator('#resumeVisualPages').textContent()).includes('INTERNSHIPS'),'Edited section heading reaches the preview');
+  await openSection('sec-skills');await page.locator('#skillLabelLanguages').fill('Programming');
+  ok((await page.locator('#resumeVisualPages').textContent()).includes('Programming:'),'Renamed skill row label reaches the preview');
+  await page.locator('#skillLabelLanguages').fill('');
+  ok((await page.locator('#resumeVisualPages').textContent()).includes('Languages:'),'Clearing a skill label restores the template wording');
+  await page.locator('#tabDesign').click();
+  await page.getByRole('button',{name:/^Tech \(\d+\)$/}).click();
+  const techCount=Object.values(TEMPLATES).filter(t=>t.group==='tech').length;
+  ok(await page.locator('#templateGalleryGrid .template-card:visible').count()===techCount,'Audience filter shows only matching templates');
+  ok(await page.getByRole('button',{name:/^Tech \(\d+\)$/}).getAttribute('aria-pressed')==='true','Active filter is announced');
+  await audit('resume-design-tab');
+  await page.getByRole('button',{name:/^All \(\d+\)$/}).click();
+  ok(await page.locator('#templateGalleryGrid .template-card:visible').count()===Object.keys(TEMPLATES).length,'All filter restores every template');
+  for(const width of [320,360,390,768,1024,1440]) {
+    await page.setViewportSize({width,height:900});
+    const spilled=await page.evaluate(()=>[...document.querySelectorAll('#templateGalleryGrid .template-card')].flatMap(card=>[...card.querySelectorAll('.btn')].filter(btn=>{const b=btn.getBoundingClientRect(),c=card.getBoundingClientRect();return b.right>c.right+1||b.left<c.left-1||btn.scrollWidth>btn.clientWidth+1;})).length);
+    ok(spilled===0,`Template card buttons stay inside their cards at ${width}px`);
+  }
+  await page.setViewportSize({width:1440,height:1000});
+  await page.locator('[data-template-id="ats-strict"] .btn-preview-template').click();
+  ok(await page.locator('#tmplModalPreviewSheet svg text').count()>20,'Template preview is drawn by the export engine');
+  ok(await page.locator('#tmplModalPreviewSheet svg line').count()===0,'ATS Plain preview has no ruled lines');
+  ok((await page.locator('#tmplModalPreviewSheet').textContent()).includes('ALEX R. MORGAN'),'Template preview shows sample content');
+  await page.keyboard.press('Escape');
+  await page.locator('#tabReview').click();
+  ok(await page.locator('#reviewChecklist .review-item').count()>=1,'Review panel lists its checks');
+  await page.locator('#jobDescriptionInput').fill('Operations Manager role. We need Jira, Smartsheet and Salesforce CRM experience, vendor management, Kubernetes and Terraform. Kubernetes is used daily; Terraform for infrastructure. Six Sigma preferred.');
+  await page.locator('#keywordMatchResult .keyword-summary').waitFor();
+  const missingTerms=await page.locator('#keywordMatchResult .is-missing li').allTextContents();
+  const foundTerms=await page.locator('#keywordMatchResult .is-found li').allTextContents();
+  ok(missingTerms.includes('Kubernetes') && missingTerms.includes('Terraform'),'Job description terms absent from the resume are listed');
+  ok(foundTerms.includes('Jira') && foundTerms.includes('Smartsheet'),'Job description terms already in the resume are recognised');
+  ok(await page.evaluate(()=>!JSON.stringify(localStorage).includes('Kubernetes')),'Pasted job description is never stored');
+  await audit('resume-review-tab');
   await page.setViewportSize({width:320,height:800});
   await page.locator('#tabEdit').click();
   await page.locator('#tabReview').click();
@@ -193,6 +235,18 @@ const server = http.createServer((req,res) => {
   }
   ok(!await overflow(), 'Mobile export controls fit a 320px screen');
   await page.screenshot({path:path.join(output,'resume-mobile-export.png'),fullPage:true});
+  // Unsaved work without device saving is protected from an accidental close.
+  for (const [saveDraft, expected] of [[false, true], [true, false]]) {
+    const guarded = await context.newPage();
+    await guarded.addInitScript(enabled => { try { localStorage.setItem('applyready_draft_enabled', String(enabled)); localStorage.removeItem('applyready_resume_draft'); } catch (e) {} }, saveDraft);
+    await guarded.goto(`${origin}/resume.html`);
+    await guarded.locator('#fullName').fill('Unsaved Person');
+    let warned = false;
+    guarded.on('dialog', dialog => { if (dialog.type() === 'beforeunload') warned = true; return dialog.accept(); });
+    await guarded.close({ runBeforeUnload: true });
+    await new Promise(resolve => setTimeout(resolve, 300));
+    ok(warned === expected, saveDraft ? 'No leave warning when the draft is saved on the device' : 'Closing with unsaved resume work asks for confirmation');
+  }
   console.log('✓ Draft recovery, malformed imports, all templates, PDF/Word/text downloads, and modal focus');
 
   await visit('index.html');await page.setViewportSize({width:390,height:844});
@@ -242,7 +296,7 @@ const server = http.createServer((req,res) => {
   await audit('404-phone');
   ok(external.length===0,`Unexpected third-party requests: ${external.join(', ')}`);
   ok(errors.length===0,`Browser errors: ${errors.join(', ')}`);
-  ok(checkLongDocuments(output)===32, 'All templates retain long content inside both paper sizes and font families');
+  ok(checkLongDocuments(output)===Object.keys(TEMPLATES).length*4, 'All templates retain long content inside both paper sizes and font families');
   console.log(`\n${checks} browser assertions passed. Screenshots and real downloads: ${output}`);
   await browser.close();await new Promise(resolve=>server.close(resolve));
 })().catch(error=>{console.error(error);server.close();process.exit(1);});

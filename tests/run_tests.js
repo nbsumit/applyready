@@ -527,12 +527,12 @@ assert(seoDocContent.includes('IndexNow'), 'SEO_SETUP.md documents owner-control
 console.log('');
 
 // ------------------------------------------------------------------
-// SUITE 9: All 8 ATS Resume Templates Rendering to Vector PDF
+// SUITE 9: Every ATS Resume Template Rendering to Vector PDF
 // ------------------------------------------------------------------
-console.log('SUITE 9: All 8 ATS Resume Templates Rendering to Vector PDF');
+console.log('SUITE 9: Every ATS Resume Template Rendering to Vector PDF');
 
 const templateKeys = Object.keys(TEMPLATES);
-assert(templateKeys.length === 8, `Exactly 8 ATS resume templates defined (found ${templateKeys.length})`);
+assert(templateKeys.length === 15, `Exactly 15 ATS resume templates defined (found ${templateKeys.length})`);
 
 const expectedTemplates = [
   'classic-professional',
@@ -542,7 +542,14 @@ const expectedTemplates = [
   'project-focused',
   'career-transition',
   'compact-professional',
-  'academic-cv'
+  'academic-cv',
+  'ivy-classic',
+  'software-engineer',
+  'campus-fresher',
+  'ats-strict',
+  'executive-impact',
+  'healthcare-licensed',
+  'finance-consulting'
 ];
 
 expectedTemplates.forEach(tId => {

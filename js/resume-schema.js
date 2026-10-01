@@ -5,7 +5,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
   const sections = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
-  const templates = ['classic-professional', 'modern-minimal', 'graduate-early-career', 'experienced-professional', 'project-focused', 'career-transition', 'compact-professional', 'academic-cv'];
+  const templates = ['classic-professional', 'modern-minimal', 'graduate-early-career', 'experienced-professional', 'project-focused', 'career-transition', 'compact-professional', 'academic-cv', 'ivy-classic', 'software-engineer', 'campus-fresher', 'ats-strict', 'executive-impact', 'healthcare-licensed', 'finance-consulting'];
   const personalFields = ['fullName', 'targetTitle', 'email', 'phone', 'location', 'linkedin', 'github', 'website'];
   const skillFields = ['languages', 'frameworks', 'tools', 'other'];
   const entries = {
@@ -37,6 +37,7 @@
     if (d.version !== undefined && ![1, 2].includes(d.version)) return false;
     if (!['summary', 'summaryTitle', 'experienceTitle', 'educationTitle', 'projectsTitle', 'skillsTitle'].every(key => d[key] === undefined || text(d[key]))) return false;
     if (d.skills !== undefined && !fieldsValid(d.skills, skillFields)) return false;
+    if (d.skillLabels !== undefined && !fieldsValid(d.skillLabels, skillFields)) return false;
     if (d.design !== undefined && !record(d.design)) return false;
     if (d.sectionVisibility !== undefined && (!record(d.sectionVisibility) || !sections.every(key => d.sectionVisibility[key] === undefined || typeof d.sectionVisibility[key] === 'boolean'))) return false;
     if (d.design && d.design.sectionOrder !== undefined && (!Array.isArray(d.design.sectionOrder) || d.design.sectionOrder.length > 30 || !d.design.sectionOrder.every(key => sections.includes(key)))) return false;
@@ -85,6 +86,7 @@
         sectionOrder: normalizeSectionOrder(design.sectionOrder)
       },
       sectionVisibility: vis, personal: pickText(src.personal, personalFields), skills: pickText(src.skills, skillFields),
+      skillLabels: Object.fromEntries(Object.entries(pickText(src.skillLabels, skillFields)).map(([key, value]) => [key, value.slice(0, 60)])),
       summary: text(src.summary) ? src.summary : '',
       summaryTitle: text(src.summaryTitle) && src.summaryTitle ? src.summaryTitle : 'Professional Summary',
       experienceTitle: text(src.experienceTitle) && src.experienceTitle ? src.experienceTitle : 'Work Experience',
@@ -97,5 +99,5 @@
     for (const key of ['publications', 'teaching', 'presentations', 'grants']) result.academic[key] = list(acad[key], entries[key]);
     return result;
   }
-  return { validate, migrate, normalizeSectionOrder, sections };
+  return { validate, migrate, normalizeSectionOrder, sections, templates };
 });
