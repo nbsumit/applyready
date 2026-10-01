@@ -473,3 +473,10 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 .ats-resume-sheet .resume-summary { margin: 0; line-height: 1.4; }
 .ats-resume-sheet .resume-list-entry { padding-left: 12pt; text-indent: -9pt; }
 .ats-resume-sheet .resume-list-entry::before { content: "\2022\00a0\00a0"; }
+.skill-row-inputs { display: grid; grid-template-columns: minmax(7.5rem, 32%) minmax(0, 1fr); gap: .5rem; }
+@media (max-width: 480px) { .skill-row-inputs { grid-template-columns: minmax(0, 1fr); } }
+.section-title-group { margin-bottom: .85rem; }
+.template-filter-bar { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .9rem; }
+.template-filter-bar .btn[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+.template-card[hidden] { display: none !important; }
+#skillLabelHint { margin: -.35rem 0 .85rem; }

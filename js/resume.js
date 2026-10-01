@@ -503,7 +503,7 @@
     }
 
     const s = data.skills || {};
-    const skillLabels = TPL.getSkillLabels(templateId);
+    const skillLabels = TPL.getSkillLabels(templateId, data);
     const skillRows = ['languages', 'frameworks', 'tools', 'other'].filter(key => t(s[key])).map(key => ({ label: skillLabels[key], val: t(s[key]) }));
     if (skillRows.length && visible('skills')) {
       sections.skills = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'skills'))}<div>${skillRows.map(r => `<div class="resume-skills-row"><span class="skills-category">${escapeHTML(r.label)}: </span><span>${escapeHTML(r.val)}</span></div>`).join('')}</div></section>`;
@@ -886,10 +886,39 @@
   /**
    * Setup Template Gallery in Design Tab
    */
+  let activeTemplateGroup = 'all';
+  function renderTemplateFilters() {
+    const bar = getEl('templateFilterBar');
+    if (!bar || !TPL.TEMPLATE_GROUPS) return;
+    bar.replaceChildren();
+    TPL.TEMPLATE_GROUPS.forEach(group => {
+      const count = group.id === 'all' ? Object.keys(TEMPLATES).length : Object.values(TEMPLATES).filter(t => t.group === group.id).length;
+      if (!count) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-secondary btn-sm';
+      btn.textContent = `${group.name} (${count})`;
+      btn.setAttribute('aria-pressed', String(group.id === activeTemplateGroup));
+      btn.addEventListener('click', () => {
+        activeTemplateGroup = group.id;
+        renderTemplateFilters();
+        applyTemplateFilter();
+      });
+      bar.appendChild(btn);
+    });
+  }
+  function applyTemplateFilter() {
+    document.querySelectorAll('#templateGalleryGrid .template-card').forEach(card => {
+      const tmpl = TEMPLATES[card.dataset.templateId];
+      card.hidden = activeTemplateGroup !== 'all' && tmpl && tmpl.group !== activeTemplateGroup && card.dataset.templateId !== resumeData.template;
+    });
+  }
+
   function setupTemplateGallery() {
     const galleryGrid = getEl('templateGalleryGrid');
     if (!galleryGrid) return;
     galleryGrid.innerHTML = '';
+    renderTemplateFilters();
 
     const templateKeys = Object.keys(TEMPLATES);
     templateKeys.forEach(key => {
@@ -935,6 +964,7 @@
 
       galleryGrid.appendChild(card);
     });
+    applyTemplateFilter();
   }
 
   /**
@@ -1033,10 +1063,25 @@
       input.value = TPL.getSectionTitle(resumeData, resumeData.template, key);
       input.placeholder = TPL.getSectionLabel(resumeData.template, key);
     });
-    const labels = TPL.getSkillLabels(resumeData.template);
+    ['certifications', 'achievements', 'volunteering', 'languages'].forEach(key => {
+      const text = TPL.getSectionLabel(resumeData.template, key);
+      const header = document.querySelector(`#sec-${key} .accordion-header > span`);
+      if (header && header.lastChild && header.lastChild.nodeType === 3) header.lastChild.textContent = ' ' + text;
+      const option = document.querySelector(`#optionalSectionSelect option[value="${key}"]`);
+      if (option) option.textContent = text;
+    });
+    const labels = TPL.getSkillLabels(resumeData.template, resumeData);
+    const defaults = TPL.getSkillLabels(resumeData.template);
+    const custom = resumeData.skillLabels || {};
     Object.keys(labels).forEach(key => {
       const label = getEl('skill-label-' + key);
       if (label) label.textContent = labels[key];
+      const input = document.querySelector(`.skill-label-input[data-skill="${key}"]`);
+      if (input) {
+        if (document.activeElement !== input) input.value = custom[key] || '';
+        input.placeholder = defaults[key];
+        input.setAttribute('aria-label', `Row label, currently ${labels[key]}`);
+      }
     });
   }
 
@@ -1518,18 +1563,9 @@
       ? resumeData.design.sectionOrder
       : ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
 
-    const labels = {
-      summary: 'Professional Summary',
-      experience: 'Work Experience',
-      education: 'Education',
-      projects: 'Key Projects & Portfolio',
-      skills: 'Skills & Competencies',
-      certifications: 'Certifications & Credentials',
-      achievements: 'Honors & Achievements',
-      volunteering: 'Community & Leadership',
-      languages: 'Languages',
-      academic: 'Academic & Research (CV)'
-    };
+    const labels = { academic: 'Academic & Research (CV)' };
+    ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => { labels[key] = TPL.getSectionTitle(resumeData, resumeData.template, key); });
+    ['certifications', 'achievements', 'volunteering', 'languages'].forEach(key => { labels[key] = TPL.getSectionLabel(resumeData.template, key); });
 
     order.forEach((key, index) => {
       if (!labels[key]) return;
@@ -1543,13 +1579,13 @@
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
           <label class="checkbox-label" style="font-size: 0.85rem; font-weight: 600; color: var(--text-heading);">
             <input type="checkbox" class="chk-section-vis" data-key="${key}" ${isVis ? 'checked' : ''}>
-            <span>${labels[key]}</span>
+            <span>${escapeHTML(labels[key])}</span>
           </label>
           <div style="display: flex; gap: 0.3rem;">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="order-up" data-index="${index}" title="Move Up" aria-label="Move ${labels[key]} up" ${index === 0 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="order-up" data-index="${index}" title="Move Up" aria-label="Move ${escapeHTML(labels[key])} up" ${index === 0 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
               <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="order-down" data-index="${index}" title="Move Down" aria-label="Move ${labels[key]} down" ${index === order.length - 1 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="order-down" data-index="${index}" title="Move Down" aria-label="Move ${escapeHTML(labels[key])} down" ${index === order.length - 1 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
               <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
             </button>
           </div>
@@ -1935,7 +1971,16 @@
     ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => {
       bindInput(key + 'TitleInput', v => { resumeData[key + 'Title'] = v.trim() ? v : TPL.getSectionLabel(resumeData.template, key); });
       const input = getEl(key + 'TitleInput');
-      if (input) input.addEventListener('blur', updateTemplateFieldLabels);
+      if (input) input.addEventListener('blur', () => { updateTemplateFieldLabels(); renderSectionOrderControls(); });
+    });
+
+    document.querySelectorAll('.skill-label-input').forEach(input => {
+      input.addEventListener('input', () => {
+        if (!resumeData.skillLabels || typeof resumeData.skillLabels !== 'object') resumeData.skillLabels = {};
+        resumeData.skillLabels[input.dataset.skill] = input.value;
+        renderResumePreview();
+      });
+      input.addEventListener('blur', updateTemplateFieldLabels);
     });
 
     bindInput('skillLanguages', v => { resumeData.skills.languages = v; });

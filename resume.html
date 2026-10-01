@@ -277,24 +277,37 @@
               </button>
               <div class="accordion-content" id="sec-content-skills">
                 <div class="form-group section-title-group"><label class="form-label text-sm" for="skillsTitleInput">Section heading on resume</label><input type="text" id="skillsTitleInput" class="form-control section-title-input" data-section="skills" maxlength="60" autocomplete="off"></div>
+                <p class="form-hint" id="skillLabelHint">Each row prints as “Label: skills”. Rename a label in the short box, or leave it empty to use the template’s wording.</p>
                 <div class="form-group">
-                  <label class="form-label" id="skill-label-languages" for="skillLanguages">Core Competencies / Domain Expertise</label>
-                  <input type="text" id="skillLanguages" class="form-control" placeholder="e.g. Project Management, Budgeting, Risk Assessment, Lean Six Sigma">
+                  <label class="form-label" id="skill-label-languages" for="skillLanguages">Skills</label>
+                  <div class="skill-row-inputs">
+                    <input type="text" id="skillLabelLanguages" class="form-control skill-label-input" data-skill="languages" maxlength="40" autocomplete="off" aria-describedby="skillLabelHint">
+                    <input type="text" id="skillLanguages" class="form-control" placeholder="e.g. Project Management, Budgeting, Risk Assessment, Lean Six Sigma">
+                  </div>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" id="skill-label-frameworks" for="skillFrameworks">Tools, Software & Platforms</label>
-                  <input type="text" id="skillFrameworks" class="form-control" placeholder="e.g. Jira, Smartsheet, Microsoft Project, SAP ERP, Salesforce">
+                  <label class="form-label" id="skill-label-frameworks" for="skillFrameworks">Skills</label>
+                  <div class="skill-row-inputs">
+                    <input type="text" id="skillLabelFrameworks" class="form-control skill-label-input" data-skill="frameworks" maxlength="40" autocomplete="off" aria-describedby="skillLabelHint">
+                    <input type="text" id="skillFrameworks" class="form-control" placeholder="e.g. Jira, Smartsheet, Microsoft Project, SAP ERP, Salesforce">
+                  </div>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" id="skill-label-tools" for="skillTools">Technical & Data Skills</label>
-                  <input type="text" id="skillTools" class="form-control" placeholder="e.g. Advanced Excel, SQL, Tableau, Power BI, Google Workspace">
+                  <label class="form-label" id="skill-label-tools" for="skillTools">Skills</label>
+                  <div class="skill-row-inputs">
+                    <input type="text" id="skillLabelTools" class="form-control skill-label-input" data-skill="tools" maxlength="40" autocomplete="off" aria-describedby="skillLabelHint">
+                    <input type="text" id="skillTools" class="form-control" placeholder="e.g. Advanced Excel, SQL, Tableau, Power BI, Google Workspace">
+                  </div>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                  <label class="form-label" id="skill-label-other" for="skillOther">Methodologies & Standards</label>
-                  <input type="text" id="skillOther" class="form-control" placeholder="e.g. Agile/Scrum, PMP Candidate, Six Sigma Green Belt">
+                  <label class="form-label" id="skill-label-other" for="skillOther">Skills</label>
+                  <div class="skill-row-inputs">
+                    <input type="text" id="skillLabelOther" class="form-control skill-label-input" data-skill="other" maxlength="40" autocomplete="off" aria-describedby="skillLabelHint">
+                    <input type="text" id="skillOther" class="form-control" placeholder="e.g. Agile/Scrum, PMP Candidate, Six Sigma Green Belt">
+                  </div>
                 </div>
               </div>
             </div>
@@ -451,10 +464,11 @@
             <i class="fa-solid fa-layer-group" aria-hidden="true" style="color: var(--primary);"></i> 15 ATS-Friendly Templates
           </h3>
           <p class="text-sm text-muted" style="margin-bottom: 1rem;">
-            Switching templates preserves all your entered content, section ordering, and saved drafts.
+            Every template is a single column with standard fonts and real text. Switching keeps all your content.
           </p>
 
           <!-- Template Cards Gallery -->
+          <div id="templateFilterBar" class="template-filter-bar" role="group" aria-label="Filter templates by audience"></div>
           <div id="templateGalleryGrid" class="template-gallery-grid">
             <!-- Dynamically populated from templates.js with SVG thumbnails -->
           </div>
@@ -554,7 +568,7 @@
 
           <div style="display: flex; flex-direction: column; gap: 0.75rem;">
             <button type="button" id="btnDownloadPDF" class="btn btn-primary btn-block btn-lg" title="Download text-based vector PDF">
-              <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Download PDF (<span class="export-page-size-label">A4</span>)
+              <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> <span>Download PDF (<span class="export-page-size-label">A4</span>)</span>
             </button>
 
             <div class="form-row-2">

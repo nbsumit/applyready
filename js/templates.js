@@ -17,6 +17,7 @@
   const TEMPLATES = {
     'classic-professional': {
       id: 'classic-professional',
+      group: 'general',
       name: 'Classic Professional',
       category: 'Broad Professional',
       badge: 'Default',
@@ -87,6 +88,7 @@
 
     'modern-minimal': {
       id: 'modern-minimal',
+      group: 'general',
       name: 'Modern Minimal',
       category: 'Broad Professional',
       badge: 'Clean Sans',
@@ -152,6 +154,7 @@
 
     'graduate-early-career': {
       id: 'graduate-early-career',
+      group: 'students',
       name: 'Graduate / Early Career',
       category: 'Students & Entry Level',
       badge: 'Entry Level',
@@ -225,6 +228,7 @@
 
     'experienced-professional': {
       id: 'experienced-professional',
+      group: 'senior',
       name: 'Experienced Professional',
       category: 'Senior & Executive',
       badge: 'Executive',
@@ -297,6 +301,7 @@
 
     'project-focused': {
       id: 'project-focused',
+      group: 'tech',
       name: 'Project Focused',
       category: 'Technical & Portfolio',
       badge: 'Portfolio',
@@ -366,6 +371,7 @@
 
     'career-transition': {
       id: 'career-transition',
+      group: 'general',
       name: 'Career Transition',
       category: 'Career Change',
       badge: 'Pivot',
@@ -433,6 +439,7 @@
 
     'compact-professional': {
       id: 'compact-professional',
+      group: 'general',
       name: 'Compact Professional',
       category: 'Condensed Single-Page',
       badge: 'Dense',
@@ -508,6 +515,7 @@
 
     'academic-cv': {
       id: 'academic-cv',
+      group: 'specialist',
       name: 'Academic / Research CV',
       category: 'Academia & Research',
       badge: 'Multi-Page CV',
@@ -578,6 +586,7 @@
 
     'ivy-classic': {
       id: 'ivy-classic',
+      group: 'students',
       name: 'Ivy Classic',
       category: 'Students & Professionals',
       badge: 'Traditional',
@@ -596,6 +605,7 @@
 
     'software-engineer': {
       id: 'software-engineer',
+      group: 'tech',
       name: 'Software Engineer',
       category: 'Technology',
       badge: 'Tech',
@@ -615,6 +625,7 @@
 
     'campus-fresher': {
       id: 'campus-fresher',
+      group: 'students',
       name: 'Campus Placement / Fresher',
       category: 'Students & Entry Level',
       badge: 'Fresher',
@@ -634,6 +645,7 @@
 
     'ats-strict': {
       id: 'ats-strict',
+      group: 'general',
       name: 'ATS Plain (Maximum Compatibility)',
       category: 'Maximum Compatibility',
       badge: 'Safest',
@@ -651,6 +663,7 @@
 
     'executive-impact': {
       id: 'executive-impact',
+      group: 'senior',
       name: 'Executive Impact',
       category: 'Senior & Executive',
       badge: 'Leadership',
@@ -670,6 +683,7 @@
 
     'healthcare-licensed': {
       id: 'healthcare-licensed',
+      group: 'specialist',
       name: 'Healthcare & Licensed Roles',
       category: 'Healthcare & Licensed',
       badge: 'Licensed',
@@ -689,6 +703,7 @@
 
     'finance-consulting': {
       id: 'finance-consulting',
+      group: 'specialist',
       name: 'Finance & Consulting',
       category: 'Finance & Consulting',
       badge: 'One Page',
@@ -726,6 +741,16 @@
     metaColor: [0.35, 0.4, 0.45],
     docxRule: { val: 'single', sz: 6, color: 'CBD5E1' }
   };
+
+  // Gallery filter groups, in display order.
+  const TEMPLATE_GROUPS = [
+    { id: 'all', name: 'All' },
+    { id: 'general', name: 'General' },
+    { id: 'students', name: 'Students & freshers' },
+    { id: 'tech', name: 'Tech' },
+    { id: 'senior', name: 'Senior & executive' },
+    { id: 'specialist', name: 'Specialist roles' }
+  ];
 
   const SECTION_LABELS = {
     summary: 'Professional Summary',
@@ -784,9 +809,18 @@
     return custom || SECTION_LABELS[key];
   }
 
-  function getSkillLabels(id) {
+  // Row labels for the four skills fields: the person's own wording first,
+  // then the template's, then the neutral defaults.
+  function getSkillLabels(id, data) {
     const tmpl = getTemplate(id);
-    return Object.assign({}, SKILL_LABELS, tmpl.skillLabels || {});
+    const labels = Object.assign({}, SKILL_LABELS, tmpl.skillLabels || {});
+    const custom = data && data.skillLabels;
+    if (custom && typeof custom === 'object') {
+      Object.keys(SKILL_LABELS).forEach(key => {
+        if (typeof custom[key] === 'string' && custom[key].trim()) labels[key] = custom[key].trim();
+      });
+    }
+    return labels;
   }
 
   function resolveTemplateId(data, options) {
@@ -863,6 +897,7 @@
 
   return {
     TEMPLATES,
+    TEMPLATE_GROUPS,
     DEFAULT_STYLE,
     SECTION_LABELS,
     SKILL_LABELS,

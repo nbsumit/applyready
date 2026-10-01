@@ -475,7 +475,7 @@
       style: api ? api.getTemplateStyle(templateId) : fallbackStyle,
       label: key => api ? api.getSectionLabel(templateId, key) : fallbackLabels[key],
       title: key => api ? api.getSectionTitle(resumeData, templateId, key) : ((resumeData[key + 'Title'] || '').trim() || fallbackLabels[key]),
-      skillLabels: api ? api.getSkillLabels(templateId) : { languages: 'Core Competencies', frameworks: 'Tools & Platforms', tools: 'Technical & Data Skills', other: 'Professional Skills' }
+      skillLabels: api ? api.getSkillLabels(templateId, resumeData) : { languages: 'Core Competencies', frameworks: 'Tools & Platforms', tools: 'Technical & Data Skills', other: 'Professional Skills' }
     };
   }
 

@@ -219,7 +219,7 @@
     const style = api ? api.getTemplateStyle(templateId) : { headerAlign: 'left', nameCase: 'upper', headingHex: '0F172A', linkHex: '2563EB', metaHex: '64748B', datePlacement: 'right', headingRule: 'line', headerRule: 'single', headerRuleHex: '1A1A1A', contactSeparator: '•', docxRule: { val: 'single', sz: 6, color: 'CBD5E1' } };
     const label = key => api ? api.getSectionLabel(templateId, key) : FALLBACK_LABELS[key];
     const title = key => api ? api.getSectionTitle(resumeData, templateId, key) : (clean(resumeData[key + 'Title']) || FALLBACK_LABELS[key]);
-    const skillLabels = api ? api.getSkillLabels(templateId) : { languages: 'Core Competencies', frameworks: 'Tools & Platforms', tools: 'Technical & Data Skills', other: 'Professional Skills' };
+    const skillLabels = api ? api.getSkillLabels(templateId, resumeData) : { languages: 'Core Competencies', frameworks: 'Tools & Platforms', tools: 'Technical & Data Skills', other: 'Professional Skills' };
     const bulletLines = pdf ? pdf.bulletLines : text => String(text || '').split(/\r?\n|\r/).map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
     const optionalEntries = pdf ? pdf.optionalEntries : () => [];
 
