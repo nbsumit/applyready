@@ -327,6 +327,13 @@
 
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const sheet = getEl('resumeSheet'); if (sheet) visualPageCount = renderPaginatedPreview(sheet, pdfPageCount); updatePreviewScale(); });
     window.addEventListener('resize', () => { updatePreviewScale(); scaleTemplateModal(); });
+    // Without device saving, a reload or closed tab would silently discard
+    // the resume. Warn only when there is unsaved, non-sample work.
+    window.addEventListener('beforeunload', e => {
+      if (autoSaveDraft || !isDirty || isDocumentEmpty()) return;
+      e.preventDefault();
+      e.returnValue = '';
+    });
     window.addEventListener('orientationchange', () => setTimeout(updatePreviewScale, 150));
   }
 
@@ -2282,6 +2289,7 @@
         const a = document.createElement('a');
         a.href = url;
         a.download = downloadName('Resume_Backup.json');
+        isDirty = false;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
       });
@@ -2754,6 +2762,7 @@
       const a = document.createElement('a');
       a.href = url;
       a.download = downloadName('Resume.pdf');
+      isDirty = false;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -2811,6 +2820,7 @@
       const a = document.createElement('a');
       a.href = url;
       a.download = downloadName('Resume.docx');
+      isDirty = false;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -2840,6 +2850,7 @@
     const a = document.createElement('a');
     a.href = url;
     a.download = downloadName('Resume.txt');
+    isDirty = false;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

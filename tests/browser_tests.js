@@ -228,6 +228,18 @@ const server = http.createServer((req,res) => {
   }
   ok(!await overflow(), 'Mobile export controls fit a 320px screen');
   await page.screenshot({path:path.join(output,'resume-mobile-export.png'),fullPage:true});
+  // Unsaved work without device saving is protected from an accidental close.
+  for (const [saveDraft, expected] of [[false, true], [true, false]]) {
+    const guarded = await context.newPage();
+    await guarded.addInitScript(enabled => { try { localStorage.setItem('applyready_draft_enabled', String(enabled)); localStorage.removeItem('applyready_resume_draft'); } catch (e) {} }, saveDraft);
+    await guarded.goto(`${origin}/resume.html`);
+    await guarded.locator('#fullName').fill('Unsaved Person');
+    let warned = false;
+    guarded.on('dialog', dialog => { if (dialog.type() === 'beforeunload') warned = true; return dialog.accept(); });
+    await guarded.close({ runBeforeUnload: true });
+    await new Promise(resolve => setTimeout(resolve, 300));
+    ok(warned === expected, saveDraft ? 'No leave warning when the draft is saved on the device' : 'Closing with unsaved resume work asks for confirmation');
+  }
   console.log('✓ Draft recovery, malformed imports, all templates, PDF/Word/text downloads, and modal focus');
 
   await visit('index.html');await page.setViewportSize({width:390,height:844});
