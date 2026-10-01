@@ -534,7 +534,26 @@
    * Supports every catalogue template, A4 and Letter page sizes,
    * customizable section ordering, visibility, and density.
    */
+  // Invisible characters carried over when pasting from PDFs, Word or web
+  // pages (control codes, zero-width marks, byte-order marks) are dropped and
+  // decomposed accents are composed (NFC). Visible text is never altered.
+  function cleanInvisible(value) {
+    if (typeof value === 'string') {
+      return value.normalize('NFC')
+        .replace(/[\u000B\u000C\u0085\u2028\u2029]/g, ' ')
+        .replace(/[\u0000-\u0008\u000E-\u001F\u007F\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '');
+    }
+    if (Array.isArray(value)) return value.map(cleanInvisible);
+    if (value && typeof value === 'object') {
+      const out = {};
+      for (const key of Object.keys(value)) out[key] = cleanInvisible(value[key]);
+      return out;
+    }
+    return value;
+  }
+
   function generateResumePDF(resumeData, options = {}) {
+    resumeData = cleanInvisible(resumeData || {});
     const pageSize = (options.pageSize || (resumeData.design && resumeData.design.pageSize) || 'a4').toLowerCase();
     const isLetter = pageSize === 'letter';
     const pageWidth = isLetter ? LETTER_WIDTH : A4_WIDTH;
@@ -945,6 +964,7 @@
    * Formats the resume cleanly for ATS text parsing and easy clipboard reuse.
    */
   function generateResumeText(resumeData, options = {}) {
+    resumeData = cleanInvisible(resumeData || {});
     const layout = resolveLayout(resumeData, options);
     const lines = [];
     const p = resumeData.personal || {};
@@ -1057,6 +1077,7 @@
     sanitizeUrl,
     bulletLines,
     optionalEntries,
+    cleanInvisible,
     A4_WIDTH,
     A4_HEIGHT,
     LETTER_WIDTH,

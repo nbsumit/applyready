@@ -207,4 +207,16 @@ check('Bullet-only experience entries are kept in every format', () => {
   assert(pdf.generateResumeText(d).includes('* BULLET_ONLY_MARKER'));
   assert(wordXml(docx.generateResumeDOCX(d)).includes('BULLET_ONLY_MARKER'));
 });
+check('Invisible pasted characters do not force the browser-print fallback', () => {
+  const d = resumeFixture();
+  d.personal.fullName = 'Rene\u0301 Lee\u200b';
+  d.summary = 'Copied\u0001 from\u000c a PDF\ufeff with\u2028line separators';
+  const doc = pdf.generateResumePDF(d);
+  const text = doc.pages.flatMap(page => page.elements).filter(el => el.type === 'text').map(el => el.text).join(' ');
+  assert(text.includes('RENÉ LEE'));
+  assert(text.includes('Copied from a PDF with line separators'));
+  assert(pdf.generateResumeText(d).includes('RENÉ LEE'));
+  d.personal.fullName = 'Zoë 李';
+  assert.throws(() => pdf.generateResumePDF(d), e => e.code === 'UNSUPPORTED_PDF_TEXT', 'Visible non-Latin text must still use browser print');
+});
 console.log(`\n${checks} behavior regression checks passed.`);
