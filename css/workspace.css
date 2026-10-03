@@ -464,11 +464,12 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 .ats-resume-sheet.heading-rule-line .resume-section-title { border-bottom: .6pt solid var(--resume-rule-color, #a6b3bf); }
 .ats-resume-sheet.heading-rule-thick .resume-section-title { border-bottom: 1.4pt solid var(--resume-rule-color, #0f2a54); }
 .ats-resume-sheet.heading-rule-none .resume-section-title { border-bottom: 0; }
-.ats-resume-sheet .resume-entry-meta { font-weight: 400; font-style: italic; font-size: 9pt; color: var(--resume-meta-color, #5a6673); }
+.ats-resume-sheet .resume-entry-meta { font-weight: 400; font-style: italic; font-size: 9pt; color: var(--resume-meta-color, #5a6673); margin-left: auto; text-align: right; }
 .ats-resume-sheet .resume-entry-tech { font-weight: 400; font-style: italic; color: var(--resume-meta-color, #5a6673); }
 .ats-resume-sheet .resume-entry-header a, .ats-resume-sheet .resume-contact-item a { color: var(--resume-link-color, #1d4ed8); font-weight: 400; text-decoration: none; }
 .ats-resume-sheet.dates-below .resume-entry-header { display: block; }
 .ats-resume-sheet.dates-below .resume-entry-header > span { display: block; }
+.ats-resume-sheet.dates-below .resume-entry-meta { margin-left: 0; text-align: left; }
 .ats-resume-sheet .resume-contact-sep { color: #94a3b8; margin: 0 .35rem; }
 .ats-resume-sheet .resume-summary { margin: 0; line-height: 1.4; }
 .ats-resume-sheet .resume-list-entry { padding-left: 12pt; text-indent: -9pt; }

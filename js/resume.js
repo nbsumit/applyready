@@ -294,6 +294,9 @@
    * Migrate any v1 or partial data safely into v2
    */
   function migrateResumeSchema(raw) {
+    if (SCHEMA && typeof SCHEMA.migrate === 'function') {
+      return SCHEMA.migrate(raw);
+    }
     if (typeof ApplyReadyTemplates !== 'undefined' && ApplyReadyTemplates.migrateResumeSchema) {
       return ApplyReadyTemplates.migrateResumeSchema(raw);
     }
@@ -459,7 +462,7 @@
   function renderResumeDataToHTML(data, templateId) {
     const p = data.personal || {};
     const style = TPL.getTemplateStyle(templateId);
-    const pdfApi = typeof window !== 'undefined' && window.ApplyReadyPDF;
+    const pdfApi = (typeof window !== 'undefined' && window.ApplyReadyPDF) || (typeof require === 'function' ? require('./pdf-engine.js') : null);
     const bulletLines = pdfApi ? pdfApi.bulletLines : text => String(text || '').split(/\r?\n|\r/).map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
     const optionalEntries = pdfApi ? pdfApi.optionalEntries : () => [];
     const vis = data.sectionVisibility || {};
@@ -467,7 +470,10 @@
     const t = value => (typeof value === 'string' ? value.trim() : '');
     const heading = text => `<h3 class="resume-section-title">${escapeHTML(text)}</h3>`;
     const bulletList = items => items.length ? `<ul class="resume-bullets">${items.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>` : '';
-    const entryHeader = (left, right) => `<div class="resume-entry-header"><span>${left}</span>${right ? `<span class="resume-entry-meta">${right}</span>` : ''}</div>`;
+    const entryHeader = (left, right) => {
+      if (!left && !right) return '';
+      return `<div class="resume-entry-header">${left ? `<span>${left}</span>` : ''}${right ? `<span class="resume-entry-meta">${right}</span>` : ''}</div>`;
+    };
 
     const contactItems = [];
     if (t(p.phone)) contactItems.push({ text: t(p.phone), href: 'tel:' + t(p.phone).replace(/[^\d+]/g, '') });
@@ -486,32 +492,38 @@
       sections.summary = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'summary'))}<p class="resume-summary">${escapeHTML(summaryText)}</p></section>`;
     }
 
-    const exp = (data.experience || []).filter(x => x && (t(x.role) || t(x.company) || bulletLines(x.bulletsText).length));
+    const exp = (data.experience || []).filter(x => x && (t(x.role) || t(x.company) || t(x.duration) || t(x.location) || bulletLines(x.bulletsText).length));
     if (exp.length && visible('experience')) {
       const items = exp.map(item => `<div class="resume-entry">${entryHeader(escapeHTML([t(item.role), t(item.company)].filter(Boolean).join(' | ')), escapeHTML([t(item.duration), t(item.location)].filter(Boolean).join(' • ')))}${bulletList(bulletLines(item.bulletsText))}</div>`).join('');
       sections.experience = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'experience'))}<div>${items}</div></section>`;
     }
 
-    const edu = (data.education || []).filter(x => x && (t(x.degree) || t(x.institution)));
+    const edu = (data.education || []).filter(x => x && (t(x.degree) || t(x.institution) || t(x.duration) || t(x.location) || t(x.score)));
     if (edu.length && visible('education')) {
       const items = edu.map(item => `<div class="resume-entry">${entryHeader(escapeHTML([t(item.degree), t(item.institution)].filter(Boolean).join(' — ')), escapeHTML([t(item.duration), t(item.location), t(item.score)].filter(Boolean).join(' • ')))}</div>`).join('');
       sections.education = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'education'))}<div>${items}</div></section>`;
     }
 
-    const proj = (data.projects || []).filter(x => x && (t(x.name) || t(x.tech) || bulletLines(x.bulletsText).length));
+    const proj = (data.projects || []).filter(x => x && (t(x.name) || t(x.tech) || t(x.link) || bulletLines(x.bulletsText).length));
     if (proj.length && visible('projects')) {
       const items = proj.map(item => {
         const href = sanitizeHref(t(item.link));
         const link = t(item.link) ? (href !== '#' ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(t(item.link))}</a>` : escapeHTML(t(item.link))) : '';
-        const tech = t(item.tech) ? ` <span class="resume-entry-tech">| ${escapeHTML(t(item.tech))}</span>` : '';
-        return `<div class="resume-entry">${entryHeader(escapeHTML(t(item.name) || 'Project') + tech, link)}${bulletList(bulletLines(item.bulletsText))}</div>`;
+        const name = t(item.name);
+        const tech = t(item.tech);
+        const titleHtml = name
+          ? escapeHTML(name) + (tech ? ` <span class="resume-entry-tech">| ${escapeHTML(tech)}</span>` : '')
+          : (tech ? escapeHTML(tech) : '');
+        return `<div class="resume-entry">${entryHeader(titleHtml, link)}${bulletList(bulletLines(item.bulletsText))}</div>`;
       }).join('');
       sections.projects = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'projects'))}<div>${items}</div></section>`;
     }
 
     const s = data.skills || {};
     const skillLabels = TPL.getSkillLabels(templateId, data);
-    const skillRows = ['languages', 'frameworks', 'tools', 'other'].filter(key => t(s[key])).map(key => ({ label: skillLabels[key], val: t(s[key]) }));
+    const skillRows = Array.isArray(s.categories)
+      ? s.categories.filter(c => c && t(c.name) && t(c.items)).map(c => ({ label: t(c.name).replace(/:\s*$/, ''), val: t(c.items) }))
+      : ['languages', 'frameworks', 'tools', 'other'].filter(key => t(s[key])).map(key => ({ label: String(skillLabels[key] || '').replace(/:\s*$/, ''), val: t(s[key]) }));
     if (skillRows.length && visible('skills')) {
       sections.skills = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'skills'))}<div>${skillRows.map(r => `<div class="resume-skills-row"><span class="skills-category">${escapeHTML(r.label)}: </span><span>${escapeHTML(r.val)}</span></div>`).join('')}</div></section>`;
     }
@@ -537,7 +549,7 @@
       <header class="resume-header">
         <h1 class="resume-name">${escapeHTML(style.nameCase === 'upper' ? name.toUpperCase() : name)}</h1>
         ${t(p.targetTitle) ? `<div class="resume-target-title">${escapeHTML(t(p.targetTitle))}</div>` : ''}
-        <div class="resume-contact-line">${contactHtml}</div>
+        ${contactHtml ? `<div class="resume-contact-line">${contactHtml}</div>` : ''}
       </header>
       <div>${orderedHtml}</div>
     `;
@@ -2340,6 +2352,10 @@
         }
 
         const reader = new FileReader();
+        reader.onerror = () => {
+          notify('Could not read the backup file from disk.', true);
+          fileImportInput.value = '';
+        };
         reader.onload = (event) => {
           try {
             const parsed = JSON.parse(event.target.result);
@@ -2902,6 +2918,7 @@
       sanitizeHref,
       isValidUrlFormat,
       generateReviewReport,
+      renderResumeDataToHTML,
       TEMPLATES
     };
   }

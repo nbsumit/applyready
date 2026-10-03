@@ -28,7 +28,8 @@ const server = http.createServer((req,res) => {
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const origin=`http://127.0.0.1:${server.address().port}`;
-  const browser=await chromium.launch({headless:true, ...(process.env.BROWSER_EXECUTABLE_PATH ? {executablePath:process.env.BROWSER_EXECUTABLE_PATH} : {}), args:['--no-sandbox','--disable-dev-shm-usage']});
+  const defaultBrowser = process.env.BROWSER_EXECUTABLE_PATH || (process.platform === 'win32' && fs.existsSync('C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe') ? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe' : (process.platform === 'win32' && fs.existsSync('C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe') ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : undefined));
+  const browser=await chromium.launch({headless:true, ...(defaultBrowser ? {executablePath:defaultBrowser} : {}), args:['--no-sandbox','--disable-dev-shm-usage']});
   const errors=[], external=[];
   const context=await browser.newContext({viewport:{width:1440,height:1000},colorScheme:'light',acceptDownloads:true});
   await context.route('**/*', route=>{ const url=route.request().url(); if(url.startsWith(origin) || /^(blob:|data:)/.test(url)) return route.continue(); external.push(url); return route.abort(); });
@@ -146,7 +147,12 @@ const server = http.createServer((req,res) => {
   await page.setViewportSize({width:1440,height:1000});await page.locator('#tabReview').click();
   for(const [button,ext] of [['btnDownloadDOCX','docx'],['btnDownloadText','txt']]) {
     const download=page.waitForEvent('download');await page.locator('#'+button).click();const file=await download;const target=path.join(output,`resume.${ext}`);await file.saveAs(target);
-    if(ext==='docx'){execFileSync('unzip',['-t',target]);const xml=execFileSync('unzip',['-p',target,'word/document.xml'],{encoding:'utf8'});ok(xml.includes('GRANT_MARKER') && xml.includes('VOLUNTEER_MARKER'),'Downloaded Word archive retains all optional content');}
+    if(ext==='docx'){
+      try { execFileSync('unzip',['-t',target],{stdio:['pipe','pipe','ignore']}); } catch(e){ execFileSync('tar',['-tf',target],{stdio:['pipe','pipe','ignore']}); }
+      let xml;
+      try { xml=execFileSync('unzip',['-p',target,'word/document.xml'],{encoding:'utf8',stdio:['pipe','pipe','ignore']}); } catch(e){ xml=execFileSync('tar',['-xf',target,'-O','word/document.xml'],{encoding:'utf8'}); }
+      ok(xml.includes('GRANT_MARKER') && xml.includes('VOLUNTEER_MARKER'),'Downloaded Word archive retains all optional content');
+    }
     else ok(fs.readFileSync(target,'utf8').includes('GRANT_MARKER'),'Downloaded plain text retains all optional content');
   }
   // Unicode uses browser print. It must print the exact same paginated pages shown on screen.

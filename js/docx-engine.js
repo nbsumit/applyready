@@ -270,7 +270,7 @@
     }
 
     const p = resumeData.personal || {};
-    const fullName = clean(p.fullName) || 'Resume';
+    const fullName = clean(p.fullName) || 'YOUR NAME';
     const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
     // 1. [Content_Types].xml
@@ -409,15 +409,7 @@
     const metaProps = `<w:i/><w:sz w:val="${metaSz}"/><w:color w:val="${style.metaHex}"/>`;
     const strongProps = `<w:b/><w:sz w:val="${baseSzVal}"/><w:color w:val="0F172A"/>`;
 
-    // Header: Full Name
-    bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${run(fullName)}</w:p>`);
-
-    // Target Title / Headline
-    if (clean(p.targetTitle)) {
-      bodyXml.push(`<w:p><w:pPr><w:jc w:val="${headerAlign}"/><w:spacing w:before="0" w:after="80"/></w:pPr>${run(clean(p.targetTitle), `<w:i/><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`)}</w:p>`);
-    }
-
-    // Contact Information Line
+    // Header
     const contactParts = [];
     if (clean(p.phone)) contactParts.push({ text: clean(p.phone) });
     if (clean(p.email)) contactParts.push({ text: clean(p.email), rId: registerHyperlink('mailto:' + clean(p.email)) });
@@ -427,13 +419,26 @@
       if (link) contactParts.push({ text: link.replace(/^https?:\/\//i, '').replace(/\/$/, ''), rId: registerHyperlink(link) });
     }
 
-    if (contactParts.length > 0) {
+    const hasContact = contactParts.length > 0;
+    const hasTargetTitle = Boolean(clean(p.targetTitle));
+    const headerBorder = style.headerRule === 'none' ? ''
+      : `<w:pBdr><w:bottom w:val="${style.headerRule === 'double' ? 'double' : 'single'}" w:sz="${style.headerRule === 'double' ? 6 : Math.round((style.headerRuleWidth || 1.2) * 8)}" w:space="6" w:color="${style.headerRuleHex}"/></w:pBdr>`;
+    const headerAfterSpacing = style.headerRule === 'none' ? 120 : 160;
+
+    if (hasContact) {
+      bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${run(fullName)}</w:p>`);
+      if (hasTargetTitle) {
+        bodyXml.push(`<w:p><w:pPr><w:jc w:val="${headerAlign}"/><w:spacing w:before="0" w:after="80"/></w:pPr>${run(clean(p.targetTitle), `<w:i/><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`)}</w:p>`);
+      }
       const contactProps = `<w:sz w:val="${metaSz}"/>`;
       const contactRuns = contactParts.map((item, i) => (i ? run(`  ${style.contactSeparator}  `, `<w:sz w:val="${metaSz}"/><w:color w:val="94A3B8"/>`) : '')
         + (item.rId ? linkRun(item.text, item.rId, contactProps) : run(item.text, `${contactProps}<w:color w:val="334155"/>`))).join('');
-      const headerBorder = style.headerRule === 'none' ? ''
-        : `<w:pBdr><w:bottom w:val="${style.headerRule === 'double' ? 'double' : 'single'}" w:sz="${style.headerRule === 'double' ? 6 : Math.round((style.headerRuleWidth || 1.2) * 8)}" w:space="6" w:color="${style.headerRuleHex}"/></w:pBdr>`;
-      bodyXml.push(`<w:p><w:pPr>${headerBorder}<w:jc w:val="${headerAlign}"/><w:spacing w:before="0" w:after="${style.headerRule === 'none' ? 120 : 160}"/></w:pPr>${contactRuns}</w:p>`);
+      bodyXml.push(`<w:p><w:pPr>${headerBorder}<w:jc w:val="${headerAlign}"/><w:spacing w:before="0" w:after="${headerAfterSpacing}"/></w:pPr>${contactRuns}</w:p>`);
+    } else if (hasTargetTitle) {
+      bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="Title"/></w:pPr>${run(fullName)}</w:p>`);
+      bodyXml.push(`<w:p><w:pPr>${headerBorder}<w:jc w:val="${headerAlign}"/><w:spacing w:before="0" w:after="${headerAfterSpacing}"/></w:pPr>${run(clean(p.targetTitle), `<w:i/><w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`)}</w:p>`);
+    } else {
+      bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="Title"/>${headerBorder}<w:spacing w:before="0" w:after="${headerAfterSpacing}"/></w:pPr>${run(fullName)}</w:p>`);
     }
 
     // Helper: Add Section Header
@@ -445,12 +450,15 @@
     }
     // Entry heading with dates on a right tab stop, or on their own line.
     function addEntryHeading(titleRuns, meta, before) {
+      if (!titleRuns && !meta) return;
       if (datesInline && meta) {
         bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:tabs><w:tab w:val="right" w:pos="${textWidth}"/></w:tabs><w:spacing w:before="${before}" w:after="30"/></w:pPr>${titleRuns}<w:r><w:tab/></w:r>${run(meta, metaProps)}</w:p>`);
         return;
       }
-      bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="${before}" w:after="${meta ? 0 : 30}"/></w:pPr>${titleRuns}</w:p>`);
-      if (meta) bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="30"/></w:pPr>${run(meta, metaProps)}</w:p>`);
+      if (titleRuns) {
+        bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="${before}" w:after="${meta ? 0 : 30}"/></w:pPr>${titleRuns}</w:p>`);
+      }
+      if (meta) bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="${titleRuns ? 0 : before}" w:after="30"/></w:pPr>${run(meta, metaProps)}</w:p>`);
     }
 
     // Section Visibility & Order
@@ -469,46 +477,53 @@
       }
 
       if (secKey === 'experience') {
-        const entries = (resumeData.experience || []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || bulletLines(exp.bulletsText).length));
+        const entries = (resumeData.experience || []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || clean(exp.duration) || clean(exp.location) || bulletLines(exp.bulletsText).length));
         if (entries.length) {
           addSectionHeader(title('experience'));
           for (const exp of entries) {
             const role = clean(exp.role), comp = clean(exp.company);
-            const meta = [clean(exp.duration), clean(exp.location)].filter(Boolean).join(', ');
-            if (role || comp || meta) addEntryHeading(run(role, strongProps) + (comp ? run((role ? '  |  ' : '') + comp, `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : ''), meta, 120);
+            const meta = [clean(exp.duration), clean(exp.location)].filter(Boolean).join('  •  ');
+            const headingRuns = role
+              ? run(role, strongProps) + (comp ? run('  |  ' + comp, `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : '')
+              : (comp ? run(comp, strongProps) : '');
+            if (role || comp || meta) addEntryHeading(headingRuns, meta, 120);
             bulletLines(exp.bulletsText).forEach(line => addBullet(line));
           }
         }
       }
 
       if (secKey === 'education') {
-        const entries = (resumeData.education || []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution)));
+        const entries = (resumeData.education || []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution) || clean(edu.duration) || clean(edu.location) || clean(edu.score)));
         if (entries.length) {
           addSectionHeader(title('education'));
           for (const edu of entries) {
             const deg = clean(edu.degree), inst = clean(edu.institution);
-            const meta = [clean(edu.duration), clean(edu.location)].filter(Boolean).join(', ');
-            addEntryHeading(run(deg, strongProps) + (inst ? run((deg ? '  |  ' : '') + inst, `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : ''), meta, 100);
-            if (clean(edu.score)) bodyXml.push(`<w:p><w:pPr><w:spacing w:after="40"/></w:pPr>${run(clean(edu.score), `<w:sz w:val="${metaSz}"/><w:color w:val="475569"/>`)}</w:p>`);
+            const meta = [clean(edu.duration), clean(edu.location), clean(edu.score)].filter(Boolean).join('  •  ');
+            const headingRuns = deg
+              ? run(deg, strongProps) + (inst ? run('  —  ' + inst, `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : '')
+              : (inst ? run(inst, strongProps) : '');
+            if (headingRuns || meta) addEntryHeading(headingRuns, meta, 100);
           }
         }
       }
 
       if (secKey === 'projects') {
-        const entries = (resumeData.projects || []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || bulletLines(proj.bulletsText).length));
+        const entries = (resumeData.projects || []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || clean(proj.link) || bulletLines(proj.bulletsText).length));
         if (entries.length) {
           addSectionHeader(title('projects'));
           for (const proj of entries) {
-            const name = clean(proj.name) || 'Project';
+            const name = clean(proj.name);
             const tech = clean(proj.tech);
             const link = clean(proj.link);
             const linkRId = link ? registerHyperlink(link) : null;
-            const titleRuns = run(name, strongProps) + (tech ? run('  |  ' + tech, metaProps) : '');
+            const titleRuns = name
+              ? run(name, strongProps) + (tech ? run('  |  ' + tech, metaProps) : '')
+              : (tech ? run(tech, strongProps) : '');
             if (datesInline && link) {
               bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:tabs><w:tab w:val="right" w:pos="${textWidth}"/></w:tabs><w:spacing w:before="120" w:after="30"/></w:pPr>${titleRuns}<w:r><w:tab/></w:r>${linkRun(link, linkRId, `<w:sz w:val="${metaSz}"/>`)}</w:p>`);
-            } else {
-              bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="120" w:after="${link ? 0 : 30}"/></w:pPr>${titleRuns}</w:p>`);
-              if (link) bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="0" w:after="30"/></w:pPr>${linkRun(link, linkRId, `<w:sz w:val="${metaSz}"/>`)}</w:p>`);
+            } else if (titleRuns || link) {
+              if (titleRuns) bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="120" w:after="${link ? 0 : 30}"/></w:pPr>${titleRuns}</w:p>`);
+              if (link) bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="${titleRuns ? 0 : 120}" w:after="30"/></w:pPr>${linkRun(link, linkRId, `<w:sz w:val="${metaSz}"/>`)}</w:p>`);
             }
             bulletLines(proj.bulletsText).forEach(line => addBullet(line));
           }
@@ -518,8 +533,8 @@
       if (secKey === 'skills' && resumeData.skills) {
         const s = resumeData.skills;
         const entries = Array.isArray(s.categories)
-          ? s.categories.filter(c => c && clean(c.name) && clean(c.items)).map(c => ({ label: clean(c.name), text: clean(c.items) }))
-          : ['languages', 'frameworks', 'tools', 'other'].filter(key => clean(s[key])).map(key => ({ label: skillLabels[key], text: clean(s[key]) }));
+          ? s.categories.filter(c => c && clean(c.name) && clean(c.items)).map(c => ({ label: clean(c.name).replace(/:\s*$/, ''), text: clean(c.items) }))
+          : ['languages', 'frameworks', 'tools', 'other'].filter(key => clean(s[key])).map(key => ({ label: String(skillLabels[key] || '').replace(/:\s*$/, ''), text: clean(s[key]) }));
         if (entries.length > 0) {
           addSectionHeader(title('skills'));
           for (const item of entries) {
@@ -540,7 +555,7 @@
         const langs = optionalEntries(resumeData, 'languages');
         if (langs.length) {
           addSectionHeader(label('languages'));
-          bodyXml.push(`<w:p><w:pPr><w:spacing w:after="80"/></w:pPr>${run(langs.join(', '), bodyProps)}</w:p>`);
+          bodyXml.push(`<w:p><w:pPr><w:spacing w:after="80"/></w:pPr>${run(langs.join('  •  '), bodyProps)}</w:p>`);
         }
       }
 

@@ -88,7 +88,7 @@ check('No missing language proficiency is invented as Fluent',()=>{
 });
 check('Default sample uses the available first page without losing its final section', () => {
   const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../js/resume.js'), 'utf8');
-  const sample = require('node:vm').runInNewContext('(' + source.match(/const SAMPLE_DATA = ([\s\S]*?);\n\n  \/\/ Blank/)[1] + ')');
+  const sample = require('node:vm').runInNewContext('(' + source.match(/const SAMPLE_DATA = ([\s\S]*?);(?:\r?\n)+\s*\/\/ Blank/)[1] + ')');
   const document = pdf.generateResumePDF(schema.migrate(sample));
   assert.equal(document.getPageCount(), 1);
   const lines = document.pages[0].elements.filter(item => item.type === 'text');

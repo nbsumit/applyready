@@ -521,9 +521,9 @@
     const entries = [];
     if (skills && typeof skills === 'object') {
       if (Array.isArray(skills.categories)) {
-        for (const cat of skills.categories) if (cat && clean(cat.name) && clean(cat.items)) entries.push({ label: clean(cat.name), text: clean(cat.items) });
+        for (const cat of skills.categories) if (cat && clean(cat.name) && clean(cat.items)) entries.push({ label: clean(cat.name).replace(/:\s*$/, ''), text: clean(cat.items) });
       } else {
-        for (const key of ['languages', 'frameworks', 'tools', 'other']) if (clean(skills[key])) entries.push({ label: labels[key], text: clean(skills[key]) });
+        for (const key of ['languages', 'frameworks', 'tools', 'other']) if (clean(skills[key])) entries.push({ label: String(labels[key] || '').replace(/:\s*$/, ''), text: clean(skills[key]) });
       }
     }
     return entries;
@@ -730,17 +730,18 @@
     // the right (or on the next line when it does not fit or the template
     // keeps every detail in reading order).
     function renderEntryHeading(title, meta, gapAfterInline) {
+      if (!title && !meta) return;
       const titleSize = baseFontSize;
       const metaWidth = meta ? measureTextWidth(meta, metaSize, fontKey, 'italic') : 0;
-      const titleWidth = measureTextWidth(title, titleSize, fontKey, 'bold');
+      const titleWidth = title ? measureTextWidth(title, titleSize, fontKey, 'bold') : 0;
       const maxTitleWidth = metaWidth > 0 ? contentWidth - metaWidth - 12 : contentWidth;
       if (datesInline && titleWidth <= maxTitleWidth) {
-        doc.drawText(title, marginLeft, currentY + titleSize, { fontSize: titleSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
-        if (meta) doc.drawText(meta, pageWidth - marginRight - metaWidth, currentY + metaSize, { fontSize: metaSize, fontStyle: 'italic', color: metaColor });
+        if (title) doc.drawText(title, marginLeft, currentY + titleSize, { fontSize: titleSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
+        if (meta) doc.drawText(meta, pageWidth - marginRight - metaWidth, currentY + titleSize, { fontSize: metaSize, fontStyle: 'italic', color: metaColor });
         currentY += titleSize + gapAfterInline;
         return;
       }
-      const lines = splitTextToLines(title, titleSize, contentWidth - 8, fontKey, 'bold');
+      const lines = title ? splitTextToLines(title, titleSize, contentWidth - 8, fontKey, 'bold') : [];
       for (let i = 0; i < lines.length; i++) {
         if (i > 0) ensureSpace(titleSize + 2);
         doc.drawText(lines[i], marginLeft, currentY + titleSize, { fontSize: titleSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
@@ -801,7 +802,7 @@
     }
 
     function renderExperience() {
-      const experience = (Array.isArray(resumeData.experience) ? resumeData.experience : []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || bulletLines(exp.bulletsText).length));
+      const experience = (Array.isArray(resumeData.experience) ? resumeData.experience : []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || clean(exp.duration) || clean(exp.location) || bulletLines(exp.bulletsText).length));
       if (!experience.length) return;
 
       renderSectionHeader(layout.title('experience'));
@@ -818,7 +819,7 @@
     }
 
     function renderEducation() {
-      const education = (Array.isArray(resumeData.education) ? resumeData.education : []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution)));
+      const education = (Array.isArray(resumeData.education) ? resumeData.education : []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution) || clean(edu.duration) || clean(edu.location) || clean(edu.score)));
       if (!education.length) return;
 
       renderSectionHeader(layout.title('education'));
@@ -827,14 +828,14 @@
         ensureSpace(isCompact ? 18 : 24);
         const degreeInst = [clean(edu.degree), clean(edu.institution)].filter(Boolean).join('  —  ');
         const metaParts = [clean(edu.duration), clean(edu.location), clean(edu.score)].filter(Boolean).join('  •  ');
-        renderEntryHeading(degreeInst, metaParts, isCompact ? 4 : 6);
+        if (degreeInst || metaParts) renderEntryHeading(degreeInst, metaParts, isCompact ? 4 : 6);
         currentY += (isCompact ? 2 : 4);
       }
       currentY += (isCompact ? 2 : 4);
     }
 
     function renderProjects() {
-      const projects = (Array.isArray(resumeData.projects) ? resumeData.projects : []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || bulletLines(proj.bulletsText).length));
+      const projects = (Array.isArray(resumeData.projects) ? resumeData.projects : []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || clean(proj.link) || bulletLines(proj.bulletsText).length));
       if (!projects.length) return;
 
       renderSectionHeader(layout.title('projects'));
@@ -842,29 +843,35 @@
       for (const proj of projects) {
         ensureSpace(isCompact ? 20 : 28);
 
-        const projName = clean(proj.name) || 'Project';
-        const projFontSize = baseFontSize;
+        const projName = clean(proj.name);
         const techText = clean(proj.tech);
         const linkText = clean(proj.link);
+        const titleText = projName || techText;
+        const subTech = projName && techText ? '|  ' + techText : '';
+        const projFontSize = baseFontSize;
         const techFontSize = isCompact ? 8.5 : 9;
         const linkFontSize = 8.5;
-        const nameWidth = measureTextWidth(projName, projFontSize, fontKey, 'bold');
-        const techWidth = techText ? measureTextWidth('|  ' + techText, techFontSize, fontKey, 'italic') + 6 : 0;
-        const linkWidth = measureTextWidth(linkText, linkFontSize, fontKey);
-        const inlineWidth = nameWidth + techWidth + (linkText ? linkWidth + 12 : 0);
-        if (datesInline && inlineWidth <= contentWidth - 8) {
-          doc.drawText(projName, marginLeft, currentY + projFontSize, { fontSize: projFontSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
-          if (techText) doc.drawText('|  ' + techText, marginLeft + nameWidth + 6, currentY + techFontSize, { fontSize: techFontSize, fontStyle: 'italic', color: metaColor });
-          if (linkText) {
-            const linkX = pageWidth - marginRight - linkWidth;
-            doc.drawText(linkText, linkX, currentY + linkFontSize, { fontSize: linkFontSize, color: style.linkColor });
-            doc.addLink(linkX, currentY, linkWidth, linkFontSize + 2, linkText);
+
+        if (titleText || linkText) {
+          const nameWidth = titleText ? measureTextWidth(titleText, projFontSize, fontKey, 'bold') : 0;
+          const techWidth = subTech ? measureTextWidth(subTech, techFontSize, fontKey, 'italic') + 6 : 0;
+          const linkWidth = linkText ? measureTextWidth(linkText, linkFontSize, fontKey) : 0;
+          const inlineWidth = nameWidth + techWidth + (linkText ? linkWidth + 12 : 0);
+
+          if (datesInline && inlineWidth <= contentWidth - 8) {
+            if (titleText) doc.drawText(titleText, marginLeft, currentY + projFontSize, { fontSize: projFontSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
+            if (subTech) doc.drawText(subTech, marginLeft + nameWidth + 6, currentY + projFontSize, { fontSize: techFontSize, fontStyle: 'italic', color: metaColor });
+            if (linkText) {
+              const linkX = pageWidth - marginRight - linkWidth;
+              doc.drawText(linkText, linkX, currentY + projFontSize, { fontSize: linkFontSize, color: style.linkColor });
+              doc.addLink(linkX, currentY, linkWidth, projFontSize + 2, linkText);
+            }
+            currentY += projFontSize + (isCompact ? 3 : 4);
+          } else {
+            if (titleText) drawWrapped(titleText, projFontSize, 'bold', [0.05, 0.05, 0.05]);
+            if (subTech) drawWrapped(subTech, techFontSize, 'italic', metaColor);
+            if (linkText) drawWrapped(linkText, linkFontSize, 'normal', style.linkColor, 'left', linkText);
           }
-          currentY += projFontSize + (isCompact ? 3 : 4);
-        } else {
-          drawWrapped(projName, projFontSize, 'bold', [0.05, 0.05, 0.05]);
-          if (techText) drawWrapped(techText, techFontSize, 'italic', metaColor);
-          if (linkText) drawWrapped(linkText, linkFontSize, 'normal', style.linkColor, 'left', linkText);
         }
 
         renderBullets(proj.bulletsText);
@@ -1001,7 +1008,7 @@
       }
 
       if (secKey === 'experience') {
-        const entries = (resumeData.experience || []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || bulletLines(exp.bulletsText).length));
+        const entries = (resumeData.experience || []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || clean(exp.duration) || clean(exp.location) || bulletLines(exp.bulletsText).length));
         if (entries.length) {
           addHeader(layout.title('experience'));
           entries.forEach((exp, index) => {
@@ -1016,12 +1023,13 @@
       }
 
       if (secKey === 'education') {
-        const entries = (resumeData.education || []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution)));
+        const entries = (resumeData.education || []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution) || clean(edu.duration) || clean(edu.location) || clean(edu.score)));
         if (entries.length) {
           addHeader(layout.title('education'));
           entries.forEach((edu, index) => {
             if (index) lines.push('');
-            lines.push([edu.degree, edu.institution].map(clean).filter(Boolean).join(' | '));
+            const title = [edu.degree, edu.institution].map(clean).filter(Boolean).join(' | ');
+            if (title) lines.push(title);
             const meta = [edu.duration, edu.location, edu.score].map(clean).filter(Boolean).join(' | ');
             if (meta) lines.push(meta);
           });
@@ -1029,13 +1037,16 @@
       }
 
       if (secKey === 'projects') {
-        const entries = (resumeData.projects || []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || bulletLines(proj.bulletsText).length));
+        const entries = (resumeData.projects || []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || clean(proj.link) || bulletLines(proj.bulletsText).length));
         if (entries.length) {
           addHeader(layout.title('projects'));
           entries.forEach((proj, index) => {
             if (index) lines.push('');
-            const header = [clean(proj.name) || 'Project', clean(proj.tech) ? `[${clean(proj.tech)}]` : '', clean(proj.link) ? `(${clean(proj.link)})` : ''].filter(Boolean).join(' ');
-            lines.push(header);
+            const name = clean(proj.name);
+            const tech = clean(proj.tech);
+            const link = clean(proj.link);
+            const header = [name || tech, (name && tech) ? `[${tech}]` : '', link ? `(${link})` : ''].filter(Boolean).join(' ');
+            if (header) lines.push(header);
             bulletLines(proj.bulletsText).forEach(b => lines.push(`* ${b}`));
           });
         }

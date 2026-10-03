@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { generateResumePDF, generateResumeText, measureTextWidth, splitTextToLines, escapePdfText } = require('../js/pdf-engine.js');
-const { validateResumeSchema, SAMPLE_DATA, EMPTY_DATA, escapeHTML, sanitizeHref, isValidUrlFormat } = require('../js/resume.js');
+const { validateResumeSchema, SAMPLE_DATA, EMPTY_DATA, escapeHTML, sanitizeHref, isValidUrlFormat, renderResumeDataToHTML } = require('../js/resume.js');
 const { PRESETS, formatAnnotationDate, validateDimensionSpecs } = require('../js/resizer.js');
 const { TEMPLATES, migrateResumeSchema } = require('../js/templates.js');
 const { generateResumeDOCX, SimpleZip, escapeXml } = require('../js/docx-engine.js');
@@ -867,6 +867,116 @@ assert(resumeJsContent.includes('restoreRemoveFocus'), 'resume.js defines restor
 assert(resumeJsContent.includes('openTemplatePreviewModal'), 'resume.js defines openTemplatePreviewModal');
 assert(resumeJsContent.includes('closeTemplatePreviewModal'), 'resume.js defines closeTemplatePreviewModal');
 assert(resumeJsContent.includes('isDocumentEmpty'), 'resume.js defines isDocumentEmpty to guard section ordering');
+
+// ------------------------------------------------------------------
+// SUITE 15: Security & Platform Reliability Hardening
+// ------------------------------------------------------------------
+console.log('SUITE 15: Security & Platform Reliability Hardening');
+assert(resumeJsContent.includes('reader.onerror = () =>'), 'resume.js defines reader.onerror handler for backup import resilience');
+const testMigration = migrateResumeSchema({ data: { personal: { fullName: 'Jane Doe', untrustedField: 'exploit' } } });
+assert(testMigration.personal && testMigration.personal.fullName === 'Jane Doe' && testMigration.personal.untrustedField === undefined, 'migrateResumeSchema enforces schema filtering and discards arbitrary untrusted fields');
+
+// ------------------------------------------------------------------
+// SUITE 16: Sparse & Minimal Input Structural Parity
+// ------------------------------------------------------------------
+console.log('SUITE 16: Sparse & Minimal Input Structural Parity');
+
+// Sparse header bottom border in DOCX
+const dSparseNameOnly = { personal: { fullName: 'Solo Candidate' }, experience: [], education: [], projects: [] };
+const zipSparseName = generateResumeDOCX(dSparseNameOnly);
+const xmlSparseName = Buffer.from(zipSparseName.files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(xmlSparseName.includes('<w:pBdr>'), 'DOCX retains header bottom border when only fullName is present');
+
+const dSparseNameTarget = { personal: { fullName: 'Solo Candidate', targetTitle: 'Software Architect' }, experience: [], education: [], projects: [] };
+const zipSparseTarget = generateResumeDOCX(dSparseNameTarget);
+const xmlSparseTarget = Buffer.from(zipSparseTarget.files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(xmlSparseTarget.includes('<w:pBdr>'), 'DOCX retains header bottom border when targetTitle is present without contact info');
+
+// Strong / bold fallbacks when role or degree missing in DOCX
+const dCompOnly = { personal: { fullName: 'A' }, experience: [{ id: 'e1', company: 'Acme Corp', duration: '2020' }] };
+const xmlCompOnly = Buffer.from(generateResumeDOCX(dCompOnly).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(xmlCompOnly.includes('<w:b/>') && xmlCompOnly.includes('Acme Corp'), 'Company rendered with bold strongProps when role is absent in DOCX');
+
+const dInstOnly = { personal: { fullName: 'A' }, education: [{ id: 'ed1', institution: 'MIT', duration: '2024' }] };
+const xmlInstOnly = Buffer.from(generateResumeDOCX(dInstOnly).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(xmlInstOnly.includes('<w:b/>') && xmlInstOnly.includes('MIT'), 'Institution rendered with bold strongProps when degree is absent in DOCX');
+
+// Bullet-only entries: no empty heading gap
+const dBulletOnly = { personal: { fullName: 'A' }, experience: [{ id: 'e1', bulletsText: 'Led migration.' }] };
+const htmlBulletOnly = renderResumeDataToHTML(dBulletOnly, 'classic-professional');
+assert(!htmlBulletOnly.includes('class="resume-entry-header"'), 'HTML preview does not render ghost empty resume-entry-header for bullet-only entry');
+
+const xmlBulletOnly = Buffer.from(generateResumeDOCX(dBulletOnly).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(!xmlBulletOnly.includes('<w:p><w:pPr><w:keepNext/><w:spacing w:before="120" w:after="30"/></w:pPr></w:p>'), 'DOCX does not render empty heading paragraph for bullet-only entry');
+
+// Empty contact line container prevented in HTML
+const htmlSparseNoContact = renderResumeDataToHTML(dSparseNameOnly, 'classic-professional');
+assert(!htmlSparseNoContact.includes('class="resume-contact-line"'), 'HTML preview does not render empty contact line container');
+
+// PDF baseline alignment for projects
+const dProjBaseline = { personal: { fullName: 'A' }, projects: [{ id: 'p1', name: 'Web App', tech: 'Node.js', link: 'example.com' }] };
+const docProjBaseline = generateResumePDF(dProjBaseline);
+const projPageEls = docProjBaseline.pages[0].elements;
+const projTitleEl = projPageEls.find(e => e.type === 'text' && e.text === 'Web App');
+const projLinkEl = projPageEls.find(e => e.type === 'text' && e.text === 'example.com');
+assert(projTitleEl && projLinkEl && projTitleEl.y === projLinkEl.y, 'PDF project title and link share exact same baseline Y coordinate');
+
+// Date-only entry rendered without crash in PDF
+const dDateOnly = { personal: { fullName: 'A' }, experience: [{ id: 'e1', duration: '2021 - 2022', bulletsText: 'Did work' }] };
+const docDateOnly = generateResumePDF(dDateOnly);
+assert(docDateOnly.getPageCount() >= 1, 'PDF renders without error for date-only experience');
+
+// Sparse entry retention: metadata-only education, experience, and link-only projects
+const dEduSparse = { personal: { fullName: 'A' }, education: [{ id: 'ed1', duration: '2020 - 2024', score: 'GPA 3.9' }] };
+const htmlEduSparse = renderResumeDataToHTML(dEduSparse, 'classic-professional');
+assert(htmlEduSparse.includes('2020 - 2024') && htmlEduSparse.includes('GPA 3.9'), 'HTML preview retains sparse education entry with duration and score');
+const xmlEduSparse = Buffer.from(generateResumeDOCX(dEduSparse).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(xmlEduSparse.includes('2020 - 2024') && xmlEduSparse.includes('GPA 3.9'), 'DOCX retains sparse education entry with duration and score');
+const docEduSparse = generateResumePDF(dEduSparse);
+assert(docEduSparse.pages[0].elements.some(e => e.text && e.text.includes('2020 - 2024')), 'PDF retains sparse education entry with duration and score');
+
+const dExpSparse = { personal: { fullName: 'A' }, experience: [{ id: 'ex1', duration: '2020 - 2022', location: 'Remote' }] };
+const htmlExpSparse = renderResumeDataToHTML(dExpSparse, 'classic-professional');
+assert(htmlExpSparse.includes('2020 - 2022') && htmlExpSparse.includes('Remote'), 'HTML preview retains sparse experience entry with duration and location');
+const xmlExpSparse = Buffer.from(generateResumeDOCX(dExpSparse).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(xmlExpSparse.includes('2020 - 2022') && xmlExpSparse.includes('Remote'), 'DOCX retains sparse experience entry with duration and location');
+
+const dProjLinkOnly = { personal: { fullName: 'A' }, projects: [{ id: 'p1', link: 'https://example.com/repo' }] };
+const htmlProjLink = renderResumeDataToHTML(dProjLinkOnly, 'classic-professional');
+assert(htmlProjLink.includes('example.com/repo'), 'HTML preview retains link-only project entry');
+const xmlProjLink = Buffer.from(generateResumeDOCX(dProjLinkOnly).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(xmlProjLink.includes('example.com/repo'), 'DOCX retains link-only project entry');
+
+// Projects with only tech: renders tech as primary bold title without ghost Project text
+const dProjTechOnly = { personal: { fullName: 'A' }, projects: [{ id: 'p1', tech: 'React & Node.js' }] };
+const htmlProjTech = renderResumeDataToHTML(dProjTechOnly, 'classic-professional');
+assert(htmlProjTech.includes('<span>React &amp; Node.js</span>') && !htmlProjTech.includes('<span>Project'), 'HTML preview renders tech as primary title without ghost Project');
+const xmlProjTech = Buffer.from(generateResumeDOCX(dProjTechOnly).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(xmlProjTech.includes('<w:b/>') && xmlProjTech.includes('React &amp; Node.js') && !xmlProjTech.includes('<w:t xml:space="preserve">Project</w:t>'), 'DOCX renders tech with bold strongProps without ghost Project');
+const docProjTech = generateResumePDF(dProjTechOnly);
+assert(docProjTech.pages[0].elements.some(e => e.type === 'text' && e.text === 'React & Node.js' && e.fontStyle === 'bold'), 'PDF renders tech as bold primary title without ghost Project');
+
+// Bullet-only projects suppress ghost heading paragraph across all engines
+const dProjBulletOnly = { personal: { fullName: 'A' }, projects: [{ id: 'p1', bulletsText: 'Architected high-throughput pipeline.' }] };
+const htmlProjBullet = renderResumeDataToHTML(dProjBulletOnly, 'classic-professional');
+assert(!htmlProjBullet.includes('class="resume-entry-header"'), 'HTML preview suppresses entry header for bullet-only project');
+const xmlProjBullet = Buffer.from(generateResumeDOCX(dProjBulletOnly).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(!xmlProjBullet.includes('<w:t xml:space="preserve">Project</w:t>') && xmlProjBullet.includes('Architected high-throughput pipeline.'), 'DOCX suppresses heading paragraph for bullet-only project');
+
+// Languages bullet separator parity in DOCX
+const dLangs = { personal: { fullName: 'A' }, languages: [{ id: 'l1', name: 'English', proficiency: 'Fluent' }, { id: 'l2', name: 'Spanish', proficiency: 'Conversational' }], sectionVisibility: { languages: true } };
+const xmlLangs = Buffer.from(generateResumeDOCX(dLangs).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(xmlLangs.includes('English — Fluent  •  Spanish — Conversational'), 'DOCX languages uses bullet separator parity with HTML and PDF');
+
+// Candidate name fallback in DOCX: YOUR NAME instead of Resume
+const dNoName = { personal: { fullName: '' }, experience: [], education: [] };
+const xmlNoName = Buffer.from(generateResumeDOCX(dNoName).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+assert(!xmlNoName.includes('<w:t xml:space="preserve">Resume</w:t>') && xmlNoName.includes('YOUR NAME'), 'DOCX candidate name falls back to YOUR NAME instead of Resume');
+
+// Node.js renderResumeDataToHTML retains optional sections via pdfApi fallback
+const dNodeOptional = { personal: { fullName: 'A' }, certifications: [{ name: 'AWS Solutions Architect', issuer: 'Amazon' }], sectionVisibility: { certifications: true } };
+const htmlNodeOptional = renderResumeDataToHTML(dNodeOptional, 'classic-professional');
+assert(htmlNodeOptional.includes('AWS Solutions Architect'), 'renderResumeDataToHTML retains optional sections in Node.js environment');
 
 console.log('');
 console.log('====================================================');
