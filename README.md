@@ -133,6 +133,5 @@ node tests/run_tests.js
 
 ---
 
-## Support
-ApplyReady is free, private, and open-source. If it helped you with your documents, consider buying a chai:
-[https://razorpay.me/@nbsumit](https://razorpay.me/@nbsumit)
+## Open Source & Sustainability
+ApplyReady is free, private, and open-source. All document processing runs entirely client-side in the browser. The project is supported through non-intrusive online advertising to cover hosting and domain maintenance.

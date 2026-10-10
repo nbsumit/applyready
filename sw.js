@@ -3,7 +3,7 @@
  * 100% Client-Side Caching for Offline Resizer, Resume Builder & PDF Tools
  */
 
-const CACHE_NAME = 'applyready-v2';
+const CACHE_NAME = 'applyready-v3';
 
 const STATIC_ASSETS = [
   '/',

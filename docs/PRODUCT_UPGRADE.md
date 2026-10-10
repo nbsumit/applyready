@@ -2,7 +2,7 @@
 
 ## Executive Overview
 ApplyReady (https://applyready.in) is a private, client-side document and image preparation utility. This upgrade elevates ApplyReady from a basic conversion tool into a production-grade utility interface featuring:
-1. **Calm, Utility-First Design System:** Eliminated oversized heroes, decorative marketing banners, trust banners, and all popup/modal interruptions. Voluntary financial support appears strictly as an understated navbar button and footer link.
+1. **Calm, Utility-First Design System:** Eliminated oversized heroes, decorative marketing banners, trust banners, and all popup/modal interruptions. The site is sustained via non-intrusive online advertising with zero modal or donation interruptions.
 2. **8 Distinct ATS Resume Templates:** True applicant-tracking-system compliant templates with distinct typography, spacing, header arrangements, and precomputed SVG previews.
 3. **Structured 3-Tab Resume Editor:** Intuitive workflow segmented into Content, Design & Templates, and Review & Export, featuring bounded undo/redo (up to 30 states), dynamic entry controls (add/edit/duplicate/reorder/delete), and optional career sections.
 4. **Three Native Client-Side Export Formats:**
@@ -24,11 +24,8 @@ ApplyReady (https://applyready.in) is a private, client-side document and image 
 - **Elimination of Marketing Clutter:** Removed the redundant full-width trust banner, reduced hero heights, and positioned tools directly in the primary viewport fold.
 
 ### 1.2 Strict Prohibition of Support Modals & Nags
-- **Zero Interruption Policy:** All modals (`.modal-overlay`, `.modal-card`, `.modal-close-btn`, `.btn-chai`), timed popups, exit-intent overlays, and post-export donation triggers have been completely purged from the codebase.
-- **Support Discovery:** Voluntary creator support (`https://razorpay.me/@nbsumit`) is integrated solely through:
-  - An understated navbar button (`.nav-support-link`) present across all 10 pages.
-  - A subtle link in the footer (`.footer-link`).
-  - No popups, no audio, no animations, and zero blocking flows.
+- **Zero Interruption Policy:** All modals (`.modal-overlay`, `.modal-card`, `.modal-close-btn`), timed popups, exit-intent overlays, and post-export donation triggers have been completely purged from the codebase.
+- **Sustainable Ad-Supported Model:** All voluntary donation links have been removed in favor of clean non-intrusive ads, with zero popups, no audio, no animations, and zero blocking flows.
 
 ---
 

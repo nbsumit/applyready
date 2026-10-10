@@ -126,7 +126,7 @@ Verify the 3-tab architecture (Content, Design & Templates, Review & Export), bo
 ## Task 3: Zero-Interruption Support Model Verification
 
 ### Objective
-Ensure complete removal of all modals, popups, export nags, and expanding prompts. Voluntary support must exist solely as an understated navbar button and footer link.
+Ensure complete removal of all modals, popups, export nags, and expanding prompts. Zero modals or donation buttons exist anywhere on the site.
 
 ### Step-by-Step Procedure
 1. Load every page on desktop and mobile viewports (`index.html`, `resume.html`, `about.html`, `privacy.html`, `how-to-use.html`, `404.html`, guides).
@@ -134,15 +134,14 @@ Ensure complete removal of all modals, popups, export nags, and expanding prompt
 3. Perform resume operations (load sample, edit, switch templates, download PDF, DOCX, text).
 4. Wait 60 seconds on page to check for timed popups.
 5. Move cursor outside viewport to check for exit-intent triggers.
-6. Verify support visibility:
-   - Understated navbar link `.nav-support-link` (`https://razorpay.me/@nbsumit`) with mug icon.
-   - Understated footer link `.footer-link` (`https://razorpay.me/@nbsumit`).
+6. Verify clean interface:
+   - ZERO support or donation buttons in navbar or footer.
    - ZERO overlay backdrops (`.modal-overlay`).
    - ZERO popups (`#supportModal`, `#chaiModal`).
    - ZERO modal code in JavaScript files.
 7. Automated Test Verification:
-   - Automated Suite 13 runs regex verification across all 10 HTML files, 5 JS files, and CSS stylesheet.
-   - Result: **PASS** (100% clean, zero modal selectors or scripts).
+   - Automated Suite 13 runs regex verification across all HTML files, JS files, and CSS stylesheets.
+   - Result: **PASS** (100% clean, zero modal selectors, scripts, or donation links).
 
 ---
 
