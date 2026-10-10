@@ -785,6 +785,8 @@ assert(!styleContent.includes('.modal-overlay'), 'style.css contains NO .modal-o
 assert(!styleContent.includes('.modal-card'), 'style.css contains NO .modal-card selector');
 assert(!styleContent.includes('.modal-close-btn'), 'style.css contains NO .modal-close-btn selector');
 assert(!styleContent.includes('.btn-chai'), 'style.css contains NO .btn-chai selector');
+assert(!styleContent.includes('.nav-support-link'), 'style.css contains NO .nav-support-link selector');
+assert(!styleContent.includes('--razorpay'), 'style.css contains NO --razorpay variables');
 
 // 2. Check HTML files contain NO modal HTML markup
 htmlFiles.forEach(file => {
@@ -794,11 +796,12 @@ htmlFiles.forEach(file => {
   assert(!content.includes('id="supportModal"'), `${file} contains NO supportModal element`);
   assert(!content.includes('id="chaiModal"'), `${file} contains NO chaiModal element`);
 
-  // Assert understated navbar support link exists
-  assert(content.includes('class="nav-support-link"'), `${file} contains understated .nav-support-link`);
-  assert(content.includes('https://razorpay.me/@nbsumit'), `${file} links to official Razorpay support URL`);
+  // Assert support button and Razorpay links are completely removed
+  assert(!content.includes('class="nav-support-link"'), `${file} contains NO .nav-support-link`);
+  assert(!content.includes('razorpay.me'), `${file} contains NO Razorpay support links`);
+  assert(!content.includes('fa-mug-hot'), `${file} contains NO fa-mug-hot icon`);
 
-  // Assert footer support link exists
+  // Assert footer link exists
   assert(content.includes('class="footer-link"'), `${file} contains .footer-link`);
 });
 

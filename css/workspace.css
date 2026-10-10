@@ -41,8 +41,6 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .nav-link { font-size: .85rem; font-weight: 550; padding: .6rem .9rem; min-height: 42px; border-radius: 6px; border: 1px solid transparent; }
   .nav-link.active { background: var(--primary-light); color: var(--primary); border-color: transparent; }
   .nav-actions { display: flex; align-items: center; gap: .65rem; }
-  .nav-support-link { border: 0; background: transparent; padding: .5rem; font-size: .8rem; }
-  .nav-support-link:hover { color: var(--primary); }
   .theme-toggle-btn { height: 40px; width: 40px; background: transparent; font-size: .95rem; border-radius: 7px; }
   .nav-menu-toggle { display: none; }
   .main-content { max-width: 1360px; width: 100%; padding: 2.25rem 2rem 3rem; margin: 0 auto; }
@@ -255,8 +253,6 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .nav-container { padding: .65rem 1rem; gap: .5rem; }
   .nav-actions { margin-left: auto; gap: .4rem; }
   .nav-menu-toggle { display: inline-flex; }
-  .nav-support-link span { display: none; }
-  .nav-support-link { padding: .5rem; width: 36px; justify-content: center; }
   .nav-links { display: none; position: absolute; top: calc(100% + 1px); left: 0; right: 0; margin: 0; padding: .75rem 1rem; flex-direction: column; align-items: stretch; border-bottom: 1px solid var(--border-color); background: var(--bg-card); box-shadow: var(--shadow-md); }
   .nav-links.is-open { display: flex; }
   .nav-link { width: 100%; }
@@ -327,7 +323,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 @media screen {
   .navbar { background: var(--bg-card); backdrop-filter: blur(14px); }
   .brand-img { border-radius: var(--radius-sm); }
-  .nav-link, .theme-toggle-btn, .nav-support-link, .preset-shortcut, .btn, .form-control, .form-select, .app-card, .form-panel, .preview-toolbar, .guide-card, .accordion-section, .dynamic-item, .dropzone, .advanced-disclosure, .preview-image-box, .template-card { transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease; }
+  .nav-link, .theme-toggle-btn, .preset-shortcut, .btn, .form-control, .form-select, .app-card, .form-panel, .preview-toolbar, .guide-card, .accordion-section, .dynamic-item, .dropzone, .advanced-disclosure, .preview-image-box, .template-card { transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease; }
   .nav-link, .theme-toggle-btn, .preset-shortcut, .btn, .form-control, .form-select, .advanced-disclosure, .accordion-section, .dynamic-item { border-radius: var(--radius-sm); }
   .app-card, .form-panel, .preview-toolbar, .guide-card, .dropzone, .resume-preview-outer { border-radius: var(--radius-lg); }
   .theme-toggle-btn { border: 1px solid var(--border-color); background: var(--bg-card-subtle); }

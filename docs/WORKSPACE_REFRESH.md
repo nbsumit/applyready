@@ -8,7 +8,7 @@ The tools keep the existing static, client-only architecture and public URLs. No
 - Shared light/dark themes, responsive mobile navigation, visible focus, and keyboard-operated tab lists.
 - Branding uses the owner's existing `favicon/` artwork throughout the site.
 - Eight resume templates remain available. Draft, backup, and writing options are secondary to the contact form.
-- Voluntary Support links appear only in navigation and the footer. Exports have no support dialogs or interruptions.
+- Navigation and footer are kept clean and focused. Exports have no support dialogs or interruptions.
 - The cropper, icons, and font are served locally. Third-party asset outages cannot prevent ordinary editing.
 
 ## Correctness changes
