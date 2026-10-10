@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About ApplyReady | Free & Private Client-Side Tools</title>
-  <meta name="description" content="Learn about ApplyReady.in - our commitment to 100% client-side privacy, why we built in-browser image resizing and ATS resume generation, and how it works.">
+  <meta name="description" content="Learn about ApplyReady.in - built by Sumit Sengar to provide free, 100% private in-browser image resizing and ATS resume creation for students and applicants across India.">
   <link rel="canonical" href="https://applyready.in/about.html">
 
   <meta property="og:type" content="article">
@@ -24,7 +24,6 @@
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
-
   <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
@@ -32,11 +31,13 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
+  <!-- Google AdSense -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=[PUB-ID]" crossorigin="anonymous"></script> -->
+
   <script src="js/theme.js"></script>
 
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/workspace.css?v=20261001-1">
 </head>
@@ -50,7 +51,11 @@
         <img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
         <span>ApplyReady<span class="brand-dot">.</span></span>
       </a>
-      <div class="nav-links" id="navMenu"><a href="/" class="nav-link">Image tools</a><a href="resume.html" class="nav-link">Resume builder</a><a href="how-to-use.html" class="nav-link">Guides</a></div>
+      <div class="nav-links" id="navMenu">
+        <a href="/" class="nav-link">Image tools</a>
+        <a href="resume.html" class="nav-link">Resume builder</a>
+        <a href="how-to-use.html" class="nav-link">Guides</a>
+      </div>
       <div class="nav-actions">
         <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="nav-support-link" aria-label="Support ApplyReady (opens in new tab)"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i><span>Support</span></a>
         <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
@@ -66,17 +71,17 @@
       <header style="margin-bottom: 2rem;">
         <h1>About ApplyReady</h1>
         <p class="hero-subtitle" style="text-align: left; margin: 0;">
-          Free, lightning-fast document and image preparation tools that prioritize user privacy and zero server uploads.
+          Free, lightning-fast document and image preparation tools built on a foundation of absolute client-side privacy.
         </p>
       </header>
 
       <section class="app-card">
         <h2>Our Mission</h2>
         <p>
-          Preparing job applications, official submissions, and document uploads often requires tedious technical adjustments: strict pixel dimensions, stringent maximum file sizes (e.g. under 50KB or 20KB), and ATS-friendly resume formatting.
+          Preparing job applications, official submissions, and exam portal uploads in India often requires tedious technical adjustments: strict pixel dimensions, stringent maximum file sizes (e.g. under 50KB or 20KB for SSC, UPSC, and IBPS), and ATS-friendly resume formatting.
         </p>
         <p>
-          Most conventional web converters upload your sensitive personal documents, passport photos, signatures, and career resumes to remote cloud servers. ApplyReady was built on a different foundation: <strong>100% client-side execution</strong>. All image processing, cropping, compression, and PDF generation occur directly inside your browser on your device using standard HTML5 Canvas and modern JavaScript.
+          Most conventional web converters upload your sensitive personal documents, passport photos, signatures, and career resumes to remote cloud servers. ApplyReady was built on a fundamentally different foundation: <strong>100% client-side execution</strong>. All image processing, cropping, compression, and PDF generation occur directly inside your browser on your device using standard HTML5 Canvas and modern JavaScript.
         </p>
 
         <h2>Why Client-Side Processing Matters</h2>
@@ -88,21 +93,38 @@
           <li><strong>Transparent Privacy:</strong> Your data remains strictly on your device. We do not store, catalog, or analyze user documents.</li>
         </ul>
 
+        <h2>About the Author & Why I Built ApplyReady</h2>
+        <p>
+          ApplyReady was created and is actively maintained by <strong>Sumit Sengar</strong>, an independent software engineer and technology builder based in India.
+        </p>
+        <p>
+          The motivation behind ApplyReady came from witnessing firsthand the daily struggles of students, freshers, and government exam candidates in India. Every year, millions of applicants face arbitrary image upload requirements:
+        </p>
+        <ul>
+          <li>A portal demands a photo between 20 KB and 50 KB, while another requires a signature between 10 KB and 20 KB.</li>
+          <li>Many applicants without access to desktop photo editing software end up visiting cyber cafes, paying ₹50 to ₹100 just to resize a single photo or signature.</li>
+          <li>Common free online tools often upload sensitive ID photographs to untrusted third-party servers, embed watermarks, or trick users with deceptive "Download" buttons.</li>
+        </ul>
+        <p>
+          ApplyReady was built to solve this once and for all: a clean, fast, respectful web utility where anyone can resize their photos, prepare signatures, and build ATS-friendly resumes in seconds — completely free, without sign-ups, and without any file leaving their phone or laptop.
+        </p>
+
         <h2>The Technologies Behind ApplyReady</h2>
-        <p>ApplyReady is built with lightweight, modern web standards:</p>
+        <p>ApplyReady is built with lightweight, modern web standards — zero heavy frameworks, zero backend servers, and zero bundlers:</p>
         <ul>
           <li><strong>HTML5 Canvas API:</strong> High-performance pixel manipulation, aspect-ratio scaling, and distortion-free rendering.</li>
           <li><strong>Cropper.js:</strong> Touch-friendly, accessible image cropping with 90-degree rotation and fine-grained framing.</li>
           <li><strong>Native Vector PDF Generation:</strong> Direct browser-side generation of searchable, selectable text PDFs conforming to ISO 32000 / PDF 1.4 standards with zero rasterization.</li>
+          <li><strong>Pure Client-Side OOXML Engine:</strong> Generates valid Microsoft Word (.docx) documents directly in memory.</li>
           <li><strong>CSS Custom Properties:</strong> Smooth light and dark themes adhering to system preferences and WCAG AA accessibility contrast ratios.</li>
         </ul>
 
-        <h2>About the Creator & Support</h2>
+        <h2>Support the Project</h2>
         <p>
-          ApplyReady is an independent open-source project created by <strong>Sumit</strong>. If this utility saved you time or cyber cafe fees, you can voluntarily support ongoing maintenance:
+          ApplyReady is a labor of love and an open-source initiative. If this utility saved you time, cyber cafe fees, or document frustration, you can voluntarily support ongoing hosting and development:
         </p>
-        <p>
-          <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="display: inline-flex; width: auto;">
+        <p style="margin-top: 1rem;">
+          <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="display: inline-flex; width: auto; align-items: center; gap: 0.5rem;">
             <i class="fa-solid fa-mug-hot" aria-hidden="true"></i> Buy me a Chai via Razorpay
           </a>
         </p>
@@ -123,6 +145,8 @@
         <a href="how-to-use.html" class="footer-link">Guides</a>
         <a href="about.html" class="footer-link">About</a>
         <a href="privacy.html" class="footer-link">Privacy</a>
+        <a href="terms.html" class="footer-link">Terms</a>
+        <a href="contact.html" class="footer-link">Contact</a>
         <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="footer-link">Support ApplyReady <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
       </nav>
     </div>
