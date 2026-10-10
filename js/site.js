@@ -82,4 +82,11 @@
       notificationTimer = setTimeout(() => node.classList.remove('is-visible'), error ? 9000 : 4500);
     }
   };
+
+  // Register Service Worker for PWA Offline Support
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
 })();

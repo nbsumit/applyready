@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Online Signature Background Cleaner: Whiten Paper &amp; Darken Ink | ApplyReady</title>
+  <meta name="description" content="Clean scanned paper signatures online. Whiten yellow/shadowed paper, remove scan dust, darken blue/black ink, and export crisp JPG or transparent PNG. 100% private in-browser tool.">
+  <link rel="canonical" href="https://applyready.in/signature-cleaner.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://applyready.in/signature-cleaner.html">
+  <meta property="og:title" content="Online Signature Background Cleaner: Whiten Paper &amp; Darken Ink">
+  <meta property="og:description" content="Turn phone photos of signatures into pure white, professional signatures for SSC, UPSC, IBPS, and bank exams. Zero server uploads.">
+  <meta property="og:image" content="https://applyready.in/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://applyready.in/signature-cleaner.html">
+  <meta name="twitter:title" content="Online Signature Background Cleaner | ApplyReady">
+  <meta name="twitter:description" content="Whiten paper background and darken ink lines on signature scans. Free, 100% client-side privacy.">
+  <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#2563EB">
+
+  <!-- Google AdSense -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=[PUB-ID]" crossorigin="anonymous"></script> -->
+
+  <script src="js/theme.js"></script>
+
+  <!-- Icons & Styles -->
+  <link rel="stylesheet" href="css/vendor/icons.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/workspace.css?v=20261001-1">
+
+  <!-- SoftwareApplication Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "ApplyReady Signature Background Cleaner",
+    "url": "https://applyready.in/signature-cleaner.html",
+    "description": "Free in-browser tool to clean paper signatures, whiten background shadows, and darken ink strokes for government recruitment portals.",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "All",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "INR"
+    }
+  }
+  </script>
+
+  <!-- BreadcrumbList Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://applyready.in/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Image Tools",
+        "item": "https://applyready.in/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Signature Background Cleaner",
+        "item": "https://applyready.in/signature-cleaner.html"
+      }
+    ]
+  }
+  </script>
+
+  <!-- FAQPage Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Why do official exam portals reject photos of paper signatures?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Portals like SSC, UPSC, and IBPS use automated verification software. When candidates upload phone photos with dim room lighting, gray paper shadows, or yellow tints, the automated scanner cannot differentiate the ink from the background, resulting in application rejection."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Does this tool upload my signature to any server?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. ApplyReady runs 100% locally on your computer or mobile device using HTML5 Canvas pixel manipulation. Your signature image is processed in your device's memory and is never uploaded, stored, or transmitted over the internet."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Should I choose JPEG or Transparent PNG for exam forms?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "For Indian government recruitment portals (SSC, UPSC, RRB, IBPS), always choose JPEG with a crisp white background. Transparent PNGs are often converted to black background images by portal upload scripts. Choose Transparent PNG only for inserting your signature into digital PDFs or Word documents."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I remove phone camera shadows from my signature?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Increase the Paper Whiteness threshold slider to around 70–80%. The algorithm scans every pixel and converts gray and off-white background shadows to pure 255/255/255 white while preserving the dark ink lines."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I convert a faint blue ink signature to deep black?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Select 'Pure Black Ink' from the ink color option dropdown. The tool will convert all detected ink strokes to high-contrast black while smoothing edges."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How can I reduce the file size of the cleaned signature to 20 KB?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "After downloading your cleaned signature, click 'Open in Image Resizer' or use ApplyReady's 20 KB compressor tool to crop to 300 × 100 px and compress to under 20 KB in one click."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body class="content-page">
+
+  <!-- NAVIGATION -->
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <nav class="navbar" aria-label="Main Navigation">
+    <div class="nav-container">
+      <a href="/" class="brand-logo" aria-label="ApplyReady Home">
+        <img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
+        <span>ApplyReady<span class="brand-dot">.</span></span>
+      </a>
+      <div class="nav-links" id="navMenu">
+        <a href="/" class="nav-link">Image tools</a>
+        <a href="resume.html" class="nav-link">Resume builder</a>
+        <a href="how-to-use.html" class="nav-link">Guides</a>
+      </div>
+      <div class="nav-actions">
+        <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="nav-support-link" aria-label="Support ApplyReady (opens in new tab)"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i><span>Support</span></a>
+        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="theme-toggle-btn nav-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navMenu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <noscript><p class="noscript-note">Enable JavaScript to clean and enhance signatures.</p></noscript>
+  <main id="mainContent" class="main-content">
+    <article class="guide-content">
+      
+      <!-- Breadcrumb Navigation -->
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <ol class="breadcrumb-list">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          <li class="breadcrumb-item"><a href="/">Image tools</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Signature Cleaner</li>
+        </ol>
+      </nav>
+
+      <header style="margin-bottom: 2rem;">
+        <h1 class="hero-title" style="text-align: left;">Online Signature Background Cleaner: Whiten Paper &amp; Darken Ink</h1>
+        <p class="hero-subtitle" style="text-align: left; margin: 0;">
+          Eliminate camera shadows, yellow paper tint, and scan noise. Produce high-contrast, pure-white signatures ready for SSC, UPSC, IBPS, and state government forms. 100% private in your browser.
+        </p>
+        <div class="workspace-assurance" style="margin-top: 1rem;">
+          <i class="fa-solid fa-lock" aria-hidden="true"></i>
+          <div><strong>Your files never leave your device</strong><span>All image filtering runs locally in browser memory.</span></div>
+        </div>
+      </header>
+
+      <!-- Signature Cleaner Workspace -->
+      <div class="resizer-grid" style="margin-bottom: 3rem;">
+        
+        <!-- Controls Column -->
+        <section class="app-card image-controls" aria-labelledby="cleanerControlsHeading">
+          <h2 id="cleanerControlsHeading" class="card-title">
+            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+            <span>Cleaner Controls</span>
+          </h2>
+
+          <!-- File Upload Info -->
+          <div id="cleanerFileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
+              <i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i>
+              <span id="cleanerFileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+            </div>
+            <div style="display: flex; gap: 0.4rem;">
+              <button type="button" id="btnCleanerReplace" class="btn btn-secondary btn-sm" title="Select a different image">
+                <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i> Replace
+              </button>
+              <button type="button" id="btnCleanerRemove" class="btn btn-outline-danger btn-sm" title="Remove selected image">
+                <i class="fa-regular fa-trash-can" aria-hidden="true"></i> Remove
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload Dropzone -->
+          <div id="cleanerDropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload signature image">
+            <input type="file" id="cleanerFileInput" accept="image/jpeg,image/png,image/webp" style="display: none;" aria-hidden="true">
+            <div class="upload-symbol"><i class="fa-solid fa-signature" aria-hidden="true"></i></div>
+            <h3>Upload Signature Image</h3>
+            <p class="dropzone-text">Drop a photo or scan of your signature here, or browse files</p>
+            <button type="button" id="btnCleanerBrowse" class="btn btn-primary"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> Choose signature photo</button>
+            <p class="dropzone-sub">Supports JPG, PNG, and WebP. 100% private.</p>
+          </div>
+
+          <!-- Adjustments Form -->
+          <div class="form-group" style="margin-top: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <label for="whitenessInput" class="form-label" style="margin: 0;">Paper Whiteness / Threshold</label>
+              <span id="whitenessVal" style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">70</span>
+            </div>
+            <input type="range" id="whitenessInput" min="20" max="100" value="70" class="form-control" style="padding: 0.2rem 0; cursor: pointer;">
+            <p class="form-hint">Increase if paper still looks gray or yellow; decrease if thin ink strokes vanish.</p>
+          </div>
+
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <label for="contrastInput" class="form-label" style="margin: 0;">Ink Darkness &amp; Sharpness</label>
+              <span id="contrastVal" style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">80</span>
+            </div>
+            <input type="range" id="contrastInput" min="20" max="100" value="80" class="form-control" style="padding: 0.2rem 0; cursor: pointer;">
+            <p class="form-hint">Strengthens faint ballpoint pen strokes and darkens line edges.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="inkColorSelect" class="form-label">Ink Color Option</label>
+            <select id="inkColorSelect" class="form-select">
+              <option value="original" selected>Keep original ink color (auto-cleaned)</option>
+              <option value="black">Convert to Pure Black ink (#000000)</option>
+              <option value="blue">Convert to Deep Blue ink (#0A1E6E)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="cleanerFormatSelect" class="form-label">Output Format</label>
+            <select id="cleanerFormatSelect" class="form-select">
+              <option value="image/jpeg" selected>Crisp White JPEG (.jpg) - Recommended for Exams</option>
+              <option value="image/png">White PNG (.png)</option>
+              <option value="image/png-transparent">Transparent PNG (.png) - For Digital Docs</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label" for="denoiseCheckbox">
+              <input type="checkbox" id="denoiseCheckbox" checked>
+              <span>Remove speckles &amp; paper dust (Denoise)</span>
+            </label>
+          </div>
+
+          <button type="button" id="btnResetSettings" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 0.5rem;">
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset to Default Settings
+          </button>
+        </section>
+
+        <!-- Preview Column -->
+        <section class="app-card" aria-labelledby="previewHeading">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+            <h2 id="previewHeading" class="card-title" style="margin: 0;">
+              <i class="fa-solid fa-eye" aria-hidden="true"></i>
+              <span>Live Preview</span>
+            </h2>
+            <div class="comparison-view-toggle" role="group" aria-label="Toggle preview comparison">
+              <button type="button" id="btnViewCleaned" class="btn-toggle active" aria-pressed="true">Cleaned</button>
+              <button type="button" id="btnViewOriginal" class="btn-toggle" aria-pressed="false">Original</button>
+            </div>
+          </div>
+
+          <div id="cleanerEmptyState" class="crop-empty" style="min-height: 380px;">
+            <div class="empty-state-symbol"><i class="fa-solid fa-signature" aria-hidden="true"></i></div>
+            <p style="font-weight: 600; margin-bottom: 0.25rem;">No signature loaded yet</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Upload a photo of your paper signature to whiten the background instantly.</p>
+          </div>
+
+          <div id="cleanerPreviewArea" class="hidden">
+            <div style="display: flex; justify-content: center; align-items: center; background: repeating-conic-gradient(var(--bg-card-subtle) 0% 25%, transparent 0% 50%) 50% / 16px 16px; padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; min-height: 260px; overflow: auto;">
+              <canvas id="cleanerCanvas" style="max-width: 100%; max-height: 340px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 4px;"></canvas>
+            </div>
+
+            <!-- Stats -->
+            <div class="meta-stats" style="margin-top: 1rem;">
+              <div class="meta-stat-item">
+                <span class="meta-stat-label">Dimensions</span>
+                <span class="meta-stat-val" id="statDimensions">--</span>
+              </div>
+              <div class="meta-stat-item">
+                <span class="meta-stat-label">File Size</span>
+                <span class="meta-stat-val" id="statFileSize">--</span>
+              </div>
+              <div class="meta-stat-item">
+                <span class="meta-stat-label">Format</span>
+                <span class="meta-stat-val" id="statFormat">JPEG (White)</span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap;">
+              <a id="btnCleanerDownload" class="btn btn-primary" href="#" download="Cleaned_Signature.jpg" style="flex: 1; justify-content: center;">
+                <i class="fa-solid fa-download" aria-hidden="true"></i> Download Cleaned Signature
+              </a>
+              <a href="/?preset=signature" class="btn btn-secondary" style="justify-content: center;">
+                <i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Resize to 20 KB
+              </a>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Google AdSense Slot -->
+      <div class="ad-container" style="min-height: 280px; margin: 2rem 0; text-align: center; display: flex; align-items: center; justify-content: center; background: var(--bg-card-subtle); border: 1px dashed var(--border-color); border-radius: 8px;">
+        <!-- <ins class="adsbygoogle" style="display:block" data-ad-client="[PUB-ID]" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins> -->
+        <span style="font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase;">Advertisement</span>
+      </div>
+
+      <!-- Educational Content Section -->
+      <section style="margin-top: 3rem;">
+        <h2>How to Capture and Clean Signatures for Online Forms</h2>
+        <p>
+          Online exam and recruitment portals across India (SSC CGL/CHSL, UPSC Civil Services, IBPS PO/Clerk, SBI, RRB NTPC, and state PSCs) require candidates to upload a clear signature on plain white paper.
+        </p>
+
+        <div class="guide-card-grid" style="margin: 1.5rem 0;">
+          <div class="app-card">
+            <h3>1. Sign with the Right Pen</h3>
+            <p>Use a smooth black or dark blue ballpoint pen or micro gel pen on crisp unruled A4 paper. Avoid pencils, highlighters, or fountain pens that bleed into paper fibers.</p>
+          </div>
+          <div class="app-card">
+            <h3>2. Photograph in Even Daylight</h3>
+            <p>Place the paper on a flat table near a window. Avoid standing directly over the page to prevent your body or mobile phone from casting a harsh shadow.</p>
+          </div>
+          <div class="app-card">
+            <h3>3. Clean the Background</h3>
+            <p>Upload the image to ApplyReady. Adjust the <strong>Paper Whiteness</strong> slider until all paper texture and shadows turn pure white (#FFFFFF), and ensure ink lines remain dark.</p>
+          </div>
+        </div>
+
+        <h3>Recommended Settings by Pen Type</h3>
+        <table class="table-responsive" style="margin: 1.5rem 0;">
+          <thead>
+            <tr>
+              <th>Pen Type</th>
+              <th>Recommended Whiteness</th>
+              <th>Recommended Contrast</th>
+              <th>Ink Mode</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Black Ballpoint Pen</td>
+              <td>70%</td>
+              <td>80%</td>
+              <td>Pure Black (#000000)</td>
+            </tr>
+            <tr>
+              <td>Blue Gel Pen</td>
+              <td>65%</td>
+              <td>75%</td>
+              <td>Deep Blue (#0A1E6E) or Original</td>
+            </tr>
+            <tr>
+              <td>Faint Ballpoint Pen</td>
+              <td>75%</td>
+              <td>90%</td>
+              <td>Pure Black (#000000)</td>
+            </tr>
+            <tr>
+              <td>Phone Photo with Shadow</td>
+              <td>85%</td>
+              <td>85%</td>
+              <td>Original or Pure Black</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Frequently Asked Questions (FAQ) Section -->
+      <section class="faq-section" style="margin-top: 3.5rem;">
+        <h2>Frequently Asked Questions</h2>
+        
+        <details class="faq-item">
+          <summary class="faq-question">Why do official exam portals reject photos of paper signatures?</summary>
+          <div class="faq-answer">
+            <p>Portals like SSC, UPSC, and IBPS use automated verification software. When candidates upload phone photos with dim room lighting, gray paper shadows, or yellow tints, the automated scanner cannot differentiate the ink from the background, resulting in application rejection.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">Does this tool upload my signature to any server?</summary>
+          <div class="faq-answer">
+            <p>No. ApplyReady runs 100% locally on your computer or mobile device using HTML5 Canvas pixel manipulation. Your signature image is processed in your device's memory and is never uploaded, stored, or transmitted over the internet.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">Should I choose JPEG or Transparent PNG for exam forms?</summary>
+          <div class="faq-answer">
+            <p>For Indian government recruitment portals (SSC, UPSC, RRB, IBPS), always choose JPEG with a crisp white background. Transparent PNGs are often converted to black background images by portal upload scripts. Choose Transparent PNG only for inserting your signature into digital PDFs or Word documents.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">How do I remove phone camera shadows from my signature?</summary>
+          <div class="faq-answer">
+            <p>Increase the Paper Whiteness threshold slider to around 70–80%. The algorithm scans every pixel and converts gray and off-white background shadows to pure 255/255/255 white while preserving the dark ink lines.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">Can I convert a faint blue ink signature to deep black?</summary>
+          <div class="faq-answer">
+            <p>Yes. Select 'Pure Black Ink' from the ink color option dropdown. The tool will convert all detected ink strokes to high-contrast black while smoothing edges.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">How can I reduce the file size of the cleaned signature to 20 KB?</summary>
+          <div class="faq-answer">
+            <p>After downloading your cleaned signature, click 'Open in Image Resizer' or use ApplyReady's 20 KB compressor tool to crop to 300 × 100 px and compress to under 20 KB in one click.</p>
+          </div>
+        </details>
+      </section>
+
+      <!-- Related Tools Navigation -->
+      <section class="related-tools-section" style="margin-top: 3.5rem;">
+        <h2>Related Tools &amp; Guides</h2>
+        <div class="tool-links-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
+          <a href="/" class="app-card" style="text-decoration: none; color: inherit;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-crop-simple" aria-hidden="true" style="color: var(--primary);"></i> Image Resizer &amp; Compressor</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Resize photos and signatures to exact dimensions and KB limits.</p>
+          </a>
+          <a href="resize-image-to-20kb.html" class="app-card" style="text-decoration: none; color: inherit;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i> Resize Image to 20 KB</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Instant compressor optimized for government recruitment portal limits.</p>
+          </a>
+          <a href="ssc-photo-signature-size.html" class="app-card" style="text-decoration: none; color: inherit;">
+            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-id-card" aria-hidden="true" style="color: var(--primary);"></i> SSC Photo &amp; Signature Guide</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Official 2026 SSC dimensions, KB guidelines, and specifications.</p>
+          </a>
+        </div>
+      </section>
+
+    </article>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <a href="/" class="brand-logo" aria-label="ApplyReady Home">
+          <img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32">
+          <span>ApplyReady<span class="brand-dot">.</span></span>
+        </a>
+        <p class="footer-tagline">100% private, client-side image resizer and ATS resume builder for Indian job seekers and students.</p>
+      </div>
+      <div class="footer-nav">
+        <div class="footer-col">
+          <h4>Tools</h4>
+          <ul>
+            <li><a href="/" class="footer-link">Image Resizer</a></li>
+            <li><a href="signature-cleaner.html" class="footer-link">Signature Cleaner</a></li>
+            <li><a href="resume.html" class="footer-link">Resume Builder</a></li>
+            <li><a href="how-to-use.html" class="footer-link">All Tools</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Company</h4>
+          <ul>
+            <li><a href="about.html" class="footer-link">About Us</a></li>
+            <li><a href="privacy.html" class="footer-link">Privacy Policy</a></li>
+            <li><a href="terms.html" class="footer-link">Terms of Use</a></li>
+            <li><a href="contact.html" class="footer-link">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 ApplyReady. All rights reserved. Runs 100% in your browser.</p>
+    </div>
+  </footer>
+
+  <script src="js/site.js"></script>
+  <script src="js/signature-cleaner.js"></script>
+</body>
+</html>

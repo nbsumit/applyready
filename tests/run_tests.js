@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { generateResumePDF, generateResumeText, measureTextWidth, splitTextToLines, escapePdfText } = require('../js/pdf-engine.js');
 const { validateResumeSchema, SAMPLE_DATA, EMPTY_DATA, escapeHTML, sanitizeHref, isValidUrlFormat, renderResumeDataToHTML } = require('../js/resume.js');
-const { PRESETS, formatAnnotationDate, validateDimensionSpecs } = require('../js/resizer.js');
+const { PRESETS, formatAnnotationDate, validateDimensionSpecs, ensureMinKB } = require('../js/resizer.js');
 const { TEMPLATES, migrateResumeSchema } = require('../js/templates.js');
 const { generateResumeDOCX, SimpleZip, escapeXml } = require('../js/docx-engine.js');
 
@@ -334,9 +334,18 @@ assert(formatAnnotationDate('') === '', 'formatAnnotationDate handles empty stri
 assert(formatAnnotationDate(null) === '', 'formatAnnotationDate handles null cleanly');
 
 // Test presets completeness
-assert(PRESETS.passport && PRESETS.avatar && PRESETS.signature && PRESETS['web-banner'] && PRESETS.document, 'All 5 standard dimension presets are defined');
+assert(PRESETS.passport && PRESETS.avatar && PRESETS.signature && PRESETS['web-banner'] && PRESETS.document && PRESETS.thumb && PRESETS.declaration, 'All standard dimension presets including thumb and declaration are defined');
 assert(PRESETS.passport.width === 350 && PRESETS.passport.height === 450 && PRESETS.passport.maxKB === 50, 'Passport preset has correct dimensions (350x450, 50KB)');
 assert(PRESETS.signature.width === 300 && PRESETS.signature.height === 100 && PRESETS.signature.maxKB === 30, 'Signature preset has correct dimensions (300x100, 30KB)');
+assert(PRESETS.thumb.width === 240 && PRESETS.thumb.height === 240 && PRESETS.thumb.minKB === 20 && PRESETS.thumb.maxKB === 50, 'Thumb impression preset has correct dimensions (240x240, 20-50KB)');
+assert(PRESETS.declaration.width === 800 && PRESETS.declaration.height === 400 && PRESETS.declaration.minKB === 50 && PRESETS.declaration.maxKB === 100, 'Handwritten declaration preset has correct dimensions (800x400, 50-100KB)');
+
+// Test Min KB Range Validation
+const vMinKBValid = validateDimensionSpecs('350', '450', '50', false, '20');
+assert(vMinKBValid.isValid && vMinKBValid.minKB === 20 && vMinKBValid.maxKB === 50, 'Dimension validator accepts valid minKB < maxKB range');
+
+const vMinKBInvalid = validateDimensionSpecs('350', '450', '50', false, '60');
+assert(!vMinKBInvalid.isValid && vMinKBInvalid.sizeErrorMsg.includes('less than max'), 'Dimension validator rejects minKB >= maxKB');
 
 // Test Annotation Height Boundary & Granular Errors
 const vDateHeightTooSmall = validateDimensionSpecs('350', '60', '50', true);

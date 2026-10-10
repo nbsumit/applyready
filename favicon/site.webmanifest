@@ -1,7 +1,7 @@
 {
   "name": "ApplyReady",
   "short_name": "ApplyReady",
-  "description": "Fast, private image resizer, compressor, and ATS resume builder.",
+  "description": "Fast, 100% private in-browser image resizer, signature cleaner, PDF tools, and ATS resume builder.",
   "icons": [
     {
       "src": "/favicon/android-chrome-192x192.png",
@@ -17,5 +17,6 @@
   "theme_color": "#2563EB",
   "background_color": "#ffffff",
   "display": "standalone",
-  "start_url": "/"
+  "start_url": "/",
+  "scope": "/"
 }
