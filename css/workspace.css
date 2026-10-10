@@ -357,7 +357,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 
 @media print {
   /* Print the exact physical pages used by the live preview. */
-  .skip-link, .hero-export, .task-notification, .template-preview-backdrop, .preview-empty-note, .resume-source-sheet, .faq-section, .related-guides-section, .resource-section, .related-tool, .sr-only, #previewHeading, #formHeading { display: none !important; }
+  .skip-link, .hero-export, .task-notification, .template-preview-backdrop, .preview-empty-note, .resume-source-sheet, .faq-section, .related-guides-section, .resource-section, .related-tool, .ad-slot-container, .sr-only, #previewHeading, #formHeading { display: none !important; }
 
   html, body {
     width: auto !important;
