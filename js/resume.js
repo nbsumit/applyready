@@ -547,7 +547,7 @@
 
     return `
       <header class="resume-header">
-        <h1 class="resume-name">${escapeHTML(style.nameCase === 'upper' ? name.toUpperCase() : name)}</h1>
+        <div class="resume-name">${escapeHTML(style.nameCase === 'upper' ? name.toUpperCase() : name)}</div>
         ${t(p.targetTitle) ? `<div class="resume-target-title">${escapeHTML(t(p.targetTitle))}</div>` : ''}
         ${contactHtml ? `<div class="resume-contact-line">${contactHtml}</div>` : ''}
       </header>

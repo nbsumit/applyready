@@ -68,8 +68,70 @@
         "offers": {
           "@type": "Offer",
           "price": "0",
-          "priceCurrency": "USD"
+          "priceCurrency": "INR"
         }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://applyready.in/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I resize a photo or signature to 20KB or 50KB for online exam forms?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Upload your image, choose a preset (or enter exact width and height), and specify your target file size such as 20 KB or 50 KB. ApplyReady resizes the image on your device's canvas and iteratively compresses it to ensure the final file is strictly under your target limit while preserving visual clarity."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why do government exam portals (SSC, UPSC, IBPS) reject uploaded photos and signatures?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Portals reject uploads when the file size exceeds strict thresholds (e.g. 20 KB to 50 KB for photos, 10 KB to 20 KB for signatures), when dimensions do not match specified aspect ratios (such as 3.5 × 4.5 cm), or when an unsupported format like PNG or WebP is uploaded instead of JPEG."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are my uploaded photos and signatures stored or sent to any server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. ApplyReady runs 100% inside your browser using HTML5 Canvas and the client-side File API. Your photos, signatures, and certificates never leave your phone or computer, ensuring total privacy."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What are the standard photo and signature dimensions for Indian online exams?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Most national exams (SSC, UPSC, IBPS, NEET, RRB, State PSCs) require passport photos of approximately 3.5 × 4.5 cm (around 350 × 450 pixels or 200 × 230 pixels) sized between 20 KB and 50 KB. Signatures are typically 140 × 60 pixels or 300 × 100 pixels sized between 10 KB and 20 KB."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I imprint my name and date of photo (DOP) on passport pictures?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Open Advanced options under the crop workspace and check 'Add name & date of photo'. You can type your name and the date you took the picture, and ApplyReady will cleanly format a compliant white annotation strip at the bottom of the photo without distorting image proportions."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which image format should I choose: JPG, PNG, or WebP?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Choose JPG / JPEG for almost all Indian exam portals, college admissions, and government forms. Choose PNG if you need transparent backgrounds, and WebP for lightweight modern web applications."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does this image resizer tool work on mobile phones?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. ApplyReady is fully responsive and works smoothly on mobile browsers (Chrome, Safari, Edge, Firefox) on Android and iOS. You can drag and zoom the crop box directly with touch gestures on your phone screen."
+            }
+          }
+        ]
       }
     ]
   }
@@ -81,11 +143,11 @@
   <a class="skip-link" href="#mainContent">Skip to content</a>
   <nav class="navbar" aria-label="Main Navigation">
     <div class="nav-container">
-      <a href="index.html" class="brand-logo" aria-label="ApplyReady Home">
+      <a href="/" class="brand-logo" aria-label="ApplyReady Home">
         <img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
         <span>ApplyReady<span class="brand-dot">.</span></span>
       </a>
-      <div class="nav-links" id="navMenu"><a href="index.html" class="nav-link active" aria-current="page">Image tools</a><a href="resume.html" class="nav-link">Resume builder</a><a href="how-to-use.html" class="nav-link">Guides</a></div>
+      <div class="nav-links" id="navMenu"><a href="/" class="nav-link active" aria-current="page">Image tools</a><a href="resume.html" class="nav-link">Resume builder</a><a href="how-to-use.html" class="nav-link">Guides</a></div>
       <div class="nav-actions">
         <a href="https://razorpay.me/@nbsumit" target="_blank" rel="noopener noreferrer" class="nav-support-link" aria-label="Support ApplyReady (opens in new tab)"><i class="fa-solid fa-mug-hot" aria-hidden="true"></i><span>Support</span></a>
         <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
@@ -102,7 +164,7 @@
     <header class="hero-header workspace-hero">
       <div class="hero-copy">
         <div class="eyebrow">TOOLS FOR YOUR NEXT APPLICATION</div>
-        <h1 class="hero-title">Image tools</h1>
+        <h1 class="hero-title">Resize Photo &amp; Signature to 20KB / 50KB for Online Forms</h1>
         <p class="hero-subtitle">The right dimensions. The right file size. Ready to upload.</p>
       </div>
       <div class="workspace-assurance"><i class="fa-solid fa-lock" aria-hidden="true"></i><div><strong>Your files stay on your device</strong><span>Free to use. No account or watermark.</span></div></div>
@@ -397,6 +459,10 @@
         Get the details right
       </h3>
       <div class="guide-card-grid">
+        <a href="guides/ats-friendly-resume-guide.html" class="guide-card">
+          <strong>What makes a resume ATS-friendly?</strong>
+          <p class="text-muted mt-1">Single-column layouts, clean section headings, and vector text PDF exports.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
         <a href="guides/image-dimensions-vs-file-size.html" class="guide-card">
           <strong>Pixels or kilobytes?</strong>
           <p class="text-muted mt-1">Understand which setting to change when a form rejects your image.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
@@ -414,17 +480,90 @@
 
     <aside class="related-tool"><div><span class="eyebrow">ALSO ON APPLYREADY</span><h2>One less thing between you and your next role.</h2><p>Create a professional resume with 15 ATS-friendly templates and free PDF, Word and text exports.</p></div><a class="btn btn-secondary" href="resume.html">Open resume builder <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></aside>
 
+    <!-- Frequently Asked Questions -->
+    <section class="faq-section" aria-labelledby="faqHeading">
+      <div class="faq-header">
+        <h2 id="faqHeading" class="faq-title">Frequently Asked Questions</h2>
+        <p class="faq-subtitle">Clear answers on image sizes, exam guidelines, and in-browser privacy.</p>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How do I resize a photo or signature to 20KB or 50KB for online exam forms?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Upload your image, choose a preset (or enter exact width and height), and specify your target file size such as 20 KB or 50 KB. ApplyReady resizes the image on your device's canvas and iteratively compresses it to ensure the final file is strictly under your target limit while preserving visual clarity.</p>
+          </div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Why do government exam portals (SSC, UPSC, IBPS) reject uploaded photos and signatures?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Portals reject uploads when the file size exceeds strict thresholds (e.g. 20 KB to 50 KB for photos, 10 KB to 20 KB for signatures), when dimensions do not match specified aspect ratios (such as 3.5 × 4.5 cm), or when an unsupported format like PNG or WebP is uploaded instead of JPEG. Blurry signatures caused by excessive downsampling also trigger rejections.</p>
+          </div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Are my uploaded photos and signatures stored or sent to any server?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>No. ApplyReady runs 100% inside your browser using HTML5 Canvas and the client-side File API. Your photos, signatures, and certificates never leave your phone or computer, ensuring total privacy.</p>
+          </div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>What are the standard photo and signature dimensions for Indian online exams?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Most national exams (SSC, UPSC, IBPS, NEET, RRB, State PSCs) require passport photos of approximately 3.5 × 4.5 cm (around 350 × 450 pixels or 200 × 230 pixels) sized between 20 KB and 50 KB. Signatures are typically 140 × 60 pixels or 300 × 100 pixels sized between 10 KB and 20 KB.</p>
+          </div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Can I imprint my name and date of photo (DOP) on passport pictures?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Yes. Open Advanced options under the crop workspace and check "Add name &amp; date of photo". You can type your name and the date you took the picture, and ApplyReady will cleanly format a compliant white annotation strip at the bottom of the photo without distorting image proportions.</p>
+          </div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Which image format should I choose: JPG, PNG, or WebP?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Choose JPG / JPEG for almost all Indian exam portals, college admissions, and government forms. Choose PNG if you need transparent backgrounds or sharp line art for personal websites, and WebP for lightweight modern web applications.</p>
+          </div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Does this image resizer tool work on mobile phones?</span>
+            <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
+          </summary>
+          <div class="faq-answer">
+            <p>Yes. ApplyReady is fully responsive and works smoothly on mobile browsers (Chrome, Safari, Edge, Firefox) on Android and iOS. You can drag and zoom the crop box directly with touch gestures on your phone screen.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
   </main>
 
   <!-- FOOTER -->
   <footer class="site-footer">
     <div class="footer-content">
       <div class="footer-brand-block">
-        <a href="index.html" class="brand-logo"><img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+        <a href="/" class="brand-logo"><img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
         <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
       </div>
       <nav class="footer-links" aria-label="Footer Links">
-        <a href="index.html" class="footer-link">Image tools</a>
+        <a href="/" class="footer-link">Image tools</a>
         <a href="resume.html" class="footer-link">Resume builder</a>
         <a href="how-to-use.html" class="footer-link">Guides</a>
         <a href="about.html" class="footer-link">About</a>
