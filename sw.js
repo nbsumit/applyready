@@ -3,7 +3,7 @@
  * 100% Client-Side Caching for Offline Resizer, Resume Builder & PDF Tools
  */
 
-const CACHE_NAME = 'applyready-v1';
+const CACHE_NAME = 'applyready-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -15,6 +15,23 @@ const STATIC_ASSETS = [
   '/terms.html',
   '/contact.html',
   '/404.html',
+  '/guides/',
+  '/guides/index.html',
+  '/guides/ats-friendly-resume-guide.html',
+  '/guides/compression-targets-guide.html',
+  '/guides/image-dimensions-vs-file-size.html',
+  '/guides/image-formats-guide.html',
+  '/guides/aadhaar-pan-passport-photo-specifications.html',
+  '/guides/why-was-my-photo-rejected-online-applications.html',
+  '/guides/fresher-resume-examples-by-role.html',
+  '/guides/resume-summary-examples-indian-freshers.html',
+  '/guides/cv-vs-resume-india-job-applications.html',
+  '/guides/campus-placement-interview-prep-guide.html',
+  '/hi/ssc-photo-signature-size.html',
+  '/hi/upsc-photo-signature-size.html',
+  '/hi/rrb-photo-signature-size.html',
+  '/hi/ibps-photo-signature-size.html',
+  '/hi/neet-photo-signature-size.html',
   '/ssc-photo-signature-size.html',
   '/upsc-photo-signature-size.html',
   '/ibps-photo-signature-size.html',
