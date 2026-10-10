@@ -50,6 +50,111 @@
       height: 1000,
       maxKB: 200,
       defaultPrefix: 'Document'
+    },
+    'ssc-photo': {
+      name: 'SSC Photo (350 × 450 px, max 50 KB)',
+      width: 350,
+      height: 450,
+      maxKB: 50,
+      defaultPrefix: 'SSC_Photo'
+    },
+    'ssc-signature': {
+      name: 'SSC Signature (400 × 200 px, max 20 KB)',
+      width: 400,
+      height: 200,
+      maxKB: 20,
+      defaultPrefix: 'SSC_Signature'
+    },
+    'upsc-photo': {
+      name: 'UPSC Photo (350 × 350 px, max 100 KB)',
+      width: 350,
+      height: 350,
+      maxKB: 100,
+      defaultPrefix: 'UPSC_Photo'
+    },
+    'upsc-signature': {
+      name: 'UPSC Signature (350 × 350 px, max 100 KB)',
+      width: 350,
+      height: 350,
+      maxKB: 100,
+      defaultPrefix: 'UPSC_Signature'
+    },
+    'ibps-photo': {
+      name: 'IBPS Photo (200 × 230 px, max 50 KB)',
+      width: 200,
+      height: 230,
+      maxKB: 50,
+      defaultPrefix: 'IBPS_Photo'
+    },
+    'ibps-signature': {
+      name: 'IBPS Signature (140 × 60 px, max 20 KB)',
+      width: 140,
+      height: 60,
+      maxKB: 20,
+      defaultPrefix: 'IBPS_Signature'
+    },
+    'neet-photo': {
+      name: 'NEET Photo (400 × 500 px, max 100 KB)',
+      width: 400,
+      height: 500,
+      maxKB: 100,
+      defaultPrefix: 'NEET_Photo'
+    },
+    'neet-signature': {
+      name: 'NEET Signature (300 × 100 px, max 30 KB)',
+      width: 300,
+      height: 100,
+      maxKB: 30,
+      defaultPrefix: 'NEET_Signature'
+    },
+    'rrb-photo': {
+      name: 'RRB Photo (320 × 240 px, max 70 KB)',
+      width: 320,
+      height: 240,
+      maxKB: 70,
+      defaultPrefix: 'RRB_Photo'
+    },
+    'rrb-signature': {
+      name: 'RRB Signature (300 × 120 px, max 70 KB)',
+      width: 300,
+      height: 120,
+      maxKB: 70,
+      defaultPrefix: 'RRB_Signature'
+    },
+    'kb-10': {
+      name: 'Target: Under 10 KB',
+      width: 300,
+      height: 300,
+      maxKB: 10,
+      defaultPrefix: 'Image_10KB'
+    },
+    'kb-20': {
+      name: 'Target: Under 20 KB',
+      width: 350,
+      height: 350,
+      maxKB: 20,
+      defaultPrefix: 'Image_20KB'
+    },
+    'kb-50': {
+      name: 'Target: Under 50 KB',
+      width: 400,
+      height: 500,
+      maxKB: 50,
+      defaultPrefix: 'Image_50KB'
+    },
+    'kb-100': {
+      name: 'Target: Under 100 KB',
+      width: 600,
+      height: 600,
+      maxKB: 100,
+      defaultPrefix: 'Image_100KB'
+    },
+    'kb-200': {
+      name: 'Target: Under 200 KB',
+      width: 800,
+      height: 800,
+      maxKB: 200,
+      defaultPrefix: 'Image_200KB'
     }
   };
 
@@ -151,6 +256,26 @@
     setTodayDate();
     updatePresetUI();
     attachEventListeners();
+
+    // Check for preloaded presets via data attributes or URL parameters
+    try {
+      const appEl = getEl('resizerApp');
+      const params = typeof window !== 'undefined' && window.location ? new URLSearchParams(window.location.search) : null;
+      const targetPreset = (params && params.get('preset')) || (appEl && appEl.dataset.preset);
+      const targetKB = (params && (params.get('targetKB') || params.get('maxKB'))) || (appEl && appEl.dataset.maxKb);
+      const targetWidth = (params && params.get('width')) || (appEl && appEl.dataset.width);
+      const targetHeight = (params && params.get('height')) || (appEl && appEl.dataset.height);
+
+      if (targetPreset && PRESETS[targetPreset]) {
+        applyPreset(targetPreset);
+      } else if (targetKB) {
+        if (customMaxKBInput) customMaxKBInput.value = targetKB;
+        if (targetWidth && customWidthInput) customWidthInput.value = targetWidth;
+        if (targetHeight && customHeightInput) customHeightInput.value = targetHeight;
+        markCustom();
+        updatePresetUI();
+      }
+    } catch (_) {}
   }
 
   function setWorkspaceStatus(message) {
@@ -166,16 +291,25 @@
 
   function applyPreset(key) {
     if (!PRESETS[key]) return;
-    presetSelect.value = key;
+    if (presetSelect) {
+      let opt = presetSelect.querySelector(`option[value="${key}"]`);
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = PRESETS[key].name;
+        presetSelect.appendChild(opt);
+      }
+      presetSelect.value = key;
+    }
     if (key !== 'custom') {
       const preset = PRESETS[key];
-      customWidthInput.value = preset.width;
-      customHeightInput.value = preset.height;
-      customMaxKBInput.value = preset.maxKB;
-      aspectRatioSelect.value = 'target';
+      if (customWidthInput) customWidthInput.value = preset.width;
+      if (customHeightInput) customHeightInput.value = preset.height;
+      if (customMaxKBInput) customMaxKBInput.value = preset.maxKB;
+      if (aspectRatioSelect) aspectRatioSelect.value = 'target';
     }
     // Custom retains the displayed dimensions, including the previous preset's ratio.
-    const width = Number(customWidthInput.value), height = Number(customHeightInput.value);
+    const width = Number(customWidthInput ? customWidthInput.value : 0), height = Number(customHeightInput ? customHeightInput.value : 0);
     if (width > 0 && height > 0) lockedRatio = width / height;
     updatePresetUI();
   }
@@ -1304,6 +1438,15 @@
   // Initialize on DOM ready (browser only)
   if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', init);
+  }
+
+  // Global browser API
+  if (typeof window !== 'undefined') {
+    window.ApplyReadyResizer = {
+      applyPreset,
+      PRESETS,
+      useOriginalSize
+    };
   }
 
   // Export for testing
