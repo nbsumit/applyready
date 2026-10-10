@@ -51,6 +51,22 @@
       maxKB: 200,
       defaultPrefix: 'Document'
     },
+    'thumb': {
+      name: 'Left Thumb Impression (240 × 240 px, 20–50 KB)',
+      width: 240,
+      height: 240,
+      minKB: 20,
+      maxKB: 50,
+      defaultPrefix: 'Thumb_Impression'
+    },
+    'declaration': {
+      name: 'Handwritten Declaration (800 × 400 px, 50–100 KB)',
+      width: 800,
+      height: 400,
+      minKB: 50,
+      maxKB: 100,
+      defaultPrefix: 'Declaration'
+    },
     'ssc-photo': {
       name: 'SSC Photo (350 × 450 px, max 50 KB)',
       width: 350,
@@ -181,6 +197,10 @@
   const customWidthInput = getEl('customWidth');
   const customHeightInput = getEl('customHeight');
   const customMaxKBInput = getEl('customMaxKB');
+  const customMinKBInput = getEl('customMinKB');
+  const unitSelect = getEl('unitSelect');
+  const dpiSelect = getEl('dpiSelect');
+  const dpiGroup = getEl('dpiGroup');
   const formatSelect = getEl('formatSelect');
   const bgFillSelect = getEl('bgFillSelect');
   const aspectRatioSelect = getEl('aspectRatioSelect');
@@ -303,9 +323,22 @@
     }
     if (key !== 'custom') {
       const preset = PRESETS[key];
-      if (customWidthInput) customWidthInput.value = preset.width;
-      if (customHeightInput) customHeightInput.value = preset.height;
+      if (unitSelect) unitSelect.value = 'px';
+      if (dpiGroup) dpiGroup.style.display = 'none';
+      const wLabel = getEl('customWidthLabel');
+      const hLabel = getEl('customHeightLabel');
+      if (wLabel) wLabel.textContent = 'Width (px)';
+      if (hLabel) hLabel.textContent = 'Height (px)';
+      if (customWidthInput) {
+        customWidthInput.step = '1';
+        customWidthInput.value = preset.width;
+      }
+      if (customHeightInput) {
+        customHeightInput.step = '1';
+        customHeightInput.value = preset.height;
+      }
       if (customMaxKBInput) customMaxKBInput.value = preset.maxKB;
+      if (customMinKBInput) customMinKBInput.value = preset.minKB || '';
       if (aspectRatioSelect) aspectRatioSelect.value = 'target';
     }
     // Custom retains the displayed dimensions, including the previous preset's ratio.
@@ -377,11 +410,12 @@
    * Pure Dimension & File Size Validator
    * Validates custom dimensions, Megapixel ceiling, and size limits
    */
-  function validateDimensionSpecs(rawWStr, rawHStr, rawKBStr, addDate = false) {
+  function validateDimensionSpecs(rawWStr, rawHStr, rawKBStr, addDate = false, rawMinKBStr = null) {
     const isInteger = (s) => /^\d+$/.test(String(s || '').trim());
     let width = 350;
     let height = 350;
     let maxKB = 50;
+    let minKB = 0;
     let isValid = true;
     let dimErrorMsg = null;
     let wErrorMsg = null;
@@ -455,11 +489,30 @@
       }
     }
 
+    if (rawMinKBStr !== null && rawMinKBStr !== undefined && String(rawMinKBStr).trim() !== '') {
+      if (!isInteger(rawMinKBStr)) {
+        sizeErrorMsg = 'Min file size must be a positive integer.';
+        isValid = false;
+      } else {
+        const minVal = Number(rawMinKBStr);
+        if (minVal >= maxKB) {
+          sizeErrorMsg = 'Min file size must be less than max file size.';
+          isValid = false;
+        } else if (minVal < 0) {
+          sizeErrorMsg = 'Min file size cannot be negative.';
+          isValid = false;
+        } else {
+          minKB = minVal;
+        }
+      }
+    }
+
     return {
       isValid,
       width,
       height,
       maxKB,
+      minKB,
       dimErrorMsg,
       wErrorMsg,
       hErrorMsg,
@@ -477,18 +530,36 @@
     let width = 350;
     let height = 350;
     let maxKB = 50;
+    let minKB = 0;
     let prefix = 'ApplyReady_Custom';
     let isValid = true;
 
     if (isCustom) {
-      const rawWStr = customWidthInput ? customWidthInput.value : '';
-      const rawHStr = customHeightInput ? customHeightInput.value : '';
+      let rawWStr = customWidthInput ? customWidthInput.value : '';
+      let rawHStr = customHeightInput ? customHeightInput.value : '';
       const rawKBStr = customMaxKBInput ? customMaxKBInput.value : '';
+      const rawMinKBStr = customMinKBInput ? customMinKBInput.value : null;
 
-      const validation = validateDimensionSpecs(rawWStr, rawHStr, rawKBStr, addDate);
+      const unit = unitSelect ? unitSelect.value : 'px';
+      const dpi = dpiSelect ? (parseInt(dpiSelect.value, 10) || 300) : 300;
+
+      if (unit === 'cm') {
+        const numW = parseFloat(rawWStr);
+        const numH = parseFloat(rawHStr);
+        if (!isNaN(numW) && numW > 0) rawWStr = String(Math.round((numW / 2.54) * dpi));
+        if (!isNaN(numH) && numH > 0) rawHStr = String(Math.round((numH / 2.54) * dpi));
+      } else if (unit === 'inch') {
+        const numW = parseFloat(rawWStr);
+        const numH = parseFloat(rawHStr);
+        if (!isNaN(numW) && numW > 0) rawWStr = String(Math.round(numW * dpi));
+        if (!isNaN(numH) && numH > 0) rawHStr = String(Math.round(numH * dpi));
+      }
+
+      const validation = validateDimensionSpecs(rawWStr, rawHStr, rawKBStr, addDate, rawMinKBStr);
       width = validation.width;
       height = validation.height;
       maxKB = validation.maxKB;
+      minKB = validation.minKB || 0;
       isValid = validation.isValid;
 
       if (validation.dimErrorMsg) {
@@ -504,6 +575,7 @@
       width = p.width;
       height = p.height;
       maxKB = p.maxKB;
+      minKB = p.minKB || 0;
       prefix = p.defaultPrefix;
 
       if (addDate && height < 80) {
@@ -519,6 +591,7 @@
       width,
       height,
       maxKB,
+      minKB,
       mimeType,
       bgFill,
       prefix,
@@ -565,7 +638,9 @@
     const specs = getActiveSpecs();
     if (specs.isValid) {
       if (specDims) specDims.textContent = `${specs.width} × ${specs.height} px`;
-      if (specSize) specSize.textContent = `Under ${specs.maxKB} KB`;
+      if (specSize) {
+        specSize.textContent = specs.minKB > 0 ? `${specs.minKB} KB – ${specs.maxKB} KB` : `Under ${specs.maxKB} KB`;
+      }
       if (btnProcess) btnProcess.disabled = !cropperReady || processing;
     } else {
       if (specDims) specDims.textContent = 'Invalid dimensions';
@@ -712,10 +787,78 @@
       updatePresetUI();
     });
 
-    [customWidthInput, customHeightInput, customMaxKBInput].forEach(inp => {
-      inp.addEventListener('blur', () => {
-        getActiveSpecs();
+    if (customMinKBInput) {
+      customMinKBInput.addEventListener('input', () => {
+        markCustom();
+        updatePresetUI();
       });
+    }
+
+    if (unitSelect) {
+      unitSelect.addEventListener('change', () => {
+        const unit = unitSelect.value;
+        const dpi = dpiSelect ? (parseInt(dpiSelect.value, 10) || 300) : 300;
+        if (dpiGroup) dpiGroup.style.display = unit === 'px' ? 'none' : 'block';
+        const wLabel = getEl('customWidthLabel');
+        const hLabel = getEl('customHeightLabel');
+        if (unit === 'cm') {
+          if (wLabel) wLabel.textContent = 'Width (cm)';
+          if (hLabel) hLabel.textContent = 'Height (cm)';
+          if (customWidthInput) {
+            customWidthInput.step = '0.1';
+            const curPx = parseFloat(customWidthInput.value) || 350;
+            customWidthInput.value = (curPx / dpi * 2.54).toFixed(1);
+          }
+          if (customHeightInput) {
+            customHeightInput.step = '0.1';
+            const curPx = parseFloat(customHeightInput.value) || 350;
+            customHeightInput.value = (curPx / dpi * 2.54).toFixed(1);
+          }
+        } else if (unit === 'inch') {
+          if (wLabel) wLabel.textContent = 'Width (in)';
+          if (hLabel) hLabel.textContent = 'Height (in)';
+          if (customWidthInput) {
+            customWidthInput.step = '0.05';
+            const curPx = parseFloat(customWidthInput.value) || 350;
+            customWidthInput.value = (curPx / dpi).toFixed(2);
+          }
+          if (customHeightInput) {
+            customHeightInput.step = '0.05';
+            const curPx = parseFloat(customHeightInput.value) || 350;
+            customHeightInput.value = (curPx / dpi).toFixed(2);
+          }
+        } else {
+          if (wLabel) wLabel.textContent = 'Width (px)';
+          if (hLabel) hLabel.textContent = 'Height (px)';
+          if (customWidthInput) {
+            customWidthInput.step = '1';
+            customWidthInput.value = Math.round(parseFloat(customWidthInput.value) || 350);
+          }
+          if (customHeightInput) {
+            customHeightInput.step = '1';
+            customHeightInput.value = Math.round(parseFloat(customHeightInput.value) || 350);
+          }
+        }
+        markCustom();
+        const w = Number(customWidthInput ? customWidthInput.value : 0), h = Number(customHeightInput ? customHeightInput.value : 0);
+        if (w > 0 && h > 0) lockedRatio = w / h;
+        updatePresetUI();
+      });
+    }
+
+    if (dpiSelect) {
+      dpiSelect.addEventListener('change', () => {
+        markCustom();
+        updatePresetUI();
+      });
+    }
+
+    [customWidthInput, customHeightInput, customMaxKBInput, customMinKBInput].forEach(inp => {
+      if (inp) {
+        inp.addEventListener('blur', () => {
+          getActiveSpecs();
+        });
+      }
     });
 
     if (formatSelect) {
@@ -1264,6 +1407,49 @@
   }
 
   /**
+   * Ensure image meets minimum KB requirements (e.g. for official portals like IBPS/RRB)
+   * Uses lossless standard JPEG COM markers so decoding and visual quality are 100% intact.
+   */
+  async function ensureMinKB(blob, minKB, maxKB) {
+    if (!minKB || minKB <= 0) return blob;
+    const minBytes = minKB * 1024;
+    const maxBytes = maxKB * 1024;
+    if (blob.size >= minBytes) return blob;
+
+    const padNeeded = minBytes - blob.size;
+    if (padNeeded <= 0) return blob;
+
+    if (blob.type === 'image/jpeg') {
+      try {
+        const buffer = await blob.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        if (bytes[0] === 0xFF && bytes[1] === 0xD8) {
+          let remaining = padNeeded;
+          const chunks = [bytes.subarray(0, 2)];
+          while (remaining > 0) {
+            const segTotalLen = Math.min(remaining + 4, 65535);
+            if (segTotalLen < 5) break;
+            const payloadLen = segTotalLen - 4;
+            const seg = new Uint8Array(segTotalLen);
+            seg[0] = 0xFF;
+            seg[1] = 0xFE;
+            seg[2] = (segTotalLen - 2) >> 8;
+            seg[3] = (segTotalLen - 2) & 0xFF;
+            chunks.push(seg);
+            remaining -= payloadLen;
+          }
+          chunks.push(bytes.subarray(2));
+          const newBlob = new Blob(chunks, { type: 'image/jpeg' });
+          if (newBlob.size <= maxBytes) return newBlob;
+        }
+      } catch (e) {
+        return blob;
+      }
+    }
+    return blob;
+  }
+
+  /**
    * Strict Compression Algorithm
    * Never resolves oversized images as success!
    * Clearly handles PNG lossless limitation honestly.
@@ -1325,8 +1511,14 @@
       if (opId !== currentOpId || revision !== configRevision) return;
 
       // 2. Strict Compression
-      const compressedBlob = await compressStrictly(canvas, specs.maxKB, specs.mimeType);
+      let compressedBlob = await compressStrictly(canvas, specs.maxKB, specs.mimeType);
       if (opId !== currentOpId || revision !== configRevision) return;
+
+      // Ensure Minimum KB if requested
+      if (specs.minKB && specs.minKB > 0 && compressedBlob.size < specs.minKB * 1024) {
+        compressedBlob = await ensureMinKB(compressedBlob, specs.minKB, specs.maxKB);
+        if (opId !== currentOpId || revision !== configRevision) return;
+      }
 
       // 3. Post-Compression Validation: Decode blob and check dimensions, bytes, and MIME
       if (compressedBlob.size > specs.maxKB * 1024) {
@@ -1382,7 +1574,11 @@
         resultDims.textContent = `${validationImg.naturalWidth} × ${validationImg.naturalHeight} px (Measured)`;
       }
       if (resultTargetSize) {
-        resultTargetSize.textContent = `Under ${specs.maxKB} KB (${(specs.maxKB * 1024).toLocaleString()} bytes)`;
+        if (specs.minKB > 0) {
+          resultTargetSize.textContent = `${specs.minKB}–${specs.maxKB} KB (${(specs.minKB * 1024).toLocaleString()} – ${(specs.maxKB * 1024).toLocaleString()} bytes)`;
+        } else {
+          resultTargetSize.textContent = `Under ${specs.maxKB} KB (${(specs.maxKB * 1024).toLocaleString()} bytes)`;
+        }
       }
 
       const actualBytes = compressedBlob.size;
@@ -1400,7 +1596,11 @@
       if (resultFormat) resultFormat.textContent = formatNames[specs.mimeType] || specs.mimeType;
 
       if (resultStatus) {
-        resultStatus.textContent = `Satisfies target of under ${specs.maxKB} KB`;
+        if (specs.minKB > 0) {
+          resultStatus.textContent = `Satisfies target range of ${specs.minKB}–${specs.maxKB} KB`;
+        } else {
+          resultStatus.textContent = `Satisfies target of under ${specs.maxKB} KB`;
+        }
         resultStatus.className = 'meta-stat-val status-ok';
       }
 
@@ -1416,8 +1616,8 @@
       cropperActiveArea.classList.add('hidden');
       resultArea.classList.remove('hidden');
       setWorkspaceStatus('Ready to download');
-      resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      btnDownload.focus();
+      resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      btnDownload.focus({ preventScroll: true });
 
     } catch (err) {
       if (opId !== currentOpId || revision !== configRevision) return;
@@ -1455,7 +1655,8 @@
       PRESETS,
       scaleLockedDimension,
       formatAnnotationDate,
-      validateDimensionSpecs
+      validateDimensionSpecs,
+      ensureMinKB
     };
   }
 

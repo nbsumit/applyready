@@ -177,6 +177,8 @@
       <span class="preset-bar-label">Quick start</span>
       <button type="button" class="preset-shortcut" data-preset="passport" aria-pressed="false"><i class="fa-regular fa-id-card" aria-hidden="true"></i> ID photo <span>350 × 450</span></button>
       <button type="button" class="preset-shortcut" data-preset="signature" aria-pressed="false"><i class="fa-solid fa-signature" aria-hidden="true"></i> Signature <span>300 × 100</span></button>
+      <button type="button" class="preset-shortcut" data-preset="thumb" aria-pressed="false"><i class="fa-solid fa-file-image" aria-hidden="true"></i> Thumb <span>240 × 240</span></button>
+      <button type="button" class="preset-shortcut" data-preset="declaration" aria-pressed="false"><i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Declaration <span>800 × 400</span></button>
       <button type="button" class="preset-shortcut" data-preset="avatar" aria-pressed="false"><i class="fa-regular fa-user" aria-hidden="true"></i> Profile <span>400 × 400</span></button>
       <button type="button" class="preset-shortcut" data-preset="document" aria-pressed="false"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> Document <span>800 × 1000</span></button>
     </div>
@@ -215,6 +217,8 @@
             <option value="avatar">Profile / Avatar (400 × 400 px, max 100 KB)</option>
             <option value="passport">ID / Passport Photo (350 × 450 px, max 50 KB)</option>
             <option value="signature">Signature / Stamp (300 × 100 px, max 30 KB)</option>
+            <option value="thumb">Left Thumb Impression (240 × 240 px, 20–50 KB)</option>
+            <option value="declaration">Handwritten Declaration (800 × 400 px, 50–100 KB)</option>
             <option value="web-banner">Social / Web Card (1200 × 630 px, max 300 KB)</option>
             <option value="document">Document Scan (800 × 1000 px, max 200 KB)</option>
           </select>
@@ -224,7 +228,7 @@
         <!-- Custom Dimension Controls -->
         <div id="customControls" class="custom-dims-row">
           <div>
-            <label class="form-label" for="customWidth">Width (px)</label>
+            <label class="form-label" for="customWidth" id="customWidthLabel">Width (px)</label>
             <input type="number" id="customWidth" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000" step="1">
           </div>
           <div class="aspect-lock-wrap">
@@ -233,11 +237,40 @@
             </button>
           </div>
           <div>
-            <label class="form-label" for="customHeight">Height (px)</label>
+            <label class="form-label" for="customHeight" id="customHeightLabel">Height (px)</label>
             <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000" step="1">
           </div>
           <div>
-            <label class="form-label" for="customMaxKB">File limit (KB)</label>
+            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+              <div style="flex: 1;">
+                <label class="form-label" for="unitSelect">Unit</label>
+                <select id="unitSelect" class="form-select">
+                  <option value="px" selected>px (Pixels)</option>
+                  <option value="cm">cm (Centimeters)</option>
+                  <option value="inch">in (Inches)</option>
+                </select>
+              </div>
+              <div id="dpiGroup" style="flex: 1; display: none;">
+                <label class="form-label" for="dpiSelect">Print DPI</label>
+                <select id="dpiSelect" class="form-select">
+                  <option value="300" selected>300 DPI</option>
+                  <option value="200">200 DPI</option>
+                  <option value="150">150 DPI</option>
+                  <option value="72">72 DPI</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Target File Size Limits -->
+        <div class="form-row-2" style="margin-top: 0.75rem;">
+          <div>
+            <label class="form-label" for="customMinKB">Min size (KB, optional)</label>
+            <input type="number" id="customMinKB" aria-describedby="sizeError" class="form-control" placeholder="0" min="0" max="20000" step="1">
+          </div>
+          <div>
+            <label class="form-label" for="customMaxKB">Max limit (KB)</label>
             <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="50" min="5" max="20000" step="1">
           </div>
         </div>
