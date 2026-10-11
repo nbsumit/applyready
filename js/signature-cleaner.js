@@ -180,6 +180,7 @@
         originalImageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height);
 
         processSignature();
+        if (window.ApplyReadyUI && window.ApplyReadyUI.reveal && previewArea) window.ApplyReadyUI.reveal(previewArea.closest('section') || previewArea);
       };
       img.onerror = () => { originalFile = null; notifyError('That image could not be read. Choose a JPG, PNG or WebP photo that opens on your device, then try again.'); };
       img.src = e.target.result;

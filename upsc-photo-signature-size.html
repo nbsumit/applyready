@@ -38,11 +38,9 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -194,40 +192,40 @@
           According to Union Public Service Commission examination notices and OTR guidelines, uploaded documents must strictly satisfy the following criteria:
         </p>
         <div style="overflow-x: auto; margin: 1rem 0;">
-          <table class="table-spec" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+          <table class="table-spec">
             <thead>
-              <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-card-subtle);">
-                <th style="padding: 0.75rem 1rem;">Document</th>
-                <th style="padding: 0.75rem 1rem;">File Size Limit</th>
-                <th style="padding: 0.75rem 1rem;">Pixel Dimensions</th>
-                <th style="padding: 0.75rem 1rem;">Format</th>
-                <th style="padding: 0.75rem 1rem;">Key Guidelines</th>
+              <tr>
+                <th>Document</th>
+                <th>File Size Limit</th>
+                <th>Pixel Dimensions</th>
+                <th>Format</th>
+                <th>Key Guidelines</th>
               </tr>
             </thead>
             <tbody>
-              <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 0.75rem 1rem; font-weight: 600;">Scanned Photo</td>
-                <td style="padding: 0.75rem 1rem;"><strong>20 KB – 200 KB</strong></td>
-                <td style="padding: 0.75rem 1rem;">Check official notification (350 × 350 px recommended)</td>
-                <td style="padding: 0.75rem 1rem;">JPG / JPEG</td>
-                <td style="padding: 0.75rem 1rem;">3/4th face coverage, plain light background, frontal view</td>
+              <tr>
+                <td>Scanned Photo</td>
+                <td><strong>20 KB – 200 KB</strong></td>
+                <td>Check official notification (350 × 350 px recommended)</td>
+                <td>JPG / JPEG</td>
+                <td>3/4th face coverage, plain light background, frontal view</td>
               </tr>
-              <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 0.75rem 1rem; font-weight: 600;">Triple Signature (Scanned Signature)</td>
-                <td style="padding: 0.75rem 1rem;"><strong>20 KB – 100 KB</strong></td>
-                <td style="padding: 0.75rem 1rem;">350 × 350 px to 500 × 500 px</td>
-                <td style="padding: 0.75rem 1rem;">JPG / JPEG</td>
-                <td style="padding: 0.75rem 1rem;">Candidate must sign three times (one below the other) on plain white paper with a black ballpoint pen. UPSC requires a triple signature in a single image for identity verification.</td>
+              <tr>
+                <td>Triple Signature (Scanned Signature)</td>
+                <td><strong>20 KB – 100 KB</strong></td>
+                <td>350 × 350 px to 500 × 500 px</td>
+                <td>JPG / JPEG</td>
+                <td>Candidate must sign three times (one below the other) on plain white paper with a black ballpoint pen. UPSC requires a triple signature in a single image for identity verification.</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div style="background: var(--bg-card-subtle); border-left: 4px solid var(--primary); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-top: 1rem;">
-          <p style="margin: 0; font-size: 0.9rem; color: var(--text-main);">
+        <div class="callout">
+          <p style="margin: 0;">
             <strong>Official Verification Disclaimer:</strong> Guidelines are sourced directly from UPSC examination notifications. Always verify with the latest notification published on the official Union Public Service Commission portal: <a href="https://upsconline.nic.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">upsconline.nic.in</a>.
           </p>
-          <p class="text-muted" style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">
+          <p class="text-muted" style="margin: 0.5rem 0 0 0;">
             Last verified: October 2026 — always confirm with the official notification on <a href="https://upsconline.nic.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">upsconline.nic.in</a>.
           </p>
         </div>
@@ -237,14 +235,14 @@
       <section id="resize-tool" style="margin-bottom: 2rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
           <div>
-            <h2 style="font-size: 1.35rem; margin: 0; color: var(--text-heading);">Resize Your UPSC File Online</h2>
-            <p class="text-muted" style="margin: 0; font-size: 0.9rem;">Preloaded with official UPSC square aspect ratio and file size targets:</p>
+            <h2>Resize Your UPSC File Online</h2>
+            <p class="text-muted" style="margin: 0;">Preloaded with official UPSC square aspect ratio and file size targets:</p>
           </div>
-          <div style="display: inline-flex; gap: 0.5rem;">
-            <button type="button" id="btnPresetUPSCPhoto" class="btn btn-primary btn-sm" onclick="window.ApplyReadyResizer?.applyPreset('upsc-photo')">
+          <div class="preset-choice">
+            <button type="button" id="btnPresetUPSCPhoto" class="btn btn-secondary btn-sm" data-preset="upsc-photo" aria-pressed="false">
               <i class="fa-solid fa-image" aria-hidden="true"></i> Photo (350×350, 20–200 KB)
             </button>
-            <button type="button" id="btnPresetUPSCSig" class="btn btn-secondary btn-sm" onclick="window.ApplyReadyResizer?.applyPreset('upsc-signature')">
+            <button type="button" id="btnPresetUPSCSig" class="btn btn-secondary btn-sm" data-preset="upsc-signature" aria-pressed="false">
               <i class="fa-solid fa-signature" aria-hidden="true"></i> Triple Signature (400×400, 20–100 KB)
             </button>
           </div>
@@ -283,7 +281,7 @@
             </div>
 
             <div class="control-group">
-              <label for="presetSelect" class="control-label">Target Preset</label>
+              <label for="presetSelect" class="control-label">Preset</label>
               <select id="presetSelect" class="form-control custom-select-source">
                 <option value="upsc-photo" selected>UPSC Photo (350 × 350 px, 20–200 KB)</option>
                 <option value="upsc-signature">UPSC Triple Signature (400 × 400 px, 20–100 KB)</option>
@@ -294,8 +292,8 @@
             </div>
 
             <div id="customControls">
-              <div class="dim-row" style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                <div class="control-group" style="flex: 1;">
+              <div class="dim-row">
+                <div class="control-group">
                   <label for="customWidth" class="control-label">Width (px)</label>
                   <input type="number" id="customWidth" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000">
                 </div>
@@ -304,20 +302,22 @@
                     <i class="fa-solid fa-lock" aria-hidden="true"></i>
                   </button>
                 </div>
-                <div class="control-group" style="flex: 1;">
+                <div class="control-group">
                   <label for="customHeight" class="control-label">Height (px)</label>
                   <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000">
                 </div>
               </div>
+              <span id="dimError" class="field-error hidden" role="alert"></span>
 
-              <div class="control-group" style="margin-top: 0.75rem;">
-                <label for="customMaxKB" class="control-label">Max File Size (KB)</label>
+              <div class="control-group">
+                <label for="customMaxKB" class="control-label">Max file size (KB)</label>
                 <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="100" min="5" max="20000">
               </div>
+              <span id="sizeError" class="field-error hidden" role="alert"></span>
 
-              <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
+              <div class="form-row-2">
                 <div class="control-group">
-                  <label for="formatSelect" class="control-label">Output Format</label>
+                  <label for="formatSelect" class="control-label">Output format</label>
                   <select id="formatSelect" class="form-control custom-select-source">
                     <option value="image/jpeg" selected>JPEG (.jpg)</option>
                     <option value="image/png">PNG (.png)</option>
@@ -325,7 +325,7 @@
                   </select>
                 </div>
                 <div class="control-group">
-                  <label for="bgFillSelect" class="control-label">Background Fill</label>
+                  <label for="bgFillSelect" class="control-label">Background</label>
                   <select id="bgFillSelect" class="form-control">
                     <option value="white" selected>White</option>
                     <option value="transparent">Transparent</option>
@@ -336,21 +336,21 @@
             </div>
 
             <!-- Optional Name and Date Strip (Useful for UPSC OTR requirements) -->
-            <div class="annotation-wrapper" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-              <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+            <div class="annotation-wrapper">
+              <label class="checkbox-label">
                 <input type="checkbox" id="addDateCheckbox">
                 <span>Add Candidate Name &amp; Date Strip (UPSC OTR)</span>
               </label>
-              <div id="dateInputGroup" style="display: none; margin-top: 0.5rem;">
-                <div class="control-group" style="margin-bottom: 0.5rem;">
-                  <label for="candidateNameInput" class="control-label">Candidate Name</label>
+              <div id="dateInputGroup" class="date-strip-fields" style="display: none;">
+                <div class="control-group">
+                  <label for="candidateNameInput" class="control-label">Candidate name</label>
                   <input type="text" id="candidateNameInput" class="form-control" placeholder="YOUR FULL NAME">
                 </div>
                 <div class="control-group">
-                  <label for="annotationDateInput" class="control-label">Date of Photo</label>
-                  <div style="display: flex; gap: 0.5rem;">
+                  <label for="annotationDateInput" class="control-label">Date of photo</label>
+                  <div class="input-with-button">
                     <input type="date" id="annotationDateInput" class="form-control">
-                    <button type="button" id="btnTodayDate" class="btn btn-secondary btn-sm">Today</button>
+                    <button type="button" id="btnTodayDate" class="btn btn-secondary">Today</button>
                   </div>
                 </div>
               </div>
@@ -360,12 +360,10 @@
               <select id="aspectRatioSelect"><option value="target">Target</option></select>
             </div>
 
-            <span id="dimError" class="field-error hidden" role="alert"></span>
-            <span id="sizeError" class="field-error hidden" role="alert"></span>
-
-            <button type="button" id="btnProcess" class="btn btn-primary btn-block" style="margin-top: 1rem;" disabled>
+            <button type="button" id="btnProcess" class="btn btn-primary btn-block" aria-describedby="processSummary" disabled>
               <i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize &amp; Compress for UPSC
             </button>
+            <p id="processSummary" class="process-summary" aria-live="polite"></p>
           </section>
 
           <!-- RIGHT: Preview Panel -->
@@ -381,7 +379,7 @@
               <div class="cropper-container-wrapper">
                 <img id="imageToCrop" alt="Source for cropping" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
               </div>
-              <div class="cropper-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.75rem; flex-wrap: wrap;">
+              <div class="cropper-actions">
                 <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="Rotate left 90°"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> 90°</button>
                 <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="Rotate right 90°"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> 90°</button>
                 <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="Reset crop"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Reset</button>
@@ -394,12 +392,12 @@
               <div class="result-card">
                 <img id="resultImage" alt="Resized UPSC preview" class="result-img">
               </div>
-              <div class="result-meta-stats" style="display: flex; gap: 0.5rem; justify-content: space-between; flex-wrap: wrap; margin: 1rem 0;">
+              <div class="result-meta-stats">
                 <div><span class="text-muted">Dimensions:</span> <strong id="resultDims">350 × 350 px</strong></div>
                 <div><span class="text-muted">File Size:</span> <strong id="resultFileSize" class="status-ok">75 KB</strong></div>
                 <div><span class="text-muted">Format:</span> <strong id="resultFormat">JPEG</strong></div>
               </div>
-              <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+              <div class="result-actions">
                 <a id="btnDownload" class="btn btn-success btn-block" download="UPSC_Photo.jpg">
                   <i class="fa-solid fa-download" aria-hidden="true"></i> Download UPSC Ready File
                 </a>
@@ -407,7 +405,7 @@
               </div>
             </div>
 
-            <div class="workspace-footnote" style="margin-top: 1rem;">
+            <div class="workspace-footnote">
               <span><i class="fa-solid fa-lock" aria-hidden="true"></i> 100% Private (Processed in browser)</span>
               <span id="workspaceStatus">No image selected</span>
             </div>

@@ -80,6 +80,15 @@
       node.textContent = message; node.classList.toggle('is-error', error);
       node.classList.add('is-visible');
       notificationTimer = setTimeout(() => node.classList.remove('is-visible'), error ? 9000 : 4500);
+    },
+    // Bring a result into view when it is below the fold, as on phones where the
+    // preview sits under the settings. Does nothing when it is already visible.
+    reveal(el) {
+      if (!el || typeof el.getBoundingClientRect !== 'function') return;
+      const r = el.getBoundingClientRect();
+      if (r.top >= 0 && r.top < window.innerHeight * 0.6) return;
+      const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
     }
   });
 

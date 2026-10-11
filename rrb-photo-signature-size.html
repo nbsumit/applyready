@@ -38,11 +38,9 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -194,40 +192,40 @@
           According to recent CEN notifications on the official RRB recruitment portal, uploaded files must meet the following exact standards:
         </p>
         <div style="overflow-x: auto; margin: 1rem 0;">
-          <table class="table-spec" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+          <table class="table-spec">
             <thead>
-              <tr style="border-bottom: 2px solid var(--border-color); background: var(--bg-card-subtle);">
-                <th style="padding: 0.75rem 1rem;">Document</th>
-                <th style="padding: 0.75rem 1rem;">File Size Limit</th>
-                <th style="padding: 0.75rem 1rem;">Dimensions</th>
-                <th style="padding: 0.75rem 1rem;">Format</th>
-                <th style="padding: 0.75rem 1rem;">Key Guidelines</th>
+              <tr>
+                <th>Document</th>
+                <th>File Size Limit</th>
+                <th>Dimensions</th>
+                <th>Format</th>
+                <th>Key Guidelines</th>
               </tr>
             </thead>
             <tbody>
-              <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 0.75rem 1rem; font-weight: 600;">Passport Photo</td>
-                <td style="padding: 0.75rem 1rem;"><strong>30 KB – 70 KB</strong></td>
-                <td style="padding: 0.75rem 1rem;">240 × 320 px (portrait, 35 × 45 mm)</td>
-                <td style="padding: 0.75rem 1rem;">JPG / JPEG</td>
-                <td style="padding: 0.75rem 1rem;">Plain white background, full frontal view, no cap or dark spectacles</td>
+              <tr>
+                <td>Passport Photo</td>
+                <td><strong>30 KB – 70 KB</strong></td>
+                <td>240 × 320 px (portrait, 35 × 45 mm)</td>
+                <td>JPG / JPEG</td>
+                <td>Plain white background, full frontal view, no cap or dark spectacles</td>
               </tr>
-              <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 0.75rem 1rem; font-weight: 600;">Signature</td>
-                <td style="padding: 0.75rem 1rem;"><strong>30 KB – 49 KB</strong></td>
-                <td style="padding: 0.75rem 1rem;">300 × 120 px (minimum 140 × 60 px)</td>
-                <td style="padding: 0.75rem 1rem;">JPG / JPEG</td>
-                <td style="padding: 0.75rem 1rem;">Black or blue ink on plain white paper, cursive/running handwriting (no all-caps)</td>
+              <tr>
+                <td>Signature</td>
+                <td><strong>30 KB – 49 KB</strong></td>
+                <td>300 × 120 px (minimum 140 × 60 px)</td>
+                <td>JPG / JPEG</td>
+                <td>Black or blue ink on plain white paper, cursive/running handwriting (no all-caps)</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div style="background: var(--bg-card-subtle); border-left: 4px solid var(--primary); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-top: 1rem;">
-          <p style="margin: 0; font-size: 0.9rem; color: var(--text-main);">
+        <div class="callout">
+          <p style="margin: 0;">
             <strong>Official Verification Disclaimer:</strong> Extracted directly from official CEN notices. Always verify with the latest notification published on the official Railway portal: <a href="https://www.rrbapply.gov.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">rrbapply.gov.in</a>.
           </p>
-          <p class="text-muted" style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">
+          <p class="text-muted" style="margin: 0.5rem 0 0 0;">
             Last verified: October 2026 — always confirm with the official notification on <a href="https://www.rrbapply.gov.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">rrbapply.gov.in</a>.
           </p>
         </div>
@@ -237,14 +235,14 @@
       <section id="resize-tool" style="margin-bottom: 2rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
           <div>
-            <h2 style="font-size: 1.35rem; margin: 0; color: var(--text-heading);">Resize Your Railway RRB Files Online</h2>
-            <p class="text-muted" style="margin: 0; font-size: 0.9rem;">Preloaded with official 30–70 KB range, dimensions, and aspect ratio:</p>
+            <h2>Resize Your Railway RRB Files Online</h2>
+            <p class="text-muted" style="margin: 0;">Preloaded with official 30–70 KB range, dimensions, and aspect ratio:</p>
           </div>
-          <div style="display: inline-flex; gap: 0.5rem;">
-            <button type="button" id="btnPresetRRBPhoto" class="btn btn-primary btn-sm" onclick="window.ApplyReadyResizer?.applyPreset('rrb-photo')">
+          <div class="preset-choice">
+            <button type="button" id="btnPresetRRBPhoto" class="btn btn-secondary btn-sm" data-preset="rrb-photo" aria-pressed="false">
               <i class="fa-solid fa-image" aria-hidden="true"></i> Photo (30–70 KB)
             </button>
-            <button type="button" id="btnPresetRRBSig" class="btn btn-secondary btn-sm" onclick="window.ApplyReadyResizer?.applyPreset('rrb-signature')">
+            <button type="button" id="btnPresetRRBSig" class="btn btn-secondary btn-sm" data-preset="rrb-signature" aria-pressed="false">
               <i class="fa-solid fa-signature" aria-hidden="true"></i> Signature (30–49 KB)
             </button>
           </div>
@@ -283,7 +281,7 @@
             </div>
 
             <div class="control-group">
-              <label for="presetSelect" class="control-label">Target Preset</label>
+              <label for="presetSelect" class="control-label">Preset</label>
               <select id="presetSelect" class="form-control custom-select-source">
                 <option value="rrb-photo" selected>RRB Photo (240 × 320 px, max 70 KB)</option>
                 <option value="rrb-signature">RRB Signature (300 × 120 px, max 49 KB)</option>
@@ -294,8 +292,8 @@
             </div>
 
             <div id="customControls">
-              <div class="dim-row" style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                <div class="control-group" style="flex: 1;">
+              <div class="dim-row">
+                <div class="control-group">
                   <label for="customWidth" class="control-label">Width (px)</label>
                   <input type="number" id="customWidth" aria-describedby="dimError" class="form-control" value="320" min="20" max="8000">
                 </div>
@@ -304,20 +302,22 @@
                     <i class="fa-solid fa-lock" aria-hidden="true"></i>
                   </button>
                 </div>
-                <div class="control-group" style="flex: 1;">
+                <div class="control-group">
                   <label for="customHeight" class="control-label">Height (px)</label>
                   <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="240" min="20" max="8000">
                 </div>
               </div>
+              <span id="dimError" class="field-error hidden" role="alert"></span>
 
-              <div class="control-group" style="margin-top: 0.75rem;">
-                <label for="customMaxKB" class="control-label">Max File Size (KB)</label>
+              <div class="control-group">
+                <label for="customMaxKB" class="control-label">Max file size (KB)</label>
                 <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="70" min="5" max="20000">
               </div>
+              <span id="sizeError" class="field-error hidden" role="alert"></span>
 
-              <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
+              <div class="form-row-2">
                 <div class="control-group">
-                  <label for="formatSelect" class="control-label">Output Format</label>
+                  <label for="formatSelect" class="control-label">Output format</label>
                   <select id="formatSelect" class="form-control custom-select-source">
                     <option value="image/jpeg" selected>JPEG (.jpg)</option>
                     <option value="image/png">PNG (.png)</option>
@@ -325,7 +325,7 @@
                   </select>
                 </div>
                 <div class="control-group">
-                  <label for="bgFillSelect" class="control-label">Background Fill</label>
+                  <label for="bgFillSelect" class="control-label">Background</label>
                   <select id="bgFillSelect" class="form-control">
                     <option value="white" selected>White</option>
                     <option value="transparent">Transparent</option>
@@ -339,12 +339,10 @@
               <select id="aspectRatioSelect"><option value="target">Target</option></select>
             </div>
 
-            <span id="dimError" class="field-error hidden" role="alert"></span>
-            <span id="sizeError" class="field-error hidden" role="alert"></span>
-
-            <button type="button" id="btnProcess" class="btn btn-primary btn-block" style="margin-top: 1rem;" disabled>
+            <button type="button" id="btnProcess" class="btn btn-primary btn-block" aria-describedby="processSummary" disabled>
               <i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize &amp; Compress for RRB
             </button>
+            <p id="processSummary" class="process-summary" aria-live="polite"></p>
           </section>
 
           <!-- RIGHT: Preview Panel -->
@@ -360,7 +358,7 @@
               <div class="cropper-container-wrapper">
                 <img id="imageToCrop" alt="Source for cropping" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
               </div>
-              <div class="cropper-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.75rem; flex-wrap: wrap;">
+              <div class="cropper-actions">
                 <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="Rotate left 90°"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> 90°</button>
                 <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="Rotate right 90°"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> 90°</button>
                 <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="Reset crop"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Reset</button>
@@ -373,12 +371,12 @@
               <div class="result-card">
                 <img id="resultImage" alt="Resized RRB preview" class="result-img">
               </div>
-              <div class="result-meta-stats" style="display: flex; gap: 0.5rem; justify-content: space-between; flex-wrap: wrap; margin: 1rem 0;">
+              <div class="result-meta-stats">
                 <div><span class="text-muted">Dimensions:</span> <strong id="resultDims">320 × 240 px</strong></div>
                 <div><span class="text-muted">File Size:</span> <strong id="resultFileSize" class="status-ok">52 KB</strong></div>
                 <div><span class="text-muted">Format:</span> <strong id="resultFormat">JPEG</strong></div>
               </div>
-              <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+              <div class="result-actions">
                 <a id="btnDownload" class="btn btn-success btn-block" download="RRB_Photo.jpg">
                   <i class="fa-solid fa-download" aria-hidden="true"></i> Download RRB Ready File
                 </a>
@@ -386,7 +384,7 @@
               </div>
             </div>
 
-            <div class="workspace-footnote" style="margin-top: 1rem;">
+            <div class="workspace-footnote">
               <span><i class="fa-solid fa-lock" aria-hidden="true"></i> 100% Private (Processed in browser)</span>
               <span id="workspaceStatus">No image selected</span>
             </div>

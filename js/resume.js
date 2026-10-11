@@ -1126,7 +1126,7 @@
       el.dataset.id = exp.id;
       el.innerHTML = `
         <div class="dynamic-item-header">
-          <strong style="font-size: 0.85rem;">#${index + 1} Role / Company</strong>
+          <strong>#${index + 1} Role / Company</strong>
           <div class="dynamic-item-actions">
             <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-exp" data-id="${exp.id}" title="Move Up" aria-label="Move entry ${index + 1} up" ${index === 0 ? 'disabled' : ''}>
               <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
@@ -1142,7 +1142,7 @@
             </button>
           </div>
         </div>
-        <div class="form-row-2" style="margin-bottom: 0.5rem;">
+        <div class="form-row-2">
           <div>
             <label class="form-label text-sm" for="exp-role-${exp.id}">Job Title / Role</label>
             <input type="text" id="exp-role-${exp.id}" class="form-control item-role" placeholder="e.g. Operations Coordinator" value="${escapeHTML(exp.role)}">
@@ -1152,7 +1152,7 @@
             <input type="text" id="exp-comp-${exp.id}" class="form-control item-company" placeholder="e.g. Acme Corp" value="${escapeHTML(exp.company)}">
           </div>
         </div>
-        <div class="form-row-2" style="margin-bottom: 0.5rem;">
+        <div class="form-row-2">
           <div>
             <label class="form-label text-sm" for="exp-dur-${exp.id}">Duration / Dates</label>
             <input type="text" id="exp-dur-${exp.id}" class="form-control item-duration" placeholder="e.g. Jan 2022 - Present" value="${escapeHTML(exp.duration)}">
@@ -1182,7 +1182,7 @@
       el.dataset.id = edu.id;
       el.innerHTML = `
         <div class="dynamic-item-header">
-          <strong style="font-size: 0.85rem;">#${index + 1} Degree / School</strong>
+          <strong>#${index + 1} Degree / School</strong>
           <div class="dynamic-item-actions">
             <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-edu" data-id="${edu.id}" title="Move Up" aria-label="Move entry ${index + 1} up" ${index === 0 ? 'disabled' : ''}>
               <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
@@ -1198,7 +1198,7 @@
             </button>
           </div>
         </div>
-        <div class="form-row-2" style="margin-bottom: 0.5rem;">
+        <div class="form-row-2">
           <div>
             <label class="form-label text-sm" for="edu-deg-${edu.id}">Degree / Field of Study</label>
             <input type="text" id="edu-deg-${edu.id}" class="form-control item-degree" placeholder="e.g. B.S. in Management" value="${escapeHTML(edu.degree)}">
@@ -1238,7 +1238,7 @@
       el.dataset.id = proj.id;
       el.innerHTML = `
         <div class="dynamic-item-header">
-          <strong style="font-size: 0.85rem;">#${index + 1} Project</strong>
+          <strong>#${index + 1} Project</strong>
           <div class="dynamic-item-actions">
             <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-proj" data-id="${proj.id}" title="Move Up" aria-label="Move entry ${index + 1} up" ${index === 0 ? 'disabled' : ''}>
               <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
@@ -1254,7 +1254,7 @@
             </button>
           </div>
         </div>
-        <div class="form-row-2" style="margin-bottom: 0.5rem;">
+        <div class="form-row-2">
           <div>
             <label class="form-label text-sm" for="proj-name-${proj.id}">Project Name</label>
             <input type="text" id="proj-name-${proj.id}" class="form-control item-name" placeholder="e.g. Enterprise Automation" value="${escapeHTML(proj.name)}">
@@ -1308,7 +1308,7 @@
           item.className = 'dynamic-item';
           item.innerHTML = `
             <div class="dynamic-item-header">
-              <strong style="font-size: 0.85rem;">Certification #${idx + 1}</strong>
+              <strong>Certification #${idx + 1}</strong>
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-cert" data-index="${idx}">
                 <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
@@ -1369,7 +1369,7 @@
           item.className = 'dynamic-item';
           item.innerHTML = `
             <div class="dynamic-item-header">
-              <strong style="font-size: 0.85rem;">Role / Organization</strong>
+              <strong>Role / Organization</strong>
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-vol" data-index="${idx}">
                 <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
@@ -1443,7 +1443,7 @@
           item.className = 'dynamic-item';
           item.innerHTML = `
             <div class="dynamic-item-header">
-              <strong style="font-size: 0.85rem;">Teaching Entry</strong>
+              <strong>Teaching Entry</strong>
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-teach" data-index="${idx}">
                 <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
@@ -1466,7 +1466,7 @@
           item.className = 'dynamic-item';
           item.innerHTML = `
             <div class="dynamic-item-header">
-              <strong style="font-size: 0.85rem;">Presentation</strong>
+              <strong>Presentation</strong>
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-pres" data-index="${idx}">
                 <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
@@ -1488,7 +1488,7 @@
           item.className = 'dynamic-item';
           item.innerHTML = `
             <div class="dynamic-item-header">
-              <strong style="font-size: 0.85rem;">Grant</strong>
+              <strong>Grant</strong>
               <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-grant" data-index="${idx}">
                 <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
               </button>
@@ -1597,7 +1597,7 @@
       row.style.padding = '0.5rem 0.75rem';
       row.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-          <label class="checkbox-label" style="font-size: 0.85rem; font-weight: 600; color: var(--text-heading);">
+          <label class="checkbox-label">
             <input type="checkbox" class="chk-section-vis" data-key="${key}" ${isVis ? 'checked' : ''}>
             <span>${escapeHTML(labels[key])}</span>
           </label>
@@ -1804,15 +1804,16 @@
     if (statusBar && statusText && statusIcon) {
       if (hasErrors) {
         statusBar.className = 'readiness-status-bar readiness-warning';
-        statusText.textContent = `Action Needed: ${issues.filter(x => x.type === 'error').length} Required Fix(es)`;
+        const fixCount = issues.filter(x => x.type === 'error').length;
+        statusText.textContent = `${fixCount} ${fixCount === 1 ? 'thing' : 'things'} to fix before you download`;
         statusIcon.className = 'fa-solid fa-triangle-exclamation';
       } else if (hasWarnings) {
         statusBar.className = 'readiness-status-bar readiness-ready';
-        statusText.textContent = 'Ready to Export (With Suggestions)';
+        statusText.textContent = 'Ready to download. A few suggestions below.';
         statusIcon.className = 'fa-solid fa-circle-check';
       } else {
         statusBar.className = 'readiness-status-bar readiness-ready';
-        statusText.textContent = 'All Checks Satisfied - Ready to Export';
+        statusText.textContent = 'Ready to download';
         statusIcon.className = 'fa-solid fa-circle-check';
       }
     }
@@ -1830,7 +1831,7 @@
         <div class="review-item review-item--ok">
           <div class="review-item-content">
             <i aria-hidden="true" class="fa-solid fa-circle-check"></i>
-            <span>All contact information, links, and sections conform to clean ATS formatting standards.</span>
+            <span>Contact details, links and sections all passed the checks.</span>
           </div>
         </div>
       `;

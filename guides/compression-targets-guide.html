@@ -93,11 +93,9 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
 
-  <link rel="stylesheet" href="../css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="../css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="../css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="../css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="../css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="../css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="../css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="../css/app.css?v=20261014-1">
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
   <meta name="google-adsense-account" content="ca-pub-2713609207324356">
@@ -159,7 +157,7 @@
         </ol>
       </nav>
       <header style="margin-bottom: 2rem;">
-        <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Optimization Techniques</span>
+        <span class="eyebrow">Optimization Techniques</span>
         <h1>Hitting Strict Compression Targets (20KB, 50KB, 100KB)</h1>
         <p class="hero-subtitle" style="text-align: left; margin: 0;">
           How adaptive quantization loops work, what causes compression to fail, and how to configure settings for guaranteed success.
@@ -212,45 +210,45 @@
         </ol>
 
         <h2>Practical Recommendations for Portal Compression Limits</h2>
-        <table style="width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.9rem;">
+        <table>
           <thead>
-            <tr style="border-bottom: 2px solid var(--border-color); text-align: left; background: var(--bg-card-subtle);">
-              <th style="padding: 0.6rem;">Target Limit</th>
-              <th style="padding: 0.6rem;">Recommended Resolution</th>
-              <th style="padding: 0.6rem;">Format</th>
-              <th style="padding: 0.6rem;">Best Use Case</th>
+            <tr>
+              <th>Target Limit</th>
+              <th>Recommended Resolution</th>
+              <th>Format</th>
+              <th>Best Use Case</th>
             </tr>
           </thead>
           <tbody>
-            <tr style="border-bottom: 1px solid var(--border-color);">
-              <td style="padding: 0.6rem;"><strong>Under 20 KB</strong> (10–20 KB)</td>
-              <td style="padding: 0.6rem;">140 × 60 px up to 400 × 200 px</td>
-              <td style="padding: 0.6rem;">JPEG</td>
-              <td style="padding: 0.6rem;">SSC, IBPS &amp; State PSC Signatures</td>
+            <tr>
+              <td><strong>Under 20 KB</strong> (10–20 KB)</td>
+              <td>140 × 60 px up to 400 × 200 px</td>
+              <td>JPEG</td>
+              <td>SSC, IBPS &amp; State PSC Signatures</td>
             </tr>
-            <tr style="border-bottom: 1px solid var(--border-color);">
-              <td style="padding: 0.6rem;"><strong>Under 50 KB</strong> (20–50 KB)</td>
-              <td style="padding: 0.6rem;">350 × 450 px or 200 × 230 px</td>
-              <td style="padding: 0.6rem;">JPEG</td>
-              <td style="padding: 0.6rem;">SSC, IBPS &amp; College Admission Photos</td>
+            <tr>
+              <td><strong>Under 50 KB</strong> (20–50 KB)</td>
+              <td>350 × 450 px or 200 × 230 px</td>
+              <td>JPEG</td>
+              <td>SSC, IBPS &amp; College Admission Photos</td>
             </tr>
-            <tr style="border-bottom: 1px solid var(--border-color);">
-              <td style="padding: 0.6rem;"><strong>30–70 KB Range</strong></td>
-              <td style="padding: 0.6rem;">240 × 320 px (35 × 45 mm)</td>
-              <td style="padding: 0.6rem;">JPEG</td>
-              <td style="padding: 0.6rem;">Railway Recruitment Board (RRB) Photos</td>
+            <tr>
+              <td><strong>30–70 KB Range</strong></td>
+              <td>240 × 320 px (35 × 45 mm)</td>
+              <td>JPEG</td>
+              <td>Railway Recruitment Board (RRB) Photos</td>
             </tr>
-            <tr style="border-bottom: 1px solid var(--border-color);">
-              <td style="padding: 0.6rem;"><strong>Under 100 KB</strong></td>
-              <td style="padding: 0.6rem;">400 × 400 px up to 600 × 600 px</td>
-              <td style="padding: 0.6rem;">JPEG / WebP</td>
-              <td style="padding: 0.6rem;">UPSC Signature (Triple signature) &amp; Avatars</td>
+            <tr>
+              <td><strong>Under 100 KB</strong></td>
+              <td>400 × 400 px up to 600 × 600 px</td>
+              <td>JPEG / WebP</td>
+              <td>UPSC Signature (Triple signature) &amp; Avatars</td>
             </tr>
-            <tr style="border-bottom: 1px solid var(--border-color);">
-              <td style="padding: 0.6rem;"><strong>Under 200 KB</strong> (20–200 KB)</td>
-              <td style="padding: 0.6rem;">350 × 350 px up to 1000 × 1000 px</td>
-              <td style="padding: 0.6rem;">JPEG</td>
-              <td style="padding: 0.6rem;">UPSC Civil Services OTR &amp; NEET Photos</td>
+            <tr>
+              <td><strong>Under 200 KB</strong> (20–200 KB)</td>
+              <td>350 × 350 px up to 1000 × 1000 px</td>
+              <td>JPEG</td>
+              <td>UPSC Civil Services OTR &amp; NEET Photos</td>
             </tr>
           </tbody>
         </table>

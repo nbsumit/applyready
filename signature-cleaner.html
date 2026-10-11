@@ -34,11 +34,9 @@
 
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
@@ -222,7 +220,7 @@
       </header>
 
       <!-- Signature Cleaner Workspace -->
-      <div class="resizer-grid" data-layout="input-first" style="margin-bottom: 3rem;">
+      <div class="resizer-grid" data-layout="input-first">
 
         <!-- Controls Column -->
         <section class="app-card image-controls" aria-labelledby="cleanerControlsHeading">
@@ -232,12 +230,12 @@
           </h2>
 
           <!-- File Upload Info -->
-          <div id="cleanerFileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
-              <i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i>
-              <span id="cleanerFileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+          <div id="cleanerFileInfoBox" class="file-bar hidden">
+            <div class="file-bar__main">
+              <i class="fa-solid fa-file-image" aria-hidden="true"></i>
+              <span id="cleanerFileInfoText" class="file-bar__name"></span>
             </div>
-            <div style="display: flex; gap: 0.4rem;">
+            <div class="file-bar__actions">
               <button type="button" id="btnCleanerReplace" class="btn btn-secondary btn-sm" title="Select a different image">
                 <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i> Replace
               </button>
@@ -258,19 +256,19 @@
           </div>
 
           <!-- Adjustments Form -->
-          <div class="form-group" style="margin-top: 1.25rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-              <label for="whitenessInput" class="form-label" style="margin: 0;">Paper Whiteness / Threshold</label>
-              <span id="whitenessVal" style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">70</span>
+          <div class="form-group">
+            <div class="range-head">
+              <label for="whitenessInput" class="form-label">Paper Whiteness / Threshold</label>
+              <span id="whitenessVal" class="range-value">70</span>
             </div>
             <input type="range" id="whitenessInput" min="20" max="100" value="70" class="form-control">
             <p class="form-hint">Increase if paper still looks gray or yellow; decrease if thin ink strokes vanish.</p>
           </div>
 
           <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-              <label for="contrastInput" class="form-label" style="margin: 0;">Ink Darkness &amp; Sharpness</label>
-              <span id="contrastVal" style="font-size: 0.82rem; font-weight: 600; color: var(--primary);">80</span>
+            <div class="range-head">
+              <label for="contrastInput" class="form-label">Ink Darkness &amp; Sharpness</label>
+              <span id="contrastVal" class="range-value">80</span>
             </div>
             <input type="range" id="contrastInput" min="20" max="100" value="80" class="form-control">
             <p class="form-hint">Strengthens faint ballpoint pen strokes and darkens line edges.</p>
@@ -301,15 +299,15 @@
             </label>
           </div>
 
-          <button type="button" id="btnResetSettings" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 0.5rem;">
+          <button type="button" id="btnResetSettings" class="btn btn-secondary btn-sm btn-block">
             <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset to Default Settings
           </button>
         </section>
 
         <!-- Preview Column -->
         <section class="app-card" aria-labelledby="previewHeading">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
-            <h2 id="previewHeading" class="card-title" style="margin: 0;">
+          <div class="panel-head">
+            <h2 id="previewHeading" class="card-title">
               <i class="fa-solid fa-eye" aria-hidden="true"></i>
               <span>Live Preview</span>
             </h2>
@@ -319,19 +317,19 @@
             </div>
           </div>
 
-          <div id="cleanerEmptyState" class="crop-empty" style="min-height: 380px;">
+          <div id="cleanerEmptyState" class="crop-empty empty-state">
             <div class="empty-state-symbol"><i class="fa-solid fa-signature" aria-hidden="true"></i></div>
-            <p style="font-weight: 600; margin-bottom: 0.25rem;">No signature loaded yet</p>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">Upload a photo of your paper signature to whiten the background instantly.</p>
+            <p class="empty-state__title">No signature loaded yet</p>
+            <p class="empty-state__text">Upload a photo of your paper signature to whiten the background instantly.</p>
           </div>
 
           <div id="cleanerPreviewArea" class="hidden">
-            <div style="display: flex; justify-content: center; align-items: center; background: repeating-conic-gradient(var(--bg-card-subtle) 0% 25%, transparent 0% 50%) 50% / 16px 16px; padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; min-height: 260px; overflow: auto;">
-              <canvas id="cleanerCanvas" style="max-width: 100%; max-height: 340px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 4px;"></canvas>
+            <div class="sheet-frame is-checker">
+              <canvas id="cleanerCanvas" class="sheet-canvas"></canvas>
             </div>
 
             <!-- Stats -->
-            <div class="meta-stats" style="margin-top: 1rem;">
+            <div class="meta-stats">
               <div class="meta-stat-item">
                 <span class="meta-stat-label">Dimensions</span>
                 <span class="meta-stat-val" id="statDimensions">--</span>
@@ -347,11 +345,11 @@
             </div>
 
             <!-- Actions -->
-            <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap;">
-              <a id="btnCleanerDownload" class="btn btn-primary" href="#" download="Cleaned_Signature.jpg" style="flex: 1; justify-content: center;">
+            <div class="result-actions">
+              <a id="btnCleanerDownload" class="btn btn-primary" href="#" download="Cleaned_Signature.jpg">
                 <i class="fa-solid fa-download" aria-hidden="true"></i> Download Cleaned Signature
               </a>
-              <a href="/?preset=signature" class="btn btn-secondary" style="justify-content: center;">
+              <a href="/?preset=signature" class="btn btn-secondary">
                 <i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Resize to 20 KB
               </a>
             </div>
@@ -391,7 +389,7 @@
         </div>
 
         <h3>Recommended Settings by Pen Type</h3>
-        <table class="table-responsive" style="margin: 1.5rem 0;">
+        <table class="table-responsive">
           <thead>
             <tr>
               <th>Pen Type</th>
@@ -502,16 +500,16 @@
         <h2>Related Tools &amp; Guides</h2>
         <div class="tool-links-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
           <a href="/" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-crop-simple" aria-hidden="true" style="color: var(--primary);"></i> Image Resizer &amp; Compressor</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Resize photos and signatures to exact dimensions and KB limits.</p>
+            <h3><i class="fa-solid fa-crop-simple" aria-hidden="true" style="color: var(--primary);"></i> Image Resizer &amp; Compressor</h3>
+            <p style="margin: 0;">Resize photos and signatures to exact dimensions and KB limits.</p>
           </a>
           <a href="resize-image-to-20kb.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i> Resize Image to 20 KB</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Instant compressor optimized for government recruitment portal limits.</p>
+            <h3><i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i> Resize Image to 20 KB</h3>
+            <p style="margin: 0;">Instant compressor optimized for government recruitment portal limits.</p>
           </a>
           <a href="ssc-photo-signature-size.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-id-card" aria-hidden="true" style="color: var(--primary);"></i> SSC Photo &amp; Signature Guide</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Official 2026 SSC dimensions, KB guidelines, and specifications.</p>
+            <h3><i class="fa-solid fa-id-card" aria-hidden="true" style="color: var(--primary);"></i> SSC Photo &amp; Signature Guide</h3>
+            <p style="margin: 0;">Official 2026 SSC dimensions, KB guidelines, and specifications.</p>
           </a>
         </div>
       </section>

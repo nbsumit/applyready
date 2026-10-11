@@ -144,6 +144,7 @@
 
     try {
       const targetKB = parseInt(targetKbInput ? targetKbInput.value : '200', 10) || 200;
+      lastTargetKB = targetKB;
       const isPdf = currentFile.type === 'application/pdf' || currentFile.name.toLowerCase().endsWith('.pdf');
 
       let pages = [];
@@ -407,6 +408,26 @@
     return out;
   }
 
+  let lastTargetKB = 0;
+
+  // Say plainly whether the file meets the limit the user asked for.
+  function showTargetStatus(compBytes, compKb) {
+    const statusEl = doc.getElementById('compressStatus');
+    const met = !lastTargetKB || compBytes <= lastTargetKB * 1024;
+    if (statCompressed) statCompressed.className = 'meta-stat-val ' + (met ? 'status-ok' : 'status-warning');
+    if (!statusEl) return;
+    statusEl.className = 'result-status' + (met ? '' : ' is-warning');
+    statusEl.textContent = '';
+    const icon = doc.createElement('i');
+    icon.className = met ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation';
+    icon.setAttribute('aria-hidden', 'true');
+    const text = doc.createElement('span');
+    text.textContent = met
+      ? `Under ${lastTargetKB} KB. Ready to upload.`
+      : `This file could not get under ${lastTargetKB} KB. The smallest readable version is ${compKb} KB. Try a higher limit, or upload fewer pages.`;
+    statusEl.append(icon, text);
+  }
+
   function displayResult(blob, pagesCount) {
     if (compressedBlobUrl) URL.revokeObjectURL(compressedBlobUrl);
     compressedBlobUrl = URL.createObjectURL(blob);
@@ -422,6 +443,7 @@
     if (statCompressed) statCompressed.textContent = `${compKb} KB`;
     if (statReduction) statReduction.textContent = `${reductionPercent}% Saved`;
     if (statPages) statPages.textContent = `${pagesCount} ${pagesCount === 1 ? 'Page' : 'Pages'}`;
+    showTargetStatus(compBytes, compKb);
 
     if (btnDownload) {
       btnDownload.href = compressedBlobUrl;

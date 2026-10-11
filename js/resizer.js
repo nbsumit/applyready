@@ -241,6 +241,7 @@
   const processErrorBox = getEl('processErrorBox');
   const processErrorMessage = getEl('processErrorMessage');
 
+  const processSummary = getEl('processSummary');
   const specDims = getEl('specDims');
   const specSize = getEl('specSize');
   const specFormat = getEl('specFormat');
@@ -695,9 +696,57 @@
       specFormat.textContent = formatNames[specs.mimeType] || 'JPEG';
     }
 
+    renderProcessSummary(specs);
     invalidateResult();
     if (specs.isValid) {
       updateCropperRatio();
+    }
+  }
+
+  /**
+   * One line under the main action that says what the result will be,
+   * or which setting needs fixing. Uses the same values as the settings panel.
+   * Strings can be overridden per page with data-* attributes (Hindi pages).
+   */
+  function renderProcessSummary(specs) {
+    if (!processSummary || !doc) return;
+    const d = processSummary.dataset || {};
+    const el = (tag, text) => { const node = doc.createElement(tag); node.textContent = text; return node; };
+    processSummary.textContent = '';
+    processSummary.classList.toggle('is-invalid', !specs.isValid);
+    if (!specs.isValid) {
+      processSummary.append(doc.createTextNode((d.labelFix || 'Fix the setting marked in red to continue.') + ' '));
+      const firstInvalid = [customWidthInput, customHeightInput, customMinKBInput, customMaxKBInput]
+        .find(input => input && input.getAttribute('aria-invalid') === 'true');
+      if (firstInvalid) {
+        const show = el('button', d.labelShow || 'Show me');
+        show.type = 'button';
+        show.addEventListener('click', () => {
+          const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          firstInvalid.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+          firstInvalid.focus({ preventScroll: true });
+        });
+        processSummary.append(show);
+      }
+      return;
+    }
+    const formatNames = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
+    const size = specs.minKB > 0
+      ? (d.sizeRange || '{min} to {max} KB').replace('{min}', specs.minKB).replace('{max}', specs.maxKB)
+      : (d.sizeUnder || 'under {max} KB').replace('{max}', specs.maxKB);
+    const sep = () => el('span', '·');
+    processSummary.append(
+      el('span', (d.labelOutput || 'Output') + ':'),
+      el('strong', `${specs.width} × ${specs.height} px`), sep(),
+      el('span', formatNames[specs.mimeType] || 'JPEG'), sep(),
+      el('span', size)
+    );
+    processSummary.querySelectorAll('span').forEach(node => { if (node.textContent === '·') node.className = 'sep'; });
+    const target = d.changeTarget ? getEl(d.changeTarget) : null;
+    if (target) {
+      const change = el('a', d.labelChange || 'Change');
+      change.href = '#' + d.changeTarget;
+      processSummary.append(change);
     }
   }
 

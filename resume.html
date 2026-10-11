@@ -39,11 +39,9 @@
   <link rel="stylesheet" href="css/vendor/icons.min.css">
 
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- Structured Data: WebApplication & FAQPage -->
   <script type="application/ld+json">
@@ -209,16 +207,16 @@
 
         <h2 id="formHeading" class="sr-only">Resume Editor Workspace</h2>
 
-        <!-- Rebuilt Editor Navigation: Content | Design | Download -->
+        <!-- Editor navigation: Write | Style | Review & download -->
         <nav class="editor-tabs-nav" role="tablist" aria-label="Editor sections">
           <button type="button" id="tabContent" class="editor-tab-btn active" role="tab" aria-selected="true" aria-controls="viewContent">
-            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Content
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> Write
           </button>
           <button type="button" id="tabDesign" class="editor-tab-btn" role="tab" aria-selected="false" aria-controls="viewDesign">
-            <i class="fa-solid fa-palette" aria-hidden="true"></i> Design
+            <i class="fa-solid fa-palette" aria-hidden="true"></i> Style
           </button>
           <button type="button" id="tabReview" class="editor-tab-btn" role="tab" aria-selected="false" aria-controls="viewReview">
-            <i class="fa-solid fa-clipboard-check" aria-hidden="true"></i> Download
+            <i class="fa-solid fa-clipboard-check" aria-hidden="true"></i> Review<span class="tab-extra">&nbsp;&amp; download</span>
           </button>
         </nav>
 
@@ -259,7 +257,7 @@
             <!-- SECTION 1: Personal Details -->
             <div class="accordion-section open" id="sec-personal">
               <button type="button" class="accordion-header" aria-expanded="true" aria-controls="sec-content-personal">
-                <span><i class="fa-solid fa-user-tie" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Contact details</span>
+                <span><i class="fa-solid fa-user-tie" aria-hidden="true"></i> Contact details</span>
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-personal">
@@ -269,40 +267,40 @@
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="targetTitle">Professional Headline / Target Role</label>
+                  <label class="form-label" for="targetTitle">Headline or target role</label>
                   <input type="text" id="targetTitle" class="form-control" placeholder="e.g. Operations & Project Manager | PMP">
                 </div>
 
                 <div class="form-row-2">
                   <div class="form-group">
                     <label class="form-label" for="email">Email</label>
-                    <input type="email" id="email" autocomplete="email" class="form-control" placeholder="alex.morgan@email.com">
+                    <input type="email" id="email" autocomplete="email" class="form-control" placeholder="e.g. alex.morgan@email.com">
                   </div>
                   <div class="form-group">
                     <label class="form-label" for="phone">Phone</label>
-                    <input type="tel" id="phone" autocomplete="tel" class="form-control" placeholder="+1 (555) 234-5678">
+                    <input type="tel" id="phone" autocomplete="tel" class="form-control" placeholder="e.g. +91 98765 43210">
                   </div>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="location">Location (City, State / Country)</label>
+                  <label class="form-label" for="location">Location (city, state or country)</label>
                   <input type="text" id="location" class="form-control" placeholder="e.g. Chicago, IL">
                 </div>
 
                 <div class="form-row-2">
                   <div class="form-group">
-                    <label class="form-label" for="linkedin">LinkedIn Profile URL</label>
-                    <input type="text" id="linkedin" class="form-control" placeholder="linkedin.com/in/alexmorgan">
+                    <label class="form-label" for="linkedin">LinkedIn profile URL</label>
+                    <input type="text" id="linkedin" class="form-control" placeholder="e.g. linkedin.com/in/alexmorgan">
                   </div>
                   <div class="form-group">
-                    <label class="form-label" for="github">GitHub Profile (Optional)</label>
-                    <input type="text" id="github" class="form-control" placeholder="github.com/alexmorgan">
+                    <label class="form-label" for="github">GitHub profile <span class="optional">(optional)</span></label>
+                    <input type="text" id="github" class="form-control" placeholder="e.g. github.com/alexmorgan">
                   </div>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 0;">
-                  <label class="form-label" for="website">Portfolio / Personal Website (Optional)</label>
-                  <input type="text" id="website" class="form-control" placeholder="alexmorgan.com">
+                <div class="form-group">
+                  <label class="form-label" for="website">Portfolio or personal website <span class="optional">(optional)</span></label>
+                  <input type="text" id="website" class="form-control" placeholder="e.g. alexmorgan.com">
                 </div>
               </div>
             </div>
@@ -310,13 +308,13 @@
             <!-- SECTION 2: Professional Summary -->
             <div class="accordion-section" id="sec-summary">
               <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-summary">
-                <span><i class="fa-solid fa-align-left" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Professional summary</span>
+                <span><i class="fa-solid fa-align-left" aria-hidden="true"></i> Professional summary</span>
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-summary">
                 <div class="form-group section-title-group"><label class="form-label text-sm" for="summaryTitleInput">Section heading on resume</label><input type="text" id="summaryTitleInput" class="form-control section-title-input" data-section="summary" maxlength="60" autocomplete="off"></div>
-                <div class="form-group" style="margin-bottom: 0;">
-                  <label class="form-label" for="summaryText">Summary / Career Objective</label>
+                <div class="form-group">
+                  <label class="form-label" for="summaryText">Summary or career objective</label>
                   <textarea id="summaryText" class="form-control" rows="4" placeholder="Brief summary highlighting your core background, achievements, and capabilities..."></textarea>
                   <p class="form-hint">Highlight measurable achievements, leadership experience, and primary competencies.</p>
                 </div>
@@ -326,7 +324,7 @@
             <!-- SECTION 3: Work Experience -->
             <div class="accordion-section" id="sec-experience">
               <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-experience">
-                <span><i class="fa-solid fa-briefcase" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Work experience</span>
+                <span><i class="fa-solid fa-briefcase" aria-hidden="true"></i> Work experience</span>
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-experience">
@@ -341,7 +339,7 @@
             <!-- SECTION 4: Education -->
             <div class="accordion-section" id="sec-education">
               <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-education">
-                <span><i class="fa-solid fa-graduation-cap" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Education</span>
+                <span><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i> Education</span>
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-education">
@@ -356,7 +354,7 @@
             <!-- SECTION 5: Projects -->
             <div class="accordion-section" id="sec-projects">
               <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-projects">
-                <span><i class="fa-solid fa-diagram-project" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Projects</span>
+                <span><i class="fa-solid fa-diagram-project" aria-hidden="true"></i> Projects</span>
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-projects">
@@ -371,7 +369,7 @@
             <!-- SECTION 6: Skills -->
             <div class="accordion-section" id="sec-skills">
               <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-skills">
-                <span><i class="fa-solid fa-gears" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Skills</span>
+                <span><i class="fa-solid fa-gears" aria-hidden="true"></i> Skills</span>
                 <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
               </button>
               <div class="accordion-content" id="sec-content-skills">
@@ -401,7 +399,7 @@
                   </div>
                 </div>
 
-                <div class="form-group" style="margin-bottom: 0;">
+                <div class="form-group">
                   <label class="form-label" id="skill-label-other" for="skillOther">Skills</label>
                   <div class="skill-row-inputs">
                     <input type="text" id="skillLabelOther" class="form-control skill-label-input" data-skill="other" maxlength="40" autocomplete="off" aria-describedby="skillLabelHint">
@@ -417,7 +415,7 @@
               <!-- Certifications -->
               <div class="accordion-section" id="sec-certifications" style="display: none;">
                 <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-certifications">
-                  <span><i class="fa-solid fa-certificate" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Certifications & Credentials</span>
+                  <span><i class="fa-solid fa-certificate" aria-hidden="true"></i> Certifications & Credentials</span>
                   <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
                 </button>
                 <div class="accordion-content" id="sec-content-certifications">
@@ -431,7 +429,7 @@
               <!-- Achievements -->
               <div class="accordion-section" id="sec-achievements" style="display: none;">
                 <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-achievements">
-                  <span><i class="fa-solid fa-trophy" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Honors & Achievements</span>
+                  <span><i class="fa-solid fa-trophy" aria-hidden="true"></i> Honors & Achievements</span>
                   <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
                 </button>
                 <div class="accordion-content" id="sec-content-achievements">
@@ -445,7 +443,7 @@
               <!-- Volunteering -->
               <div class="accordion-section" id="sec-volunteering" style="display: none;">
                 <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-volunteering">
-                  <span><i class="fa-solid fa-hand-holding-heart" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Community & Leadership</span>
+                  <span><i class="fa-solid fa-hand-holding-heart" aria-hidden="true"></i> Community & Leadership</span>
                   <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
                 </button>
                 <div class="accordion-content" id="sec-content-volunteering">
@@ -459,7 +457,7 @@
               <!-- Languages -->
               <div class="accordion-section" id="sec-languages" style="display: none;">
                 <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-languages">
-                  <span><i class="fa-solid fa-language" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Languages</span>
+                  <span><i class="fa-solid fa-language" aria-hidden="true"></i> Languages</span>
                   <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
                 </button>
                 <div class="accordion-content" id="sec-content-languages">
@@ -473,27 +471,27 @@
               <!-- Academic Sections (Publications & Teaching) -->
               <div class="accordion-section" id="sec-academic" style="display: none;">
                 <button type="button" class="accordion-header" aria-expanded="false" aria-controls="sec-content-academic">
-                  <span><i class="fa-solid fa-book-journal-whills" aria-hidden="true" style="margin-right: 0.5rem; color: var(--primary);"></i> Academic & Research (CV)</span>
+                  <span><i class="fa-solid fa-book-journal-whills" aria-hidden="true"></i> Academic & Research (CV)</span>
                   <i class="fa-solid fa-chevron-down chevron" aria-hidden="true"></i>
                 </button>
                 <div class="accordion-content" id="sec-content-academic">
-                  <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.5rem;">Peer-Reviewed Publications</h4>
+                  <h4 class="subsection-title">Peer-Reviewed Publications</h4>
                   <div id="academicPubsList"></div>
                   <button type="button" id="btnAddPublication" class="btn btn-outline-primary btn-sm btn-block mt-2 mb-3">
                     <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Publication
                   </button>
 
-                  <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.5rem;">Teaching Experience</h4>
+                  <h4 class="subsection-title">Teaching Experience</h4>
                   <div id="academicTeachingList"></div>
                   <button type="button" id="btnAddTeaching" class="btn btn-outline-primary btn-sm btn-block mt-2 mb-3">
                     <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Teaching Entry
                   </button>
-                  <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.5rem;">Conference Presentations</h4>
+                  <h4 class="subsection-title">Conference Presentations</h4>
                   <div id="academicPresentationsList"></div>
                   <button type="button" id="btnAddPresentation" class="btn btn-outline-primary btn-sm btn-block mt-2 mb-3">
                     <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Presentation
                   </button>
-                  <h4 style="font-size: 0.875rem; font-weight: 700; margin-bottom: 0.5rem;">Research Grants &amp; Funding</h4>
+                  <h4 class="subsection-title">Research Grants &amp; Funding</h4>
                   <div id="academicGrantsList"></div>
                   <button type="button" id="btnAddGrant" class="btn btn-outline-primary btn-sm btn-block mt-2">
                     <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Grant
@@ -540,7 +538,7 @@
               <i class="fa-regular fa-lightbulb" aria-hidden="true"></i>
               <span>A few writing tips</span>
             </summary>
-            <div style="margin-top: 0.65rem; line-height: 1.5; font-size: 0.825rem;">
+            <div class="tips-body">
               <p><strong>Use the STAR Bullet Formula:</strong> <em>[Action Verb] + [Context / Challenge] + [Quantified Result / Metric]</em>.</p>
               <p class="mt-1"><strong>Strong Action Verbs:</strong> Directed, Orchestrated, Engineered, Spearheaded, Accelerated, Formulated, Overhauled, Optimized, Standardized, Consolidated.</p>
               <p class="mt-1"><strong>ATS Formatting Tip:</strong> Keep sections standard and linear. Avoid graphic skill ratings, tables, and photos which many recruitment scanners cannot extract.</p>
@@ -553,10 +551,10 @@
              ========================================================= -->
         <div id="viewDesign" class="editor-tab-pane" role="tabpanel" aria-labelledby="tabDesign">
 
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.5rem;">
-            <i class="fa-solid fa-layer-group" aria-hidden="true" style="color: var(--primary);"></i> 15 ATS-Friendly Templates
+          <h3 class="pane-title">
+            <i class="fa-solid fa-layer-group" aria-hidden="true"></i> 15 ATS-Friendly Templates
           </h3>
-          <p class="text-sm text-muted" style="margin-bottom: 1rem;">
+          <p class="pane-intro">
             Every template is a single column with standard fonts and real text. Switching keeps all your content.
           </p>
 
@@ -566,23 +564,23 @@
             <!-- Dynamically populated from templates.js with SVG thumbnails -->
           </div>
 
-          <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+          <hr class="pane-divider">
 
           <!-- Document Typography, Density & Page Format Controls -->
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.75rem;">
-            <i class="fa-solid fa-sliders" aria-hidden="true" style="color: var(--primary);"></i> Document Typography & Spacing
+          <h3 class="pane-title">
+            <i class="fa-solid fa-sliders" aria-hidden="true"></i> Document Typography & Spacing
           </h3>
 
           <div class="form-row-2">
             <div class="form-group">
-              <label for="fontSelect" class="form-label">Font Family:</label>
+              <label for="fontSelect" class="form-label">Font</label>
               <select id="fontSelect" class="form-select">
                 <option value="serif" selected>Classic Serif (Times New Roman)</option>
                 <option value="sans">Modern Sans-Serif (Arial / Helvetica)</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="pageSizeSelect" class="form-label">Paper Standard:</label>
+              <label for="pageSizeSelect" class="form-label">Paper size</label>
               <select id="pageSizeSelect" class="form-select">
                 <option value="a4" selected>International A4 (210 × 297 mm)</option>
                 <option value="letter">US Letter (8.5 × 11 in)</option>
@@ -592,14 +590,14 @@
 
           <div class="form-row-2">
             <div class="form-group">
-              <label for="densitySelect" class="form-label">Spacing Density:</label>
+              <label for="densitySelect" class="form-label">Spacing</label>
               <select id="densitySelect" class="form-select">
                 <option value="standard" selected>Standard (Comfortable reading)</option>
                 <option value="compact">Compact (Tighter line height & margins)</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="fontSizeSelect" class="form-label">Base Font Size:</label>
+              <label for="fontSizeSelect" class="form-label">Font size</label>
               <select id="fontSizeSelect" class="form-select">
                 <option value="standard" selected>Standard (11 pt)</option>
                 <option value="comfortable">Comfortable (12 pt)</option>
@@ -608,19 +606,19 @@
             </div>
           </div>
 
-          <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+          <hr class="pane-divider">
 
           <!-- Section Reordering & Visibility Manager -->
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.5rem;">
-            <i class="fa-solid fa-arrows-up-down" aria-hidden="true" style="color: var(--primary);"></i> Section Order & Visibility
+          <h3 class="pane-title">
+            <i class="fa-solid fa-arrows-up-down" aria-hidden="true"></i> Section Order & Visibility
           </h3>
-          <p class="text-sm text-muted" style="margin-bottom: 0.75rem;">
+          <p class="pane-intro">
             Reorder document sections or toggle visibility. Changes are non-destructive and preserve entered data.
           </p>
-          <div id="sectionOrderContainer" style="display: flex; flex-direction: column; gap: 0.45rem;">
+          <div id="sectionOrderContainer" class="section-order-list">
             <!-- Dynamically populated with Move Up / Move Down buttons and visibility checkboxes -->
           </div>
-          <button type="button" id="btnApplyRecommendedOrder" class="btn btn-outline-primary btn-sm mt-2 hidden" style="width: 100%;">
+          <button type="button" id="btnApplyRecommendedOrder" class="btn btn-outline-primary btn-sm btn-block mt-2 hidden">
             <i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Apply Template's Recommended Section Order
           </button>
 
@@ -631,19 +629,19 @@
              ========================================================= -->
         <div id="viewReview" class="editor-tab-pane" role="tabpanel" aria-labelledby="tabReview">
 
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.5rem;">
-            <i class="fa-solid fa-clipboard-check" aria-hidden="true" style="color: var(--primary);"></i> A few checks before you send it
+          <h3 class="pane-title">
+            <i class="fa-solid fa-clipboard-check" aria-hidden="true"></i> A few checks before you send it
           </h3>
-          <p class="text-sm text-muted" style="margin-bottom: 1rem;">
+          <p class="pane-intro">
             Check your contact details, links, and content. These suggestions help catch omissions; they do not simulate an employer's ATS.
           </p>
 
           <!-- Review Status Card -->
           <div class="review-panel-card">
             <div id="reviewStatusBar" class="readiness-status-bar readiness-ready">
-              <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">
+              <div class="readiness-status-text">
                 <i class="fa-solid fa-circle-check" aria-hidden="true" id="reviewStatusIcon"></i>
-                <span id="reviewStatusText">Document Ready for Export</span>
+                <span id="reviewStatusText">Ready to download</span>
               </div>
               <span id="reviewPageEstimatePill" class="page-indicator-pill">1 page</span>
             </div>
@@ -655,18 +653,18 @@
           </div>
 
           <!-- Document Export Actions -->
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.75rem;">
-            <i class="fa-solid fa-file-arrow-down" aria-hidden="true" style="color: var(--primary);"></i> Export Document
+          <h3 class="pane-title">
+            <i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i> Export Document
           </h3>
 
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div class="export-actions">
             <button type="button" id="btnDownloadPDF" class="btn btn-primary btn-block btn-lg" title="Download text-based vector PDF">
               <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> <span>Download PDF (<span class="export-page-size-label">A4</span>)</span>
             </button>
 
             <div class="form-row-2">
               <button type="button" id="btnDownloadDOCX" class="btn btn-secondary btn-block" title="Download editable Microsoft Word document">
-                <i class="fa-solid fa-file-word" aria-hidden="true" style="color: #2B579A;"></i> Download Word (.docx)
+                <i class="fa-solid fa-file-word" aria-hidden="true"></i> Download Word (.docx)
               </button>
               <button type="button" id="btnDownloadText" class="btn btn-secondary btn-block" title="Download formatted plain-text resume">
                 <i class="fa-solid fa-file-lines" aria-hidden="true"></i> Plain Text (.txt)
@@ -678,17 +676,17 @@
             </button>
           </div>
 
-          <div style="background: var(--bg-card-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1.45;">
+          <div class="note-box">
             <p><strong>Export Verification:</strong> Your downloads contain selectable text. Word and browser print may wrap lines differently. Follow the file format requested by the employer; read our comprehensive <a href="guides/ats-friendly-resume-guide.html" style="color: var(--primary); text-decoration: underline;">ATS-friendly resume guide</a> for recruiter insights; no template can guarantee an ATS result.</p>
           </div>
 
 
           <!-- Job Description Keyword Match (on-device, never stored) -->
           <section class="review-panel-card keyword-match-card" aria-labelledby="keywordMatchHeading">
-            <h3 id="keywordMatchHeading" style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.35rem;">
-              <i class="fa-solid fa-magnifying-glass" aria-hidden="true" style="color: var(--primary);"></i> Compare with a job description
+            <h3 id="keywordMatchHeading" class="pane-title">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Compare with a job description
             </h3>
-            <p class="text-sm text-muted" style="margin-bottom: 0.75rem;">Paste the job advert to see which of its key terms your resume already uses. It is checked on this device and never saved.</p>
+            <p class="pane-intro">Paste the job advert to see which of its key terms your resume already uses. It is checked on this device and never saved.</p>
             <label class="form-label" for="jobDescriptionInput">Job description</label>
             <textarea id="jobDescriptionInput" class="form-control" rows="5" placeholder="Paste the full job description here" autocomplete="off" spellcheck="false"></textarea>
             <div id="keywordMatchResult" class="keyword-match-result" aria-live="polite"></div>
@@ -703,7 +701,7 @@
 
         <!-- Live Action & Zoom Toolbar -->
         <div class="preview-toolbar">
-          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <div class="preview-toolbar__meta">
             <span class="ats-pill" id="prevTemplateBadge" title="Current Active Template">
               <i class="fa-solid fa-shield-check" aria-hidden="true"></i> Classic Professional
             </span>
@@ -945,7 +943,7 @@
   <div id="templatePreviewModal" class="template-preview-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="tmplModalTitle">
     <div class="template-preview-modal-card">
       <div class="template-preview-modal-header">
-        <h3 id="tmplModalTitle" style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-heading);">
+        <h3 id="tmplModalTitle">
           Template Full Preview
         </h3>
         <button type="button" id="btnCloseTmplModal" class="btn btn-secondary btn-sm" aria-label="Close template preview">

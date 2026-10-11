@@ -91,11 +91,9 @@
 
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
-  <link rel="stylesheet" href="../css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="../css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="../css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="../css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="../css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="../css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="../css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="../css/app.css?v=20261014-1">
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
   <meta name="google-adsense-account" content="ca-pub-2713609207324356">
@@ -162,7 +160,7 @@
       </nav>
 
       <header style="margin-bottom: 2rem;">
-        <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary); text-transform: uppercase;">Identity Documents &amp; Government Guidelines</span>
+        <span class="eyebrow">Identity Documents &amp; Government Guidelines</span>
         <h1>Aadhaar, PAN Card &amp; Indian Passport Photo Specifications</h1>
         <p class="hero-subtitle" style="text-align: left; margin: 0;">
           A comprehensive breakdown of dimensions, DPI, file sizes, and background rules for India's primary government identification cards and travel documents.
@@ -179,44 +177,44 @@
 
         <h2>Summary Comparison Table</h2>
         <div style="overflow-x: auto; margin: 1.5rem 0;">
-          <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+          <table class="data-table">
             <thead>
-              <tr style="background: var(--bg-surface); text-align: left; border-bottom: 2px solid var(--border);">
-                <th style="padding: 0.75rem 1rem;">Document</th>
-                <th style="padding: 0.75rem 1rem;">Dimensions</th>
-                <th style="padding: 0.75rem 1rem;">Pixel Size (at 200–300 DPI)</th>
-                <th style="padding: 0.75rem 1rem;">File Size (KB)</th>
-                <th style="padding: 0.75rem 1rem;">Background</th>
+              <tr>
+                <th>Document</th>
+                <th>Dimensions</th>
+                <th>Pixel Size (at 200–300 DPI)</th>
+                <th>File Size (KB)</th>
+                <th>Background</th>
               </tr>
             </thead>
             <tbody>
-              <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 0.75rem 1rem;"><strong>Indian Passport (Print / PSK)</strong></td>
-                <td style="padding: 0.75rem 1rem;">3.5 × 4.5 cm (or 2 × 2 in for US Visa / counter)</td>
-                <td style="padding: 0.75rem 1rem;">413 × 531 px (300 DPI)</td>
-                <td style="padding: 0.75rem 1rem;">10 KB – 300 KB</td>
-                <td style="padding: 0.75rem 1rem;">Plain White or Off-White</td>
+              <tr>
+                <td><strong>Indian Passport (Print / PSK)</strong></td>
+                <td>3.5 × 4.5 cm (or 2 × 2 in for US Visa / counter)</td>
+                <td>413 × 531 px (300 DPI)</td>
+                <td>10 KB – 300 KB</td>
+                <td>Plain White or Off-White</td>
               </tr>
-              <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 0.75rem 1rem;"><strong>PAN Card Photo (NSDL / UTIITSL)</strong></td>
-                <td style="padding: 0.75rem 1rem;">3.5 × 2.5 cm</td>
-                <td style="padding: 0.75rem 1rem;">213 × 213 px (UTI) / ~295 × 413 px (NSDL)</td>
-                <td style="padding: 0.75rem 1rem;">Under 50 KB (typically 20–50 KB)</td>
-                <td style="padding: 0.75rem 1rem;">White or light plain background</td>
+              <tr>
+                <td><strong>PAN Card Photo (NSDL / UTIITSL)</strong></td>
+                <td>3.5 × 2.5 cm</td>
+                <td>213 × 213 px (UTI) / ~295 × 413 px (NSDL)</td>
+                <td>Under 50 KB (typically 20–50 KB)</td>
+                <td>White or light plain background</td>
               </tr>
-              <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 0.75rem 1rem;"><strong>PAN Card Signature</strong></td>
-                <td style="padding: 0.75rem 1rem;">4.5 × 2.0 cm</td>
-                <td style="padding: 0.75rem 1rem;">213 × 400 px (or 400 × 200 px)</td>
-                <td style="padding: 0.75rem 1rem;">Under 50 KB (typically 10–20 KB)</td>
-                <td style="padding: 0.75rem 1rem;">Crisp White (Black ink only)</td>
+              <tr>
+                <td><strong>PAN Card Signature</strong></td>
+                <td>4.5 × 2.0 cm</td>
+                <td>213 × 400 px (or 400 × 200 px)</td>
+                <td>Under 50 KB (typically 10–20 KB)</td>
+                <td>Crisp White (Black ink only)</td>
               </tr>
-              <tr style="border-bottom: 1px solid var(--border);">
-                <td style="padding: 0.75rem 1rem;"><strong>Aadhaar Card (UIDAI)</strong></td>
-                <td style="padding: 0.75rem 1rem;">Captured Live at Kendra</td>
-                <td style="padding: 0.75rem 1rem;">Live webcam capture (300 DPI)</td>
-                <td style="padding: 0.75rem 1rem;">N/A (Managed by UIDAI system)</td>
-                <td style="padding: 0.75rem 1rem;">Solid White screen behind applicant</td>
+              <tr>
+                <td><strong>Aadhaar Card (UIDAI)</strong></td>
+                <td>Captured Live at Kendra</td>
+                <td>Live webcam capture (300 DPI)</td>
+                <td>N/A (Managed by UIDAI system)</td>
+                <td>Solid White screen behind applicant</td>
               </tr>
             </tbody>
           </table>

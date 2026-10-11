@@ -35,11 +35,9 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -164,8 +162,8 @@
       <section id="resize-tool" style="margin-bottom: 2rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
           <div>
-            <h2 style="font-size: 1.35rem; margin: 0; color: var(--text-heading);">Image Compressor: Preloaded for 20 KB</h2>
-            <p class="text-muted" style="margin: 0; font-size: 0.9rem;">Upload your signature or document to crop and compress strictly under 20 KB:</p>
+            <h2>Image Compressor: Preloaded for 20 KB</h2>
+            <p class="text-muted" style="margin: 0;">Upload your signature or document to crop and compress strictly under 20 KB:</p>
           </div>
         </div>
 
@@ -202,7 +200,7 @@
             </div>
 
             <div class="control-group">
-              <label for="presetSelect" class="control-label">Target Preset</label>
+              <label for="presetSelect" class="control-label">Preset</label>
               <select id="presetSelect" class="form-control custom-select-source">
                 <option value="kb-20" selected>Target: Under 20 KB</option>
                 <option value="signature">Signature (300 × 100 px, max 30 KB)</option>
@@ -212,8 +210,8 @@
             </div>
 
             <div id="customControls">
-              <div class="dim-row" style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                <div class="control-group" style="flex: 1;">
+              <div class="dim-row">
+                <div class="control-group">
                   <label for="customWidth" class="control-label">Width (px)</label>
                   <input type="number" id="customWidth" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000">
                 </div>
@@ -222,20 +220,22 @@
                     <i class="fa-solid fa-lock" aria-hidden="true"></i>
                   </button>
                 </div>
-                <div class="control-group" style="flex: 1;">
+                <div class="control-group">
                   <label for="customHeight" class="control-label">Height (px)</label>
                   <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="150" min="20" max="8000">
                 </div>
               </div>
+              <span id="dimError" class="field-error hidden" role="alert"></span>
 
-              <div class="control-group" style="margin-top: 0.75rem;">
-                <label for="customMaxKB" class="control-label">Max File Size (KB)</label>
+              <div class="control-group">
+                <label for="customMaxKB" class="control-label">Max file size (KB)</label>
                 <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="20" min="5" max="20000">
               </div>
+              <span id="sizeError" class="field-error hidden" role="alert"></span>
 
-              <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
+              <div class="form-row-2">
                 <div class="control-group">
-                  <label for="formatSelect" class="control-label">Output Format</label>
+                  <label for="formatSelect" class="control-label">Output format</label>
                   <select id="formatSelect" class="form-control custom-select-source">
                     <option value="image/jpeg" selected>JPEG (.jpg)</option>
                     <option value="image/png">PNG (.png)</option>
@@ -243,7 +243,7 @@
                   </select>
                 </div>
                 <div class="control-group">
-                  <label for="bgFillSelect" class="control-label">Background Fill</label>
+                  <label for="bgFillSelect" class="control-label">Background</label>
                   <select id="bgFillSelect" class="form-control">
                     <option value="white" selected>White</option>
                     <option value="transparent">Transparent</option>
@@ -257,12 +257,10 @@
               <select id="aspectRatioSelect"><option value="target">Target</option></select>
             </div>
 
-            <span id="dimError" class="field-error hidden" role="alert"></span>
-            <span id="sizeError" class="field-error hidden" role="alert"></span>
-
-            <button type="button" id="btnProcess" class="btn btn-primary btn-block" style="margin-top: 1rem;" disabled>
+            <button type="button" id="btnProcess" class="btn btn-primary btn-block" aria-describedby="processSummary" disabled>
               <i class="fa-solid fa-bolt" aria-hidden="true"></i> Compress to Under 20 KB
             </button>
+            <p id="processSummary" class="process-summary" aria-live="polite"></p>
           </section>
 
           <!-- RIGHT: Preview Panel -->
@@ -278,7 +276,7 @@
               <div class="cropper-container-wrapper">
                 <img id="imageToCrop" alt="Source for cropping" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
               </div>
-              <div class="cropper-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.75rem; flex-wrap: wrap;">
+              <div class="cropper-actions">
                 <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="Rotate left 90°"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> 90°</button>
                 <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="Rotate right 90°"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> 90°</button>
                 <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="Reset crop"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Reset</button>
@@ -291,12 +289,12 @@
               <div class="result-card">
                 <img id="resultImage" alt="Resized 20 KB preview" class="result-img">
               </div>
-              <div class="result-meta-stats" style="display: flex; gap: 0.5rem; justify-content: space-between; flex-wrap: wrap; margin: 1rem 0;">
+              <div class="result-meta-stats">
                 <div><span class="text-muted">Dimensions:</span> <strong id="resultDims">350 × 150 px</strong></div>
                 <div><span class="text-muted">File Size:</span> <strong id="resultFileSize" class="status-ok">17.8 KB</strong></div>
                 <div><span class="text-muted">Format:</span> <strong id="resultFormat">JPEG</strong></div>
               </div>
-              <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+              <div class="result-actions">
                 <a id="btnDownload" class="btn btn-success btn-block" download="Signature_20KB.jpg">
                   <i class="fa-solid fa-download" aria-hidden="true"></i> Download 20 KB Image
                 </a>
@@ -304,7 +302,7 @@
               </div>
             </div>
 
-            <div class="workspace-footnote" style="margin-top: 1rem;">
+            <div class="workspace-footnote">
               <span><i class="fa-solid fa-lock" aria-hidden="true"></i> 100% Private (Processed in browser)</span>
               <span id="workspaceStatus">No image selected</span>
             </div>
@@ -346,7 +344,7 @@
 <tr><td>Thumb impression</td><td>240 x 240</td><td>57,600</td><td>2.8</td><td>Comfortable</td></tr>
 </tbody>
 </table>
-        <p class="text-muted" style="font-size: 0.9rem;">Rule of thumb for photographs: 2.5 or more bits per pixel is comfortable, 1.5 to 2.5 is workable, below 1.5 looks soft or blocky.</p>
+        <p class="text-muted">Rule of thumb for photographs: 2.5 or more bits per pixel is comfortable, 1.5 to 2.5 is workable, below 1.5 looks soft or blocky.</p>
         <p><strong>The 350 x 450 portrait at 20 KB is the tight case.</strong> It has 157,500 pixels, so each pixel gets about one bit. Expect visible softness and blocky skin tones. If the form really requires both 350 x 450 and 20 KB, start from a sharp, evenly lit photo and a tight crop, and accept that the result will look plain.</p><p><strong>Smaller pixel sizes change the picture completely.</strong> At 200 x 230 the same 20 KB gives more than three and a half bits per pixel, which is comfortable. Many forms that cap the file at 20 KB also allow or require a small pixel size, so always read the dimension line before reaching for the quality slider.</p><p><strong>Signatures have room to spare.</strong> Even at 400 x 200 a clean black-on-white signature fits under 20 KB at good quality, so the thing to check is that the file is not smaller than any minimum the form sets.</p>
         <ul>
           <li>Choose the dimensions first, then the size limit. Reversing the order leads to blurry compromises.</li><li>Crop out everything except the face or the signature: borders cost bytes.</li><li>Look at the finished file at 100 percent zoom, not on the preview thumbnail.</li>

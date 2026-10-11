@@ -42,11 +42,9 @@
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
 
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- Structured Data: WebSite & WebApplication -->
   <script type="application/ld+json">
@@ -230,12 +228,12 @@
         </h2>
 
         <!-- File Info Display -->
-        <div id="fileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
-            <i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i>
-            <span id="fileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+        <div id="fileInfoBox" class="file-bar hidden">
+          <div class="file-bar__main">
+            <i class="fa-solid fa-file-image" aria-hidden="true"></i>
+            <span id="fileInfoText" class="file-bar__name"></span>
           </div>
-          <div style="display: flex; gap: 0.4rem;">
+          <div class="file-bar__actions">
             <button type="button" id="btnReplaceFile" class="btn btn-secondary btn-sm" title="Select a different image">
               <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i> Replace
             </button>
@@ -276,6 +274,7 @@
             <label class="form-label" for="customHeight" id="customHeightLabel">Height (px)</label>
             <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000" step="1">
           </div>
+          <span id="dimError" class="field-error hidden" role="alert"></span>
           <div>
             <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
               <div style="flex: 1;">
@@ -300,9 +299,9 @@
         </div>
 
         <!-- Target File Size Limits -->
-        <div class="form-row-2" style="margin-top: 0.75rem;">
+        <div class="form-row-2 size-row">
           <div>
-            <label class="form-label" for="customMinKB">Min KB (optional)</label>
+            <label class="form-label" for="customMinKB">Min KB <span class="optional">(optional)</span></label>
             <input type="number" id="customMinKB" aria-describedby="sizeError" class="form-control" placeholder="0" min="0" max="20000" step="1">
           </div>
           <div>
@@ -310,7 +309,6 @@
             <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="50" min="5" max="20000" step="1">
           </div>
         </div>
-        <span id="dimError" class="field-error hidden" role="alert"></span>
         <span id="sizeError" class="field-error hidden" role="alert"></span>
         <button type="button" id="btnOriginalSize" class="btn btn-secondary btn-sm original-size-btn" disabled><i class="fa-solid fa-expand" aria-hidden="true"></i> Use original size</button>
         <p class="form-hint">Keep the full image and its dimensions when you only need a smaller file.</p>
@@ -341,7 +339,7 @@
         <!-- Target Spec Info -->
         <div id="presetSummaryBox" class="meta-stats" aria-live="polite">
           <div class="meta-stat-item">
-            <span class="meta-stat-label">Target Dimensions</span>
+            <span class="meta-stat-label">Target dimensions</span>
             <span class="meta-stat-val" id="specDims">350 × 350 px</span>
           </div>
           <div class="meta-stat-item">
@@ -362,7 +360,7 @@
           </summary>
           <div class="advanced-disclosure-body">
             <div class="form-group">
-              <label for="bgFillSelect" class="form-label">Background Fill:</label>
+              <label for="bgFillSelect" class="form-label">Background fill</label>
               <select id="bgFillSelect" class="form-select">
                 <option value="white" selected>White (#FFFFFF) - Recommended</option>
                 <option value="black">Black (#000000)</option>
@@ -372,19 +370,19 @@
             </div>
 
             <!-- Optional Name / Date Annotations -->
-            <div id="dateOptionsBox" class="date-strip-box" style="margin-top: 0.75rem;">
+            <div id="dateOptionsBox" class="date-strip-box">
               <label class="checkbox-label" for="addDateCheckbox">
                 <input type="checkbox" id="addDateCheckbox">
-                <span>Add Date / Name Strip (Optional)</span>
+                <span>Add a date and name strip <span class="optional">(optional)</span></span>
               </label>
-              <div id="dateInputGroup" class="mt-2" style="display: none;">
-                <label for="annotationDateInput" class="form-label text-sm">Printed Date:</label>
-                <div style="display: flex; gap: 0.5rem;">
-                  <input type="date" id="annotationDateInput" class="form-control" style="flex: 1;">
-                  <button type="button" id="btnTodayDate" class="btn btn-secondary btn-sm" title="Set to Today">Today</button>
+              <div id="dateInputGroup" class="date-strip-fields" style="display: none;">
+                <label for="annotationDateInput" class="form-label">Printed date</label>
+                <div class="input-with-button">
+                  <input type="date" id="annotationDateInput" class="form-control">
+                  <button type="button" id="btnTodayDate" class="btn btn-secondary" title="Set to today">Today</button>
                 </div>
-                <div class="mt-2">
-                  <label for="candidateNameInput" class="form-label text-sm">Printed Name / Label (Optional):</label>
+                <div class="form-group">
+                  <label for="candidateNameInput" class="form-label">Printed name or label <span class="optional">(optional)</span></label>
                   <input type="text" id="candidateNameInput" class="form-control" placeholder="e.g. John Doe">
                   <p class="form-hint">Text scales to fit the strip. Very long labels may be shortened.</p>
                 </div>
@@ -449,18 +447,19 @@
           </div>
 
           <!-- Process Button -->
-          <div class="mt-4">
-            <button type="button" id="btnProcess" class="btn btn-primary btn-block">
+          <div class="process-action">
+            <button type="button" id="btnProcess" class="btn btn-primary btn-block" aria-describedby="processSummary">
               <i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize & compress
             </button>
+            <p id="processSummary" class="process-summary" data-change-target="controlsHeading" aria-live="polite"></p>
           </div>
         </div>
 
         <!-- Result Preview Section -->
         <div id="resultArea" class="preview-result-card hidden" aria-live="polite">
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-heading); margin: 0;">
-              <i class="fa-solid fa-circle-check" aria-hidden="true" style="color: var(--accent-green);"></i> Ready to download
+          <div class="result-top">
+            <h3 class="result-head">
+              <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Ready to download
             </h3>
 
             <!-- Before / After Comparison Toggle -->
@@ -481,36 +480,36 @@
 
           <div class="meta-stats">
             <div class="meta-stat-item">
-              <span class="meta-stat-label">Original Dimensions</span>
+              <span class="meta-stat-label">Original dimensions</span>
               <span class="meta-stat-val" id="resultOrigDims">-</span>
             </div>
             <div class="meta-stat-item">
-              <span class="meta-stat-label">Target Dimensions</span>
+              <span class="meta-stat-label">Target dimensions</span>
               <span class="meta-stat-val" id="resultTargetDims">-</span>
             </div>
             <div class="meta-stat-item">
-              <span class="meta-stat-label">Measured Output</span>
+              <span class="meta-stat-label">Output dimensions</span>
               <span class="meta-stat-val" id="resultDims">350 × 350 px</span>
             </div>
             <div class="meta-stat-item">
-              <span class="meta-stat-label">Target Size Limit</span>
+              <span class="meta-stat-label">Size limit</span>
               <span class="meta-stat-val" id="resultTargetSize">Under 50 KB</span>
             </div>
             <div class="meta-stat-item">
-              <span class="meta-stat-label">Exact File Size</span>
+              <span class="meta-stat-label">File size</span>
               <span class="meta-stat-val status-ok" id="resultFileSize">38.2 KB</span>
             </div>
             <div class="meta-stat-item">
               <span class="meta-stat-label">Format</span>
               <span class="meta-stat-val" id="resultFormat">JPEG</span>
             </div>
-            <div class="meta-stat-item" style="flex: 1 1 100%;">
-              <span class="meta-stat-label">Size Verification</span>
+            <div class="meta-stat-item">
+              <span class="meta-stat-label">Size check</span>
               <span class="meta-stat-val status-ok" id="resultStatus">Satisfies Target Limit</span>
             </div>
           </div>
 
-          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <div class="result-actions">
             <a id="btnDownload" class="btn btn-success btn-block" download="ApplyReady_Image.jpg">
               <i class="fa-solid fa-download" aria-hidden="true"></i> Download Image
             </a>
@@ -533,7 +532,7 @@
 
     <!-- Practical Resizing Guide Card -->
     <section class="resource-section" aria-labelledby="guideHeading">
-      <h3 id="guideHeading" style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-heading);">
+      <h3 id="guideHeading">
         Get the details right
       </h3>
       <div class="guide-card-grid">

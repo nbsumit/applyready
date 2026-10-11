@@ -34,11 +34,9 @@
 
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
@@ -222,7 +220,7 @@
       </header>
 
       <!-- Print Sheet Workspace Grid -->
-      <div class="resizer-grid" data-layout="input-first" style="margin-bottom: 3rem;">
+      <div class="resizer-grid" data-layout="input-first">
 
         <!-- Controls Column -->
         <section class="app-card image-controls" aria-labelledby="printControlsHeading">
@@ -232,12 +230,12 @@
           </h2>
 
           <!-- File Upload Info -->
-          <div id="printFileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
-              <i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i>
-              <span id="printFileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+          <div id="printFileInfoBox" class="file-bar hidden">
+            <div class="file-bar__main">
+              <i class="fa-solid fa-file-image" aria-hidden="true"></i>
+              <span id="printFileInfoText" class="file-bar__name"></span>
             </div>
-            <div style="display: flex; gap: 0.4rem;">
+            <div class="file-bar__actions">
               <button type="button" id="btnPrintReplace" class="btn btn-secondary btn-sm" title="Select a different photo">
                 <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i> Replace
               </button>
@@ -258,7 +256,7 @@
           </div>
 
           <!-- Photo Specs Form -->
-          <div class="form-group" style="margin-top: 1.25rem;">
+          <div class="form-group">
             <label for="photoSizeSelect" class="form-label">Photo Size Standard</label>
             <select id="photoSizeSelect" class="form-select">
               <option value="in-passport" selected>Indian Passport / Exam (3.5 × 4.5 cm / 35 × 45 mm)</option>
@@ -299,7 +297,7 @@
           </div>
 
           <div class="form-group">
-            <label class="checkbox-label" for="guideLinesCheckbox" style="margin-bottom: 0.4rem;">
+            <label class="checkbox-label" for="guideLinesCheckbox">
               <input type="checkbox" id="guideLinesCheckbox" checked>
               <span>Show dashed scissor cutting guidelines</span>
             </label>
@@ -312,26 +310,26 @@
 
         <!-- Preview Column -->
         <section class="app-card" aria-labelledby="sheetPreviewHeading">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
-            <h2 id="sheetPreviewHeading" class="card-title" style="margin: 0;">
+          <div class="panel-head">
+            <h2 id="sheetPreviewHeading" class="card-title">
               <i class="fa-solid fa-print" aria-hidden="true"></i>
               <span>Print Sheet Preview</span>
             </h2>
           </div>
 
-          <div id="printEmptyState" class="crop-empty" style="min-height: 380px;">
+          <div id="printEmptyState" class="crop-empty empty-state">
             <div class="empty-state-symbol"><i class="fa-solid fa-id-card" aria-hidden="true"></i></div>
-            <p style="font-weight: 600; margin-bottom: 0.25rem;">No photo uploaded yet</p>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">Upload a photo to see the tiled 300 DPI print sheet.</p>
+            <p class="empty-state__title">No photo uploaded yet</p>
+            <p class="empty-state__text">Upload a photo to see the tiled 300 DPI print sheet.</p>
           </div>
 
           <div id="printPreviewArea" class="hidden">
-            <div style="display: flex; justify-content: center; align-items: center; background: var(--bg-card-subtle); padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; min-height: 280px; overflow: auto;">
-              <canvas id="sheetCanvas" style="max-width: 100%; max-height: 360px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); border-radius: 4px; background: #ffffff;"></canvas>
+            <div class="sheet-frame">
+              <canvas id="sheetCanvas" class="sheet-canvas"></canvas>
             </div>
 
             <!-- Stats -->
-            <div class="meta-stats" style="margin-top: 1rem;">
+            <div class="meta-stats">
               <div class="meta-stat-item">
                 <span class="meta-stat-label">Paper Type</span>
                 <span class="meta-stat-val" id="statPrintPaper">4 × 6 inch</span>
@@ -347,11 +345,11 @@
             </div>
 
             <!-- Actions -->
-            <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap;">
-              <a id="btnDownloadPrintJpg" class="btn btn-primary" href="#" download="Passport_Photos_300DPI.jpg" style="flex: 1; justify-content: center;">
+            <div class="result-actions">
+              <a id="btnDownloadPrintJpg" class="btn btn-primary" href="#" download="Passport_Photos_300DPI.jpg">
                 <i class="fa-solid fa-download" aria-hidden="true"></i> Download 300 DPI Image (JPEG)
               </a>
-              <button type="button" id="btnDownloadPrintPdf" class="btn btn-secondary" style="justify-content: center;">
+              <button type="button" id="btnDownloadPrintPdf" class="btn btn-secondary">
                 <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Download Print PDF
               </button>
             </div>
@@ -391,7 +389,7 @@
         </div>
 
         <h3>Standard Passport &amp; Visa Photo Dimensions in India</h3>
-        <table class="table-responsive" style="margin: 1.5rem 0;">
+        <table class="table-responsive">
           <thead>
             <tr>
               <th>Document Type</th>
@@ -502,16 +500,16 @@
         <h2>Related Tools &amp; Guides</h2>
         <div class="tool-links-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
           <a href="/" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-crop-simple" aria-hidden="true" style="color: var(--primary);"></i> Image Resizer &amp; Compressor</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Resize photos to 350 × 450 px and under 50 KB for online portals.</p>
+            <h3><i class="fa-solid fa-crop-simple" aria-hidden="true" style="color: var(--primary);"></i> Image Resizer &amp; Compressor</h3>
+            <p style="margin: 0;">Resize photos to 350 × 450 px and under 50 KB for online portals.</p>
           </a>
           <a href="signature-cleaner.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-signature" aria-hidden="true" style="color: var(--primary);"></i> Signature Background Cleaner</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Whiten paper shadows and darken ink lines on signature scans.</p>
+            <h3><i class="fa-solid fa-signature" aria-hidden="true" style="color: var(--primary);"></i> Signature Background Cleaner</h3>
+            <p style="margin: 0;">Whiten paper shadows and darken ink lines on signature scans.</p>
           </a>
           <a href="image-to-pdf.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-file-pdf" aria-hidden="true" style="color: var(--primary);"></i> Image to PDF Converter</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Compile photos into a single standardized A4 PDF document.</p>
+            <h3><i class="fa-solid fa-file-pdf" aria-hidden="true" style="color: var(--primary);"></i> Image to PDF Converter</h3>
+            <p style="margin: 0;">Compile photos into a single standardized A4 PDF document.</p>
           </a>
         </div>
       </section>

@@ -78,7 +78,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .meta-stats { border-radius: 6px; }
   #fileInfoBox { flex-wrap: wrap; gap: .65rem; padding: .7rem; margin-bottom: 1rem; background: var(--bg-card-subtle); }
   #fileInfoBox > div:first-child { flex-basis: 100% !important; }
-  #fileInfoText { white-space: normal !important; overflow-wrap: anywhere; line-height: 1.6; font-size: 0.75rem !important; font-weight: 500 !important; }
+  #fileInfoText { white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
   #presetSummaryBox { padding: .75rem; margin-top: .5rem; gap: .85rem; background: var(--bg-card-subtle); }
   .meta-stat-label { font-size: 0.75rem; letter-spacing: .06em; font-weight: 550; }
   .meta-stat-val { font-size: .78rem; font-weight: 600; overflow-wrap: anywhere; }
@@ -122,7 +122,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .comparison-view-toggle { display: flex; flex-wrap: wrap; }
   .comparison-view-toggle .btn { min-height: 36px; font-size: 0.75rem; }
   .resource-section { margin-top: 2.5rem; }
-  .resource-section > h3 { font-size: 1rem !important; font-weight: 600 !important; }
+  .resource-section > h3 { font-size: 1rem; font-weight: 600; }
   .guide-card-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; margin: 1rem 0 0; }
   .guide-card { padding: 1.25rem; border-radius: 8px; box-shadow: none; display: flex; flex-direction: column; }
   .guide-card:hover { transform: none; box-shadow: none; border-color: var(--input-border); }
@@ -150,7 +150,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .editor-action-group { gap: .4rem; }
   .draft-options, .writing-hints-card { background: transparent; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: .75rem; padding: 0; font-size: .78rem; }
   .draft-options summary, .writing-hints-card summary { padding: .8rem; cursor: pointer; color: var(--text-muted); font-weight: 500; font-size: .78rem; }
-  .draft-options > div, .writing-hints-card > div { margin: .75rem !important; }
+  .draft-options > div, .writing-hints-card > div { margin: .75rem; }
   .backup-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
   .accordion-section { border-radius: 6px; margin-bottom: .65rem; }
   .accordion-header { padding: .9rem; background: var(--bg-card); font-size: .82rem; font-weight: 550; gap: .5rem; }
@@ -300,7 +300,6 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
 @media screen and (max-width: 580px) {
   .form-sections-container > div:last-child > div { width: 100%; min-width: 0; }
   #optionalSectionSelect { flex: 1; width: 0 !important; }
-  .template-preview-modal-header h3 { font-size: .8rem !important; }
   .template-preview-modal-footer { gap: .4rem; padding: .75rem; }
 }
 @media screen and (max-width: 400px) {
@@ -439,7 +438,7 @@ input[type='checkbox'] { accent-color: var(--button-primary); }
   .template-card-actions .btn { flex: auto; width: 100%; padding: .65rem .75rem; }
   .dynamic-item-actions .btn { padding: .5rem; min-width: 36px; }
   .backup-actions .btn { flex: 1 1 130px; }
-  #btnDeleteDraft { min-height: 44px !important; padding: .6rem .85rem !important; }
+  #btnDeleteDraft { min-height: 44px; padding: .6rem .85rem; }
   #viewReview .form-row-2 { grid-template-columns: minmax(0, 1fr); }
 }
 @media screen and (max-width: 400px) {

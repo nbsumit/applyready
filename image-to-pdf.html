@@ -34,11 +34,9 @@
 
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
@@ -222,7 +220,7 @@
       </header>
 
       <!-- Image to PDF Workspace -->
-      <div class="resizer-grid" style="margin-bottom: 3rem;">
+      <div class="resizer-grid">
 
         <!-- Controls Column -->
         <section class="app-card image-controls" aria-labelledby="imgPdfControlsHeading">
@@ -267,15 +265,15 @@
             </select>
           </div>
 
-          <div id="workspaceControls" class="hidden" style="margin-top: 1.5rem;">
-            <button type="button" id="btnConvertToPdf" class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: 0.75rem;">
+          <div id="workspaceControls" class="panel-actions hidden">
+            <button type="button" id="btnConvertToPdf" class="btn btn-primary btn-block">
               <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Convert to PDF
             </button>
-            <div style="display: flex; gap: 0.5rem;">
-              <button type="button" id="btnAddMoreImages" class="btn btn-secondary btn-sm" style="flex: 1; justify-content: center;">
+            <div class="panel-actions__row">
+              <button type="button" id="btnAddMoreImages" class="btn btn-secondary btn-sm">
                 <i class="fa-solid fa-plus" aria-hidden="true"></i> Add More Images
               </button>
-              <button type="button" id="btnClearAllImages" class="btn btn-outline-danger btn-sm" style="justify-content: center;">
+              <button type="button" id="btnClearAllImages" class="btn btn-outline-danger btn-sm">
                 <i class="fa-regular fa-trash-can" aria-hidden="true"></i> Clear
               </button>
               <input type="file" id="addMoreFileInput" accept="image/jpeg,image/png,image/webp" multiple style="display: none;" aria-hidden="true">
@@ -285,8 +283,8 @@
 
         <!-- Image List Column -->
         <section class="app-card" aria-labelledby="imagesHeading">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
-            <h2 id="imagesHeading" class="card-title" style="margin: 0;">
+          <div class="panel-head">
+            <h2 id="imagesHeading" class="card-title">
               <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
               <span>Uploaded Images</span>
             </h2>
@@ -302,17 +300,17 @@
             <p class="dropzone-sub">Supports JPG, PNG, WebP. Multiple files allowed.</p>
           </div>
 
-          <div id="imgPdfEmptyState" class="crop-empty" style="min-height: 220px; margin-top: 1rem;">
-            <p style="font-weight: 600; margin-bottom: 0.25rem;">No images uploaded yet</p>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">Uploaded photos will appear here with reorder and delete options.</p>
+          <div id="imgPdfEmptyState" class="crop-empty empty-state">
+            <p class="empty-state__title">No images uploaded yet</p>
+            <p class="empty-state__text">Uploaded photos will appear here with reorder and delete options.</p>
           </div>
 
           <!-- Reorderable List of Images -->
-          <div id="imageListContainer" style="margin-top: 1rem;"></div>
+          <div id="imageListContainer"></div>
 
           <!-- PDF Result Display -->
-          <div id="pdfResultArea" class="hidden" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
-            <div class="meta-stats" style="margin-bottom: 1rem;">
+          <div id="pdfResultArea" class="result-block hidden">
+            <div class="meta-stats">
               <div class="meta-stat-item">
                 <span class="meta-stat-label">Total Pages</span>
                 <span class="meta-stat-val" id="statPdfPages">--</span>
@@ -327,11 +325,11 @@
               </div>
             </div>
 
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-              <a id="btnDownloadPdf" class="btn btn-primary" href="#" download="Document.pdf" style="flex: 1; justify-content: center;">
+            <div class="result-actions">
+              <a id="btnDownloadPdf" class="btn btn-primary" href="#" download="Document.pdf">
                 <i class="fa-solid fa-download" aria-hidden="true"></i> Download PDF
               </a>
-              <a href="compress-pdf.html" class="btn btn-secondary" style="justify-content: center;">
+              <a href="compress-pdf.html" class="btn btn-secondary">
                 <i class="fa-solid fa-compress" aria-hidden="true"></i> Compress to Target KB
               </a>
             </div>
@@ -444,16 +442,16 @@
         <h2>Related Tools &amp; Guides</h2>
         <div class="tool-links-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
           <a href="compress-pdf.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-file-pdf" aria-hidden="true" style="color: var(--primary);"></i> Compress PDF to Target KB</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Reduce scanned PDF certificate sizes to under 100 KB, 200 KB, or 500 KB.</p>
+            <h3><i class="fa-solid fa-file-pdf" aria-hidden="true" style="color: var(--primary);"></i> Compress PDF to Target KB</h3>
+            <p style="margin: 0;">Reduce scanned PDF certificate sizes to under 100 KB, 200 KB, or 500 KB.</p>
           </a>
           <a href="/" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-crop-simple" aria-hidden="true" style="color: var(--primary);"></i> Image Resizer &amp; Compressor</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Resize photos and signatures to exact dimensions and KB limits.</p>
+            <h3><i class="fa-solid fa-crop-simple" aria-hidden="true" style="color: var(--primary);"></i> Image Resizer &amp; Compressor</h3>
+            <p style="margin: 0;">Resize photos and signatures to exact dimensions and KB limits.</p>
           </a>
           <a href="signature-cleaner.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-signature" aria-hidden="true" style="color: var(--primary);"></i> Signature Background Cleaner</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Whiten paper shadows and darken ink lines on signature scans.</p>
+            <h3><i class="fa-solid fa-signature" aria-hidden="true" style="color: var(--primary);"></i> Signature Background Cleaner</h3>
+            <p style="margin: 0;">Whiten paper shadows and darken ink lines on signature scans.</p>
           </a>
         </div>
       </section>

@@ -134,6 +134,7 @@
         if (emptyState) emptyState.classList.add('hidden');
         if (previewArea) previewArea.classList.remove('hidden');
         renderSheet();
+        if (window.ApplyReadyUI && window.ApplyReadyUI.reveal && previewArea) window.ApplyReadyUI.reveal(previewArea.closest('section') || previewArea);
       };
       img.onerror = () => { loadedFile = null; notifyError('That photo could not be read. Choose a JPG or PNG that opens on your device, then try again.'); };
       img.src = e.target.result;

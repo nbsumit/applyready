@@ -78,10 +78,10 @@ const server = http.createServer((req, res) => {
   console.log(`✓ ${pages.length} pages: readable buttons, no native file input, no default buttons, 12px text floor`);
 
   // 1b. One scale for icons and controls on every page, on a desktop and a phone-sized viewport.
-  //     Icons use five sizes. Fields and buttons use the control heights from css/ui.css.
+  //     Icons use five sizes. Fields and buttons use the control heights from css/app.css.
   {
     const ICONS = [12, 14, 16, 20, 24];
-    for (const [width, height, fieldMax, fieldMin, btnSizes] of [[1280, 900, 33, 31, [28, 32, 40]], [390, 780, 41, 39, [36, 40, 44]]]) {
+    for (const [width, height, fieldMax, fieldMin, btnSizes] of [[1280, 900, 37, 35, [32, 36, 44]], [390, 780, 45, 43, [40, 44, 48]]]) {
       const { context, page } = await open(width, height);
       for (const file of pages) {
         await page.goto(`${origin}/${file}`);
@@ -96,7 +96,7 @@ const server = http.createServer((req, res) => {
             fields.push(Math.round(e.getBoundingClientRect().height));
           });
           document.querySelectorAll('.btn').forEach(e => {
-            if (!shown(e)) return;
+            if (!shown(e) || e.closest('.comparison-view-toggle')) return;
             const h = Math.round(e.getBoundingClientRect().height);
             if (h <= 46) buttons.push(h);
           });

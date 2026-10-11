@@ -34,11 +34,9 @@
 
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
@@ -222,7 +220,7 @@
       </header>
 
       <!-- PDF Compressor Grid -->
-      <div class="resizer-grid" data-layout="stack" style="margin-bottom: 3rem;">
+      <div class="resizer-grid" data-layout="stack">
 
         <!-- Controls Column -->
         <section class="app-card image-controls" aria-labelledby="compressControlsHeading">
@@ -232,12 +230,12 @@
           </h2>
 
           <!-- File Upload Info -->
-          <div id="compressFileInfoBox" class="meta-stats hidden" style="align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; overflow: hidden;">
-              <i class="fa-solid fa-file-pdf" aria-hidden="true" style="color: var(--primary);"></i>
-              <span id="compressFileInfoText" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+          <div id="compressFileInfoBox" class="file-bar hidden">
+            <div class="file-bar__main">
+              <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
+              <span id="compressFileInfoText" class="file-bar__name"></span>
             </div>
-            <div style="display: flex; gap: 0.4rem;">
+            <div class="file-bar__actions">
               <button type="button" id="btnCompressReplace" class="btn btn-secondary btn-sm" title="Select a different PDF">
                 <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i> Replace
               </button>
@@ -258,9 +256,9 @@
           </div>
 
           <!-- Target KB Presets -->
-          <div class="form-group" style="margin-top: 1.25rem;">
+          <div class="form-group">
             <label class="form-label">Select Target File Limit</label>
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 0.75rem;">
+            <div class="choice-grid">
               <button type="button" class="btn btn-secondary btn-sm preset-kb-btn" data-kb="100" aria-pressed="false">Under 100 KB</button>
               <button type="button" class="btn btn-secondary btn-sm preset-kb-btn active" data-kb="200" aria-pressed="true">Under 200 KB (Popular)</button>
               <button type="button" class="btn btn-secondary btn-sm preset-kb-btn" data-kb="300" aria-pressed="false">Under 300 KB (UPSC)</button>
@@ -272,41 +270,42 @@
             <p class="form-hint">The compressor optimizes document image quality to guarantee the file stays under this limit.</p>
           </div>
 
-          <button type="button" id="btnStartCompress" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 0.5rem;" disabled>
+          <button type="button" id="btnStartCompress" class="btn btn-primary btn-block" disabled>
             <i class="fa-solid fa-bolt" aria-hidden="true"></i> Compress Document Now
           </button>
         </section>
 
         <!-- Status & Results Column -->
         <section class="app-card" aria-labelledby="statusHeading">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
-            <h2 id="statusHeading" class="card-title" style="margin: 0;">
+          <div class="panel-head">
+            <h2 id="statusHeading" class="card-title">
               <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
               <span>Compression Status</span>
             </h2>
           </div>
 
           <!-- Progress Box -->
-          <div id="compressProgressBox" class="hidden" style="padding: 1.5rem; text-align: center;">
-            <div style="width: 100%; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden; margin-bottom: 0.75rem;">
-              <div id="compressProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s ease;"></div>
+          <div id="compressProgressBox" class="progress-box hidden">
+            <div class="progress-track">
+              <div id="compressProgressBar" class="progress-bar" style="width: 0%;"></div>
             </div>
-            <p id="compressProgressText" style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Processing document…</p>
+            <p id="compressProgressText" class="progress-text">Processing document…</p>
           </div>
 
           <!-- Result Area -->
           <div id="compressResultArea" class="hidden">
-            <div class="meta-stats" style="margin-bottom: 1.25rem;">
+            <p id="compressStatus" class="result-status" role="status"></p>
+            <div class="meta-stats">
               <div class="meta-stat-item">
-                <span class="meta-stat-label">Original Size</span>
+                <span class="meta-stat-label">Original size</span>
                 <span class="meta-stat-val" id="statOrigSize">--</span>
               </div>
               <div class="meta-stat-item">
-                <span class="meta-stat-label">Compressed Size</span>
+                <span class="meta-stat-label">Compressed size</span>
                 <span class="meta-stat-val status-ok" id="statCompSize">--</span>
               </div>
               <div class="meta-stat-item">
-                <span class="meta-stat-label">Space Saved</span>
+                <span class="meta-stat-label">Saved</span>
                 <span class="meta-stat-val" id="statReduction">--</span>
               </div>
               <div class="meta-stat-item">
@@ -315,11 +314,11 @@
               </div>
             </div>
 
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-              <a id="btnDownloadCompressedPdf" class="btn btn-primary" href="#" download="Compressed_Document.pdf" style="flex: 1; justify-content: center;">
+            <div class="result-actions">
+              <a id="btnDownloadCompressedPdf" class="btn btn-primary" href="#" download="Compressed_Document.pdf">
                 <i class="fa-solid fa-download" aria-hidden="true"></i> Download Compressed PDF
               </a>
-              <a href="image-to-pdf.html" class="btn btn-secondary" style="justify-content: center;">
+              <a href="image-to-pdf.html" class="btn btn-secondary">
                 <i class="fa-solid fa-layer-group" aria-hidden="true"></i> Combine Images to PDF
               </a>
             </div>
@@ -339,7 +338,7 @@
       <!-- Educational Content Section -->
       <section style="margin-top: 3rem;">
         <h2>Official Document PDF Size Limits in India</h2>
-        <table class="table-responsive" style="margin: 1.5rem 0;">
+        <table class="table-responsive">
           <thead>
             <tr>
               <th>Exam / Portal</th>
@@ -450,16 +449,16 @@
         <h2>Related Tools &amp; Guides</h2>
         <div class="tool-links-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
           <a href="image-to-pdf.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-file-pdf" aria-hidden="true" style="color: var(--primary);"></i> Image to PDF Converter</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Combine JPG and PNG images into a clean standardized A4 PDF.</p>
+            <h3><i class="fa-solid fa-file-pdf" aria-hidden="true" style="color: var(--primary);"></i> Image to PDF Converter</h3>
+            <p style="margin: 0;">Combine JPG and PNG images into a clean standardized A4 PDF.</p>
           </a>
           <a href="resize-image-to-20kb.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i> Resize Image to 20 KB</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Fast client-side signature and photo compressor for online exams.</p>
+            <h3><i class="fa-solid fa-file-image" aria-hidden="true" style="color: var(--primary);"></i> Resize Image to 20 KB</h3>
+            <p style="margin: 0;">Fast client-side signature and photo compressor for online exams.</p>
           </a>
           <a href="signature-cleaner.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3 style="font-size: 1.05rem; margin-bottom: 0.35rem;"><i class="fa-solid fa-signature" aria-hidden="true" style="color: var(--primary);"></i> Signature Background Cleaner</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Whiten paper shadows and darken ink lines on signature scans.</p>
+            <h3><i class="fa-solid fa-signature" aria-hidden="true" style="color: var(--primary);"></i> Signature Background Cleaner</h3>
+            <p style="margin: 0;">Whiten paper shadows and darken ink lines on signature scans.</p>
           </a>
         </div>
       </section>

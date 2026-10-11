@@ -35,11 +35,9 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261013-1">
-  <link rel="stylesheet" href="css/style.css?v=20261013-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261013-1">
-  <link rel="stylesheet" href="css/ui.css?v=20261013-1">
+  <link rel="stylesheet" href="css/style.css?v=20261014-1">
+  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261014-1">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -164,8 +162,8 @@
       <section id="resize-tool" style="margin-bottom: 2rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
           <div>
-            <h2 style="font-size: 1.35rem; margin: 0; color: var(--text-heading);">Image Compressor: Preloaded for 50 KB</h2>
-            <p class="text-muted" style="margin: 0; font-size: 0.9rem;">Upload your passport photo to crop and compress strictly under 50 KB:</p>
+            <h2>Image Compressor: Preloaded for 50 KB</h2>
+            <p class="text-muted" style="margin: 0;">Upload your passport photo to crop and compress strictly under 50 KB:</p>
           </div>
         </div>
 
@@ -202,7 +200,7 @@
             </div>
 
             <div class="control-group">
-              <label for="presetSelect" class="control-label">Target Preset</label>
+              <label for="presetSelect" class="control-label">Preset</label>
               <select id="presetSelect" class="form-control custom-select-source">
                 <option value="kb-50" selected>Target: Under 50 KB</option>
                 <option value="passport">Passport Photo (350 × 450 px, max 50 KB)</option>
@@ -212,8 +210,8 @@
             </div>
 
             <div id="customControls">
-              <div class="dim-row" style="display: flex; gap: 0.5rem; align-items: flex-end;">
-                <div class="control-group" style="flex: 1;">
+              <div class="dim-row">
+                <div class="control-group">
                   <label for="customWidth" class="control-label">Width (px)</label>
                   <input type="number" id="customWidth" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000">
                 </div>
@@ -222,20 +220,22 @@
                     <i class="fa-solid fa-lock" aria-hidden="true"></i>
                   </button>
                 </div>
-                <div class="control-group" style="flex: 1;">
+                <div class="control-group">
                   <label for="customHeight" class="control-label">Height (px)</label>
                   <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="450" min="20" max="8000">
                 </div>
               </div>
+              <span id="dimError" class="field-error hidden" role="alert"></span>
 
-              <div class="control-group" style="margin-top: 0.75rem;">
-                <label for="customMaxKB" class="control-label">Max File Size (KB)</label>
+              <div class="control-group">
+                <label for="customMaxKB" class="control-label">Max file size (KB)</label>
                 <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="50" min="5" max="20000">
               </div>
+              <span id="sizeError" class="field-error hidden" role="alert"></span>
 
-              <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
+              <div class="form-row-2">
                 <div class="control-group">
-                  <label for="formatSelect" class="control-label">Output Format</label>
+                  <label for="formatSelect" class="control-label">Output format</label>
                   <select id="formatSelect" class="form-control custom-select-source">
                     <option value="image/jpeg" selected>JPEG (.jpg)</option>
                     <option value="image/png">PNG (.png)</option>
@@ -243,7 +243,7 @@
                   </select>
                 </div>
                 <div class="control-group">
-                  <label for="bgFillSelect" class="control-label">Background Fill</label>
+                  <label for="bgFillSelect" class="control-label">Background</label>
                   <select id="bgFillSelect" class="form-control">
                     <option value="white" selected>White</option>
                     <option value="transparent">Transparent</option>
@@ -254,21 +254,21 @@
             </div>
 
             <!-- Optional Name and Date Strip -->
-            <div class="annotation-wrapper" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-              <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+            <div class="annotation-wrapper">
+              <label class="checkbox-label">
                 <input type="checkbox" id="addDateCheckbox">
                 <span>Add Candidate Name &amp; Date Strip</span>
               </label>
-              <div id="dateInputGroup" style="display: none; margin-top: 0.5rem;">
-                <div class="control-group" style="margin-bottom: 0.5rem;">
-                  <label for="candidateNameInput" class="control-label">Candidate Name</label>
+              <div id="dateInputGroup" class="date-strip-fields" style="display: none;">
+                <div class="control-group">
+                  <label for="candidateNameInput" class="control-label">Candidate name</label>
                   <input type="text" id="candidateNameInput" class="form-control" placeholder="YOUR FULL NAME">
                 </div>
                 <div class="control-group">
-                  <label for="annotationDateInput" class="control-label">Date of Photo</label>
-                  <div style="display: flex; gap: 0.5rem;">
+                  <label for="annotationDateInput" class="control-label">Date of photo</label>
+                  <div class="input-with-button">
                     <input type="date" id="annotationDateInput" class="form-control">
-                    <button type="button" id="btnTodayDate" class="btn btn-secondary btn-sm">Today</button>
+                    <button type="button" id="btnTodayDate" class="btn btn-secondary">Today</button>
                   </div>
                 </div>
               </div>
@@ -278,12 +278,10 @@
               <select id="aspectRatioSelect"><option value="target">Target</option></select>
             </div>
 
-            <span id="dimError" class="field-error hidden" role="alert"></span>
-            <span id="sizeError" class="field-error hidden" role="alert"></span>
-
-            <button type="button" id="btnProcess" class="btn btn-primary btn-block" style="margin-top: 1rem;" disabled>
+            <button type="button" id="btnProcess" class="btn btn-primary btn-block" aria-describedby="processSummary" disabled>
               <i class="fa-solid fa-bolt" aria-hidden="true"></i> Compress to Under 50 KB
             </button>
+            <p id="processSummary" class="process-summary" aria-live="polite"></p>
           </section>
 
           <!-- RIGHT: Preview Panel -->
@@ -299,7 +297,7 @@
               <div class="cropper-container-wrapper">
                 <img id="imageToCrop" alt="Source for cropping" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
               </div>
-              <div class="cropper-actions" style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 0.75rem; flex-wrap: wrap;">
+              <div class="cropper-actions">
                 <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="Rotate left 90°"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> 90°</button>
                 <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="Rotate right 90°"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> 90°</button>
                 <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="Reset crop"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Reset</button>
@@ -312,12 +310,12 @@
               <div class="result-card">
                 <img id="resultImage" alt="Resized 50 KB preview" class="result-img">
               </div>
-              <div class="result-meta-stats" style="display: flex; gap: 0.5rem; justify-content: space-between; flex-wrap: wrap; margin: 1rem 0;">
+              <div class="result-meta-stats">
                 <div><span class="text-muted">Dimensions:</span> <strong id="resultDims">350 × 450 px</strong></div>
                 <div><span class="text-muted">File Size:</span> <strong id="resultFileSize" class="status-ok">43.2 KB</strong></div>
                 <div><span class="text-muted">Format:</span> <strong id="resultFormat">JPEG</strong></div>
               </div>
-              <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+              <div class="result-actions">
                 <a id="btnDownload" class="btn btn-success btn-block" download="Photo_50KB.jpg">
                   <i class="fa-solid fa-download" aria-hidden="true"></i> Download 50 KB Photo
                 </a>
@@ -325,7 +323,7 @@
               </div>
             </div>
 
-            <div class="workspace-footnote" style="margin-top: 1rem;">
+            <div class="workspace-footnote">
               <span><i class="fa-solid fa-lock" aria-hidden="true"></i> 100% Private (Processed in browser)</span>
               <span id="workspaceStatus">No image selected</span>
             </div>
@@ -367,7 +365,7 @@
 <tr><td>Signature</td><td>400 x 200</td><td>80,000</td><td>5.1</td><td>Comfortable</td></tr>
 </tbody>
 </table>
-        <p class="text-muted" style="font-size: 0.9rem;">Rule of thumb for photographs: 2.5 or more bits per pixel is comfortable, 1.5 to 2.5 is workable, below 1.5 looks soft or blocky.</p>
+        <p class="text-muted">Rule of thumb for photographs: 2.5 or more bits per pixel is comfortable, 1.5 to 2.5 is workable, below 1.5 looks soft or blocky.</p>
         <p><strong>Why 350 x 450 works.</strong> It has 157,500 pixels, so each pixel gets about 2.6 bits, enough for a clean portrait. That is why so many portals pair a 50 KB limit with a size close to 350 x 450. If you change the dimensions, the budget changes with them.</p><p><strong>Why bigger crops struggle.</strong> A 600 x 800 photo has three times as many pixels, which cuts the budget to under one bit per pixel. The result is the blocky, smeared look people blame on "bad compression". The cure is not a better tool but a smaller pixel size.</p><p><strong>A note on centimetre sizes.</strong> A form that says 3.5 x 4.5 cm without giving pixels is easiest to satisfy at about 350 x 450. At 300 DPI the same physical size would be 413 x 531, which has 40 percent more pixels and a tighter budget. See the guide on pixels, centimetres and DPI for the conversion.</p>
         <ul>
           <li>Start from the original photo. Every extra save loses a little detail.</li><li>Leave a margin of a few KB below the limit: some systems count 1 KB as 1000 bytes.</li><li>Use a plain light background; busy backgrounds cost bytes and risk rejection.</li>
