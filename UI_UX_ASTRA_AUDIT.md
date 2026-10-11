@@ -72,6 +72,14 @@ Fix: give these pages a tool-width container and the same task-first header and 
 
 **A08. Tables break words mid-word on phones.** Exam spec tables (English and Hindi), compress limits table at 320 to 430px ("Doc/um/ent", "Commissio/n)"). Fix: horizontal scroll container with a sensible `min-width`, no `word-break` on cells. Risk: low.
 
+**A38. Exam, KB and Hindi pages show a native file input and native buttons.** 15 pages (`ssc/upsc/ibps/neet/rrb`, `resize-image-to-*kb`, `hi/*`), all viewports.
+The embedded resizer renders the browser's "Choose File / No file chosen" control above a half-width dropzone (`.file-input-hidden` has no CSS), and the Replace/Remove buttons are default grey browser buttons (`.btn-text` has no CSS). These are the highest-traffic landing pages; they are the least finished screens in the product.
+Fix: visually hide the real input (stays in DOM and focusable through the dropzone), full-width dropzone, shared button styles for Replace/Remove. Risk: low (CSS only, ids untouched).
+
+**A39. Exam and KB pages: the order of the workflow is wrong and the result has no success state.** 15 pages, 390 and 1440.
+The tool is `form-panel` then `preview-panel`: dropzone, preset, size fields, format, then the **Resize button**, and only below that the cropper that the button acts on. After upload on a phone the user must scroll past every setting to find the image, then back up to the button. The result block is raw text lines ("Dimensions:", "File Size:", full-width unconstrained image) with no "Ready" or within-limit indication; the dropzone stays on screen after a file is chosen.
+Fix: CSS-only ordering inside `#resizerApp`: file bar, cropper or result, settings, Resize; dropzone folds away once a file is loaded; result gets a success header and metric tiles like the home page. Risk: medium (layout order only; accessibility order preserved by keeping DOM order sensible and using `display: contents` panels).
+
 ### P2
 
 **A09. Image result panel repeats itself.** Home and exam/KB pages after processing: seven boxes (original dimensions, target dimensions, measured output, target limit, exact bytes with "1 KB = 1024 B", format, verification) plus Result/Original size chips. Eye order is unclear. Fix: one status line ("Within 50 KB, 350x450 px"), three metrics (size, dimensions, format), details behind a disclosure; keep all values in the DOM. Risk: medium (JS writes these ids; keep ids).
@@ -96,6 +104,9 @@ Fix: give these pages a tool-width container and the same task-first header and 
 
 **A19. Secondary-tool action layout.** Passport, signature, compress results place Download as an equal-weight button beside a secondary button, and result stats come before it. Fix: Download is full-width and first. Risk: low.
 
+**A40. Embedded tool typography is unstyled.** Exam/KB/Hindi pages: `control-group`/`control-label` have no CSS so labels render as 17px regular body text, not the 13px semibold label used on the home tool; width/height row, format row and unit spacing differ from home.
+Fix: map them to the shared field system. Risk: low.
+
 **A20. Tiny text.** 9.6px (eyebrow), 10.2 to 10.6px (dropzone help, some spans), 11.5 to 11.7px (small buttons, resource links, hints). Fix: 12px floor, 13px for helper text. Risk: low.
 
 ### P3
@@ -111,6 +122,7 @@ Fix: give these pages a tool-width container and the same task-first header and 
 **A29.** Inline styles: about 1,300 attributes override tokens (draft panel, skill rows, optional-section select, Delete Draft button at 28px).
 **A30.** Two native select appearances still exist in the optional-section picker and unit selects because inline `min-height` overrides the control height.
 **A31.** Existing em dashes in UI strings (template modal title, a few headings). Content text is left as is (SEO and meaning), UI chrome strings are replaced.
+**A41.** SSC page repeats the same "Important Notice on Live Photo Capture" callout twice (identical text), and the callouts on exam pages use inline orange borders unlike every other callout.
 **A32.** Dark theme toggle is an unlabelled half-circle; brief wants a professional light theme. Dark mode is kept (not removed, to preserve behaviour) but light stays the default.
 
 ### P4
@@ -137,12 +149,12 @@ Fix: give these pages a tool-width container and the same task-first header and 
 | Severity | Count |
 |---|---|
 | P0 | 2 |
-| P1 | 6 |
-| P2 | 12 |
-| P3 | 12 |
+| P1 | 8 |
+| P2 | 13 |
+| P3 | 13 |
 | P4 | 5 |
 
-Biggest problems: A01 (dropdowns unusable), A02 (30 blank primary buttons), A03 (no focus on text fields), A04/A05 (four tools off-system), the fact that four stylesheets fight each other and the tests cannot see it.
+Biggest problems: A01 (dropdowns unusable), A02 (30 blank primary buttons), A03 (no focus on text fields), A04/A05 (four tools off-system), A38/A39 (the 15 SEO landing pages ship a native file input, raw buttons and a backwards workflow), the fact that four stylesheets fight each other and the tests cannot see it.
 
 ## 7. Not in scope and not changing
 

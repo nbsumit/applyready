@@ -155,28 +155,23 @@
 
     items.forEach((item, index) => {
       const card = doc.createElement('div');
-      card.className = 'app-card';
-      card.style.display = 'flex';
-      card.style.alignItems = 'center';
-      card.style.gap = '1rem';
-      card.style.padding = '0.75rem 1rem';
-      card.style.marginBottom = '0.5rem';
+      card.className = 'app-card page-row';
 
       card.innerHTML = `
-        <span style="font-weight: 700; color: var(--primary); min-width: 24px;">#${index + 1}</span>
-        <img src="${item.dataUrl}" alt="${escapeHTML(item.name)}" style="width: 52px; height: 52px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border-color);">
-        <div style="flex: 1; overflow: hidden;">
-          <strong style="display: block; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(item.name)}</strong>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">${item.width} × ${item.height} px · ${(item.file.size / 1024).toFixed(1)} KB</span>
+        <span class="page-row__num">#${index + 1}</span>
+        <img class="page-row__thumb" src="${item.dataUrl}" alt="${escapeHTML(item.name)}">
+        <div class="page-row__text">
+          <strong class="page-row__name">${escapeHTML(item.name)}</strong>
+          <span class="page-row__meta">${item.width} × ${item.height} px · ${(item.file.size / 1024).toFixed(1)} KB</span>
         </div>
-        <div style="display: flex; gap: 0.35rem;">
-          <button type="button" class="btn btn-secondary btn-sm btn-move-up" data-idx="${index}" title="Move Up" ${index === 0 ? 'disabled' : ''}>
+        <div class="page-row__actions">
+          <button type="button" class="btn btn-secondary btn-sm btn-move-up" data-idx="${index}" title="Move up" aria-label="Move ${escapeHTML(item.name)} up" ${index === 0 ? 'disabled' : ''}>
             <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
           </button>
-          <button type="button" class="btn btn-secondary btn-sm btn-move-down" data-idx="${index}" title="Move Down" ${index === items.length - 1 ? 'disabled' : ''}>
+          <button type="button" class="btn btn-secondary btn-sm btn-move-down" data-idx="${index}" title="Move down" aria-label="Move ${escapeHTML(item.name)} down" ${index === items.length - 1 ? 'disabled' : ''}>
             <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
           </button>
-          <button type="button" class="btn btn-outline-danger btn-sm btn-del" data-idx="${index}" title="Remove">
+          <button type="button" class="btn btn-outline-danger btn-sm btn-del" data-idx="${index}" title="Remove" aria-label="Remove ${escapeHTML(item.name)}">
             <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
           </button>
         </div>

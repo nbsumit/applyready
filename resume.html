@@ -184,10 +184,10 @@
 
     <!-- Hero Header -->
     <header class="hero-header workspace-hero resume-hero">
-      <div class="hero-copy"><div class="eyebrow">TOOLS FOR YOUR NEXT APPLICATION</div>
+      <div class="hero-copy">
         <h1 class="hero-title">Resume builder</h1>
         <p class="hero-subtitle">Your experience, clearly presented. Fifteen ATS-friendly templates. Free PDF and Word downloads.</p></div>
-      <div class="hero-export"><button type="button" id="btnOpenExport" class="btn btn-primary"><i class="fa-solid fa-download" aria-hidden="true"></i> Review & download</button><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Your details stay on this device</span></div>
+      <div class="hero-export"><button type="button" id="btnOpenExport" class="btn btn-secondary"><i class="fa-solid fa-download" aria-hidden="true"></i> Review & download</button><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Your details stay on this device</span></div>
     </header>
 
     <!-- Mobile View Switcher (Visible on screens <= 949px) -->
@@ -503,12 +503,10 @@
             </div>
 
             <!-- Add Optional Section Dropdown -->
-            <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-              <label for="optionalSectionSelect" style="font-size: 0.85rem; font-weight: 600; color: var(--text-heading);">
-                <i class="fa-solid fa-plus-circle text-muted" aria-hidden="true"></i> Add Optional Section:
-              </label>
-              <div style="display: flex; gap: 0.5rem;">
-                <select id="optionalSectionSelect" class="form-select" style="min-height: 38px; width: auto; font-size: 0.85rem;">
+            <div class="add-section-row">
+              <label for="optionalSectionSelect" class="add-section-label">Add an optional section</label>
+              <div class="add-section-controls">
+                <select id="optionalSectionSelect" class="form-select">
                   <option value="" disabled selected>Select section...</option>
                   <option value="certifications">Certifications & Credentials</option>
                   <option value="achievements">Honors & Achievements</option>
@@ -516,7 +514,7 @@
                   <option value="languages">Languages</option>
                   <option value="academic">Academic & Research (CV)</option>
                 </select>
-                <button type="button" id="btnAddOptionalSection" class="btn btn-secondary btn-sm">Add</button>
+                <button type="button" id="btnAddOptionalSection" class="btn btn-secondary">Add</button>
               </div>
             </div>
 
@@ -524,20 +522,16 @@
 
         <details class="draft-options"><summary><i class="fa-regular fa-hard-drive" aria-hidden="true"></i> Draft & backup options</summary>
           <!-- Local Draft Storage Options -->
-          <div style="background: var(--bg-card-subtle); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1rem;">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-              <label class="checkbox-label" for="chkSaveDraft" style="font-size: 0.85rem;">
-                <input type="checkbox" id="chkSaveDraft">
-                <span>Save draft on this device</span>
-              </label>
-              <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
-                <span id="draftStatusText" role="status">Local saving disabled</span>
-                <button type="button" id="btnDeleteDraft" class="btn btn-outline-danger btn-sm" style="min-height: 28px; padding: 0.15rem 0.45rem; font-size: 0.725rem;" title="Delete saved draft">
-                  Delete Draft
-                </button>
-              </div>
+          <div class="draft-card">
+            <label class="checkbox-label" for="chkSaveDraft">
+              <input type="checkbox" id="chkSaveDraft">
+              <span>Save draft on this device</span>
+            </label>
+            <p class="form-hint">Drafts are stored locally in your browser storage. <strong>Do not enable on shared or public devices</strong> to protect your personal information.</p>
+            <div class="draft-status-row">
+              <span id="draftStatusText" role="status">Local saving disabled</span>
+              <button type="button" id="btnDeleteDraft" class="btn btn-outline-danger btn-sm" title="Delete saved draft">Delete draft</button>
             </div>
-            <p class="form-hint" style="margin-top: 0.35rem; font-size: 0.775rem;">Drafts are stored locally in your browser storage. <strong>Do not enable on shared or public devices</strong> to protect your personal information.</p>
           </div>
 
 <div class="backup-actions"><button type="button" id="btnExportJSON" class="btn btn-secondary btn-sm"><i class="fa-solid fa-file-export" aria-hidden="true"></i> Save backup</button><button type="button" id="btnImportJSON" class="btn btn-secondary btn-sm"><i class="fa-solid fa-file-import" aria-hidden="true"></i> Import backup</button><button type="button" id="btnClearForm" class="btn btn-outline-danger btn-sm">Clear resume</button><input type="file" id="fileImportInput" accept=".json" class="hidden" aria-hidden="true"></div></details><details class="writing-hints-card">
@@ -659,16 +653,6 @@
             </div>
           </div>
 
-          <!-- Job Description Keyword Match (on-device, never stored) -->
-          <section class="review-panel-card keyword-match-card" aria-labelledby="keywordMatchHeading">
-            <h3 id="keywordMatchHeading" style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.35rem;">
-              <i class="fa-solid fa-magnifying-glass" aria-hidden="true" style="color: var(--primary);"></i> Compare with a job description
-            </h3>
-            <p class="text-sm text-muted" style="margin-bottom: 0.75rem;">Paste the job advert to see which of its key terms your resume already uses. It is checked on this device and never saved.</p>
-            <label class="form-label" for="jobDescriptionInput">Job description</label>
-            <textarea id="jobDescriptionInput" class="form-control" rows="5" placeholder="Paste the full job description here" autocomplete="off" spellcheck="false"></textarea>
-            <div id="keywordMatchResult" class="keyword-match-result" aria-live="polite"></div>
-          </section>
           <!-- Document Export Actions -->
           <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.75rem;">
             <i class="fa-solid fa-file-arrow-down" aria-hidden="true" style="color: var(--primary);"></i> Export Document
@@ -697,6 +681,17 @@
             <p><strong>Export Verification:</strong> Your downloads contain selectable text. Word and browser print may wrap lines differently. Follow the file format requested by the employer; read our comprehensive <a href="guides/ats-friendly-resume-guide.html" style="color: var(--primary); text-decoration: underline;">ATS-friendly resume guide</a> for recruiter insights; no template can guarantee an ATS result.</p>
           </div>
 
+
+          <!-- Job Description Keyword Match (on-device, never stored) -->
+          <section class="review-panel-card keyword-match-card" aria-labelledby="keywordMatchHeading">
+            <h3 id="keywordMatchHeading" style="font-size: 1rem; font-weight: 700; color: var(--text-heading); margin-bottom: 0.35rem;">
+              <i class="fa-solid fa-magnifying-glass" aria-hidden="true" style="color: var(--primary);"></i> Compare with a job description
+            </h3>
+            <p class="text-sm text-muted" style="margin-bottom: 0.75rem;">Paste the job advert to see which of its key terms your resume already uses. It is checked on this device and never saved.</p>
+            <label class="form-label" for="jobDescriptionInput">Job description</label>
+            <textarea id="jobDescriptionInput" class="form-control" rows="5" placeholder="Paste the full job description here" autocomplete="off" spellcheck="false"></textarea>
+            <div id="keywordMatchResult" class="keyword-match-result" aria-live="polite"></div>
+          </section>
         </div>
 
       </section>

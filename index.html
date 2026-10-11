@@ -197,7 +197,6 @@
     <!-- Hero Header -->
     <header class="hero-header workspace-hero">
       <div class="hero-copy">
-        <div class="eyebrow">TOOLS FOR YOUR NEXT APPLICATION</div>
         <h1 class="hero-title">Resize Photo &amp; Signature to 20KB / 50KB for Online Forms</h1>
         <p class="hero-subtitle">The right dimensions. The right file size. Ready to upload.</p>
         <div class="steps" aria-label="Process steps">
@@ -205,11 +204,8 @@
           <div class="steps__item"><span>2</span> Adjust</div>
           <div class="steps__item"><span>3</span> Download</div>
         </div>
-        <div class="trust-points" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:0.875rem;color:var(--text-muted);">
-          <span>✓ Free</span><span>✓ Private</span><span>✓ No sign-up</span><span>✓ Works offline</span>
-        </div>
       </div>
-      <div class="workspace-assurance"><i class="fa-solid fa-lock" aria-hidden="true"></i><div><strong>Your files stay on your device</strong><span>Free to use. No account or watermark.</span></div></div>
+      <div class="workspace-assurance"><i class="fa-solid fa-lock" aria-hidden="true"></i><div><strong>Your files stay on your device</strong><span>Free. No sign-up or watermark. Works offline.</span></div></div>
     </header>
 
     <div class="preset-bar" role="group" aria-label="Quick image presets">
@@ -305,11 +301,11 @@
         <!-- Target File Size Limits -->
         <div class="form-row-2" style="margin-top: 0.75rem;">
           <div>
-            <label class="form-label" for="customMinKB">Min size (KB, optional)</label>
+            <label class="form-label" for="customMinKB">Min KB (optional)</label>
             <input type="number" id="customMinKB" aria-describedby="sizeError" class="form-control" placeholder="0" min="0" max="20000" step="1">
           </div>
           <div>
-            <label class="form-label" for="customMaxKB">Max limit (KB)</label>
+            <label class="form-label" for="customMaxKB">Max KB</label>
             <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="50" min="5" max="20000" step="1">
           </div>
         </div>
@@ -469,10 +465,10 @@
             <!-- Before / After Comparison Toggle -->
             <div class="comparison-view-toggle" role="group" aria-label="Image comparison view">
               <button type="button" id="btnViewProcessed" class="btn active" aria-pressed="true">
-                <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Result (<span id="compProcessedKB">—</span>)
+                <i class="fa-solid fa-circle-check" aria-hidden="true"></i><span>Result <span id="compProcessedKB">-</span></span>
               </button>
               <button type="button" id="btnViewOriginal" class="btn" aria-pressed="false">
-                <i class="fa-solid fa-image" aria-hidden="true"></i> Original (<span id="compOriginalKB">—</span>)
+                <i class="fa-solid fa-image" aria-hidden="true"></i><span>Original <span id="compOriginalKB">-</span></span>
               </button>
             </div>
           </div>
@@ -485,11 +481,11 @@
           <div class="meta-stats">
             <div class="meta-stat-item">
               <span class="meta-stat-label">Original Dimensions</span>
-              <span class="meta-stat-val" id="resultOrigDims">—</span>
+              <span class="meta-stat-val" id="resultOrigDims">-</span>
             </div>
             <div class="meta-stat-item">
               <span class="meta-stat-label">Target Dimensions</span>
-              <span class="meta-stat-val" id="resultTargetDims">—</span>
+              <span class="meta-stat-val" id="resultTargetDims">-</span>
             </div>
             <div class="meta-stat-item">
               <span class="meta-stat-label">Measured Output</span>
@@ -522,8 +518,6 @@
             </button>
           </div>
         </div>
-
-        <div class="workspace-footnote"><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Processed in your browser</span><span>1. Choose image <span aria-hidden="true">/</span> 2. Adjust <span aria-hidden="true">/</span> 3. Download</span></div>
       </section>
 
     </div>

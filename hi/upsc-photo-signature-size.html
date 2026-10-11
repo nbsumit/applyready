@@ -157,7 +157,7 @@
           <li class="breadcrumb-item"><a href="../guides/">Guides</a></li>
           <li class="breadcrumb-item active" aria-current="page">UPSC फोटो और सिग्नेचर</li>
         </ol>
-        <a href="../upsc-photo-signature-size.html" class="btn-text" style="font-size: 0.85rem; border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 4px; text-decoration: none;">English Version</a>
+        <a href="../upsc-photo-signature-size.html" class="lang-switch">English Version</a>
       </nav>
 
       <header style="margin-bottom: 2rem;">
@@ -226,7 +226,7 @@
         <div class="app-container" id="resizerApp" data-preset="upsc-photo">
           <section class="form-panel" id="formPanel">
             <div class="file-upload-wrapper">
-              <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="file-input-hidden" aria-label="फोटो या सिग्नेचर चुनें">
+              <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="hidden" tabindex="-1" aria-hidden="true" aria-label="फोटो या सिग्नेचर चुनें">
               <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="फोटो या सिग्नेचर चुनें">
                 <i class="fa-solid fa-cloud-arrow-up dropzone-icon" aria-hidden="true"></i>
                 <p class="dropzone-text"><strong>फोटो या सिग्नेचर चुनने के लिए क्लिक करें</strong></p>
@@ -291,7 +291,8 @@
               <img id="imageToCrop" src="" alt="क्रॉप करने के लिए फोटो" class="hidden">
             </div>
 
-            <div id="resultArea" class="result-area hidden" style="margin-top: 1rem;">
+            <div id="resultArea" class="result-area hidden" style="margin-top: 1rem;" aria-live="polite">
+              <div class="result-head"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> डाउनलोड के लिए तैयार</div>
               <div class="result-card" style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem;">
                 <h3 style="margin-top: 0; font-size: 1rem;">तैयार फाइल</h3>
                 <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">

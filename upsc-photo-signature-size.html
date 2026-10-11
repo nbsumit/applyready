@@ -175,7 +175,7 @@
           <li class="breadcrumb-item"><a href="guides/">Guides</a></li>
           <li class="breadcrumb-item active" aria-current="page">UPSC Photo &amp; Signature</li>
         </ol>
-        <a href="hi/upsc-photo-signature-size.html" class="btn-text" style="font-size: 0.85rem; border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 4px; text-decoration: none;">हिन्दी संस्करण</a>
+        <a href="hi/upsc-photo-signature-size.html" class="lang-switch">हिन्दी संस्करण</a>
       </nav>
 
       <header style="margin-bottom: 2rem;">
@@ -257,7 +257,7 @@
             <h3 id="toolControlsHeading" class="sr-only">Image Configuration Controls</h3>
 
             <div class="file-upload-wrapper">
-              <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="file-input-hidden" aria-label="Upload photo or signature">
+              <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Upload photo or signature">
               <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload photo or signature image">
                 <i class="fa-solid fa-cloud-arrow-up dropzone-icon" aria-hidden="true"></i>
                 <p class="dropzone-text"><strong>Click to select photo or signature</strong> or drop file here</p>
@@ -377,7 +377,8 @@
             </div>
 
             <!-- Result Area -->
-            <div id="resultArea" class="result-area hidden">
+            <div id="resultArea" class="result-area hidden" aria-live="polite">
+              <div class="result-head"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Ready to download</div>
               <div class="result-card">
                 <img id="resultImage" alt="Resized UPSC preview" class="result-img">
               </div>
