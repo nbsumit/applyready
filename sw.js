@@ -5,7 +5,7 @@
  * NOTE: Bump CACHE_NAME on every deploy to ensure clients receive updated assets.
  */
 
-const CACHE_NAME = 'applyready-v12';
+const CACHE_NAME = 'applyready-v13';
 
 const STATIC_ASSETS = [
   '/',
@@ -64,11 +64,14 @@ const STATIC_ASSETS = [
   '/image-to-pdf.html',
   '/compress-pdf.html',
   '/passport-photo-print.html',
-  '/css/style.css',
-  '/css/workspace.css',
   '/css/app.css',
+  '/css/document.css',
   '/css/vendor/icons.min.css',
   '/css/vendor/cropper.min.css',
+  '/css/webfonts/fa-solid-900.woff2',
+  '/css/webfonts/fa-regular-400.woff2',
+  '/assets/fonts/inter-latin.woff2',
+  '/assets/fonts/noto-devanagari.woff2',
   '/js/components.js',
   '/js/site.js',
   '/js/theme.js',
