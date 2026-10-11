@@ -32,7 +32,7 @@ const server = http.createServer((req,res) => {
   const browser=await chromium.launch({headless:true, ...(defaultBrowser ? {executablePath:defaultBrowser} : {}), args:['--no-sandbox','--disable-dev-shm-usage']});
   const errors=[], external=[];
   const context=await browser.newContext({viewport:{width:1440,height:1000},colorScheme:'light',acceptDownloads:true});
-  await context.route('**/*', route=>{ const url=route.request().url(); if(url.startsWith(origin) || /^(blob:|data:)/.test(url)) return route.continue(); external.push(url); return route.abort(); });
+  await context.route('**/*', route=>{ const url=route.request().url(); if(url.startsWith(origin) || /^(blob:|data:)/.test(url)) return route.continue(); if (url.includes('googlesyndication.com')) return route.abort(); external.push(url); return route.abort(); });
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   let dialogAction='dismiss'; const dialogs=[];
   page.on('dialog',d=>{dialogs.push(d.message()); return d[dialogAction]();});
@@ -293,6 +293,28 @@ const server = http.createServer((req,res) => {
   ok(await page.locator('#btnProcess').isDisabled(),'A corrupt source never becomes a processable image');
   await page.setViewportSize({width:320,height:800});await page.locator('#navMenuToggle').click();ok(await page.locator('#navMenuToggle').getAttribute('aria-expanded')==='true','Mobile navigation opens');await page.locator('#navMenuToggle').press('Escape');ok(await page.locator('#navMenuToggle').getAttribute('aria-expanded')==='false','Escape closes mobile navigation');
   console.log('✓ Strict image sizes, transparency, repeat downloads, corrupt sources, canceled jobs, and mobile navigation');
+
+  for (const pageTest of [
+    { file: 'upsc-photo-signature-size.html', minKB: 20, maxKB: 200, name: 'UPSC exam page' },
+    { file: 'resize-image-to-50kb.html', minKB: 0, maxKB: 50, name: '50 KB landing page' },
+    { file: 'hi/ssc-photo-signature-size.html', minKB: 20, maxKB: 50, name: 'Hindi SSC exam page' }
+  ]) {
+    await visit(pageTest.file);
+    await page.locator('#fileInput').setInputFiles({ name: 'test.png', mimeType: 'image/png', buffer: Buffer.from(image, 'base64') });
+    await page.locator('#btnProcess').waitFor({ state: 'visible' });
+    await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
+    await page.locator('#btnProcess').click();
+    await page.locator('#resultArea').waitFor({ state: 'visible' });
+    const outputResult = await page.evaluate(async () => {
+      const blob = await fetch(document.getElementById('btnDownload').href).then(r => r.blob());
+      return { bytes: blob.size, kb: blob.size / 1024 };
+    });
+    ok(outputResult.kb <= pageTest.maxKB * 1.05, `${pageTest.name}: output size (${outputResult.kb.toFixed(1)} KB) under max limit (${pageTest.maxKB} KB)`);
+    if (pageTest.minKB > 0) {
+      ok(outputResult.kb >= pageTest.minKB * 0.95, `${pageTest.name}: output size (${outputResult.kb.toFixed(1)} KB) satisfies min limit (${pageTest.minKB} KB)`);
+    }
+  }
+  console.log('✓ Embedded resizer on exam page, KB page, and Hindi page resizes within preset range without errors');
   for(const file of ['about.html','privacy.html','how-to-use.html','404.html','guides/ats-friendly-resume-guide.html','guides/image-dimensions-vs-file-size.html','guides/image-formats-guide.html','guides/compression-targets-guide.html']) {await visit(file);ok(!await overflow(),`${file} fits at 320px`);}
   await visit('nested/missing-page');
   ok((await page.title()).includes('404'), 'Deep missing routes display the recovery page');

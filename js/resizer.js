@@ -7,13 +7,14 @@
 (function () {
   'use strict';
 
-  // General-Purpose Presets
-  const PRESETS = {
+  // General-Purpose & Official Exam Presets
+  const FALLBACK_PRESETS = {
     'custom': {
       name: 'Custom Dimensions & Limit',
       width: 350,
       height: 350,
       maxKB: 50,
+      minKB: 0,
       defaultPrefix: 'ApplyReady_Custom'
     },
     'avatar': {
@@ -21,6 +22,7 @@
       width: 400,
       height: 400,
       maxKB: 100,
+      minKB: 0,
       defaultPrefix: 'Avatar'
     },
     'passport': {
@@ -28,6 +30,7 @@
       width: 350,
       height: 450,
       maxKB: 50,
+      minKB: 0,
       defaultPrefix: 'Passport_Photo'
     },
     'signature': {
@@ -35,6 +38,7 @@
       width: 300,
       height: 100,
       maxKB: 30,
+      minKB: 0,
       defaultPrefix: 'Signature'
     },
     'web-banner': {
@@ -42,6 +46,7 @@
       width: 1200,
       height: 630,
       maxKB: 300,
+      minKB: 0,
       defaultPrefix: 'Web_Card'
     },
     'document': {
@@ -49,6 +54,7 @@
       width: 800,
       height: 1000,
       maxKB: 200,
+      minKB: 0,
       defaultPrefix: 'Document'
     },
     'thumb': {
@@ -68,73 +74,83 @@
       defaultPrefix: 'Declaration'
     },
     'ssc-photo': {
-      name: 'SSC Photo (350 × 450 px, max 50 KB)',
+      name: 'SSC Photo (350 × 450 px, 20–50 KB)',
       width: 350,
       height: 450,
+      minKB: 20,
       maxKB: 50,
       defaultPrefix: 'SSC_Photo'
     },
     'ssc-signature': {
-      name: 'SSC Signature (400 × 200 px, max 20 KB)',
+      name: 'SSC Signature (400 × 200 px, 10–20 KB)',
       width: 400,
       height: 200,
+      minKB: 10,
       maxKB: 20,
       defaultPrefix: 'SSC_Signature'
     },
     'upsc-photo': {
-      name: 'UPSC Photo (350 × 350 px, max 100 KB)',
+      name: 'UPSC Photo (350 × 350 px, 20–200 KB)',
       width: 350,
       height: 350,
-      maxKB: 100,
+      minKB: 20,
+      maxKB: 200,
       defaultPrefix: 'UPSC_Photo'
     },
     'upsc-signature': {
-      name: 'UPSC Signature (350 × 350 px, max 100 KB)',
-      width: 350,
-      height: 350,
+      name: 'UPSC Signature (400 × 400 px, 20–100 KB)',
+      width: 400,
+      height: 400,
+      minKB: 20,
       maxKB: 100,
       defaultPrefix: 'UPSC_Signature'
     },
     'ibps-photo': {
-      name: 'IBPS Photo (200 × 230 px, max 50 KB)',
+      name: 'IBPS Photo (200 × 230 px, 20–50 KB)',
       width: 200,
       height: 230,
+      minKB: 20,
       maxKB: 50,
       defaultPrefix: 'IBPS_Photo'
     },
     'ibps-signature': {
-      name: 'IBPS Signature (140 × 60 px, max 20 KB)',
+      name: 'IBPS Signature (140 × 60 px, 10–20 KB)',
       width: 140,
       height: 60,
+      minKB: 10,
       maxKB: 20,
       defaultPrefix: 'IBPS_Signature'
     },
     'neet-photo': {
-      name: 'NEET Photo (400 × 500 px, max 100 KB)',
+      name: 'NEET Photo (400 × 500 px, 10–200 KB)',
       width: 400,
       height: 500,
-      maxKB: 100,
+      minKB: 10,
+      maxKB: 200,
       defaultPrefix: 'NEET_Photo'
     },
     'neet-signature': {
-      name: 'NEET Signature (300 × 100 px, max 30 KB)',
+      name: 'NEET Signature (300 × 100 px, 4–30 KB)',
       width: 300,
       height: 100,
+      minKB: 4,
       maxKB: 30,
       defaultPrefix: 'NEET_Signature'
     },
     'rrb-photo': {
-      name: 'RRB Photo (320 × 240 px, max 70 KB)',
-      width: 320,
-      height: 240,
+      name: 'RRB Photo (240 × 320 px, 30–70 KB)',
+      width: 240,
+      height: 320,
+      minKB: 30,
       maxKB: 70,
       defaultPrefix: 'RRB_Photo'
     },
     'rrb-signature': {
-      name: 'RRB Signature (300 × 120 px, max 70 KB)',
+      name: 'RRB Signature (300 × 120 px, 30–49 KB)',
       width: 300,
       height: 120,
-      maxKB: 70,
+      minKB: 30,
+      maxKB: 49,
       defaultPrefix: 'RRB_Signature'
     },
     'kb-10': {
@@ -142,6 +158,7 @@
       width: 300,
       height: 300,
       maxKB: 10,
+      minKB: 0,
       defaultPrefix: 'Image_10KB'
     },
     'kb-20': {
@@ -149,6 +166,7 @@
       width: 350,
       height: 350,
       maxKB: 20,
+      minKB: 0,
       defaultPrefix: 'Image_20KB'
     },
     'kb-50': {
@@ -156,6 +174,7 @@
       width: 400,
       height: 500,
       maxKB: 50,
+      minKB: 0,
       defaultPrefix: 'Image_50KB'
     },
     'kb-100': {
@@ -163,6 +182,7 @@
       width: 600,
       height: 600,
       maxKB: 100,
+      minKB: 0,
       defaultPrefix: 'Image_100KB'
     },
     'kb-200': {
@@ -170,9 +190,14 @@
       width: 800,
       height: 800,
       maxKB: 200,
+      minKB: 0,
       defaultPrefix: 'Image_200KB'
     }
   };
+
+  const PRESETS = (typeof window !== 'undefined' && window.APPLYREADY_PRESETS)
+    ? window.APPLYREADY_PRESETS
+    : FALLBACK_PRESETS;
 
   // State Management
   let currentPresetKey = 'custom';
@@ -191,6 +216,11 @@
   // DOM Elements (safe for Node test environments)
   const doc = typeof document !== 'undefined' ? document : null;
   const getEl = (id) => doc ? doc.getElementById(id) : null;
+  const on = (el, evt, fn) => {
+    if (el && typeof el.addEventListener === 'function') {
+      el.addEventListener(evt, fn);
+    }
+  };
 
   const presetSelect = getEl('presetSelect');
   const customControls = getEl('customControls');
@@ -347,23 +377,26 @@
     updatePresetUI();
   }
 
-  function markCustom() { presetSelect.value = 'custom'; }
+  function markCustom() {
+    if (presetSelect) presetSelect.value = 'custom';
+  }
 
   function useOriginalSize() {
     if (!cropperReady || !cropper) return;
     const { width, height } = sourceDimensions;
-    const validation = validateDimensionSpecs(width, height, customMaxKBInput.value);
+    const maxVal = customMaxKBInput ? customMaxKBInput.value : 50;
+    const validation = validateDimensionSpecs(width, height, maxVal);
     if (validation.dimErrorMsg) {
       showProcessError('The original dimensions exceed the supported range (20–8,000 px per side, up to 32 megapixels). Set smaller output dimensions.');
       return;
     }
-    customWidthInput.value = width;
-    customHeightInput.value = height;
+    if (customWidthInput) customWidthInput.value = width;
+    if (customHeightInput) customHeightInput.value = height;
     lockedRatio = width / height;
     markCustom();
-    addDateCheckbox.checked = false;
-    dateInputGroup.style.display = 'none';
-    aspectRatioSelect.value = 'original';
+    if (addDateCheckbox) addDateCheckbox.checked = false;
+    if (dateInputGroup) dateInputGroup.style.display = 'none';
+    if (aspectRatioSelect) aspectRatioSelect.value = 'original';
     if (processErrorBox) processErrorBox.classList.add('hidden');
     updatePresetUI();
     cropper.reset();
@@ -387,9 +420,9 @@
     for (let y = 710; y <= 1000; y += 58) { ctx.beginPath(); ctx.moveTo(72, y); ctx.lineTo(888, y); ctx.stroke(); }
     ctx.font = '18px sans-serif'; ctx.fillStyle = '#5c6970'; ctx.fillText('SAMPLE ONLY — no personal information', 72, 1110);
     const requestId = currentOpId;
-    btnTryExample.disabled = true;
+    if (btnTryExample) btnTryExample.disabled = true;
     canvas.toBlob(blob => {
-      btnTryExample.disabled = false;
+      if (btnTryExample) btnTryExample.disabled = false;
       if (requestId !== currentOpId) return;
       if (!blob) { showProcessError('Could not create the sample. Please choose an image instead.'); return; }
       applyPreset('document');
@@ -584,7 +617,10 @@
       }
     }
 
-    const mimeType = formatSelect ? formatSelect.value : 'image/jpeg';
+    let mimeType = formatSelect ? formatSelect.value : 'image/jpeg';
+    if (mimeType === 'jpeg' || mimeType === 'jpg') mimeType = 'image/jpeg';
+    else if (mimeType === 'png') mimeType = 'image/png';
+    else if (mimeType === 'webp') mimeType = 'image/webp';
     const bgFill = bgFillSelect ? bgFillSelect.value : 'white';
 
     return {
@@ -629,9 +665,9 @@
    * Update Preset UI and Cropper Aspect Ratio
    */
   function updatePresetUI() {
-    currentPresetKey = presetSelect.value;
+    if (presetSelect) currentPresetKey = presetSelect.value;
     if (customControls) customControls.classList.remove('hidden');
-    if (doc) doc.querySelectorAll('[data-preset]').forEach(button => {
+    if (doc) doc.querySelectorAll('button[data-preset], .preset-shortcut[data-preset]').forEach(button => {
       button.setAttribute('aria-pressed', String(button.dataset.preset === currentPresetKey));
     });
 
@@ -711,12 +747,6 @@
    */
   function invalidateResult() {
     configRevision++;
-    if (processing) {
-      processing = false;
-      btnProcess.innerHTML = processLabel;
-      btnProcess.disabled = !cropperReady;
-      btnProcess.removeAttribute('aria-busy');
-    }
     if (cropperReady && cropperActiveArea) cropperActiveArea.classList.remove('hidden');
     if (resultArea) resultArea.classList.add('hidden');
     setWorkspaceStatus(cropperReady ? 'Ready to edit' : 'No image selected');
@@ -742,233 +772,208 @@
    * Attach all DOM Event Listeners
    */
   function attachEventListeners() {
-    presetSelect.addEventListener('change', () => applyPreset(presetSelect.value));
-    doc.querySelectorAll('[data-preset]').forEach(button => {
-      button.addEventListener('click', () => applyPreset(button.dataset.preset));
+    on(presetSelect, 'change', () => {
+      if (presetSelect) applyPreset(presetSelect.value);
     });
-    if (btnOriginalSize) btnOriginalSize.addEventListener('click', useOriginalSize);
-    if (btnTryExample) btnTryExample.addEventListener('click', loadExample);
+    if (doc) {
+      doc.querySelectorAll('button[data-preset], .preset-shortcut[data-preset]').forEach(button => {
+        on(button, 'click', () => applyPreset(button.dataset.preset));
+      });
+    }
+    on(btnOriginalSize, 'click', useOriginalSize);
+    on(btnTryExample, 'click', loadExample);
 
-    if (btnLockAspect) {
-      btnLockAspect.addEventListener('click', () => {
-        isAspectLocked = !isAspectLocked;
+    on(btnLockAspect, 'click', () => {
+      isAspectLocked = !isAspectLocked;
+      if (btnLockAspect) {
         btnLockAspect.classList.toggle('active', isAspectLocked);
         btnLockAspect.setAttribute('aria-pressed', String(isAspectLocked));
         btnLockAspect.title = isAspectLocked ? 'Aspect ratio locked (proportional width & height)' : 'Aspect ratio unlocked';
         btnLockAspect.innerHTML = isAspectLocked ? '<i aria-hidden="true" class="fa-solid fa-lock"></i>' : '<i aria-hidden="true" class="fa-solid fa-lock-open"></i>';
-        if (isAspectLocked) {
-          const w = parseFloat(customWidthInput.value) || 350;
-          const h = parseFloat(customHeightInput.value) || 350;
-          if (w > 0 && h > 0) lockedRatio = w / h;
-        }
-      });
-    }
-
-    customWidthInput.addEventListener('input', () => {
-      markCustom();
-      if (isAspectLocked && lockedRatio > 0 && document.activeElement === customWidthInput) {
-        const height = scaleLockedDimension(customWidthInput.value, lockedRatio, 'width');
-        if (height !== null) customHeightInput.value = height;
       }
-      updatePresetUI();
-    });
-
-    customHeightInput.addEventListener('input', () => {
-      markCustom();
-      if (isAspectLocked && lockedRatio > 0 && document.activeElement === customHeightInput) {
-        const width = scaleLockedDimension(customHeightInput.value, lockedRatio, 'height');
-        if (width !== null) customWidthInput.value = width;
-      }
-      updatePresetUI();
-    });
-
-    customMaxKBInput.addEventListener('input', () => {
-      markCustom();
-      updatePresetUI();
-    });
-
-    if (customMinKBInput) {
-      customMinKBInput.addEventListener('input', () => {
-        markCustom();
-        updatePresetUI();
-      });
-    }
-
-    if (unitSelect) {
-      unitSelect.addEventListener('change', () => {
-        const unit = unitSelect.value;
-        const dpi = dpiSelect ? (parseInt(dpiSelect.value, 10) || 300) : 300;
-        if (dpiGroup) dpiGroup.style.display = unit === 'px' ? 'none' : 'block';
-        const wLabel = getEl('customWidthLabel');
-        const hLabel = getEl('customHeightLabel');
-        if (unit === 'cm') {
-          if (wLabel) wLabel.textContent = 'Width (cm)';
-          if (hLabel) hLabel.textContent = 'Height (cm)';
-          if (customWidthInput) {
-            customWidthInput.step = '0.1';
-            const curPx = parseFloat(customWidthInput.value) || 350;
-            customWidthInput.value = (curPx / dpi * 2.54).toFixed(1);
-          }
-          if (customHeightInput) {
-            customHeightInput.step = '0.1';
-            const curPx = parseFloat(customHeightInput.value) || 350;
-            customHeightInput.value = (curPx / dpi * 2.54).toFixed(1);
-          }
-        } else if (unit === 'inch') {
-          if (wLabel) wLabel.textContent = 'Width (in)';
-          if (hLabel) hLabel.textContent = 'Height (in)';
-          if (customWidthInput) {
-            customWidthInput.step = '0.05';
-            const curPx = parseFloat(customWidthInput.value) || 350;
-            customWidthInput.value = (curPx / dpi).toFixed(2);
-          }
-          if (customHeightInput) {
-            customHeightInput.step = '0.05';
-            const curPx = parseFloat(customHeightInput.value) || 350;
-            customHeightInput.value = (curPx / dpi).toFixed(2);
-          }
-        } else {
-          if (wLabel) wLabel.textContent = 'Width (px)';
-          if (hLabel) hLabel.textContent = 'Height (px)';
-          if (customWidthInput) {
-            customWidthInput.step = '1';
-            customWidthInput.value = Math.round(parseFloat(customWidthInput.value) || 350);
-          }
-          if (customHeightInput) {
-            customHeightInput.step = '1';
-            customHeightInput.value = Math.round(parseFloat(customHeightInput.value) || 350);
-          }
-        }
-        markCustom();
-        const w = Number(customWidthInput ? customWidthInput.value : 0), h = Number(customHeightInput ? customHeightInput.value : 0);
+      if (isAspectLocked) {
+        const w = customWidthInput ? (parseFloat(customWidthInput.value) || 350) : 350;
+        const h = customHeightInput ? (parseFloat(customHeightInput.value) || 350) : 350;
         if (w > 0 && h > 0) lockedRatio = w / h;
-        updatePresetUI();
-      });
-    }
+      }
+    });
 
-    if (dpiSelect) {
-      dpiSelect.addEventListener('change', () => {
-        markCustom();
-        updatePresetUI();
-      });
-    }
+    on(customWidthInput, 'input', () => {
+      markCustom();
+      if (isAspectLocked && lockedRatio > 0 && customWidthInput && doc && doc.activeElement === customWidthInput) {
+        const height = scaleLockedDimension(customWidthInput.value, lockedRatio, 'width');
+        if (height !== null && customHeightInput) customHeightInput.value = height;
+      }
+      updatePresetUI();
+    });
+
+    on(customHeightInput, 'input', () => {
+      markCustom();
+      if (isAspectLocked && lockedRatio > 0 && customHeightInput && doc && doc.activeElement === customHeightInput) {
+        const width = scaleLockedDimension(customHeightInput.value, lockedRatio, 'height');
+        if (width !== null && customWidthInput) customWidthInput.value = width;
+      }
+      updatePresetUI();
+    });
+
+    on(customMaxKBInput, 'input', () => {
+      markCustom();
+      updatePresetUI();
+    });
+
+    on(customMinKBInput, 'input', () => {
+      markCustom();
+      updatePresetUI();
+    });
+
+    on(unitSelect, 'change', () => {
+      const unit = unitSelect ? unitSelect.value : 'px';
+      const dpi = dpiSelect ? (parseInt(dpiSelect.value, 10) || 300) : 300;
+      if (dpiGroup) dpiGroup.style.display = unit === 'px' ? 'none' : 'block';
+      const wLabel = getEl('customWidthLabel');
+      const hLabel = getEl('customHeightLabel');
+      if (unit === 'cm') {
+        if (wLabel) wLabel.textContent = 'Width (cm)';
+        if (hLabel) hLabel.textContent = 'Height (cm)';
+        if (customWidthInput) {
+          customWidthInput.step = '0.1';
+          const curPx = parseFloat(customWidthInput.value) || 350;
+          customWidthInput.value = (curPx / dpi * 2.54).toFixed(1);
+        }
+        if (customHeightInput) {
+          customHeightInput.step = '0.1';
+          const curPx = parseFloat(customHeightInput.value) || 350;
+          customHeightInput.value = (curPx / dpi * 2.54).toFixed(1);
+        }
+      } else if (unit === 'inch') {
+        if (wLabel) wLabel.textContent = 'Width (in)';
+        if (hLabel) hLabel.textContent = 'Height (in)';
+        if (customWidthInput) {
+          customWidthInput.step = '0.05';
+          const curPx = parseFloat(customWidthInput.value) || 350;
+          customWidthInput.value = (curPx / dpi).toFixed(2);
+        }
+        if (customHeightInput) {
+          customHeightInput.step = '0.05';
+          const curPx = parseFloat(customHeightInput.value) || 350;
+          customHeightInput.value = (curPx / dpi).toFixed(2);
+        }
+      } else {
+        if (wLabel) wLabel.textContent = 'Width (px)';
+        if (hLabel) hLabel.textContent = 'Height (px)';
+        if (customWidthInput) {
+          customWidthInput.step = '1';
+          customWidthInput.value = Math.round(parseFloat(customWidthInput.value) || 350);
+        }
+        if (customHeightInput) {
+          customHeightInput.step = '1';
+          customHeightInput.value = Math.round(parseFloat(customHeightInput.value) || 350);
+        }
+      }
+      markCustom();
+      const w = Number(customWidthInput ? customWidthInput.value : 0), h = Number(customHeightInput ? customHeightInput.value : 0);
+      if (w > 0 && h > 0) lockedRatio = w / h;
+      updatePresetUI();
+    });
+
+    on(dpiSelect, 'change', () => {
+      markCustom();
+      updatePresetUI();
+    });
 
     [customWidthInput, customHeightInput, customMaxKBInput, customMinKBInput].forEach(inp => {
-      if (inp) {
-        inp.addEventListener('blur', () => {
-          getActiveSpecs();
-        });
-      }
+      on(inp, 'blur', () => {
+        getActiveSpecs();
+      });
     });
 
-    if (formatSelect) {
-      formatSelect.addEventListener('change', () => {
-        const val = formatSelect.value;
-        if (bgFillSelect) {
-          // Transparency is only supported on PNG / WebP
-          const transparentOption = bgFillSelect.querySelector('option[value="transparent"]');
-          if (transparentOption) {
-            transparentOption.disabled = (val === 'image/jpeg');
-            // Keep transparency by default, but never override a fill the person chose.
-            if (val !== 'image/jpeg' && !bgFillChosen) bgFillSelect.value = 'transparent';
-            if (val === 'image/jpeg' && bgFillSelect.value === 'transparent') {
-              bgFillSelect.value = 'white';
-            }
+    on(formatSelect, 'change', () => {
+      let val = formatSelect ? formatSelect.value : 'image/jpeg';
+      if (val === 'jpeg' || val === 'jpg') val = 'image/jpeg';
+      else if (val === 'png') val = 'image/png';
+      else if (val === 'webp') val = 'image/webp';
+      if (bgFillSelect) {
+        const transparentOption = bgFillSelect.querySelector('option[value="transparent"]');
+        if (transparentOption) {
+          transparentOption.disabled = (val === 'image/jpeg');
+          if (val !== 'image/jpeg' && !bgFillChosen) bgFillSelect.value = 'transparent';
+          if (val === 'image/jpeg' && bgFillSelect.value === 'transparent') {
+            bgFillSelect.value = 'white';
           }
         }
-        updatePresetUI();
-      });
-    }
+      }
+      updatePresetUI();
+    });
 
-    if (bgFillSelect) {
-      bgFillSelect.addEventListener('change', () => {
-        bgFillChosen = true;
-        invalidateResult();
-      });
-    }
+    on(bgFillSelect, 'change', () => {
+      bgFillChosen = true;
+      invalidateResult();
+    });
 
-    if (aspectRatioSelect) {
-      aspectRatioSelect.addEventListener('change', () => {
-        updateCropperRatio();
-        invalidateResult();
-      });
-    }
+    on(aspectRatioSelect, 'change', () => {
+      updateCropperRatio();
+      invalidateResult();
+    });
 
-    addDateCheckbox.addEventListener('change', () => {
-      if (dateInputGroup) {
+    on(addDateCheckbox, 'change', () => {
+      if (dateInputGroup && addDateCheckbox) {
         dateInputGroup.style.display = addDateCheckbox.checked ? 'block' : 'none';
       }
       updatePresetUI();
     });
 
-    if (btnTodayDate) {
-      btnTodayDate.addEventListener('click', () => {
-        setTodayDate();
-        invalidateResult();
-      });
-    }
+    on(btnTodayDate, 'click', () => {
+      setTodayDate();
+      invalidateResult();
+    });
 
-    if (annotationDateInput) {
-      annotationDateInput.addEventListener('input', invalidateResult);
-      annotationDateInput.addEventListener('change', invalidateResult);
-    }
-
-    if (candidateNameInput) {
-      candidateNameInput.addEventListener('input', invalidateResult);
-    }
+    on(annotationDateInput, 'input', invalidateResult);
+    on(annotationDateInput, 'change', invalidateResult);
+    on(candidateNameInput, 'input', invalidateResult);
 
     // File Input & Dropzone
-    btnBrowse.addEventListener('click', () => fileInput.click());
-    dropzone.addEventListener('click', (e) => {
-      if (e.target !== btnBrowse && !btnBrowse.contains(e.target)) {
+    on(btnBrowse, 'click', () => { if (fileInput) fileInput.click(); });
+    on(dropzone, 'click', (e) => {
+      if (fileInput && (!btnBrowse || (e.target !== btnBrowse && !btnBrowse.contains(e.target)))) {
         fileInput.click();
       }
     });
 
-    fileInput.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files[0]) {
+    on(fileInput, 'change', (e) => {
+      if (e.target && e.target.files && e.target.files[0]) {
         handleFileSelect(e.target.files[0]);
       }
-      // Reset input value to allow selecting the same file again
-      fileInput.value = '';
+      if (fileInput) fileInput.value = '';
     });
 
-    // Accept replacements anywhere in the workspace, including over an active crop.
-    const dropTarget = doc.querySelector('.image-stage') || dropzone;
-    dropTarget.addEventListener('dragover', (e) => {
+    const dropTarget = (doc && (doc.querySelector('.image-stage') || dropzone)) || null;
+    on(dropTarget, 'dragover', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropzone.classList.add('dragover');
+      if (dropzone) dropzone.classList.add('dragover');
     });
 
-    dropTarget.addEventListener('dragleave', (e) => {
+    on(dropTarget, 'dragleave', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropzone.classList.remove('dragover');
+      if (dropzone) dropzone.classList.remove('dragover');
     });
 
-    dropTarget.addEventListener('drop', (e) => {
+    on(dropTarget, 'drop', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      dropzone.classList.remove('dragover');
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      if (dropzone) dropzone.classList.remove('dragover');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
         handleFileSelect(e.dataTransfer.files[0]);
       }
     });
 
-    // Replace file button
-    if (btnReplaceFile) {
-      btnReplaceFile.addEventListener('click', () => fileInput.click());
-    }
-
-    // Remove file button
-    if (btnRemoveFile) {
-      btnRemoveFile.addEventListener('click', removeUploadedImage);
-    }
+    on(btnReplaceFile, 'click', () => { if (fileInput) fileInput.click(); });
+    on(btnRemoveFile, 'click', removeUploadedImage);
 
     // Before / After comparison view toggle
     if (btnViewProcessed && btnViewOriginal) {
-      btnViewProcessed.addEventListener('click', () => {
+      on(btnViewProcessed, 'click', () => {
         btnViewProcessed.classList.add('active');
         btnViewProcessed.setAttribute('aria-pressed', 'true');
         btnViewOriginal.classList.remove('active');
@@ -977,7 +982,7 @@
         if (originalComparisonImage) originalComparisonImage.classList.add('hidden');
       });
 
-      btnViewOriginal.addEventListener('click', () => {
+      on(btnViewOriginal, 'click', () => {
         btnViewOriginal.classList.add('active');
         btnViewOriginal.setAttribute('aria-pressed', 'true');
         btnViewProcessed.classList.remove('active');
@@ -987,8 +992,8 @@
       });
     }
 
-    const cropSurface = imageToCrop.closest('.cropper-container-wrapper');
-    cropSurface.addEventListener('keydown', e => {
+    const cropSurface = imageToCrop ? imageToCrop.closest('.cropper-container-wrapper') : null;
+    on(cropSurface, 'keydown', e => {
       if (!cropperReady || !cropper || !['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','-','='].includes(e.key)) return;
       e.preventDefault();
       if (['+','-','='].includes(e.key)) cropper.zoom(e.key === '-' ? -.05 : .05);
@@ -1000,51 +1005,50 @@
       invalidateResult();
     });
 
-    // Cropper Toolbar Controls
-    btnRotateLeft.addEventListener('click', () => {
+    on(btnRotateLeft, 'click', () => {
       if (cropper) {
         cropper.rotate(-90);
         invalidateResult();
       }
     });
 
-    btnRotateRight.addEventListener('click', () => {
+    on(btnRotateRight, 'click', () => {
       if (cropper) {
         cropper.rotate(90);
         invalidateResult();
       }
     });
 
-    btnResetCrop.addEventListener('click', () => {
+    on(btnResetCrop, 'click', () => {
       if (cropper) {
         cropper.reset();
         invalidateResult();
       }
     });
 
-    btnZoomIn.addEventListener('click', () => {
+    on(btnZoomIn, 'click', () => {
       if (cropper) {
         cropper.zoom(0.1);
         invalidateResult();
       }
     });
 
-    btnZoomOut.addEventListener('click', () => {
+    on(btnZoomOut, 'click', () => {
       if (cropper) {
         cropper.zoom(-0.1);
         invalidateResult();
       }
     });
 
-    // Process & Download
-    btnProcess.addEventListener('click', processImage);
+    on(btnProcess, 'click', processImage);
 
-    // Re-adjust crop
-    btnCropAgain.addEventListener('click', () => {
-      resultArea.classList.add('hidden');
-      cropperActiveArea.classList.remove('hidden');
+    on(btnCropAgain, 'click', () => {
+      if (resultArea) resultArea.classList.add('hidden');
+      if (cropperActiveArea) {
+        cropperActiveArea.classList.remove('hidden');
+        cropperActiveArea.scrollIntoView({ behavior: 'smooth' });
+      }
       setWorkspaceStatus('Ready to edit');
-      cropperActiveArea.scrollIntoView({ behavior: 'smooth' });
     });
   }
 
@@ -1143,35 +1147,39 @@
           cropper = null;
         }
 
-        imageToCrop.src = dataUrl;
-        cropperPlaceholder.classList.add('hidden');
-        cropperActiveArea.classList.remove('hidden');
+        if (imageToCrop) imageToCrop.src = dataUrl;
+        if (cropperPlaceholder) cropperPlaceholder.classList.add('hidden');
+        if (cropperActiveArea) cropperActiveArea.classList.remove('hidden');
 
-        cropper = new Cropper(imageToCrop, {
-          viewMode: 1,
-          dragMode: 'move',
-          autoCropArea: 0.95,
-          restore: false,
-          guides: true,
-          center: true,
-          highlight: false,
-          cropBoxMovable: true,
-          cropBoxResizable: true,
-          toggleDragModeOnDblclick: false,
-          ready: function () {
-            if (opId !== currentOpId) return;
-            cropperReady = true;
-            if (btnOriginalSize) btnOriginalSize.disabled = false;
-            setWorkspaceStatus('Ready to edit');
-            updateCropperRatio();
-            if (window.innerWidth <= 760) cropperActiveArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            const specs = getActiveSpecs();
-            if (btnProcess) btnProcess.disabled = !specs.isValid;
-          },
-          crop: function () {
-            invalidateResult();
-          }
-        });
+        if (imageToCrop) {
+          cropper = new Cropper(imageToCrop, {
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.95,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false,
+            ready: function () {
+              if (opId !== currentOpId) return;
+              cropperReady = true;
+              if (btnOriginalSize) btnOriginalSize.disabled = false;
+              setWorkspaceStatus('Ready to edit');
+              updateCropperRatio();
+              if (window.innerWidth <= 760 && cropperActiveArea) cropperActiveArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              const specs = getActiveSpecs();
+              if (btnProcess) btnProcess.disabled = !specs.isValid;
+            },
+            crop: function () {
+              if (!processing && (!resultArea || resultArea.classList.contains('hidden'))) {
+                invalidateResult();
+              }
+            }
+          });
+        }
       };
 
       testImg.src = dataUrl;
@@ -1193,7 +1201,7 @@
     currentFile = null;
     sourceImage = null;
     sourceDimensions = { width: 0, height: 0, sizeBytes: 0 };
-    imageToCrop.src = '';
+    if (imageToCrop) imageToCrop.src = '';
 
     if (originalFileBlobUrl) {
       URL.revokeObjectURL(originalFileBlobUrl);
@@ -1206,8 +1214,8 @@
     if (btnProcess) btnProcess.disabled = true;
     if (btnOriginalSize) btnOriginalSize.disabled = true;
     if (fileInfoBox) fileInfoBox.classList.add('hidden');
-    cropperActiveArea.classList.add('hidden');
-    cropperPlaceholder.classList.remove('hidden');
+    if (cropperActiveArea) cropperActiveArea.classList.add('hidden');
+    if (cropperPlaceholder) cropperPlaceholder.classList.remove('hidden');
     invalidateResult();
     hideErrors();
     if (processErrorBox) processErrorBox.classList.add('hidden');
@@ -1454,7 +1462,7 @@
    * Never resolves oversized images as success!
    * Clearly handles PNG lossless limitation honestly.
    */
-  async function compressStrictly(canvas, maxKB, mimeType) {
+  async function compressStrictly(canvas, maxKB, mimeType, isCancelled) {
     const maxBytes = maxKB * 1024;
     const encode = quality => new Promise((resolve, reject) => {
       try {
@@ -1466,13 +1474,16 @@
       } catch (error) { reject(error); }
     });
     let best = await encode(0.95);
+    if (isCancelled && isCancelled()) return best;
     if (best.size <= maxBytes) return best;
     if (mimeType === 'image/png') throw new Error(`PNG needs ${(best.size / 1024).toFixed(1)} KB at this size. Increase the file limit, reduce dimensions, or choose WebP or JPEG.`);
     best = await encode(0.05);
+    if (isCancelled && isCancelled()) return best;
     if (best.size > maxBytes) throw new Error(`The smallest result is ${(best.size / 1024).toFixed(1)} KB. Increase the file limit or reduce the dimensions to preserve a usable image.`);
     // Find the highest quality that really meets the byte limit.
     let low = 0.05, high = 0.95;
     for (let i = 0; i < 7; i++) {
+      if (isCancelled && isCancelled()) return best;
       const quality = (low + high) / 2;
       const candidate = await encode(quality);
       if (candidate.size <= maxBytes) { best = candidate; low = quality; }
@@ -1498,9 +1509,11 @@
     let validationUrl = null;
     processing = true;
     setWorkspaceStatus('Processing…');
-    btnProcess.setAttribute('aria-busy', 'true');
-    btnProcess.disabled = true;
-    btnProcess.innerHTML = '<i aria-hidden="true" class="fa-solid fa-spinner fa-spin"></i> Processing & Compressing...';
+    if (btnProcess) {
+      btnProcess.setAttribute('aria-busy', 'true');
+      btnProcess.disabled = true;
+      btnProcess.innerHTML = '<i aria-hidden="true" class="fa-solid fa-spinner fa-spin"></i> Processing & Compressing...';
+    }
 
     try {
       const addDate = addDateCheckbox && addDateCheckbox.checked;
@@ -1511,7 +1524,7 @@
       if (opId !== currentOpId || revision !== configRevision) return;
 
       // 2. Strict Compression
-      let compressedBlob = await compressStrictly(canvas, specs.maxKB, specs.mimeType);
+      let compressedBlob = await compressStrictly(canvas, specs.maxKB, specs.mimeType, () => (opId !== currentOpId || revision !== configRevision));
       if (opId !== currentOpId || revision !== configRevision) return;
 
       // Ensure Minimum KB if requested
@@ -1558,7 +1571,7 @@
       validationUrl = null;
 
       // Update Result UI
-      resultImage.src = processedBlobUrl;
+      if (resultImage) resultImage.src = processedBlobUrl;
 
       const resultOrigDims = document.getElementById('resultOrigDims');
       const resultTargetDims = document.getElementById('resultTargetDims');
@@ -1583,7 +1596,9 @@
 
       const actualBytes = compressedBlob.size;
       const actualKB = (actualBytes / 1024).toFixed(2);
-      resultFileSize.textContent = `${actualBytes.toLocaleString()} bytes (${actualKB} KB, 1 KB = 1024 B)`;
+      if (resultFileSize) {
+        resultFileSize.textContent = `${actualBytes.toLocaleString()} bytes (${actualKB} KB, 1 KB = 1024 B)`;
+      }
 
       if (compProcessedKB) {
         compProcessedKB.textContent = `${actualKB} KB`;
@@ -1609,28 +1624,35 @@
       const dateSuffix = addDate ? '_Dated' : '';
       const filename = `${specs.prefix}${dateSuffix}_${specs.width}x${specs.height}.${ext}`;
 
-      btnDownload.href = processedBlobUrl;
-      btnDownload.download = filename;
+      if (btnDownload) {
+        btnDownload.href = processedBlobUrl;
+        btnDownload.download = filename;
+      }
 
       // Switch views
-      cropperActiveArea.classList.add('hidden');
-      resultArea.classList.remove('hidden');
+      if (cropperActiveArea) cropperActiveArea.classList.add('hidden');
+      if (resultArea) {
+        resultArea.classList.remove('hidden');
+        resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
       setWorkspaceStatus('Ready to download');
-      resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      btnDownload.focus({ preventScroll: true });
+      if (btnDownload) btnDownload.focus({ preventScroll: true });
 
     } catch (err) {
       if (opId !== currentOpId || revision !== configRevision) return;
 
       const msg = err && err.message ? err.message : 'An unexpected error occurred while processing the image.';
+      console.error('RESIZER PROCESS ERROR:', err);
       showProcessError(msg);
     } finally {
       if (validationUrl) URL.revokeObjectURL(validationUrl);
-      if (opId === currentOpId && revision === configRevision) {
+      if (opId === currentOpId) {
         processing = false;
-        btnProcess.disabled = !cropperReady || !getActiveSpecs().isValid;
-        btnProcess.innerHTML = processLabel;
-        btnProcess.removeAttribute('aria-busy');
+        if (btnProcess) {
+          btnProcess.disabled = !cropperReady || !getActiveSpecs().isValid;
+          btnProcess.innerHTML = processLabel;
+          btnProcess.removeAttribute('aria-busy');
+        }
       }
     }
   }
