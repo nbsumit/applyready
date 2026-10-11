@@ -1319,6 +1319,16 @@
   .review-item { flex-direction: column; gap: var(--sp-2); }
   .review-jump-btn { align-self: flex-start; }
 }
+@media screen {
+  /* Targets: footer links and the brand mark are real controls */
+  .footer-links { row-gap: 0; }
+  .footer-link { min-height: 36px; }
+  .brand-logo { min-height: 44px; display: inline-flex; align-items: center; }
+  .content-page .app-card.text-center .hero-title { font-size: var(--fs-title); }
+}
+@media screen and (pointer: coarse) {
+  .footer-link { min-height: 44px; }
+}
 @media screen and (max-width: 960px) {
   .resizer-grid[data-layout="input-first"] { display: flex; flex-direction: column; }
   .resizer-grid[data-layout="input-first"] > * { width: 100%; }

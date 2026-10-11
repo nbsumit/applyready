@@ -54,4 +54,29 @@ Link `css/design-system.css` (imported by `style.css`) and `js/components.js` on
 Visible focus rings, ARIA, keyboard support, 44px targets, reduced motion, contrast AA.
 
 ## Performance
-No render-blocking bloat. New CSS/JS added to service worker precache (`applyready-v5`).
+No render-blocking bloat. New CSS/JS added to service worker precache (bump `CACHE_NAME` in `sw.js` on every deploy; currently `applyready-v9`).
+
+
+## Astra recovery notes (2026-10)
+
+Read `UI_UX_ASTRA_AUDIT.md`, `UI_UX_ASTRA_PLAN.md` and `UI_UX_ASTRA_POST_AUDIT.md` for the evidence behind these rules.
+
+### Who owns what
+| File | Owns |
+|---|---|
+| `css/design-system.css` | Tokens and dark theme. The custom select list is `position: fixed` and shown only by its own `[hidden]` state. |
+| `css/style.css` | Base, tool layout, resume sheet, print. Do not edit the sheet or `@media print` for editor work. |
+| `css/workspace.css` | Page layouts. |
+| `css/ux.css` | All screen chrome. The last block ("Astra layer") holds the shared tool, reading and resume-shell rules. |
+
+### Rules that prevent the regressions we had
+- A control rule must never remove its own focus indicator. `:focus` rules for fields list the same type selectors as the control rule.
+- Link colour rules exclude `.btn` (`a:not(.btn)`).
+- A popup that is moved to `<body>` cannot be styled through a `.parent.is-open` selector.
+- Nothing below 12px (`--fs-cap`); helper text is 13px (`--fs-help`).
+- Tables never use `overflow-wrap: anywhere`; they scroll horizontally on small screens.
+- Exam, KB and Hindi pages use the embedded tool (`#resizerApp`). Its visual order is file bar, image or result, settings, action, produced with `display: contents` panels and `order`.
+- Tool pages that use `.resizer-grid` get full width and the home header through `.guide-content:has(> .resizer-grid)`. `data-layout="input-first"` puts the upload card first, `data-layout="stack"` makes one column.
+
+### Tests that guard this
+`npm run test:browser` runs `tests/browser_tests.js`, `tests/ui_tests.js` (visible controls, button labels, focus, native controls, 12px floor, overflow at 9 widths) and `tests/browser_smoke.js` (real image process and resume exports). `npm run test:firefox` runs the UI and smoke tests in Firefox.
