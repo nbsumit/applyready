@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NEET Photo &amp; Signature Size 2026 | Dimensions, KB Limits &amp; Resizer</title>
-  <meta name="description" content="Resize passport photo (10–200 KB), postcard photo (4x6 in), signature (4–30 KB), and fingers/thumb impressions for NTA NEET-UG application forms. Free client-side tool.">
+  <meta name="description" content="Resize passport photo (10–200 KB), postcard photo (4x6 in), and fingers/thumb impressions (check the official NTA bulletin for signature) for NTA NEET-UG application forms. Free client-side tool.">
   <link rel="canonical" href="https://applyready.in/neet-photo-signature-size.html">
   <link rel="alternate" hreflang="en" href="https://applyready.in/neet-photo-signature-size.html">
   <link rel="alternate" hreflang="hi" href="https://applyready.in/hi/neet-photo-signature-size.html">
@@ -13,7 +13,7 @@
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://applyready.in/neet-photo-signature-size.html">
   <meta property="og:title" content="NEET Photo &amp; Signature Size 2026: Official NTA Guidelines &amp; Free Resizer">
-  <meta property="og:description" content="Prepare passport photo (10–200 KB), postcard photo, signature (4–30 KB) and thumb impressions for NEET-UG online form.">
+  <meta property="og:description" content="Prepare passport photo (10–200 KB), postcard photo and thumb impressions (check the official NTA bulletin for signature) for NEET-UG online form.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -22,7 +22,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://applyready.in/neet-photo-signature-size.html">
   <meta name="twitter:title" content="NEET Photo &amp; Signature Size 2026 | Official Specs &amp; Free Resizer">
-  <meta name="twitter:description" content="Resize passport photo (10–200 KB), postcard size photo, and signature (4–30 KB) for NEET-UG medical entrance.">
+  <meta name="twitter:description" content="Resize passport photo (10–200 KB), postcard size photo, and signature (check the official NTA bulletin) for NEET-UG medical entrance.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -38,6 +38,7 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
+  <link rel="stylesheet" href="css/design-system.css?v=20261011-4">
   <link rel="stylesheet" href="css/style.css?v=20261011-3">
   <link rel="stylesheet" href="css/workspace.css?v=20261011-3">
 
@@ -124,6 +125,32 @@
         <span>ApplyReady<span class="brand-dot">.</span></span>
       </a>
       <div class="nav-links" id="navMenu">
+        <div class="tools-menu">
+          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+          <div class="tools-menu__panel" role="menu">
+            <div class="tools-menu__group"><strong>Image tools</strong>
+              <a href="/" role="menuitem">Image resizer</a>
+              <a href="signature-cleaner.html" role="menuitem">Signature cleaner</a>
+              <a href="image-to-pdf.html" role="menuitem">Image to PDF</a>
+              <a href="compress-pdf.html" role="menuitem">Compress PDF</a>
+              <a href="passport-photo-print.html" role="menuitem">Passport photo print</a>
+            </div>
+            <div class="tools-menu__group"><strong>Exam specs</strong>
+              <a href="ssc-photo-signature-size.html" role="menuitem">SSC</a>
+              <a href="upsc-photo-signature-size.html" role="menuitem">UPSC</a>
+              <a href="ibps-photo-signature-size.html" role="menuitem">IBPS</a>
+              <a href="neet-photo-signature-size.html" role="menuitem">NEET</a>
+              <a href="rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            </div>
+            <div class="tools-menu__group"><strong>Resize to KB</strong>
+              <a href="resize-image-to-10kb.html" role="menuitem">10 KB</a>
+              <a href="resize-image-to-20kb.html" role="menuitem">20 KB</a>
+              <a href="resize-image-to-50kb.html" role="menuitem">50 KB</a>
+              <a href="resize-image-to-100kb.html" role="menuitem">100 KB</a>
+              <a href="resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            </div>
+          </div>
+        </div>
         <a href="/" class="nav-link">Image tools</a>
         <a href="resume.html" class="nav-link">Resume builder</a>
         <a href="guides/" class="nav-link">Guides</a>
@@ -267,7 +294,7 @@
 
             <div class="control-group">
               <label for="presetSelect" class="control-label">Target Preset</label>
-              <select id="presetSelect" class="form-control">
+              <select id="presetSelect" class="form-control custom-select-source">
                 <option value="neet-photo" selected>NEET Photo (400 × 500 px, max 100 KB)</option>
                 <option value="neet-signature">NEET Signature (300 × 100 px, check bulletin)</option>
                 <option value="custom">Custom Dimensions</option>
@@ -301,7 +328,7 @@
               <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
                 <div class="control-group">
                   <label for="formatSelect" class="control-label">Output Format</label>
-                  <select id="formatSelect" class="form-control">
+                  <select id="formatSelect" class="form-control custom-select-source">
                     <option value="image/jpeg" selected>JPEG (.jpg)</option>
                     <option value="image/png">PNG (.png)</option>
                     <option value="image/webp">WebP (.webp)</option>
@@ -502,6 +529,7 @@
     <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
+  <script src="js/components.js?v=20261011-4" defer></script>
   <script src="js/site.js?v=20261011-3"></script>
   <script src="js/vendor/cropper.min.js"></script>
   <script src="js/presets.js?v=20261011-3"></script>

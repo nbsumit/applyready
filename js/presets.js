@@ -131,11 +131,11 @@
       defaultPrefix: 'NEET_Photo'
     },
     'neet-signature': {
-      name: 'NEET Signature (300 × 100 px, 4–30 KB)',
+      name: 'NEET Signature (300 × 100 px, typically 10–50 KB; check official bulletin)',
       width: 300,
       height: 100,
-      minKB: 4,
-      maxKB: 30,
+      minKB: 10,
+      maxKB: 50,
       defaultPrefix: 'NEET_Signature'
     },
     'rrb-photo': {

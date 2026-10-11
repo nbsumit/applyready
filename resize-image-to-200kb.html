@@ -35,6 +35,7 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
+  <link rel="stylesheet" href="css/design-system.css?v=20261011-4">
   <link rel="stylesheet" href="css/style.css?v=20261011-3">
   <link rel="stylesheet" href="css/workspace.css?v=20261011-3">
 
@@ -86,9 +87,36 @@
         <span>ApplyReady<span class="brand-dot">.</span></span>
       </a>
       <div class="nav-links" id="navMenu">
+        <div class="tools-menu">
+          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+          <div class="tools-menu__panel" role="menu">
+            <div class="tools-menu__group"><strong>Image tools</strong>
+              <a href="/" role="menuitem">Image resizer</a>
+              <a href="signature-cleaner.html" role="menuitem">Signature cleaner</a>
+              <a href="image-to-pdf.html" role="menuitem">Image to PDF</a>
+              <a href="compress-pdf.html" role="menuitem">Compress PDF</a>
+              <a href="passport-photo-print.html" role="menuitem">Passport photo print</a>
+            </div>
+            <div class="tools-menu__group"><strong>Exam specs</strong>
+              <a href="ssc-photo-signature-size.html" role="menuitem">SSC</a>
+              <a href="upsc-photo-signature-size.html" role="menuitem">UPSC</a>
+              <a href="ibps-photo-signature-size.html" role="menuitem">IBPS</a>
+              <a href="neet-photo-signature-size.html" role="menuitem">NEET</a>
+              <a href="rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            </div>
+            <div class="tools-menu__group"><strong>Resize to KB</strong>
+              <a href="resize-image-to-10kb.html" role="menuitem">10 KB</a>
+              <a href="resize-image-to-20kb.html" role="menuitem">20 KB</a>
+              <a href="resize-image-to-50kb.html" role="menuitem">50 KB</a>
+              <a href="resize-image-to-100kb.html" role="menuitem">100 KB</a>
+              <a href="resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            </div>
+          </div>
+        </div>
         <a href="/" class="nav-link">Image tools</a>
         <a href="resume.html" class="nav-link">Resume builder</a>
         <a href="guides/" class="nav-link">Guides</a>
+              <a href="hi/ssc-photo-signature-size.html" class="nav-link">हिन्दी</a>
       </div>
       <div class="nav-actions">
         <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
@@ -164,7 +192,7 @@
 
             <div class="control-group">
               <label for="presetSelect" class="control-label">Target Preset</label>
-              <select id="presetSelect" class="form-control">
+              <select id="presetSelect" class="form-control custom-select-source">
                 <option value="kb-200" selected>Target: Under 200 KB</option>
                 <option value="document">Document Scan (800 × 1000 px, max 200 KB)</option>
                 <option value="custom">Custom Dimensions</option>
@@ -197,7 +225,7 @@
               <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
                 <div class="control-group">
                   <label for="formatSelect" class="control-label">Output Format</label>
-                  <select id="formatSelect" class="form-control">
+                  <select id="formatSelect" class="form-control custom-select-source">
                     <option value="image/jpeg" selected>JPEG (.jpg)</option>
                     <option value="image/png">PNG (.png)</option>
                     <option value="image/webp">WebP (.webp)</option>
@@ -366,6 +394,7 @@
     <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
+  <script src="js/components.js?v=20261011-4" defer></script>
   <script src="js/site.js?v=20261011-3"></script>
   <script src="js/vendor/cropper.min.js"></script>
   <script src="js/presets.js?v=20261011-3"></script>
