@@ -64,6 +64,41 @@ let checks = 0; const ok = (c, m) => { assert(c, m); checks++; };
   const colors = await page.locator('#btnDownload').evaluate(e => { const c = getComputedStyle(e); return [c.color, c.backgroundColor]; });
   ok(colors[0] !== colors[1], 'exam page Download label is not hidden by its own fill');
 
+  // Secondary tools with real files: compress, image to PDF, passport sheet, signature cleaner
+  const saveDownload = async (locator, name) => { const d = page.waitForEvent('download'); await locator.click(); const f = path.join(out, name); await (await d).saveAs(f); return fs.readFileSync(f); };
+  await page.goto(`${origin}/compress-pdf.html`);
+  await page.locator('#compressFileInput').setInputFiles({ name: 'scan.png', mimeType: 'image/png', buffer: png(1000, 1300) });
+  await page.locator('#btnStartCompress').click();
+  await page.locator('#compressResultArea').waitFor({ state: 'visible' });
+  let pdf = await saveDownload(page.locator('#btnDownloadCompressedPdf'), 'compressed.pdf');
+  ok(pdf.subarray(0, 4).toString('latin1') === '%PDF', 'compress tool downloads a PDF');
+  ok(await page.locator('#btnDownloadCompressedPdf').evaluate(e => getComputedStyle(e).color !== getComputedStyle(e).backgroundColor), 'compress Download label is readable');
+
+  await page.goto(`${origin}/image-to-pdf.html`);
+  await page.locator('input[type=file]').first().setInputFiles([{ name: 'a.png', mimeType: 'image/png', buffer: png(800, 1000) }, { name: 'b.png', mimeType: 'image/png', buffer: png(700, 900) }]);
+  await page.locator('.page-row').nth(1).waitFor();
+  ok(await page.locator('.page-row').count() === 2, 'two pages are listed as rows');
+  await page.locator('#btnConvertToPdf').click();
+  await page.locator('#btnDownloadPdf').waitFor({ state: 'visible' });
+  pdf = await saveDownload(page.locator('#btnDownloadPdf'), 'combined.pdf');
+  ok(pdf.subarray(0, 4).toString('latin1') === '%PDF' && (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length === 2, 'image to PDF downloads a two page PDF');
+
+  await page.goto(`${origin}/passport-photo-print.html`);
+  await page.locator('input[type=file]').first().setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: png(900, 1100) });
+  await page.locator('#btnDownloadPrintJpg').waitFor({ state: 'visible' });
+  const sheet = await saveDownload(page.locator('#btnDownloadPrintJpg'), 'sheet.jpg');
+  ok(sheet[0] === 0xff && sheet[1] === 0xd8 && sheet.length > 5000, 'passport sheet downloads a JPEG');
+  pdf = await saveDownload(page.locator('#btnDownloadPrintPdf'), 'sheet.pdf');
+  ok(pdf.subarray(0, 4).toString('latin1') === '%PDF', 'passport sheet downloads a PDF');
+
+  await page.goto(`${origin}/signature-cleaner.html`);
+  await page.locator('input[type=file]').first().setInputFiles({ name: 's.png', mimeType: 'image/png', buffer: png(900, 300) });
+  await page.locator('#btnCleanerDownload').waitFor({ state: 'visible' });
+  await page.locator('#btnViewOriginal').click();
+  ok(await page.locator('#btnViewOriginal').getAttribute('aria-pressed') === 'true', 'Cleaned/Original toggle switches view');
+  const sig = await saveDownload(page.locator('#btnCleanerDownload'), 'signature.jpg');
+  ok(sig[0] === 0xff && sig[1] === 0xd8, 'signature cleaner downloads a JPEG');
+
   // Resume: import, export every format
   await page.goto(`${origin}/resume.html`);
   await page.locator('.draft-options > summary').click();

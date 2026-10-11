@@ -211,7 +211,8 @@
   let cropperReady = false;
   let processing = false;
   let bgFillChosen = false;
-  const processLabel = '<i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize & compress';
+  let processLabel = '<i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize & compress';
+  let busyLabel = '<i aria-hidden="true" class="fa-solid fa-spinner fa-spin"></i> Processing & Compressing...';
 
   // DOM Elements (safe for Node test environments)
   const doc = typeof document !== 'undefined' ? document : null;
@@ -281,6 +282,11 @@
   const btnZoomIn = getEl('btnZoomIn');
   const btnZoomOut = getEl('btnZoomOut');
   const btnProcess = getEl('btnProcess');
+  // Pages in other languages carry their own button label in the markup.
+  if (btnProcess && btnProcess.dataset && btnProcess.dataset.busyLabel) {
+    processLabel = btnProcess.innerHTML.trim() || processLabel;
+    busyLabel = '<i aria-hidden="true" class="fa-solid fa-spinner fa-spin"></i> ' + btnProcess.dataset.busyLabel;
+  }
 
   // Result Elements
   const resultArea = getEl('resultArea');
@@ -1512,7 +1518,7 @@
     if (btnProcess) {
       btnProcess.setAttribute('aria-busy', 'true');
       btnProcess.disabled = true;
-      btnProcess.innerHTML = '<i aria-hidden="true" class="fa-solid fa-spinner fa-spin"></i> Processing & Compressing...';
+      btnProcess.innerHTML = busyLabel;
     }
 
     try {

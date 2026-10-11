@@ -6,6 +6,7 @@ const path = require('node:path');
 const http = require('node:http');
 const assert = require('node:assert/strict');
 const { chromium, firefox } = require('playwright');
+const AxeBuilder = require('@axe-core/playwright').default;
 const engine = process.env.BROWSER === 'firefox' ? firefox : chromium;
 const root = path.resolve(__dirname, '..');
 const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.png':'image/png', '.svg':'image/svg+xml', '.woff2':'font/woff2', '.txt':'text/plain', '.xml':'application/xml', '.webmanifest':'application/manifest+json' };
@@ -174,6 +175,71 @@ const server = http.createServer((req, res) => {
     }
   }
   console.log(`✓ No horizontal overflow on ${pages.length} pages at 9 widths`);
+
+  // 5. Accessibility rules on every page in both themes, and on result states.
+  {
+    const rules = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'];
+    for (const scheme of ['light', 'dark']) {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: scheme });
+      await context.route('**/*', route => /^(http:\/\/127\.|blob:|data:)/.test(route.request().url()) ? route.continue() : route.abort());
+      const page = await context.newPage();
+      const setTheme = async () => { if (await page.evaluate(() => document.documentElement.dataset.theme) !== scheme) await page.locator('#themeToggle').click(); await page.waitForTimeout(200); };
+      const scan = async label => {
+        const result = await new AxeBuilder({ page }).withTags(rules).analyze();
+        ok(result.violations.length === 0, `${scheme} ${label}: ${result.violations.map(v => v.id + ' ' + v.nodes[0].target.join(' ')).join('; ')}`);
+      };
+      for (const file of pages) { await page.goto(`${origin}/${file}`); await setTheme(); await scan(file); }
+      const image = async () => Buffer.from(await page.evaluate(() => {
+        const c = document.createElement('canvas'); c.width = 900; c.height = 1100; const x = c.getContext('2d');
+        const g = x.createLinearGradient(0, 0, 900, 1100); g.addColorStop(0, '#456'); g.addColorStop(1, '#dba');
+        x.fillStyle = g; x.fillRect(0, 0, 900, 1100); x.fillStyle = '#fff'; x.beginPath(); x.arc(450, 450, 250, 0, 7); x.fill();
+        return c.toDataURL('image/png').split(',')[1];
+      }), 'base64');
+      for (const [file, input, action, result] of [['index.html', '#fileInput', '#btnProcess', '#resultArea'], ['ssc-photo-signature-size.html', '#fileInput', '#btnProcess', '#resultArea'], ['hi/ssc-photo-signature-size.html', '#fileInput', '#btnProcess', '#resultArea']]) {
+        await page.goto(`${origin}/${file}`); await setTheme();
+        await page.locator(input).setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await image() });
+        await page.locator(action).click();
+        await page.locator(result).waitFor({ state: 'visible' });
+        await page.waitForTimeout(250);
+        await scan(`${file} result`);
+      }
+      await context.close();
+    }
+  }
+  console.log('✓ axe: no violations on every page in light and dark');
+
+  // 6. Embedded tool on exam, KB and Hindi pages: order, language and result facts.
+  {
+    const { context, page } = await open(1280, 900);
+    const canvasPng = async () => Buffer.from(await page.evaluate(() => {
+      const c = document.createElement('canvas'); c.width = 900; c.height = 1100; const x = c.getContext('2d');
+      x.fillStyle = '#789'; x.fillRect(0, 0, 900, 1100); x.fillStyle = '#fed'; x.beginPath(); x.arc(450, 450, 250, 0, 7); x.fill();
+      return c.toDataURL('image/png').split(',')[1];
+    }), 'base64');
+    const embedded = pages.filter(f => /photo-signature-size\.html$|resize-image-to-\d+kb\.html$/.test(f));
+    ok(embedded.length === 15, `found the 15 embedded tool pages (${embedded.length})`);
+    for (const file of embedded) {
+      await page.goto(`${origin}/${file}`);
+      const hindi = file.startsWith('hi/');
+      const label = (await page.locator('#btnProcess').innerText()).trim();
+      await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await canvasPng() });
+      await page.locator('#cropperActiveArea').waitFor({ state: 'visible' });
+      ok(await page.locator('.file-upload-wrapper').isHidden(), `${file}: the dropzone folds away once a file is chosen`);
+      const before = await page.evaluate(() => { const i = document.getElementById('cropperActiveArea').getBoundingClientRect().top, b = document.getElementById('btnProcess').getBoundingClientRect().top; return i < b; });
+      ok(before, `${file}: the image appears above the Resize button`);
+      ok((await page.locator('#btnProcess').innerText()).trim() === label || !hindi, `${file}: button label is not replaced by another language`);
+      await page.locator('#btnProcess').click();
+      await page.locator('#resultArea').waitFor({ state: 'visible' });
+      await page.waitForFunction(() => document.getElementById('resultFileSize') && document.getElementById('resultFileSize').textContent.trim().length > 2);
+      ok((await page.locator('#resultDims').innerText()).trim().length > 3, `${file}: result shows dimensions`);
+      ok((await page.locator('#resultFileSize').innerText()).includes('KB'), `${file}: result shows file size`);
+      const top = await page.evaluate(() => ['resultArea', 'btnProcess'].map(id => document.getElementById(id).getBoundingClientRect().top));
+      ok(top[0] < top[1], `${file}: the result sits above the settings and Resize button`);
+      if (hindi) ok(/[\u0900-\u097F]/.test(await page.locator('#btnProcess').innerText()), `${file}: Resize button stays in Hindi after processing`);
+    }
+    await context.close();
+  }
+  console.log('✓ Exam, KB and Hindi tools: order, folded dropzone, Hindi label, result facts');
 
   await browser.close();
   server.close();

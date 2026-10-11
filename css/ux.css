@@ -903,7 +903,10 @@
   #resizerApp .form-panel > .control-group { order: 4; }
   #resizerApp #customControls { order: 5; }
   #resizerApp #btnProcess { order: 6; margin-top: 0 !important; min-height: 48px; }
+  #resizerApp .btn-group { order: 6; margin-top: 0 !important; }
   #resizerApp .workspace-footnote { order: 7; margin-top: 0 !important; }
+  .field-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }
+  .field-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); }
   #resizerApp .cropper-placeholder { display: none; }
   #resizerApp:has(#fileInfoBox:not(.hidden)) .file-upload-wrapper { display: none; }
   #resizerApp .file-upload-wrapper .dropzone {
@@ -1325,9 +1328,40 @@
   .footer-link { min-height: 36px; }
   .brand-logo { min-height: 44px; display: inline-flex; align-items: center; }
   .content-page .app-card.text-center .hero-title { font-size: var(--fs-title); }
+  .breadcrumb-item a { display: inline-flex; align-items: center; min-height: 36px; }
 }
 @media screen and (pointer: coarse) {
-  .footer-link { min-height: 44px; }
+  .footer-link, .breadcrumb-item a { min-height: 44px; }
+}
+@media screen {
+  /* Second audit fixes */
+  .image-controls [id$="FileInfoText"] {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
+  }
+  .image-controls [id$="FileInfoBox"] > div:first-child { flex: 1 1 10rem !important; min-width: 0; }
+  .image-controls [id$="FileInfoBox"] { gap: var(--sp-2) var(--sp-3); }
+  .content-page .guide-content th,
+  .content-page .guide-content td { min-width: 5.5rem; }
+}
+@media screen and (max-width: 1100px) {
+  .preset-bar { display: flex; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; padding-bottom: var(--sp-2); -webkit-overflow-scrolling: touch; }
+  .preset-bar-label { flex: 0 0 auto; align-self: center; }
+  .preset-shortcut { flex: 0 0 auto; }
+}
+@media screen and (max-width: 949px) {
+  .resume-hero { display: block; }
+  .hero-export { display: block; margin-top: var(--sp-2); }
+  .hero-export > span { display: inline-flex; align-items: center; gap: 0.4rem; }
+}
+@media screen and (max-width: 420px) {
+  .comparison-view-toggle { display: flex; width: 100%; }
+  .comparison-view-toggle .btn,
+  .comparison-view-toggle .btn-toggle { flex: 1 1 0; min-width: 0; justify-content: center; padding-inline: 0.4rem; }
+  .comparison-view-toggle .btn > i { display: none; }
 }
 @media screen and (max-width: 960px) {
   .resizer-grid[data-layout="input-first"] { display: flex; flex-direction: column; }
