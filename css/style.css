@@ -2133,3 +2133,11 @@ textarea.form-control {
 }
 
 
+
+/* Ensure content clears sticky header */
+.main-content, main {
+  scroll-margin-top: 80px;
+}
+#fullName, .form-control {
+  scroll-margin-top: 80px;
+}
