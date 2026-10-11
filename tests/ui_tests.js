@@ -77,6 +77,43 @@ const server = http.createServer((req, res) => {
   }
   console.log(`✓ ${pages.length} pages: readable buttons, no native file input, no default buttons, 12px text floor`);
 
+  // 1b. One scale for icons and controls on every page, on a desktop and a phone-sized viewport.
+  //     Icons use five sizes. Fields and buttons use the control heights from css/ui.css.
+  {
+    const ICONS = [12, 14, 16, 20, 24];
+    for (const [width, height, fieldMax, fieldMin, btnSizes] of [[1280, 900, 33, 31, [28, 32, 40]], [390, 780, 41, 39, [36, 40, 44]]]) {
+      const { context, page } = await open(width, height);
+      for (const file of pages) {
+        await page.goto(`${origin}/${file}`);
+        if (file === 'resume.html') await page.evaluate(() => { document.querySelectorAll('.accordion-section').forEach(s => s.classList.add('open')); });
+        const found = await page.evaluate(() => {
+          const sheet = '.resume-source-sheet, .resume-visual-pages, #tmplModalPreviewSheet, .template-thumb, .template-card-thumb, .ats-resume-sheet, .cropper-container';
+          const shown = e => { const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return !e.closest(sheet) && cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 1 && r.height > 1; };
+          const icons = [], fields = [], buttons = [];
+          document.querySelectorAll('i[class*="fa-"]').forEach(e => { if (shown(e)) icons.push(Math.round(parseFloat(getComputedStyle(e).fontSize))); });
+          document.querySelectorAll('input.form-control, select.form-select, select.form-control, .custom-select__button').forEach(e => {
+            if (!shown(e) || ['range', 'file', 'checkbox', 'radio'].includes(e.type)) return;
+            fields.push(Math.round(e.getBoundingClientRect().height));
+          });
+          document.querySelectorAll('.btn').forEach(e => {
+            if (!shown(e)) return;
+            const h = Math.round(e.getBoundingClientRect().height);
+            if (h <= 46) buttons.push(h);
+          });
+          return { icons: [...new Set(icons)], fields: [...new Set(fields)], buttons: [...new Set(buttons)] };
+        });
+        const stray = found.icons.filter(s => !ICONS.includes(s));
+        ok(stray.length === 0, `${file} @${width}: icon sizes outside the scale ${ICONS}: ${stray}`);
+        const badFields = found.fields.filter(h => h < fieldMin || h > fieldMax);
+        ok(badFields.length === 0, `${file} @${width}: field heights outside ${fieldMin}-${fieldMax}px: ${badFields}`);
+        const badButtons = found.buttons.filter(h => !btnSizes.some(s => Math.abs(h - s) <= 1));
+        ok(badButtons.length === 0, `${file} @${width}: button heights outside ${btnSizes}: ${badButtons}`);
+      }
+      await context.close();
+    }
+  }
+  console.log(`✓ ${pages.length} pages: icons use the 5-size scale; fields and buttons use the control heights (desktop and phone)`);
+
   // 2. Custom select with a mouse and with the keyboard, at phone and desktop sizes.
   for (const [width, height] of [[390, 780], [1280, 900]]) {
     const { context, page } = await open(width, height);
@@ -200,7 +237,8 @@ const server = http.createServer((req, res) => {
         await page.locator(input).setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await image() });
         await page.locator(action).click();
         await page.locator(result).waitFor({ state: 'visible' });
-        await page.waitForTimeout(250);
+        // Smooth scrolling to the result can still be running; scan the settled page.
+        await page.evaluate(() => new Promise(done => { let last = -1, still = 0; const t = setInterval(() => { still = scrollY === last ? still + 1 : 0; last = scrollY; if (still >= 4) { clearInterval(t); done(); } }, 60); }));
         await scan(`${file} result`);
       }
       await context.close();

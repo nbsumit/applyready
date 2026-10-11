@@ -57,6 +57,25 @@ Visible focus rings, ARIA, keyboard support, 44px targets, reduced motion, contr
 No render-blocking bloat. New CSS/JS added to service worker precache (bump `CACHE_NAME` in `sw.js` on every deploy; currently `applyready-v9`).
 
 
+## Figma-style system (`css/ui.css`, 2026-10)
+
+One compact, neutral interface language on every page. Change a value here, not on a component.
+
+| Scale | Values |
+|---|---|
+| Icons (`--icon`) | 12 inline with small text, 14 in controls and body, 16 in navigation and panel titles, 20 feature marks, 24 the drop target |
+| Controls (`--ctl`) | 28 small, 32 default, 40 primary action; on phones and touch 36 / 40 / 44 |
+| Radius | 4, 6 (controls), 8 (panels) |
+| Text | 12 labels and help, 13 interface, 14 secondary, 16 reading; fields are 16 on phones so browsers do not zoom |
+| Surfaces | grey canvas, white panels with a 1px border, no shadows except menus and toasts |
+| Fields | grey fill, 1px transparent border, accent border and ring on focus; fields on the bare canvas (`.content-page`) use a white fill with a border |
+
+Rules:
+- Icons never carry their own size. Containers set `--icon`; one `!important` rule in `ui.css` applies it, so inline `style="font-size"` and old rules cannot break the scale.
+- New components use `var(--ctl)`, `var(--ctl-sm)` or `var(--ctl-lg)` for height and the radius tokens. No 44px or 48px literals.
+- The accent colour is one token (`--primary` in `workspace.css`); changing it recolours everything.
+- `tests/ui_tests.js` fails on any icon outside the five sizes and any field or button outside the control heights, at 1280px and 390px.
+
 ## Astra recovery notes (2026-10)
 
 Read `UI_UX_ASTRA_AUDIT.md`, `UI_UX_ASTRA_PLAN.md` and `UI_UX_ASTRA_POST_AUDIT.md` for the evidence behind these rules.
@@ -67,7 +86,8 @@ Read `UI_UX_ASTRA_AUDIT.md`, `UI_UX_ASTRA_PLAN.md` and `UI_UX_ASTRA_POST_AUDIT.m
 | `css/design-system.css` | Tokens and dark theme. The custom select list is `position: fixed` and shown only by its own `[hidden]` state. |
 | `css/style.css` | Base, tool layout, resume sheet, print. Do not edit the sheet or `@media print` for editor work. |
 | `css/workspace.css` | Page layouts. |
-| `css/ux.css` | All screen chrome. The last block ("Astra layer") holds the shared tool, reading and resume-shell rules. |
+| `css/ux.css` | Layout and behaviour of screen chrome (tool order, grids, resume shell, reading pages). Do not set icon, control or text sizes here. |
+| `css/ui.css` | The Figma-style visual system. Loaded last, so it owns every size listed below. |
 
 ### Rules that prevent the regressions we had
 - A control rule must never remove its own focus indicator. `:focus` rules for fields list the same type selectors as the control rule.
