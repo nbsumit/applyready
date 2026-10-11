@@ -35,10 +35,10 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261012-2">
-  <link rel="stylesheet" href="css/style.css?v=20261012-2">
-  <link rel="stylesheet" href="css/workspace.css?v=20261012-2">
-  <link rel="stylesheet" href="css/ux.css?v=20261012-2">
+  <link rel="stylesheet" href="css/design-system.css?v=20261012-3">
+  <link rel="stylesheet" href="css/style.css?v=20261012-3">
+  <link rel="stylesheet" href="css/workspace.css?v=20261012-3">
+  <link rel="stylesheet" href="css/ux.css?v=20261012-6">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -328,6 +328,28 @@
           <li><strong>Dark Black Pen:</strong> Use a dark black ballpoint pen for bold letter contrast.</li>
           <li><strong>Proper Cropping:</strong> Crop out tables, bedspreads, or desks from the photo frame so only the written text area is encoded.</li>
         </ul>
+      </section>
+
+      <!-- Size budget: unique to the 100 KB page -->
+      <section class="app-card" data-unique-section="kb-100" style="margin-bottom: 2rem;">
+        <h2>How many pixels can 100 KB afford?</h2>
+        <p>A 100 KB file is 102,400 bytes, or 819,200 bits. That is twice the budget of a 50 KB limit, which is enough for a larger portrait or a handwritten page if you choose the dimensions sensibly.</p>
+        <table>
+<thead><tr><th>Kind of image</th><th>Dimensions</th><th>Pixels</th><th>Bits per pixel at 100 KB</th><th>For a photograph</th></tr></thead>
+<tbody>
+<tr><td>Square photo</td><td>400 x 400</td><td>160,000</td><td>5.1</td><td>Comfortable</td></tr>
+<tr><td>Portrait</td><td>600 x 800</td><td>480,000</td><td>1.7</td><td>Workable</td></tr>
+<tr><td>Handwritten declaration</td><td>800 x 400</td><td>320,000</td><td>2.6</td><td>Comfortable</td></tr>
+<tr><td>Square photo</td><td>600 x 600</td><td>360,000</td><td>2.3</td><td>Workable</td></tr>
+<tr><td>Large portrait</td><td>1000 x 1000</td><td>1,000,000</td><td>0.8</td><td>Tight</td></tr>
+</tbody>
+</table>
+        <p class="text-muted" style="font-size: 0.9rem;">Rule of thumb for photographs: 2.5 or more bits per pixel is comfortable, 1.5 to 2.5 is workable, below 1.5 looks soft or blocky.</p>
+        <p><strong>Declarations and handwritten notes.</strong> An 800 x 400 declaration has 320,000 pixels and gets about 2.6 bits each. Handwriting is high-contrast on a plain page, so it stays readable at this budget as long as the paper is white and the pen is dark. Photograph it flat and in even light, and crop to the writing.</p><p><strong>Portraits.</strong> A 600 x 800 portrait gets about 1.7 bits per pixel, which is workable but soft; dropping to 400 x 400 or similar gives a noticeably cleaner face. A 1000 x 1000 image at this limit gets under one bit per pixel, which is why very large dimensions with a 100 KB limit look blocky.</p><p><strong>Choose the size the form needs, not the largest it allows.</strong> Larger dimensions do not add information a reviewer can use, but they do take bytes away from every pixel.</p>
+        <ul>
+          <li>For handwriting, use dark ink and white paper, and avoid ruled lines.</li><li>Check readability at 100 percent zoom: you should be able to read every word.</li><li>If the first result is too soft, reduce the pixel size a step instead of raising the limit.</li>
+        </ul>
+        <p>For the method behind this table, see <a href="guides/how-to-reduce-photo-to-50kb-without-blur.html">how to reduce a photo to 50 KB without blur</a> and <a href="guides/pixels-cm-inches-dpi-explained.html">pixels, centimetres and DPI</a>.</p>
       </section>
 
       <!-- Frequently Asked Questions -->

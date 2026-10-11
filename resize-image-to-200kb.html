@@ -35,10 +35,10 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261012-2">
-  <link rel="stylesheet" href="css/style.css?v=20261012-2">
-  <link rel="stylesheet" href="css/workspace.css?v=20261012-2">
-  <link rel="stylesheet" href="css/ux.css?v=20261012-2">
+  <link rel="stylesheet" href="css/design-system.css?v=20261012-3">
+  <link rel="stylesheet" href="css/style.css?v=20261012-3">
+  <link rel="stylesheet" href="css/workspace.css?v=20261012-3">
+  <link rel="stylesheet" href="css/ux.css?v=20261012-6">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -328,6 +328,27 @@
           <li><strong>Crop Out the Background:</strong> Crop tightly around the edges of the marksheet paper. Eliminating shadows and floor surfaces preserves more bytes for text clarity.</li>
           <li><strong>Ensure Clean Contrast:</strong> Avoid dim room lighting. Good ambient light ensures the text is pitch black on crisp white paper.</li>
         </ul>
+      </section>
+
+      <!-- Size budget: unique to the 200 KB page -->
+      <section class="app-card" data-unique-section="kb-200" style="margin-bottom: 2rem;">
+        <h2>How many pixels can 200 KB afford?</h2>
+        <p>A 200 KB file is 204,800 bytes, or 1,638,400 bits. A scanned page has far more pixels than a passport photo, so this budget is spread thinly, but a page of printed text is easier to compress than a photograph.</p>
+        <table>
+<thead><tr><th>Kind of image</th><th>Dimensions</th><th>Pixels</th><th>Bits per pixel at 200 KB</th><th>For a photograph</th></tr></thead>
+<tbody>
+<tr><td>Small document photo</td><td>800 x 1000</td><td>800,000</td><td>2.0</td><td>Workable</td></tr>
+<tr><td>Medium scan</td><td>1000 x 1400</td><td>1,400,000</td><td>1.2</td><td>Tight</td></tr>
+<tr><td>A4 at 150 DPI</td><td>1240 x 1754</td><td>2,174,960</td><td>0.8</td><td>Tight</td></tr>
+<tr><td>A4 at 200 DPI</td><td>1654 x 2339</td><td>3,868,706</td><td>0.4</td><td>Tight</td></tr>
+</tbody>
+</table>
+        <p class="text-muted" style="font-size: 0.9rem;">Rule of thumb for photographs: 2.5 or more bits per pixel is comfortable, 1.5 to 2.5 is workable, below 1.5 looks soft or blocky.</p>
+        <p><strong>Text pages follow different rules from photos.</strong> The "comfortable" and "tight" labels in the table are a rule of thumb for photographs. A certificate or marksheet is mostly flat white paper with dark text, which compresses far better than skin tones, so a text page can stay readable at fewer bits per pixel. Judge by reading the smallest text on the result, not by the table alone.</p><p><strong>Where the bytes go.</strong> An A4 page at 150 DPI has about 2.2 million pixels. Staying under 200 KB means each pixel gets under one bit, so keep the page flat and evenly lit, crop away the table around it, and avoid coloured backgrounds, stamps with large solid fills and photographs of screens.</p><p><strong>When one page is not enough.</strong> A portal that allows 200 KB per file expects one document or one page per upload. If a document has several pages, upload them separately where the form allows, or combine them and check the result against the limit.</p>
+        <ul>
+          <li>Photograph or scan flat, straight, in daylight. A clean source saves more bytes than any setting.</li><li>Read the smallest text on the result: dates, roll numbers and percentages.</li><li>If a text page is still too soft, try greyscale or a slightly smaller pixel size before lowering the quality further.</li>
+        </ul>
+        <p>For the method behind this table, see <a href="guides/how-to-reduce-photo-to-50kb-without-blur.html">how to reduce a photo to 50 KB without blur</a> and <a href="guides/pixels-cm-inches-dpi-explained.html">pixels, centimetres and DPI</a>.</p>
       </section>
 
       <!-- Frequently Asked Questions -->

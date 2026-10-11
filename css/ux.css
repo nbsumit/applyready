@@ -1365,6 +1365,32 @@
   .comparison-view-toggle .btn-toggle { flex: 1 1 0; min-width: 0; justify-content: center; padding-inline: 0.4rem; }
   .comparison-view-toggle .btn > i { display: none; }
 }
+@media screen {
+  /* Guides: byline and callout used by the long-form articles */
+  .guide-meta { margin: var(--sp-3) 0 0; font-size: var(--fs-help); color: var(--text-muted); }
+  .guide-meta a { color: var(--text-main); font-weight: 600; text-decoration: underline; text-underline-offset: 0.18em; }
+  .callout {
+    margin: var(--sp-4) 0;
+    padding: var(--sp-3) var(--sp-4);
+    border-left: 3px solid var(--primary);
+    background: var(--bg-card-subtle);
+    border-radius: 0 var(--ux-radius-sm) var(--ux-radius-sm) 0;
+    font-size: var(--fs-ui);
+    line-height: 1.6;
+  }
+  .content-page .guide-content > .app-card > ol { padding-left: 1.25rem; }
+  .content-page .guide-content table { margin: var(--sp-4) 0; }
+  /* Long file names and URLs in prose wrap instead of widening the page */
+  .content-page .guide-content p,
+  .content-page .guide-content li,
+  .content-page .guide-content h2,
+  .content-page .guide-content h3 { overflow-wrap: break-word; }
+}
+@media screen and (max-width: 760px) {
+  /* The last column usually holds a sentence: give it room so rows do not become tall and narrow */
+  .content-page .guide-content th:last-child,
+  .content-page .guide-content td:last-child { min-width: 12rem; }
+}
 @media screen and (max-width: 960px) {
   .resizer-grid[data-layout="input-first"] { display: flex; flex-direction: column; }
   .resizer-grid[data-layout="input-first"] > * { width: 100%; }

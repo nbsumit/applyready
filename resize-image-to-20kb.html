@@ -35,10 +35,10 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261012-2">
-  <link rel="stylesheet" href="css/style.css?v=20261012-2">
-  <link rel="stylesheet" href="css/workspace.css?v=20261012-2">
-  <link rel="stylesheet" href="css/ux.css?v=20261012-2">
+  <link rel="stylesheet" href="css/design-system.css?v=20261012-3">
+  <link rel="stylesheet" href="css/style.css?v=20261012-3">
+  <link rel="stylesheet" href="css/workspace.css?v=20261012-3">
+  <link rel="stylesheet" href="css/ux.css?v=20261012-6">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -328,6 +328,29 @@
           <li><strong>Good Lighting, No Shadows:</strong> Take the photo from directly above in natural daylight to prevent gloomy shadows that inflate JPEG file size.</li>
           <li><strong>Crop Away Blank Margins:</strong> The tighter you crop around the signature, the higher the resolution and clarity you can retain within 20 KB.</li>
         </ul>
+      </section>
+
+      <!-- Size budget: unique to the 20 KB page -->
+      <section class="app-card" data-unique-section="kb-20" style="margin-bottom: 2rem;">
+        <h2>How many pixels can 20 KB afford?</h2>
+        <p>A 20 KB file is 20,480 bytes, or 163,840 bits. How far that goes depends entirely on the pixel count, which is why the same limit can feel easy for one form and impossible for another.</p>
+        <table>
+<thead><tr><th>Kind of image</th><th>Dimensions</th><th>Pixels</th><th>Bits per pixel at 20 KB</th><th>For a photograph</th></tr></thead>
+<tbody>
+<tr><td>Signature</td><td>140 x 60</td><td>8,400</td><td>19.5</td><td>Comfortable</td></tr>
+<tr><td>Signature</td><td>400 x 200</td><td>80,000</td><td>2.0</td><td>Workable</td></tr>
+<tr><td>Portrait</td><td>200 x 230</td><td>46,000</td><td>3.6</td><td>Comfortable</td></tr>
+<tr><td>Portrait</td><td>300 x 300</td><td>90,000</td><td>1.8</td><td>Workable</td></tr>
+<tr><td>Portrait</td><td>350 x 450</td><td>157,500</td><td>1.0</td><td>Tight</td></tr>
+<tr><td>Thumb impression</td><td>240 x 240</td><td>57,600</td><td>2.8</td><td>Comfortable</td></tr>
+</tbody>
+</table>
+        <p class="text-muted" style="font-size: 0.9rem;">Rule of thumb for photographs: 2.5 or more bits per pixel is comfortable, 1.5 to 2.5 is workable, below 1.5 looks soft or blocky.</p>
+        <p><strong>The 350 x 450 portrait at 20 KB is the tight case.</strong> It has 157,500 pixels, so each pixel gets about one bit. Expect visible softness and blocky skin tones. If the form really requires both 350 x 450 and 20 KB, start from a sharp, evenly lit photo and a tight crop, and accept that the result will look plain.</p><p><strong>Smaller pixel sizes change the picture completely.</strong> At 200 x 230 the same 20 KB gives more than three and a half bits per pixel, which is comfortable. Many forms that cap the file at 20 KB also allow or require a small pixel size, so always read the dimension line before reaching for the quality slider.</p><p><strong>Signatures have room to spare.</strong> Even at 400 x 200 a clean black-on-white signature fits under 20 KB at good quality, so the thing to check is that the file is not smaller than any minimum the form sets.</p>
+        <ul>
+          <li>Choose the dimensions first, then the size limit. Reversing the order leads to blurry compromises.</li><li>Crop out everything except the face or the signature: borders cost bytes.</li><li>Look at the finished file at 100 percent zoom, not on the preview thumbnail.</li>
+        </ul>
+        <p>For the method behind this table, see <a href="guides/how-to-reduce-photo-to-50kb-without-blur.html">how to reduce a photo to 50 KB without blur</a> and <a href="guides/pixels-cm-inches-dpi-explained.html">pixels, centimetres and DPI</a>.</p>
       </section>
 
       <!-- Frequently Asked Questions -->

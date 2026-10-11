@@ -35,10 +35,10 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261012-2">
-  <link rel="stylesheet" href="css/style.css?v=20261012-2">
-  <link rel="stylesheet" href="css/workspace.css?v=20261012-2">
-  <link rel="stylesheet" href="css/ux.css?v=20261012-2">
+  <link rel="stylesheet" href="css/design-system.css?v=20261012-3">
+  <link rel="stylesheet" href="css/style.css?v=20261012-3">
+  <link rel="stylesheet" href="css/workspace.css?v=20261012-3">
+  <link rel="stylesheet" href="css/ux.css?v=20261012-6">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -328,6 +328,29 @@
           <li><strong>Avoid Unnecessary Megapixels:</strong> A signature viewed on an application PDF only needs about 140 × 60 or 300 × 100 pixels. Setting smaller dimensions ensures crisp ink lines without compression noise.</li>
           <li><strong>White Background Fill:</strong> If your signature photo has yellowish paper lighting, setting white background fill produces higher JPEG compression ratios.</li>
         </ul>
+      </section>
+
+      <!-- Size budget: unique to the 10 KB page -->
+      <section class="app-card" data-unique-section="kb-10" style="margin-bottom: 2rem;">
+        <h2>How many pixels can 10 KB afford?</h2>
+        <p>A 10 KB file is 10,240 bytes, or 81,920 bits. Divide that by the number of pixels and you get the bits each pixel can use. That single number tells you whether a target is easy, workable or a struggle before you touch a slider.</p>
+        <table>
+<thead><tr><th>Kind of image</th><th>Dimensions</th><th>Pixels</th><th>Bits per pixel at 10 KB</th><th>For a photograph</th></tr></thead>
+<tbody>
+<tr><td>Signature</td><td>140 x 60</td><td>8,400</td><td>9.8</td><td>Comfortable</td></tr>
+<tr><td>Signature</td><td>300 x 100</td><td>30,000</td><td>2.7</td><td>Comfortable</td></tr>
+<tr><td>Small portrait</td><td>100 x 120</td><td>12,000</td><td>6.8</td><td>Comfortable</td></tr>
+<tr><td>Small portrait</td><td>150 x 180</td><td>27,000</td><td>3.0</td><td>Comfortable</td></tr>
+<tr><td>Small portrait</td><td>200 x 230</td><td>46,000</td><td>1.8</td><td>Workable</td></tr>
+<tr><td>Thumb impression</td><td>240 x 240</td><td>57,600</td><td>1.4</td><td>Tight</td></tr>
+</tbody>
+</table>
+        <p class="text-muted" style="font-size: 0.9rem;">Rule of thumb for photographs: 2.5 or more bits per pixel is comfortable, 1.5 to 2.5 is workable, below 1.5 looks soft or blocky.</p>
+        <p><strong>Signatures are easy at 10 KB.</strong> A 140 x 60 signature has only 8,400 pixels and most of them are white paper, so the budget per pixel is generous. The usual problem is not the maximum but a form that also sets a minimum: a very clean signature can come out smaller than the minimum size. If your form has a lower limit, enter it as well, and the resizer pads the file with harmless metadata so the image itself stays unchanged.</p><p><strong>Portraits are the hard case.</strong> At 200 x 230 pixels a face gets under 2 bits per pixel, which looks soft. Dropping to about 150 x 180 raises the budget per pixel by roughly 70 percent and gives a cleaner result, so if the form allows a range of sizes, choose the smaller one. If the form fixes the size, use a tight crop and good light in the source photo, because noise and shadow eat bytes that detail needs.</p>
+        <ul>
+          <li>Check the smallest line of the signature at 100 percent zoom: a continuous thin stroke is the quality test.</li><li>Do not upload a coloured scan: a plain white background and dark ink compress best.</li><li>Re-export from the original, not from a previously shrunk copy.</li>
+        </ul>
+        <p>For the method behind this table, see <a href="guides/how-to-reduce-photo-to-50kb-without-blur.html">how to reduce a photo to 50 KB without blur</a> and <a href="guides/pixels-cm-inches-dpi-explained.html">pixels, centimetres and DPI</a>.</p>
       </section>
 
       <!-- Frequently Asked Questions -->
