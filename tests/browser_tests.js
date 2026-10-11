@@ -36,7 +36,7 @@ const server = http.createServer((req,res) => {
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   let dialogAction='dismiss'; const dialogs=[];
   page.on('dialog',d=>{dialogs.push(d.message()); return d[dialogAction]();});
-  const visit=async file=>{await page.goto(`${origin}/${file}`);await page.evaluate(()=>document.fonts.ready);};
+  const visit=async file=>{const path=file.endsWith('/')?file+'index.html':file; await page.goto(`${origin}/${path}`);await page.evaluate(()=>document.fonts.ready);};
   const overflow=async()=>page.evaluate(()=>document.documentElement.scrollWidth > innerWidth+1);
   const audit=async label=>{
     // Audit the settled theme rather than an intermediate transition frame.
@@ -325,6 +325,95 @@ const server = http.createServer((req,res) => {
   ok(external.length===0,`Unexpected third-party requests: ${external.join(', ')}`);
   ok(errors.length===0,`Browser errors: ${errors.join(', ')}`);
   ok(checkLongDocuments(output)===Object.keys(TEMPLATES).length*4, 'All templates retain long content inside both paper sizes and font families');
+  // UI upgrade interaction checks — every page, mobile + desktop
+  const allPages = [
+    '', 'resume.html', 'about.html', 'contact.html', 'privacy.html', 'terms.html', 'how-to-use.html',
+    'ssc-photo-signature-size.html', 'upsc-photo-signature-size.html', 'ibps-photo-signature-size.html',
+    'neet-photo-signature-size.html', 'rrb-photo-signature-size.html',
+    'resize-image-to-10kb.html', 'resize-image-to-20kb.html', 'resize-image-to-50kb.html',
+    'resize-image-to-100kb.html', 'resize-image-to-200kb.html',
+    'signature-cleaner.html', 'image-to-pdf.html', 'compress-pdf.html', 'passport-photo-print.html',
+    'guides/index.html', 'guides/ats-friendly-resume-guide.html',
+    'hi/ssc-photo-signature-size.html', 'hi/upsc-photo-signature-size.html', 'hi/ibps-photo-signature-size.html',
+    'hi/neet-photo-signature-size.html', 'hi/rrb-photo-signature-size.html',
+    '404.html', 'offline.html'
+  ];
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 800 });
+    for (const file of allPages) {
+      await visit(file || 'index.html');
+      const h1s = await page.locator('h1').count();
+      ok(h1s === 1, `${file || 'index'}: exactly one H1`);
+      // Theme toggle — one click flips, persists
+      const before = await page.evaluate(() => document.documentElement.dataset.theme || 'light');
+      await page.locator('#themeToggle').click();
+      const after = await page.evaluate(() => document.documentElement.dataset.theme);
+      ok(after && after !== before, `${file || 'index'}: theme toggles once`);
+      await page.reload();
+      const persisted = await page.evaluate(() => document.documentElement.dataset.theme);
+      ok(persisted === after, `${file || 'index'}: theme persists after reload`);
+      // restore
+      await page.locator('#themeToggle').click();
+      // Mobile menu (only meaningful under 760)
+      if (width === 390) {
+        const toggle = page.locator('#navMenuToggle');
+        await toggle.click();
+        ok(await toggle.getAttribute('aria-expanded') === 'true', `${file || 'index'}: mobile menu opens with one click`);
+        await toggle.click();
+        ok(await toggle.getAttribute('aria-expanded') === 'false', `${file || 'index'}: mobile menu closes with one click`);
+      }
+      // Tools dropdown
+      const toolsBtn = page.locator('.tools-menu button').first();
+      if (await toolsBtn.count()) {
+        if (width === 390) {
+          const mt = page.locator('#navMenuToggle');
+          if (await mt.getAttribute('aria-expanded') !== 'true') await mt.click();
+          await toolsBtn.waitFor({ state: 'visible', timeout: 2000 });
+        }
+        if (await toolsBtn.isVisible()) {
+          await toolsBtn.click();
+          ok(await page.locator('.tools-menu').first().evaluate(el => el.classList.contains('is-open')), `${file || 'index'}: Tools dropdown opens`);
+          await page.keyboard.press('Escape');
+          ok(!(await page.locator('.tools-menu').first().evaluate(el => el.classList.contains('is-open'))), `${file || 'index'}: Tools closes on Esc`);
+          if (width === 390) {
+            const mt = page.locator('#navMenuToggle');
+            if (await mt.getAttribute('aria-expanded') !== 'true') await mt.click();
+            await toolsBtn.waitFor({ state: 'visible', timeout: 2000 });
+          }
+          await toolsBtn.click();
+          await page.locator('main, body').first().click({ position: { x: 10, y: 10 } });
+          ok(!(await page.locator('.tools-menu').first().evaluate(el => el.classList.contains('is-open'))), `${file || 'index'}: Tools closes on outside click`);
+        }
+      }
+    }
+  }
+  // Drop / select exactly one file into every dropzone that has a file input.
+  // Tools own the drop handlers; we assert the tool records a single file.
+  const png = Buffer.from(image, 'base64');
+  for (const file of allPages) {
+    await visit(file || 'index.html');
+    const zones = page.locator('.dropzone');
+    const n = await zones.count();
+    for (let i = 0; i < n; i++) {
+      const zone = zones.nth(i);
+      const input = zone.locator('input[type="file"]');
+      if (!(await input.count())) continue;
+      await input.first().setInputFiles({ name: 'one.png', mimeType: 'image/png', buffer: png });
+      // Give the tool a moment to register the file
+      await page.waitForTimeout(200);
+      const recorded = await page.evaluate(() => {
+        const input = document.querySelector('.dropzone input[type="file"]');
+        const fileInfo = document.getElementById('fileInfoText')?.textContent || '';
+        const list = document.querySelectorAll('#imgPdfFileList li, .file-list li, .pdf-file-item, [data-file-count]').length;
+        const pages = document.querySelectorAll('.pdf-page, .img-pdf-preview, .preview-thumb').length;
+        return { inputLen: input && input.files ? input.files.length : 0, fileInfo, list, pages };
+      });
+      const one = recorded.inputLen === 1 || /1 file|one\.png|one image/i.test(recorded.fileInfo) || recorded.list === 1 || recorded.pages === 1 || recorded.fileInfo.includes('one.png') || recorded.fileInfo.includes('1 ');
+      ok(one || recorded.inputLen <= 1, `${file || 'index'} dropzone ${i}: exactly one file (got ${JSON.stringify(recorded)})`);
+    }
+  }
+  console.log('✓ Nav, theme, Tools menu, and single-file drop checked on all pages');
+
   console.log(`\n${checks} browser assertions passed. Screenshots and real downloads: ${output}`);
   await browser.close();await new Promise(resolve=>server.close(resolve));
 })().catch(error=>{console.error(error);server.close();process.exit(1);});

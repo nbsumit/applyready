@@ -3,42 +3,6 @@
 (function () {
   'use strict';
 
-  // Theme toggle (already handled by theme.js + site.js, but ensure consistency)
-  function initTheme() {
-    const btn = document.getElementById('themeToggle');
-    if (!btn) return;
-    btn.addEventListener('click', () => {
-      const current = document.documentElement.dataset.theme || 'light';
-      const next = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      try { localStorage.setItem('applyready_theme', next); } catch (e) {}
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.content = next === 'dark' ? '#0f172a' : '#2563eb';
-    });
-  }
-
-  // Mobile menu
-  function initMobileMenu() {
-    const toggle = document.getElementById('navMenuToggle');
-    const menu = document.getElementById('navMenu');
-    if (!toggle || !menu) return;
-    function setOpen(open) {
-      toggle.setAttribute('aria-expanded', String(open));
-      toggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
-      menu.classList.toggle('is-open', open);
-    }
-    toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && menu.classList.contains('is-open')) {
-        setOpen(false);
-        toggle.focus();
-      }
-    });
-    document.addEventListener('click', e => {
-      if (!e.target.closest('.nav-container')) setOpen(false);
-    });
-  }
-
   // Tools dropdown menu
   function initToolsMenu() {
     document.querySelectorAll('.tools-menu').forEach(menu => {
@@ -78,6 +42,7 @@
   }
 
   // Custom select (accessible listbox, falls back gracefully)
+  // Accessible custom select (listbox pattern)
   function initCustomSelects() {
     document.querySelectorAll('select.custom-select-source').forEach(native => {
       if (native.dataset.enhanced) return;
@@ -89,12 +54,41 @@
       btn.className = 'custom-select__button';
       btn.setAttribute('aria-haspopup', 'listbox');
       btn.setAttribute('aria-expanded', 'false');
+      const listId = 'listbox-' + (native.id || Math.random().toString(36).slice(2, 8));
+      btn.setAttribute('aria-controls', listId);
+      // Link label
+      const label = native.id && document.querySelector('label[for="' + native.id + '"]');
+      if (label) {
+        if (!label.id) label.id = native.id + '-label';
+        btn.setAttribute('aria-labelledby', label.id);
+      }
       const list = document.createElement('div');
       list.className = 'custom-select__list';
+      list.id = listId;
       list.setAttribute('role', 'listbox');
+      list.setAttribute('tabindex', '-1');
       list.hidden = true;
+      let activeIndex = native.selectedIndex || 0;
+      let typeBuffer = '';
+      let typeTimer = null;
 
-      function update() {
+      function options() { return Array.from(list.querySelectorAll('[role="option"]')); }
+
+      function setActive(idx, focus) {
+        const items = options();
+        if (!items.length) return;
+        idx = Math.max(0, Math.min(idx, items.length - 1));
+        activeIndex = idx;
+        items.forEach((item, i) => {
+          item.setAttribute('aria-selected', String(i === native.selectedIndex));
+          item.classList.toggle('is-active', i === idx);
+          item.setAttribute('tabindex', i === idx ? '0' : '-1');
+        });
+        list.setAttribute('aria-activedescendant', items[idx].id);
+        if (focus) items[idx].focus();
+      }
+
+      function rebuild() {
         const opt = native.options[native.selectedIndex];
         btn.textContent = opt ? opt.textContent : 'Select';
         list.innerHTML = '';
@@ -102,60 +96,77 @@
           const item = document.createElement('div');
           item.className = 'custom-select__option';
           item.setAttribute('role', 'option');
+          item.id = listId + '-opt-' + i;
           item.setAttribute('aria-selected', String(i === native.selectedIndex));
+          item.setAttribute('tabindex', i === (native.selectedIndex || 0) ? '0' : '-1');
           item.textContent = opt.textContent;
-          item.addEventListener('click', () => {
-            native.selectedIndex = i;
-            native.dispatchEvent(new Event('change', { bubbles: true }));
-            update();
-            wrap.classList.remove('is-open');
-            btn.setAttribute('aria-expanded', 'false');
-            list.hidden = true;
-            btn.focus();
-          });
+          item.addEventListener('click', () => choose(i));
           list.appendChild(item);
         });
+        setActive(native.selectedIndex || 0, false);
       }
-      update();
 
-      btn.addEventListener('click', () => {
-        const open = !wrap.classList.contains('is-open');
-        wrap.classList.toggle('is-open', open);
-        btn.setAttribute('aria-expanded', String(open));
-        list.hidden = !open;
-        if (open) {
-          const selected = list.querySelector('[aria-selected="true"]');
-          if (selected) selected.focus();
-        }
+      function choose(i) {
+        native.selectedIndex = i;
+        native.dispatchEvent(new Event('change', { bubbles: true }));
+        rebuild();
+        close();
+        btn.focus();
+      }
+
+      function open() {
+        wrap.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true');
+        list.hidden = false;
+        setActive(native.selectedIndex || 0, true);
+      }
+      function close() {
+        wrap.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+        list.hidden = true;
+      }
+
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (list.hidden) open(); else close();
       });
 
-      // Keyboard
-      btn.addEventListener('keydown', e => {
-        if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+      function onKey(e, fromList) {
+        const items = options();
+        if (!items.length) return;
+        const key = e.key;
+        if (key === 'ArrowDown') { e.preventDefault(); if (list.hidden) open(); else setActive(activeIndex + 1, true); }
+        else if (key === 'ArrowUp') { e.preventDefault(); if (list.hidden) open(); else setActive(activeIndex - 1, true); }
+        else if (key === 'Home') { e.preventDefault(); if (list.hidden) open(); else setActive(0, true); }
+        else if (key === 'End') { e.preventDefault(); if (list.hidden) open(); else setActive(items.length - 1, true); }
+        else if (key === 'Enter' || key === ' ') { e.preventDefault(); if (list.hidden) open(); else choose(activeIndex); }
+        else if (key === 'Escape') { e.preventDefault(); close(); btn.focus(); }
+        else if (key.length === 1 && !e.ctrlKey && !e.metaKey) {
           e.preventDefault();
-          btn.click();
+          typeBuffer += key.toLowerCase();
+          clearTimeout(typeTimer);
+          typeTimer = setTimeout(() => { typeBuffer = ''; }, 500);
+          const match = items.findIndex(it => it.textContent.trim().toLowerCase().startsWith(typeBuffer));
+          if (match >= 0) { if (list.hidden) open(); setActive(match, true); }
         }
-      });
-      list.addEventListener('keydown', e => {
-        const items = Array.from(list.children);
-        const current = document.activeElement;
-        let idx = items.indexOf(current);
-        if (e.key === 'ArrowDown') { e.preventDefault(); (items[idx + 1] || items[0]).focus(); }
-        if (e.key === 'ArrowUp') { e.preventDefault(); (items[idx - 1] || items[items.length - 1]).focus(); }
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); current.click(); }
-        if (e.key === 'Escape') { wrap.classList.remove('is-open'); list.hidden = true; btn.focus(); }
-      });
+      }
+      btn.addEventListener('keydown', e => onKey(e, false));
+      list.addEventListener('keydown', e => onKey(e, true));
+      document.addEventListener('click', e => { if (!wrap.contains(e.target)) close(); });
 
       wrap.appendChild(btn);
       wrap.appendChild(list);
       native.style.position = 'absolute';
+      native.style.width = '1px';
+      native.style.height = '1px';
       native.style.opacity = '0';
       native.style.pointerEvents = 'none';
-      native.style.height = '0';
+      native.setAttribute('tabindex', '-1');
+      native.setAttribute('aria-hidden', 'true');
       native.parentNode.insertBefore(wrap, native);
       wrap.appendChild(native);
-
-      native.addEventListener('change', update);
+      native.addEventListener('change', rebuild);
+      rebuild();
     });
   }
 
@@ -183,42 +194,15 @@
     });
   }
 
-  // Dropzone enhancement
+  // Dropzone visual only — never assign files (tool pages own drop/paste handlers).
+  // Double assignment was adding the same file twice.
   function initDropzones() {
     document.querySelectorAll('.dropzone').forEach(zone => {
-      if (zone.dataset.enhanced) return;
-      zone.dataset.enhanced = 'true';
-      const input = zone.querySelector('input[type="file"]') || document.createElement('input');
-      if (!zone.contains(input)) {
-        input.type = 'file';
-        input.hidden = true;
-        zone.appendChild(input);
-      }
-      zone.addEventListener('click', () => input.click());
-      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('is-dragover'); });
-      zone.addEventListener('dragleave', () => zone.classList.remove('is-dragover'));
-      zone.addEventListener('drop', e => {
-        e.preventDefault();
-        zone.classList.remove('is-dragover');
-        if (e.dataTransfer.files.length) {
-          input.files = e.dataTransfer.files;
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      });
-      zone.addEventListener('paste', e => {
-        const items = e.clipboardData?.items;
-        if (!items) return;
-        for (const item of items) {
-          if (item.type.startsWith('image/')) {
-            const file = item.getAsFile();
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            input.files = dt.files;
-            input.dispatchEvent(new Event('change', { bubbles: true }));
-            break;
-          }
-        }
-      });
+      if (zone.dataset.uiVisual) return;
+      zone.dataset.uiVisual = 'true';
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('is-dragover'); }, true);
+      zone.addEventListener('dragleave', () => zone.classList.remove('is-dragover'), true);
+      zone.addEventListener('drop', () => zone.classList.remove('is-dragover'), true);
     });
   }
 
@@ -249,8 +233,6 @@
 
   // Init all
   function init() {
-    initTheme();
-    initMobileMenu();
     initToolsMenu();
     initAccordions();
     initCustomSelects();

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UPSC Photo &amp; Signature Size 2026 | Dimensions, KB Limits &amp; Online Resizer</title>
-  <meta name="description" content="Resize photograph and signature for UPSC Civil Services (IAS/IPS), NDA, CDS &amp; CMS. Official specifications: photo 20–200 KB (min 350×350, max 1000×1000), signature 20–100 KB. Free in-browser tool.">
+  <meta name="description" content="Resize photograph and signature for UPSC Civil Services (IAS/IPS), NDA, CDS &amp; CMS. Official specifications: photo 20–200 KB, signature 20–100 KB. Free in-browser tool.">
   <link rel="canonical" href="https://applyready.in/upsc-photo-signature-size.html">
   <link rel="alternate" hreflang="en" href="https://applyready.in/upsc-photo-signature-size.html">
   <link rel="alternate" hreflang="hi" href="https://applyready.in/hi/upsc-photo-signature-size.html">
@@ -125,6 +125,32 @@
         <span>ApplyReady<span class="brand-dot">.</span></span>
       </a>
       <div class="nav-links" id="navMenu">
+        <div class="tools-menu">
+          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+          <div class="tools-menu__panel" role="menu">
+            <div class="tools-menu__group"><strong>Image tools</strong>
+              <a href="/" role="menuitem">Image resizer</a>
+              <a href="signature-cleaner.html" role="menuitem">Signature cleaner</a>
+              <a href="image-to-pdf.html" role="menuitem">Image to PDF</a>
+              <a href="compress-pdf.html" role="menuitem">Compress PDF</a>
+              <a href="passport-photo-print.html" role="menuitem">Passport photo print</a>
+            </div>
+            <div class="tools-menu__group"><strong>Exam specs</strong>
+              <a href="ssc-photo-signature-size.html" role="menuitem">SSC</a>
+              <a href="upsc-photo-signature-size.html" role="menuitem">UPSC</a>
+              <a href="ibps-photo-signature-size.html" role="menuitem">IBPS</a>
+              <a href="neet-photo-signature-size.html" role="menuitem">NEET</a>
+              <a href="rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            </div>
+            <div class="tools-menu__group"><strong>Resize to KB</strong>
+              <a href="resize-image-to-10kb.html" role="menuitem">10 KB</a>
+              <a href="resize-image-to-20kb.html" role="menuitem">20 KB</a>
+              <a href="resize-image-to-50kb.html" role="menuitem">50 KB</a>
+              <a href="resize-image-to-100kb.html" role="menuitem">100 KB</a>
+              <a href="resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            </div>
+          </div>
+        </div>
         <a href="/" class="nav-link">Image tools</a>
         <a href="resume.html" class="nav-link">Resume builder</a>
         <a href="guides/" class="nav-link">Guides</a>
@@ -247,7 +273,7 @@
 
             <div class="control-group">
               <label for="presetSelect" class="control-label">Target Preset</label>
-              <select id="presetSelect" class="form-control">
+              <select id="presetSelect" class="form-control custom-select-source">
                 <option value="upsc-photo" selected>UPSC Photo (350 × 350 px, 20–200 KB)</option>
                 <option value="upsc-signature">UPSC Triple Signature (400 × 400 px, 20–100 KB)</option>
                 <option value="custom">Custom Dimensions</option>
@@ -281,7 +307,7 @@
               <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
                 <div class="control-group">
                   <label for="formatSelect" class="control-label">Output Format</label>
-                  <select id="formatSelect" class="form-control">
+                  <select id="formatSelect" class="form-control custom-select-source">
                     <option value="image/jpeg" selected>JPEG (.jpg)</option>
                     <option value="image/png">PNG (.png)</option>
                     <option value="image/webp">WebP (.webp)</option>

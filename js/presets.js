@@ -36,7 +36,7 @@
       name: 'Signature (300 × 100 px, max 30 KB)',
       width: 300,
       height: 100,
-      maxKB: 50,
+      maxKB: 30,
       minKB: 0,
       defaultPrefix: 'Signature'
     },

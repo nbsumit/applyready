@@ -42,6 +42,7 @@
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
 
   <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/design-system.css?v=20261011-5">
   <link rel="stylesheet" href="css/style.css?v=20261011-3">
   <link rel="stylesheet" href="css/workspace.css?v=20261011-3">
 
@@ -320,7 +321,7 @@
         <div class="form-row-2" style="margin-top: 1rem;">
           <div class="form-group">
             <label for="formatSelect" class="form-label">File format</label>
-            <select id="formatSelect" class="form-select">
+            <select id="formatSelect" class="form-select custom-select-source">
               <option value="image/jpeg" selected>JPEG (.jpg)</option>
               <option value="image/png">PNG (.png)</option>
               <option value="image/webp">WebP (.webp)</option>
@@ -667,7 +668,8 @@
     <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
-    <script defer src="js/site.js?v=20261011-3"></script>
+    <script src="js/components.js?v=20261011-5" defer></script>
+  <script defer src="js/site.js?v=20261011-3"></script>
   <script defer src="js/presets.js?v=20261011-3"></script>
   <script defer src="js/vendor/cropper.min.js"></script>
   <script defer src="js/resizer.js?v=20261011-3"></script>
