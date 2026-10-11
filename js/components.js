@@ -290,8 +290,24 @@
   }
 
   // Init all
+
+  function initCurrentNav() {
+    const here = location.pathname.replace(/\/index\.html$/, '/');
+    const norm = here.length > 1 ? here.replace(/\/$/, '') : here;
+    document.querySelectorAll('a.nav-link[href], .tools-menu a[href], .footer-link[href]').forEach(a => {
+      const href = a.getAttribute('href');
+      if (!href || href.charAt(0) === '#') return;
+      let path;
+      try { path = new URL(href, location.href).pathname; } catch (e) { return; }
+      path = path.replace(/\/index\.html$/, '/');
+      if (path.length > 1) path = path.replace(/\/$/, '');
+      if (path === norm) a.setAttribute('aria-current', 'page');
+    });
+  }
+
   function init() {
     initToolsMenu();
+    initCurrentNav();
     initAccordions();
     initCustomSelects(document);
     initRanges(document);
