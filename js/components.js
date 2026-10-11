@@ -1,91 +1,60 @@
-/* Shared UI components. Enhances native elements, no libraries.
-   Loaded on every page. Keeps keyboard, screen readers, mobile keyboards intact. */
+/* Shared interface components: custom select, range fill, tool workspace states.
+   Native elements stay in the DOM and keep their value, validity and events. */
 (function () {
   'use strict';
+  const doc = document;
 
-  // Tools dropdown menu
-  function initToolsMenu() {
-    document.querySelectorAll('.tools-menu').forEach(menu => {
-      const btn = menu.querySelector('button');
-      if (!btn) return;
-      btn.addEventListener('click', e => {
-        e.stopPropagation();
-        const open = menu.classList.toggle('is-open');
-        btn.setAttribute('aria-expanded', String(open));
-      });
-      document.addEventListener('click', () => {
-        menu.classList.remove('is-open');
-        btn.setAttribute('aria-expanded', 'false');
-      });
-      document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && menu.classList.contains('is-open')) {
-          const inside = menu.contains(document.activeElement);
-          menu.classList.remove('is-open');
-          btn.setAttribute('aria-expanded', 'false');
-          // Return focus to the button that opened the menu
-          if (inside) btn.focus();
-        }
-      });
-    });
-  }
-
-  // Accordion
-  function initAccordions() {
-    document.querySelectorAll('.accordion').forEach(acc => {
-      acc.querySelectorAll('.accordion__button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const item = btn.closest('.accordion__item');
-          const open = item.classList.toggle('is-open');
-          btn.setAttribute('aria-expanded', String(open));
-          const panel = item.querySelector('.accordion__panel');
-          if (panel) panel.hidden = !open;
-        });
-      });
-    });
-  }
+  /* ---------------------------------------------------------------- Select */
+  const selectValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+  const selectIndex = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'selectedIndex');
+  let selectSeq = 0;
 
   function enhanceSelect(native) {
     if (!native || native.dataset.enhanced) return;
     if (native.multiple || native.size > 1) return;
     if (native.closest('.sr-only')) return;
     native.dataset.enhanced = 'true';
-    const wrap = document.createElement('div');
-    wrap.className = 'custom-select';
-    const btn = document.createElement('button');
+    const uid = (native.id || 'select' + (++selectSeq)) + '-list';
+
+    const wrap = doc.createElement('div');
+    wrap.className = 'select';
+    const btn = doc.createElement('button');
     btn.type = 'button';
-    btn.className = 'custom-select__button';
+    btn.className = 'select-btn';
     btn.setAttribute('aria-haspopup', 'listbox');
     btn.setAttribute('aria-expanded', 'false');
-    const listId = 'listbox-' + (native.id || Math.random().toString(36).slice(2, 8));
-    btn.setAttribute('aria-controls', listId);
-    const valueEl = document.createElement('span');
-    valueEl.className = 'custom-select__value';
+    btn.setAttribute('aria-controls', uid);
+    const valueEl = doc.createElement('span');
+    valueEl.className = 'select-value';
     btn.appendChild(valueEl);
-    const label = native.id && document.querySelector('label[for="' + CSS.escape(native.id) + '"]');
+
+    const label = native.id && doc.querySelector('label[for="' + CSS.escape(native.id) + '"]');
     if (label) {
       if (!label.id) label.id = native.id + '-label';
-      btn.setAttribute('aria-labelledby', label.id);
+      btn.setAttribute('aria-labelledby', label.id + ' ' + (btn.id = native.id + '-button'));
+      label.addEventListener('click', e => { e.preventDefault(); btn.focus(); });
     } else if (native.getAttribute('aria-label')) {
       btn.setAttribute('aria-label', native.getAttribute('aria-label'));
     }
-    const list = document.createElement('div');
-    list.className = 'custom-select__list';
-    list.id = listId;
+
+    const list = doc.createElement('div');
+    list.className = 'select-list';
+    list.id = uid;
     list.setAttribute('role', 'listbox');
     list.tabIndex = -1;
     list.hidden = true;
     if (label && label.id) list.setAttribute('aria-labelledby', label.id);
-    let activeIndex = native.selectedIndex > -1 ? native.selectedIndex : 0;
+    else if (native.getAttribute('aria-label')) list.setAttribute('aria-label', native.getAttribute('aria-label'));
+
+    let activeIndex = Math.max(0, native.selectedIndex);
     let typeBuffer = '';
     let typeTimer = null;
-
-    function options() { return Array.from(list.querySelectorAll('[role="option"]')); }
+    const options = () => Array.from(list.querySelectorAll('[role="option"]'));
 
     function setActive(idx, focus, step) {
       const items = options();
       if (!items.length) return;
       idx = Math.max(0, Math.min(idx, items.length - 1));
-      // Arrow, Home and End skip disabled options.
       const dir = step || 1;
       let guard = items.length;
       while (items[idx].getAttribute('aria-disabled') === 'true' && guard-- > 0) {
@@ -105,41 +74,41 @@
     function rebuild() {
       const opt = native.options[native.selectedIndex];
       valueEl.textContent = opt ? opt.textContent : 'Select';
+      valueEl.classList.toggle('is-placeholder', !!opt && opt.disabled && opt.value === '');
       btn.disabled = native.disabled;
       const invalid = native.classList.contains('is-invalid') || native.getAttribute('aria-invalid') === 'true';
       wrap.classList.toggle('is-invalid', invalid);
-      if (invalid) btn.setAttribute('aria-invalid', 'true');
-      else btn.removeAttribute('aria-invalid');
-      list.innerHTML = '';
-      Array.from(native.options).forEach((opt, i) => {
-        const item = document.createElement('div');
-        item.className = 'custom-select__option';
+      if (invalid) btn.setAttribute('aria-invalid', 'true'); else btn.removeAttribute('aria-invalid');
+      list.textContent = '';
+      Array.from(native.options).forEach((o, i) => {
+        const item = doc.createElement('div');
+        item.className = 'select-opt';
         item.setAttribute('role', 'option');
-        item.id = listId + '-opt-' + i;
+        item.id = uid + '-' + i;
         item.setAttribute('aria-selected', String(i === native.selectedIndex));
         item.tabIndex = i === activeIndex ? 0 : -1;
-        if (opt.disabled) item.setAttribute('aria-disabled', 'true');
-        item.textContent = opt.textContent;
-        item.addEventListener('click', () => { if (!opt.disabled) choose(i); });
+        if (o.disabled) item.setAttribute('aria-disabled', 'true');
+        item.textContent = o.textContent;
+        item.addEventListener('click', () => { if (!o.disabled) choose(i); });
         list.appendChild(item);
       });
-      setActive(native.selectedIndex > -1 ? native.selectedIndex : 0, false);
+      activeIndex = Math.max(0, native.selectedIndex);
+      setActive(activeIndex, false);
     }
 
     function place() {
       const rect = btn.getBoundingClientRect();
-      const width = Math.min(Math.max(rect.width, 180), window.innerWidth - 16);
+      const width = Math.min(Math.max(rect.width, 200), window.innerWidth - 16);
       list.style.width = width + 'px';
       list.style.maxHeight = '';
       list.hidden = false;
-      const gap = 4;
-      const margin = 8;
+      const gap = 4, margin = 8;
       const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
       const spaceAbove = rect.top - gap - margin;
       const natural = list.scrollHeight + 2;
       const openUp = natural > spaceBelow && spaceAbove > spaceBelow;
       const room = Math.max(120, openUp ? spaceAbove : spaceBelow);
-      const height = Math.min(natural, room, 320);
+      const height = Math.min(natural, room, 340);
       list.style.maxHeight = height + 'px';
       const top = openUp ? rect.top - gap - height : rect.bottom + gap;
       let left = rect.left;
@@ -147,28 +116,24 @@
       list.style.left = left + 'px';
       list.style.top = Math.max(margin, top) + 'px';
     }
-
     function onReflow() {
       if (list.hidden) return;
       const r = btn.getBoundingClientRect();
       if (r.bottom < 0 || r.top > window.innerHeight) { close(); return; }
       place();
     }
-
     function choose(i) {
-      native.selectedIndex = i;
+      selectIndex.set.call(native, i);
       native.dispatchEvent(new Event('change', { bubbles: true }));
       rebuild();
       close();
       btn.focus();
     }
-
     function open() {
       wrap.classList.add('is-open');
       btn.setAttribute('aria-expanded', 'true');
-      list.hidden = false;
       place();
-      setActive(native.selectedIndex > -1 ? native.selectedIndex : 0, true);
+      setActive(Math.max(0, native.selectedIndex), true);
       window.addEventListener('scroll', onReflow, true);
       window.addEventListener('resize', onReflow);
     }
@@ -185,7 +150,6 @@
       if (btn.disabled) return;
       if (list.hidden) open(); else close();
     });
-
     function onKey(e) {
       const items = options();
       if (!items.length) return;
@@ -207,156 +171,100 @@
     }
     btn.addEventListener('keydown', onKey);
     list.addEventListener('keydown', onKey);
-    document.addEventListener('click', e => { if (!wrap.contains(e.target) && !list.contains(e.target)) close(); });
+    doc.addEventListener('click', e => { if (!wrap.contains(e.target) && !list.contains(e.target)) close(); });
 
     wrap.appendChild(btn);
-    document.body.appendChild(list);
+    doc.body.appendChild(list);
     if (native.required) btn.setAttribute('aria-required', 'true');
-    native.classList.add('ux-native-select');
     native.tabIndex = -1;
     native.setAttribute('aria-hidden', 'true');
     native.parentNode.insertBefore(wrap, native);
     wrap.appendChild(native);
     native.addEventListener('change', rebuild);
-    const optObserver = new MutationObserver(rebuild);
-    optObserver.observe(native, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'label', 'class', 'aria-invalid'] });
+    // Script that sets .value or .selectedIndex must update what the person sees.
+    Object.defineProperty(native, 'value', { configurable: true, get() { return selectValue.get.call(this); }, set(v) { selectValue.set.call(this, v); rebuild(); } });
+    Object.defineProperty(native, 'selectedIndex', { configurable: true, get() { return selectIndex.get.call(this); }, set(v) { selectIndex.set.call(this, v); rebuild(); } });
+    new MutationObserver(rebuild).observe(native, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'label', 'class', 'aria-invalid'] });
     rebuild();
   }
 
-  function initCustomSelects(root) {
-    (root || document).querySelectorAll('select').forEach(enhanceSelect);
+  /* ----------------------------------------------------------------- Range */
+  const rangeValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  function enhanceRange(range) {
+    if (range.dataset.enhanced) return;
+    range.dataset.enhanced = 'true';
+    const paint = () => {
+      const min = Number(range.min || 0), max = Number(range.max || 100);
+      range.style.setProperty('--pct', (max === min ? 0 : ((Number(range.value) - min) / (max - min)) * 100) + '%');
+    };
+    range.addEventListener('input', paint);
+    Object.defineProperty(range, 'value', { configurable: true, get() { return rangeValue.get.call(this); }, set(v) { rangeValue.set.call(this, v); paint(); } });
+    paint();
   }
 
-  function initRanges(root) {
-    (root || document).querySelectorAll('input[type="range"]').forEach(range => {
-      if (range.dataset.enhanced) return;
-      range.dataset.enhanced = 'true';
-      let wrap = range.parentElement;
-      if (!wrap || !wrap.classList.contains('range-wrap')) {
-        wrap = document.createElement('div');
-        wrap.className = 'range-wrap';
-        range.parentNode.insertBefore(wrap, range);
-        wrap.appendChild(range);
-      }
-      const bubble = document.createElement('div');
-      bubble.className = 'range-bubble';
-      wrap.appendChild(bubble);
-      function update() {
-        const min = Number(range.min || 0);
-        const max = Number(range.max || 100);
-        const pct = max === min ? 0 : (Number(range.value) - min) / (max - min);
-        bubble.textContent = range.value + (range.dataset.suffix || '');
-        bubble.style.left = (pct * 100) + '%';
-      }
-      range.addEventListener('input', update);
-      update();
-    });
+  // Segmented controls driven by an .active class (tool scripts) also tell assistive technology which side is on.
+  function syncPressed(group) {
+    if (group.dataset.pressedSync) return;
+    group.dataset.pressedSync = 'true';
+    const buttons = Array.from(group.querySelectorAll('button[aria-pressed]'));
+    const sync = () => buttons.forEach(b => b.setAttribute('aria-pressed', String(b.classList.contains('active'))));
+    if (!buttons.some(b => b.classList.contains('active'))) return;
+    const observer = new MutationObserver(sync);
+    buttons.forEach(b => observer.observe(b, { attributes: true, attributeFilter: ['class'] }));
   }
 
-  function initSteps() {
-    const steps = document.querySelector('.steps');
-    const fileBox = document.getElementById('fileInfoBox');
-    const result = document.getElementById('resultArea');
-    if (!steps || !fileBox) return;
-    const items = steps.querySelectorAll('.steps__item');
+  function enhance(root) {
+    (root || doc).querySelectorAll('.segmented').forEach(syncPressed);
+    (root || doc).querySelectorAll('select').forEach(enhanceSelect);
+    (root || doc).querySelectorAll('input[type="range"]').forEach(enhanceRange);
+  }
+
+  /* ------------------------------------------------------- Tool workspace */
+  // A workspace moves through three states: empty (add a file), ready (adjust), done (download).
+  // The tool script only shows and hides its own elements; this reads them and sets data-state.
+  function initWorkspace(ws) {
+    const find = sel => (sel ? ws.querySelector(sel) : null);
+    const fileEl = find(ws.dataset.wsFile);
+    const resultEl = find(ws.dataset.wsResult);
+    const busyEl = find(ws.dataset.wsBusy);
+    const steps = Array.from(ws.querySelectorAll('.steps [data-step]'));
+    const shown = el => !!el && !el.hidden && !el.classList.contains('hidden');
     function sync() {
-      const hasFile = !fileBox.classList.contains('hidden');
-      const hasResult = result && !result.classList.contains('hidden');
-      const active = hasResult ? 2 : hasFile ? 1 : 0;
-      items.forEach((el, i) => {
-        el.classList.toggle('is-active', i === active);
-        el.classList.toggle('is-done', i < active);
+      const state = shown(resultEl) ? 'done' : shown(fileEl) ? 'ready' : 'empty';
+      ws.dataset.state = state;
+      ws.dataset.busy = shown(busyEl) ? 'true' : 'false';
+      const current = { empty: 0, ready: 1, done: 2 }[state];
+      steps.forEach((step, i) => {
+        step.classList.toggle('is-done', i < current);
+        step.classList.toggle('is-current', i === current);
+        if (i === current) step.setAttribute('aria-current', 'step'); else step.removeAttribute('aria-current');
       });
     }
-    const obs = new MutationObserver(sync);
-    obs.observe(fileBox, { attributes: true, attributeFilter: ['class'] });
-    if (result) obs.observe(result, { attributes: true, attributeFilter: ['class'] });
+    const observer = new MutationObserver(sync);
+    [fileEl, resultEl, busyEl].forEach(el => { if (el) observer.observe(el, { attributes: true, attributeFilter: ['class', 'hidden'] }); });
+    ws.querySelectorAll('[data-ws-toggle]').forEach(button => {
+      button.addEventListener('click', () => {
+        const open = ws.dataset.settings !== 'open';
+        ws.dataset.settings = open ? 'open' : 'closed';
+        button.setAttribute('aria-expanded', String(open));
+      });
+    });
     sync();
   }
 
-  // Dropzone visual only. Never assign files (tool pages own drop/paste handlers).
-  // Double assignment was adding the same file twice.
-  function initDropzones() {
-    document.querySelectorAll('.dropzone').forEach(zone => {
-      if (zone.dataset.uiVisual) return;
-      zone.dataset.uiVisual = 'true';
-      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('is-dragover'); }, true);
-      zone.addEventListener('dragleave', () => zone.classList.remove('is-dragover'), true);
-      zone.addEventListener('drop', () => zone.classList.remove('is-dragover'), true);
-    });
-  }
-
-  // Toast helper
-  window.showToast = function (message, duration = 3000) {
-    let container = document.querySelector('.toast-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.className = 'toast-container';
-      document.body.appendChild(container);
-    }
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.setAttribute('role', 'status');
-    toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), duration);
-  };
-
-  // Language switcher
-  function initLang() {
-    document.querySelectorAll('[data-lang-switch]').forEach(el => {
-      el.addEventListener('click', e => {
-        // Already linked; just ensure it works
-      });
-    });
-  }
-
-  // Init all
-
-  function initCurrentNav() {
-    const here = location.pathname.replace(/\/index\.html$/, '/');
-    const norm = here.length > 1 ? here.replace(/\/$/, '') : here;
-    document.querySelectorAll('a.nav-link[href], .tools-menu a[href], .footer-link[href]').forEach(a => {
-      const href = a.getAttribute('href');
-      if (!href || href.charAt(0) === '#') return;
-      let path;
-      try { path = new URL(href, location.href).pathname; } catch (e) { return; }
-      path = path.replace(/\/index\.html$/, '/');
-      if (path.length > 1) path = path.replace(/\/$/, '');
-      if (path === norm) a.setAttribute('aria-current', 'page');
-    });
-  }
-
   function init() {
-    initToolsMenu();
-    initCurrentNav();
-    initAccordions();
-    initCustomSelects(document);
-    initRanges(document);
-    initDropzones();
-    initSteps();
-    initLang();
-    const watch = new MutationObserver(mutations => {
-      mutations.forEach(m => {
-        m.addedNodes.forEach(node => {
-          if (node.nodeType !== 1) return;
-          if (node.matches && node.matches('select')) enhanceSelect(node);
-          if (node.querySelectorAll) initCustomSelects(node);
-          if (node.matches && node.matches('input[type="range"]')) initRanges(node.parentElement || document);
-          else if (node.querySelectorAll) initRanges(node);
-        });
-      });
-    });
-    watch.observe(document.body, { childList: true, subtree: true });
+    enhance(doc);
+    doc.querySelectorAll('.ws').forEach(initWorkspace);
+    new MutationObserver(mutations => {
+      mutations.forEach(m => m.addedNodes.forEach(node => {
+        if (node.nodeType !== 1) return;
+        if (node.matches && node.matches('select')) enhanceSelect(node);
+        if (node.matches && node.matches('input[type="range"]')) enhanceRange(node);
+        if (node.querySelectorAll) enhance(node);
+      }));
+    }).observe(doc.body, { childList: true, subtree: true });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-
-  // Expose for tests
-  // Merge: site.js owns notify(); replacing the object removed it on pages where site.js loads first.
-  window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, { init, showToast });
+  if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', init); else init();
+  window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, { init, enhance });
 })();

@@ -162,7 +162,7 @@
 
     items.forEach((item, index) => {
       const card = doc.createElement('div');
-      card.className = 'app-card page-row';
+      card.className = 'page-row';
 
       card.innerHTML = `
         <span class="page-row__num">#${index + 1}</span>
@@ -172,13 +172,13 @@
           <span class="page-row__meta">${item.width} × ${item.height} px · ${(item.file.size / 1024).toFixed(1)} KB</span>
         </div>
         <div class="page-row__actions">
-          <button type="button" class="btn btn-secondary btn-sm btn-move-up" data-idx="${index}" title="Move up" aria-label="Move ${escapeHTML(item.name)} up" ${index === 0 ? 'disabled' : ''}>
+          <button type="button" class="btn btn-sm btn-icon btn-move-up" data-idx="${index}" title="Move up" aria-label="Move ${escapeHTML(item.name)} up" ${index === 0 ? 'disabled' : ''}>
             <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
           </button>
-          <button type="button" class="btn btn-secondary btn-sm btn-move-down" data-idx="${index}" title="Move down" aria-label="Move ${escapeHTML(item.name)} down" ${index === items.length - 1 ? 'disabled' : ''}>
+          <button type="button" class="btn btn-sm btn-icon btn-move-down" data-idx="${index}" title="Move down" aria-label="Move ${escapeHTML(item.name)} down" ${index === items.length - 1 ? 'disabled' : ''}>
             <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
           </button>
-          <button type="button" class="btn btn-outline-danger btn-sm btn-del" data-idx="${index}" title="Remove" aria-label="Remove ${escapeHTML(item.name)}">
+          <button type="button" class="btn btn-sm btn-icon btn-danger-ghost btn-del" data-idx="${index}" title="Remove" aria-label="Remove ${escapeHTML(item.name)}">
             <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
           </button>
         </div>
@@ -236,7 +236,7 @@
     if (isConverting || !items.length) return;
     isConverting = true;
     btnConvert.disabled = true;
-    btnConvert.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Generating PDF...';
+    btnConvert.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Generating PDF…';
 
     try {
       const pageSize = pageSizeSelect ? pageSizeSelect.value : 'a4';

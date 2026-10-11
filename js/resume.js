@@ -11,6 +11,9 @@
   const SCHEMA = typeof ApplyReadySchema !== 'undefined' ? ApplyReadySchema
     : (typeof require === 'function' ? require('./resume-schema.js') : null);
   const notify = (message, error = false) => { if (window.ApplyReadyUI) window.ApplyReadyUI.notify(message, error); };
+  // Confirmation uses the interface dialog; window.confirm remains only as a fallback.
+  const askConfirm = options => (window.ApplyReadyUI && window.ApplyReadyUI.confirm
+    ? window.ApplyReadyUI.confirm(options) : Promise.resolve(window.confirm(options.message)));
 
   // Template catalogue, visual rules and labels shared with the export engines.
   const TPL = typeof ApplyReadyTemplates !== 'undefined' ? ApplyReadyTemplates
@@ -421,7 +424,8 @@
     const tabs = [
       { btn: getEl('tabContent'), pane: getEl('viewContent') },
       { btn: getEl('tabDesign'), pane: getEl('viewDesign') },
-      { btn: getEl('tabReview'), pane: getEl('viewReview') }
+      { btn: getEl('tabReview'), pane: getEl('viewReview') },
+      { btn: getEl('tabDownload'), pane: getEl('viewDownload') }
     ];
 
     tabs.forEach(({ btn, pane }) => {
@@ -441,6 +445,18 @@
         if (btn.id === 'tabReview') {
           runResumeReview();
         }
+        // A new step starts at its top, below the sticky header.
+        const panel = getEl('formPanel');
+        if (panel && panel.getBoundingClientRect().top < 0) {
+          panel.scrollIntoView({ block: 'start', behavior: 'auto' });
+        }
+      });
+    });
+    // "Next" and "Back" buttons inside each step move along the same path.
+    document.querySelectorAll('[data-goto-tab]').forEach(button => {
+      button.addEventListener('click', () => {
+        const target = getEl(button.dataset.gotoTab);
+        if (target) { target.click(); target.focus({ preventScroll: true }); }
       });
     });
   }
@@ -779,7 +795,7 @@
     modal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     getEl('mainContent').inert = true;
-    document.querySelector('.navbar').inert = true;
+    document.querySelector('.site-header').inert = true;
     document.querySelector('.site-footer').inert = true;
     scaleTemplateModal();
 
@@ -798,7 +814,7 @@
       wrapper = document.createElement('div'); wrapper.id = 'tmplModalPreviewWrapper';
       sheet.parentElement.insertBefore(wrapper, sheet); wrapper.appendChild(sheet);
     }
-    const available = modal.querySelector('.template-preview-modal-body').clientWidth - 40;
+    const available = modal.querySelector('.template-preview-modal-body').clientWidth - 48;
     const scale = Math.min(1, Math.max(.05, available / sheet.offsetWidth));
     wrapper.style.width = `${sheet.offsetWidth * scale}px`;
     wrapper.style.height = `${sheet.offsetHeight * scale}px`;
@@ -814,7 +830,7 @@
     modal.classList.add('hidden');
     document.body.style.overflow = '';
     getEl('mainContent').inert = false;
-    document.querySelector('.navbar').inert = false;
+    document.querySelector('.site-header').inert = false;
     document.querySelector('.site-footer').inert = false;
 
     if (modalTriggerElement && typeof modalTriggerElement.focus === 'function') {
@@ -915,7 +931,7 @@
       if (!count) return;
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'btn btn-secondary btn-sm';
+      btn.className = 'chip';
       btn.textContent = `${group.name} (${count})`;
       btn.setAttribute('aria-pressed', String(group.id === activeTemplateGroup));
       btn.addEventListener('click', () => {
@@ -943,28 +959,26 @@
     templateKeys.forEach(key => {
       const tmpl = TEMPLATES[key];
       const card = document.createElement('div');
-      card.className = `template-card ${resumeData.template === key ? 'active' : ''}`;
+      const selected = resumeData.template === key;
+      card.className = `template-card ${selected ? 'active' : ''}`;
       card.dataset.templateId = key;
 
-      const svgThumb = tmpl.svgThumbnail || `<div style="padding: 1rem; color: #94A3B8;">${tmpl.name}</div>`;
+      const svgThumb = tmpl.svgThumbnail || `<div class="template-thumb-fallback">${escapeHTML(tmpl.name)}</div>`;
 
+      // The whole face is the select button; Preview is a small separate control.
       card.innerHTML = `
-        <div class="template-thumb-wrap">
-          ${svgThumb}
-        </div>
-        <div class="template-meta-row">
-          <strong class="template-card-title">${escapeHTML(tmpl.name)}</strong>
-          <span class="template-badge">${escapeHTML(tmpl.badge || 'ATS')}</span>
-        </div>
-        <p class="template-card-desc">${escapeHTML(tmpl.description)}</p>
-        <div class="template-card-actions">
-          <button type="button" class="btn btn-secondary btn-sm btn-preview-template" data-template="${key}" title="Full preview of ${escapeHTML(tmpl.name)}" aria-label="Full preview of ${escapeHTML(tmpl.name)}">
-            <i aria-hidden="true" class="fa-regular fa-eye"></i> Preview
-          </button>
-          <button type="button" class="btn ${resumeData.template === key ? 'btn-primary' : 'btn-outline-primary'} btn-sm btn-select-template" data-template="${key}" aria-label="Use ${escapeHTML(tmpl.name)} template" aria-pressed="${resumeData.template === key}">
-            ${resumeData.template === key ? '<i aria-hidden="true" class="fa-solid fa-check"></i> Active' : 'Use'}
-          </button>
-        </div>
+        <button type="button" class="template-select btn-select-template" data-template="${key}" aria-pressed="${selected}" aria-label="Use ${escapeHTML(tmpl.name)} template">
+          <span class="template-thumb-wrap">${svgThumb}</span>
+          <span class="template-meta-row">
+            <strong class="template-card-title">${escapeHTML(tmpl.name)}</strong>
+            <span class="template-badge">${escapeHTML(tmpl.badge || 'ATS')}</span>
+          </span>
+          <span class="template-card-desc">${escapeHTML(tmpl.description)}</span>
+          <span class="template-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
+        </button>
+        <button type="button" class="btn btn-sm btn-icon btn-preview-template" data-template="${key}" title="Preview ${escapeHTML(tmpl.name)}" aria-label="Full preview of ${escapeHTML(tmpl.name)}">
+          <i aria-hidden="true" class="fa-regular fa-eye"></i>
+        </button>
       `;
 
       const btnPreview = card.querySelector('.btn-preview-template');
@@ -1037,11 +1051,7 @@
       const isCurrent = c.dataset.templateId === templateId;
       c.classList.toggle('active', isCurrent);
       const btn = c.querySelector('.btn-select-template');
-      if (btn) {
-        btn.className = `btn ${isCurrent ? 'btn-primary' : 'btn-outline-primary'} btn-sm btn-select-template`;
-        btn.setAttribute('aria-pressed', String(isCurrent));
-        btn.innerHTML = isCurrent ? '<i aria-hidden="true" class="fa-solid fa-check"></i> Active' : 'Use';
-      }
+      if (btn) btn.setAttribute('aria-pressed', String(isCurrent));
     });
 
     updateDesignControlsFromState();
@@ -1085,7 +1095,7 @@
     ['certifications', 'achievements', 'volunteering', 'languages'].forEach(key => {
       const text = TPL.getSectionLabel(resumeData.template, key);
       const header = document.querySelector(`#sec-${key} .accordion-header > span`);
-      if (header && header.lastChild && header.lastChild.nodeType === 3) header.lastChild.textContent = ' ' + text;
+      if (header && header.lastChild && header.lastChild.nodeType === 3) header.lastChild.textContent = text;
       const option = document.querySelector(`#optionalSectionSelect option[value="${key}"]`);
       if (option) option.textContent = text;
     });
@@ -1115,393 +1125,230 @@
     renderOptionalSections();
   }
 
+  // ---- Entry objects: one bordered, titled unit per job, school, project and so on ----
+  function entryTitle(kind, item, index) {
+    const join = (a, b) => (a && b ? `${a}, ${b}` : a || b);
+    const t = value => (typeof value === 'string' ? value.trim() : '');
+    switch (kind) {
+      case 'exp': return join(t(item.role), t(item.company)) || `Role ${index + 1}`;
+      case 'edu': return join(t(item.degree), t(item.institution)) || `Education ${index + 1}`;
+      case 'proj': return t(item.name) || `Project ${index + 1}`;
+      default: return '';
+    }
+  }
+
+  const iconButton = (action, extra, label, icon, extraClass = '') =>
+    `<button type="button" class="btn btn-sm btn-icon btn-ghost ${extraClass}" data-action="${action}" ${extra} title="${label}" aria-label="${label}"${/disabled/.test(extra) ? ' disabled' : ''}><i aria-hidden="true" class="${icon}"></i></button>`;
+
+  // Reorder, duplicate and delete share one quiet style; delete sits apart and only turns red when aimed at.
+  function entryActions(kind, id, index, count, noun) {
+    const attr = `data-id="${id}"`;
+    return `<div class="dynamic-item-actions entry__actions">
+            ${iconButton('move-up-' + kind, `${attr}${index === 0 ? ' disabled' : ''}`, `Move ${noun} ${index + 1} up`, 'fa-solid fa-arrow-up')}
+            ${iconButton('move-down-' + kind, `${attr}${index === count - 1 ? ' disabled' : ''}`, `Move ${noun} ${index + 1} down`, 'fa-solid fa-arrow-down')}
+            ${iconButton('duplicate-' + kind, attr, `Duplicate ${noun} ${index + 1}`, 'fa-regular fa-copy')}
+            <span class="entry__sep" aria-hidden="true"></span>
+            ${iconButton('remove-' + kind, attr, `Delete ${noun} ${index + 1}`, 'fa-regular fa-trash-can', 'btn-danger-ghost')}
+          </div>`;
+  }
+
+  const fieldHTML = (id, label, cls, value, placeholder, optional) => `<div class="field">
+            <label class="field-label" for="${id}">${label}${optional ? ' <span class="optional">(optional)</span>' : ''}</label>
+            <input type="text" id="${id}" class="input ${cls}" placeholder="${placeholder}" value="${escapeHTML(value)}">
+          </div>`;
+
+  function entryFrame(kind, item, index, count, noun, body) {
+    return `<div class="entry__head dynamic-item-header">
+          <span class="entry__num" aria-hidden="true">${index + 1}</span>
+          <strong class="entry__title">${escapeHTML(entryTitle(kind, item, index))}</strong>
+          ${entryActions(kind, item.id, index, count, noun)}
+        </div>
+        <div class="entry__body">${body}</div>`;
+  }
+
+  function mountEntries(list, kind, items, noun, bodyFor) {
+    list.innerHTML = '';
+    items.forEach((item, index) => {
+      const el = document.createElement('div');
+      el.className = 'dynamic-item entry';
+      el.dataset.id = item.id;
+      el.setAttribute('role', 'group');
+      el.setAttribute('aria-label', `${noun[0].toUpperCase()}${noun.slice(1)} ${index + 1}`);
+      el.innerHTML = entryFrame(kind, item, index, items.length, noun, bodyFor(item));
+      list.appendChild(el);
+    });
+  }
+
+  // Keep the heading of an entry in step with what is typed in it.
+  function refreshEntryTitle(parent, kind, item) {
+    const title = parent && parent.querySelector('.entry__title');
+    if (!title) return;
+    const index = Array.from(parent.parentElement.children).indexOf(parent);
+    title.textContent = entryTitle(kind, item, index);
+  }
+
+  // A freshly added entry takes focus so typing can start at once.
+  function focusNewEntry(listId) {
+    setTimeout(() => {
+      const list = getEl(listId);
+      const last = list && list.lastElementChild;
+      const field = last && last.querySelector('input, textarea');
+      if (!field) return;
+      field.focus({ preventScroll: true });
+      const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      field.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+    }, 0);
+  }
+
   function renderExperienceList() {
     const list = getEl('experienceList');
     if (!list) return;
-    list.innerHTML = '';
-
-    (resumeData.experience || []).forEach((exp, index) => {
-      const el = document.createElement('div');
-      el.className = 'dynamic-item';
-      el.dataset.id = exp.id;
-      el.innerHTML = `
-        <div class="dynamic-item-header">
-          <strong>#${index + 1} Role / Company</strong>
-          <div class="dynamic-item-actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-exp" data-id="${exp.id}" title="Move Up" aria-label="Move entry ${index + 1} up" ${index === 0 ? 'disabled' : ''}>
-              <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-exp" data-id="${exp.id}" title="Move Down" aria-label="Move entry ${index + 1} down" ${index === resumeData.experience.length - 1 ? 'disabled' : ''}>
-              <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="duplicate-exp" data-id="${exp.id}" title="Duplicate Entry" aria-label="Duplicate entry ${index + 1}">
-              <i aria-hidden="true" class="fa-regular fa-copy"></i>
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-exp" data-id="${exp.id}" title="Delete Entry" aria-label="Delete Entry">
-              <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-            </button>
+    mountEntries(list, 'exp', resumeData.experience || [], 'role', exp => `
+          <div class="field-row">
+            ${fieldHTML('exp-role-' + exp.id, 'Job title', 'item-role', exp.role, 'e.g. Operations Coordinator')}
+            ${fieldHTML('exp-comp-' + exp.id, 'Company or organization', 'item-company', exp.company, 'e.g. Acme Corp')}
           </div>
-        </div>
-        <div class="form-row-2">
-          <div>
-            <label class="form-label text-sm" for="exp-role-${exp.id}">Job Title / Role</label>
-            <input type="text" id="exp-role-${exp.id}" class="form-control item-role" placeholder="e.g. Operations Coordinator" value="${escapeHTML(exp.role)}">
+          <div class="field-row">
+            ${fieldHTML('exp-dur-' + exp.id, 'Dates', 'item-duration', exp.duration, 'e.g. Jan 2022 - Present')}
+            ${fieldHTML('exp-loc-' + exp.id, 'Location', 'item-location', exp.location, 'e.g. Chicago, IL', true)}
           </div>
-          <div>
-            <label class="form-label text-sm" for="exp-comp-${exp.id}">Company / Organization</label>
-            <input type="text" id="exp-comp-${exp.id}" class="form-control item-company" placeholder="e.g. Acme Corp" value="${escapeHTML(exp.company)}">
-          </div>
-        </div>
-        <div class="form-row-2">
-          <div>
-            <label class="form-label text-sm" for="exp-dur-${exp.id}">Duration / Dates</label>
-            <input type="text" id="exp-dur-${exp.id}" class="form-control item-duration" placeholder="e.g. Jan 2022 - Present" value="${escapeHTML(exp.duration)}">
-          </div>
-          <div>
-            <label class="form-label text-sm" for="exp-loc-${exp.id}">Location</label>
-            <input type="text" id="exp-loc-${exp.id}" class="form-control item-location" placeholder="e.g. Chicago, IL" value="${escapeHTML(exp.location)}">
-          </div>
-        </div>
-        <div>
-          <label class="form-label text-sm" for="exp-bul-${exp.id}">Key Responsibilities & Measurable Impact (One bullet per line)</label>
-          <textarea id="exp-bul-${exp.id}" class="form-control item-bullets" rows="3" placeholder="Enter achievements (one bullet per line)...">${escapeHTML(exp.bulletsText)}</textarea>
-        </div>
-      `;
-      list.appendChild(el);
-    });
+          <div class="field">
+            <label class="field-label" for="exp-bul-${exp.id}">Responsibilities and results</label>
+            <textarea id="exp-bul-${exp.id}" class="textarea item-bullets" rows="4" placeholder="One bullet per line, for example: Cut report turnaround by 25% by automating weekly data pulls">${escapeHTML(exp.bulletsText)}</textarea>
+            <p class="field-hint">One bullet per line. Start with an action verb and add a number where you can.</p>
+          </div>`);
   }
 
   function renderEducationList() {
     const list = getEl('educationList');
     if (!list) return;
-    list.innerHTML = '';
-
-    (resumeData.education || []).forEach((edu, index) => {
-      const el = document.createElement('div');
-      el.className = 'dynamic-item';
-      el.dataset.id = edu.id;
-      el.innerHTML = `
-        <div class="dynamic-item-header">
-          <strong>#${index + 1} Degree / School</strong>
-          <div class="dynamic-item-actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-edu" data-id="${edu.id}" title="Move Up" aria-label="Move entry ${index + 1} up" ${index === 0 ? 'disabled' : ''}>
-              <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-edu" data-id="${edu.id}" title="Move Down" aria-label="Move entry ${index + 1} down" ${index === resumeData.education.length - 1 ? 'disabled' : ''}>
-              <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="duplicate-edu" data-id="${edu.id}" title="Duplicate Entry" aria-label="Duplicate entry ${index + 1}">
-              <i aria-hidden="true" class="fa-regular fa-copy"></i>
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-edu" data-id="${edu.id}" title="Delete Entry" aria-label="Delete Entry">
-              <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-            </button>
+    mountEntries(list, 'edu', resumeData.education || [], 'education entry', edu => `
+          <div class="field-row">
+            ${fieldHTML('edu-deg-' + edu.id, 'Degree or field of study', 'item-degree', edu.degree, 'e.g. B.S. in Management')}
+            ${fieldHTML('edu-inst-' + edu.id, 'School or university', 'item-institution', edu.institution, 'e.g. University Name')}
           </div>
-        </div>
-        <div class="form-row-2">
-          <div>
-            <label class="form-label text-sm" for="edu-deg-${edu.id}">Degree / Field of Study</label>
-            <input type="text" id="edu-deg-${edu.id}" class="form-control item-degree" placeholder="e.g. B.S. in Management" value="${escapeHTML(edu.degree)}">
-          </div>
-          <div>
-            <label class="form-label text-sm" for="edu-inst-${edu.id}">Institution / School</label>
-            <input type="text" id="edu-inst-${edu.id}" class="form-control item-institution" placeholder="e.g. University Name" value="${escapeHTML(edu.institution)}">
-          </div>
-        </div>
-        <div class="form-row-3">
-          <div>
-            <label class="form-label text-sm" for="edu-dur-${edu.id}">Dates / Years</label>
-            <input type="text" id="edu-dur-${edu.id}" class="form-control item-duration" placeholder="e.g. 2018 - 2022" value="${escapeHTML(edu.duration)}">
-          </div>
-          <div>
-            <label class="form-label text-sm" for="edu-loc-${edu.id}">Location</label>
-            <input type="text" id="edu-loc-${edu.id}" class="form-control item-location" placeholder="e.g. Chicago, IL" value="${escapeHTML(edu.location)}">
-          </div>
-          <div>
-            <label class="form-label text-sm" for="edu-score-${edu.id}">GPA / Honors (Optional)</label>
-            <input type="text" id="edu-score-${edu.id}" class="form-control item-score" placeholder="e.g. GPA: 3.8 / 4.0" value="${escapeHTML(edu.score)}">
-          </div>
-        </div>
-      `;
-      list.appendChild(el);
-    });
+          <div class="field-row field-row--3">
+            ${fieldHTML('edu-dur-' + edu.id, 'Years', 'item-duration', edu.duration, 'e.g. 2018 - 2022')}
+            ${fieldHTML('edu-loc-' + edu.id, 'Location', 'item-location', edu.location, 'e.g. Chicago, IL', true)}
+            ${fieldHTML('edu-score-' + edu.id, 'GPA or honors', 'item-score', edu.score, 'e.g. GPA 3.8 / 4.0', true)}
+          </div>`);
   }
 
   function renderProjectsList() {
     const list = getEl('projectsList');
     if (!list) return;
-    list.innerHTML = '';
-
-    (resumeData.projects || []).forEach((proj, index) => {
-      const el = document.createElement('div');
-      el.className = 'dynamic-item';
-      el.dataset.id = proj.id;
-      el.innerHTML = `
-        <div class="dynamic-item-header">
-          <strong>#${index + 1} Project</strong>
-          <div class="dynamic-item-actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-up-proj" data-id="${proj.id}" title="Move Up" aria-label="Move entry ${index + 1} up" ${index === 0 ? 'disabled' : ''}>
-              <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="move-down-proj" data-id="${proj.id}" title="Move Down" aria-label="Move entry ${index + 1} down" ${index === resumeData.projects.length - 1 ? 'disabled' : ''}>
-              <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="duplicate-proj" data-id="${proj.id}" title="Duplicate Entry" aria-label="Duplicate entry ${index + 1}">
-              <i aria-hidden="true" class="fa-regular fa-copy"></i>
-            </button>
-            <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-proj" data-id="${proj.id}" title="Delete Entry" aria-label="Delete Entry">
-              <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-            </button>
+    mountEntries(list, 'proj', resumeData.projects || [], 'project', proj => `
+          <div class="field-row">
+            ${fieldHTML('proj-name-' + proj.id, 'Project name', 'item-name', proj.name, 'e.g. Enterprise Automation')}
+            ${fieldHTML('proj-tech-' + proj.id, 'Tools and methods', 'item-tech', proj.tech, 'e.g. Jira, Tableau, SAP', true)}
           </div>
-        </div>
-        <div class="form-row-2">
-          <div>
-            <label class="form-label text-sm" for="proj-name-${proj.id}">Project Name</label>
-            <input type="text" id="proj-name-${proj.id}" class="form-control item-name" placeholder="e.g. Enterprise Automation" value="${escapeHTML(proj.name)}">
-          </div>
-          <div>
-            <label class="form-label text-sm" for="proj-tech-${proj.id}">Tools & Methodologies</label>
-            <input type="text" id="proj-tech-${proj.id}" class="form-control item-tech" placeholder="e.g. Jira, Tableau, SAP" value="${escapeHTML(proj.tech)}">
-          </div>
-        </div>
-        <div style="margin-bottom: 0.5rem;">
-          <label class="form-label text-sm" for="proj-link-${proj.id}">Link / Case Study URL (Optional)</label>
-          <input type="text" id="proj-link-${proj.id}" class="form-control item-link" placeholder="e.g. portfolio.com/case-study" value="${escapeHTML(proj.link)}">
-        </div>
-        <div>
-          <label class="form-label text-sm" for="proj-bul-${proj.id}">Key Contributions & Outcomes (One bullet per line)</label>
-          <textarea id="proj-bul-${proj.id}" class="form-control item-bullets" rows="2" placeholder="Key outcomes or impact metrics...">${escapeHTML(proj.bulletsText)}</textarea>
-        </div>
-      `;
-      list.appendChild(el);
-    });
+          ${fieldHTML('proj-link-' + proj.id, 'Link or case study', 'item-link', proj.link, 'e.g. portfolio.com/case-study', true)}
+          <div class="field">
+            <label class="field-label" for="proj-bul-${proj.id}">What you did and what changed</label>
+            <textarea id="proj-bul-${proj.id}" class="textarea item-bullets" rows="3" placeholder="One bullet per line">${escapeHTML(proj.bulletsText)}</textarea>
+            <p class="field-hint">One bullet per line.</p>
+          </div>`);
   }
 
+  // Optional sections keep their index based data; each item is still one titled, deletable unit.
   function labelOptionalFields() {
-    const labels = { 'item-cert-name': 'Certification name', 'item-cert-issuer': 'Issuing body', 'item-cert-year': 'Certification year', 'item-ach-text': 'Achievement', 'item-vol-role': 'Volunteer role', 'item-vol-org': 'Volunteer organization', 'item-vol-dur': 'Volunteer dates', 'item-lang-name': 'Language', 'item-lang-prof': 'Language proficiency', 'item-pub-text': 'Publication citation', 'item-teach-role': 'Teaching role or course', 'item-teach-inst': 'Teaching institution', 'item-teach-term': 'Teaching term', 'item-pres-title': 'Presentation title', 'item-pres-event': 'Presentation event', 'item-grant-title': 'Grant title', 'item-grant-funder': 'Grant funding body', 'item-grant-year': 'Grant year' };
-    document.querySelectorAll('#optionalSectionsArea .form-control').forEach(input => {
-      const key = Object.keys(labels).find(key => input.classList.contains(key));
-      if (key) {
-        input.id = `${key}-${input.dataset.index}`;
-        input.setAttribute('aria-label', labels[key]);
-        const label = input.parentElement.querySelector('label');
-        if (label) label.htmlFor = input.id;
-      }
-    });
     document.querySelectorAll('#optionalSectionsArea button[data-action]').forEach(button => {
-      button.setAttribute('aria-label', `Remove ${button.dataset.action.replace('remove-', '')} entry ${Number(button.dataset.index) + 1}`);
+      button.setAttribute('aria-label', `Delete ${button.dataset.action.replace('remove-', '')} entry ${Number(button.dataset.index) + 1}`);
     });
   }
+
+  function optionalItem(title, action, idx, body, extraClass) {
+    const el = document.createElement('div');
+    el.className = `dynamic-item entry entry--compact${extraClass ? ' ' + extraClass : ''}`;
+    const nouns = { 'remove-cert': 'Certification', 'remove-ach': 'Achievement', 'remove-vol': 'Leadership entry', 'remove-lang': 'Language', 'remove-pub': 'Publication', 'remove-teach': 'Teaching entry', 'remove-pres': 'Presentation', 'remove-grant': 'Grant' };
+    el.innerHTML = `<div class="entry__head dynamic-item-header">
+          <span class="entry__num" aria-hidden="true">${idx + 1}</span>
+          <strong class="entry__title" data-fallback="${nouns[action] || 'Entry'} ${idx + 1}">${escapeHTML(title)}</strong>
+          <div class="dynamic-item-actions entry__actions">
+            <button type="button" class="btn btn-sm btn-icon btn-danger-ghost" data-action="${action}" data-index="${idx}" title="Delete entry ${idx + 1}" aria-label="Delete entry ${idx + 1}"><i aria-hidden="true" class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+        <div class="entry__body">${body}</div>`;
+    return el;
+  }
+  const optField = (prefix, idx, label, cls, value, placeholder) => `<div class="field">
+            <label class="field-label" for="${prefix}-${idx}">${label}</label>
+            <input type="text" id="${prefix}-${idx}" class="input ${cls}" placeholder="${placeholder}" value="${escapeHTML(value)}" data-index="${idx}">
+          </div>`;
 
   function renderOptionalSections() {
     const vis = resumeData.sectionVisibility || {};
+    const fill = (listId, items, build) => {
+      const list = getEl(listId);
+      if (!list) return;
+      list.innerHTML = '';
+      items.forEach((item, idx) => list.appendChild(build(item, idx)));
+    };
+    const show = (id, on) => { const sec = getEl(id); if (sec) sec.style.display = on ? 'block' : 'none'; return !!sec; };
 
-    // Certifications
-    const secCert = getEl('sec-certifications');
-    if (secCert) {
-      secCert.style.display = vis.certifications ? 'block' : 'none';
-      const list = getEl('certificationsList');
-      if (list) {
-        list.innerHTML = '';
-        (resumeData.certifications || []).forEach((c, idx) => {
-          const item = document.createElement('div');
-          item.className = 'dynamic-item';
-          item.innerHTML = `
-            <div class="dynamic-item-header">
-              <strong>Certification #${idx + 1}</strong>
-              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-cert" data-index="${idx}">
-                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-              </button>
-            </div>
-            <div class="form-row-3">
-              <div style="flex: 2;">
-                <label class="form-label text-sm">Certification Name</label>
-                <input type="text" class="form-control item-cert-name" value="${escapeHTML(c.name || c.title)}" data-index="${idx}">
-              </div>
-              <div style="flex: 2;">
-                <label class="form-label text-sm">Issuing Body</label>
-                <input type="text" class="form-control item-cert-issuer" value="${escapeHTML(c.issuer)}" data-index="${idx}">
-              </div>
-              <div style="flex: 1;">
-                <label class="form-label text-sm">Year</label>
-                <input type="text" class="form-control item-cert-year" value="${escapeHTML(c.year || c.date)}" data-index="${idx}">
-              </div>
-            </div>
-          `;
-          list.appendChild(item);
-        });
-      }
+    if (show('sec-certifications', vis.certifications)) {
+      fill('certificationsList', resumeData.certifications || [], (c, idx) => optionalItem(c.name || c.title || `Certification ${idx + 1}`, 'remove-cert', idx, `
+          <div class="field-row">
+            ${optField('cert-name', idx, 'Certification name', 'item-cert-name', c.name || c.title, 'e.g. PMP')}
+            ${optField('cert-year', idx, 'Year', 'item-cert-year', c.year || c.date, 'e.g. 2024')}
+          </div>
+          ${optField('cert-issuer', idx, 'Issuing body', 'item-cert-issuer', c.issuer, 'e.g. Project Management Institute')}`));
     }
-
-    // Achievements
-    const secAch = getEl('sec-achievements');
-    if (secAch) {
-      secAch.style.display = vis.achievements ? 'block' : 'none';
-      const list = getEl('achievementsList');
-      if (list) {
-        list.innerHTML = '';
-        (resumeData.achievements || []).forEach((ach, idx) => {
-          const text = typeof ach === 'string' ? ach : (ach.title || ach.text || '');
-          const item = document.createElement('div');
-          item.className = 'dynamic-item';
-          item.innerHTML = `
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <input type="text" class="form-control item-ach-text" value="${escapeHTML(text)}" data-index="${idx}" placeholder="e.g. Recipient of 2023 Leadership Award" style="flex: 1;">
-              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-ach" data-index="${idx}">
-                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-              </button>
-            </div>
-          `;
-          list.appendChild(item);
-        });
-      }
+    if (show('sec-achievements', vis.achievements)) {
+      fill('achievementsList', resumeData.achievements || [], (ach, idx) => {
+        const text = typeof ach === 'string' ? ach : (ach.title || ach.text || '');
+        return optionalItem(text || `Achievement ${idx + 1}`, 'remove-ach', idx, optField('ach-text', idx, 'Achievement', 'item-ach-text', text, 'e.g. Recipient of the 2023 Leadership Award'));
+      });
     }
-
-    // Volunteering
-    const secVol = getEl('sec-volunteering');
-    if (secVol) {
-      secVol.style.display = vis.volunteering ? 'block' : 'none';
-      const list = getEl('volunteeringList');
-      if (list) {
-        list.innerHTML = '';
-        (resumeData.volunteering || []).forEach((v, idx) => {
-          const item = document.createElement('div');
-          item.className = 'dynamic-item';
-          item.innerHTML = `
-            <div class="dynamic-item-header">
-              <strong>Role / Organization</strong>
-              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-vol" data-index="${idx}">
-                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-              </button>
-            </div>
-            <div class="form-row-3">
-              <input type="text" class="form-control item-vol-role" placeholder="Role (e.g. Volunteer Mentor)" value="${escapeHTML(v.role)}" data-index="${idx}">
-              <input type="text" class="form-control item-vol-org" placeholder="Organization" value="${escapeHTML(v.organization || v.org)}" data-index="${idx}">
-              <input type="text" class="form-control item-vol-dur" placeholder="Duration (e.g. 2021 - 2023)" value="${escapeHTML(v.duration)}" data-index="${idx}">
-            </div>
-          `;
-          list.appendChild(item);
-        });
-      }
+    if (show('sec-volunteering', vis.volunteering)) {
+      fill('volunteeringList', resumeData.volunteering || [], (v, idx) => optionalItem(v.role || `Leadership entry ${idx + 1}`, 'remove-vol', idx, `
+          <div class="field-row">
+            ${optField('vol-role', idx, 'Role', 'item-vol-role', v.role, 'e.g. Volunteer mentor')}
+            ${optField('vol-org', idx, 'Organization', 'item-vol-org', v.organization || v.org, 'e.g. Community Group')}
+          </div>
+          ${optField('vol-dur', idx, 'Dates', 'item-vol-dur', v.duration, 'e.g. 2021 - 2023')}`));
     }
-
-    // Languages
-    const secLang = getEl('sec-languages');
-    if (secLang) {
-      secLang.style.display = vis.languages ? 'block' : 'none';
-      const list = getEl('languagesList');
-      if (list) {
-        list.innerHTML = '';
-        (resumeData.languages || []).forEach((l, idx) => {
-          const name = typeof l === 'string' ? l : (l.name || '');
-          const prof = typeof l === 'string' ? '' : (l.proficiency || '');
-          const item = document.createElement('div');
-          item.className = 'dynamic-item';
-          item.innerHTML = `
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <input type="text" class="form-control item-lang-name" placeholder="Language (e.g. Spanish)" value="${escapeHTML(name)}" data-index="${idx}" style="flex: 2;">
-              <input type="text" class="form-control item-lang-prof" placeholder="Proficiency (e.g. Professional Working)" value="${escapeHTML(prof)}" data-index="${idx}" style="flex: 2;">
-              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-lang" data-index="${idx}">
-                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-              </button>
-            </div>
-          `;
-          list.appendChild(item);
-        });
-      }
+    if (show('sec-languages', vis.languages)) {
+      fill('languagesList', resumeData.languages || [], (l, idx) => {
+        const name = typeof l === 'string' ? l : (l.name || '');
+        const prof = typeof l === 'string' ? '' : (l.proficiency || '');
+        return optionalItem(name || `Language ${idx + 1}`, 'remove-lang', idx, `
+          <div class="field-row">
+            ${optField('lang-name', idx, 'Language', 'item-lang-name', name, 'e.g. Spanish')}
+            ${optField('lang-prof', idx, 'Proficiency', 'item-lang-prof', prof, 'e.g. Professional working')}
+          </div>`);
+      });
     }
-
-    // Academic CV
-    const secAcad = getEl('sec-academic');
-    if (secAcad) {
-      secAcad.style.display = vis.academic ? 'block' : 'none';
-      const pubsList = getEl('academicPubsList');
-      if (pubsList) {
-        pubsList.innerHTML = '';
-        const pubs = (resumeData.academic && resumeData.academic.publications) || [];
-        pubs.forEach((p, idx) => {
-          const item = document.createElement('div');
-          item.className = 'dynamic-item';
-          item.innerHTML = `
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <textarea class="form-control item-pub-text" data-index="${idx}" rows="2" placeholder="Full publication citation...">${escapeHTML(p.title || p.citation)}</textarea>
-              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-pub" data-index="${idx}">
-                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-              </button>
-            </div>
-          `;
-          pubsList.appendChild(item);
-        });
-      }
-
-      const teachList = getEl('academicTeachingList');
-      if (teachList) {
-        teachList.innerHTML = '';
-        const teach = (resumeData.academic && resumeData.academic.teaching) || [];
-        teach.forEach((t, idx) => {
-          const item = document.createElement('div');
-          item.className = 'dynamic-item';
-          item.innerHTML = `
-            <div class="dynamic-item-header">
-              <strong>Teaching Entry</strong>
-              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-teach" data-index="${idx}">
-                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-              </button>
-            </div>
-            <div class="form-row-3">
-              <input type="text" class="form-control item-teach-role" placeholder="Role / Course" value="${escapeHTML(t.role || t.course)}" data-index="${idx}">
-              <input type="text" class="form-control item-teach-inst" placeholder="Institution" value="${escapeHTML(t.institution)}" data-index="${idx}">
-              <input type="text" class="form-control item-teach-term" placeholder="Term / Year" value="${escapeHTML(t.term)}" data-index="${idx}">
-            </div>
-          `;
-          teachList.appendChild(item);
-        });
-      }
-
-      const presList = getEl('academicPresentationsList');
-      if (presList) {
-        presList.innerHTML = '';
-        ((resumeData.academic && resumeData.academic.presentations) || []).forEach((pr, idx) => {
-          const item = document.createElement('div');
-          item.className = 'dynamic-item';
-          item.innerHTML = `
-            <div class="dynamic-item-header">
-              <strong>Presentation</strong>
-              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-pres" data-index="${idx}">
-                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-              </button>
-            </div>
-            <div class="form-row-2">
-              <input type="text" class="form-control item-pres-title" placeholder="Talk or poster title" value="${escapeHTML(typeof pr === 'string' ? pr : pr.title)}" data-index="${idx}">
-              <input type="text" class="form-control item-pres-event" placeholder="Conference, place, year" value="${escapeHTML(typeof pr === 'string' ? '' : pr.event)}" data-index="${idx}">
-            </div>
-          `;
-          presList.appendChild(item);
-        });
-      }
-
-      const grantList = getEl('academicGrantsList');
-      if (grantList) {
-        grantList.innerHTML = '';
-        ((resumeData.academic && resumeData.academic.grants) || []).forEach((g, idx) => {
-          const item = document.createElement('div');
-          item.className = 'dynamic-item';
-          item.innerHTML = `
-            <div class="dynamic-item-header">
-              <strong>Grant</strong>
-              <button type="button" class="btn btn-outline-danger btn-sm" data-action="remove-grant" data-index="${idx}">
-                <i aria-hidden="true" class="fa-regular fa-trash-can"></i>
-              </button>
-            </div>
-            <div class="form-row-3">
-              <input type="text" class="form-control item-grant-title" placeholder="Grant or award title" value="${escapeHTML(typeof g === 'string' ? g : (g.title || g.name))}" data-index="${idx}">
-              <input type="text" class="form-control item-grant-funder" placeholder="Funding body" value="${escapeHTML(typeof g === 'string' ? '' : g.funder)}" data-index="${idx}">
-              <input type="text" class="form-control item-grant-year" placeholder="Year" value="${escapeHTML(typeof g === 'string' ? '' : g.year)}" data-index="${idx}">
-            </div>
-          `;
-          grantList.appendChild(item);
-        });
-      }
+    if (show('sec-academic', vis.academic)) {
+      const academic = resumeData.academic || {};
+      fill('academicPubsList', academic.publications || [], (p, idx) => optionalItem(`Publication ${idx + 1}`, 'remove-pub', idx, `<div class="field">
+            <label class="field-label" for="pub-text-${idx}">Full citation</label>
+            <textarea id="pub-text-${idx}" class="textarea item-pub-text" data-index="${idx}" rows="3" placeholder="Authors, title, journal, year">${escapeHTML(p.title || p.citation)}</textarea>
+          </div>`));
+      fill('academicTeachingList', academic.teaching || [], (t, idx) => optionalItem(t.role || t.course || `Teaching entry ${idx + 1}`, 'remove-teach', idx, `
+          <div class="field-row">
+            ${optField('teach-role', idx, 'Role or course', 'item-teach-role', t.role || t.course, 'e.g. Teaching assistant, Statistics')}
+            ${optField('teach-inst', idx, 'Institution', 'item-teach-inst', t.institution, 'e.g. University Name')}
+          </div>
+          ${optField('teach-term', idx, 'Term or year', 'item-teach-term', t.term, 'e.g. Fall 2024')}`));
+      fill('academicPresentationsList', academic.presentations || [], (pr, idx) => {
+        const title = typeof pr === 'string' ? pr : pr.title;
+        return optionalItem(title || `Presentation ${idx + 1}`, 'remove-pres', idx, `
+          <div class="field-row">
+            ${optField('pres-title', idx, 'Talk or poster title', 'item-pres-title', title, 'Title')}
+            ${optField('pres-event', idx, 'Conference, place and year', 'item-pres-event', typeof pr === 'string' ? '' : pr.event, 'e.g. ACM CHI, Hamburg, 2024')}
+          </div>`);
+      });
+      fill('academicGrantsList', academic.grants || [], (g, idx) => {
+        const title = typeof g === 'string' ? g : (g.title || g.name);
+        const rest = typeof g === 'string' ? {} : g;
+        return optionalItem(title || `Grant ${idx + 1}`, 'remove-grant', idx, `
+          <div class="field-row">
+            ${optField('grant-title', idx, 'Grant or award title', 'item-grant-title', title, 'Title')}
+            ${optField('grant-funder', idx, 'Funding body', 'item-grant-funder', rest.funder, 'e.g. Research Council')}
+          </div>
+          ${optField('grant-year', idx, 'Year', 'item-grant-year', rest.year, 'e.g. 2024')}`);
+      });
     }
     labelOptionalFields();
   }
@@ -1592,21 +1439,19 @@
       const isVis = resumeData.sectionVisibility[key] !== false;
 
       const row = document.createElement('div');
-      row.className = 'section-order-row';
+      row.className = 'dynamic-item section-order-row';
       row.innerHTML = `
-        <div class="section-order-row__inner">
-          <label class="checkbox-label">
-            <input type="checkbox" class="chk-section-vis" data-key="${key}" ${isVis ? 'checked' : ''}>
-            <span>${escapeHTML(labels[key])}</span>
-          </label>
-          <div class="section-order-row__actions">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="order-up" data-index="${index}" title="Move Up" aria-label="Move ${escapeHTML(labels[key])} up" ${index === 0 ? 'disabled' : ''}>
-              <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
-            </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="order-down" data-index="${index}" title="Move Down" aria-label="Move ${escapeHTML(labels[key])} down" ${index === order.length - 1 ? 'disabled' : ''}>
-              <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
-            </button>
-          </div>
+        <span class="section-order-row__name">${escapeHTML(labels[key])}</span>
+        <label class="switch switch--inline" title="${isVis ? 'Shown' : 'Hidden'} on the resume">
+          <input type="checkbox" class="chk-section-vis" data-key="${key}" role="switch" aria-label="Show ${escapeHTML(labels[key])} on the resume" ${isVis ? 'checked' : ''}>
+        </label>
+        <div class="section-order-row__actions">
+          <button type="button" class="btn btn-sm btn-icon btn-ghost" data-action="order-up" data-index="${index}" title="Move up" aria-label="Move ${escapeHTML(labels[key])} up" ${index === 0 ? 'disabled' : ''}>
+            <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-icon btn-ghost" data-action="order-down" data-index="${index}" title="Move down" aria-label="Move ${escapeHTML(labels[key])} down" ${index === order.length - 1 ? 'disabled' : ''}>
+            <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
+          </button>
         </div>
       `;
 
@@ -1688,6 +1533,10 @@
     const resumeSheet = getEl('resumeSheet');
     const visualPages = getEl('resumeVisualPages');
     const pageCountPill = getEl('pageCountPill');
+    [['btnZoomFit', 'fit'], ['btnZoom100', '100']].forEach(([id, zoom]) => {
+      const button = getEl(id);
+      if (button) button.setAttribute('aria-pressed', String(currentZoom === zoom));
+    });
 
     if (!resumePreviewOuter || !previewWrapper || !resumeSheet || !visualPages) return;
     const firstPage = visualPages.querySelector('.resume-visual-page');
@@ -1827,45 +1676,45 @@
     if (issues.length === 0) {
       checklist.innerHTML = `
         <div class="review-item review-item--ok">
-          <div class="review-item-content">
-            <i aria-hidden="true" class="fa-solid fa-circle-check"></i>
-            <span>Contact details, links and sections all passed the checks.</span>
-          </div>
+          <i aria-hidden="true" class="fa-solid fa-circle-check"></i>
+          <div class="review-item__body"><p class="review-item__msg">Contact details, links and sections all passed the checks.</p></div>
         </div>
       `;
       return;
     }
 
-    // Blocking errors first, then warnings, then suggestions. Each group is named
-    // so severity is never carried by colour alone.
+    // Four kinds of feedback, each named so severity is never carried by colour alone:
+    // fix first (blocks a good download), worth checking, suggestions. Success is the line above.
     const groups = [
       { type: 'error', title: 'Fix before sending', icon: 'fa-triangle-exclamation', label: 'Required fix' },
       { type: 'warning', title: 'Worth checking', icon: 'fa-circle-exclamation', label: 'Warning' },
       { type: 'info', title: 'Suggestions', icon: 'fa-circle-info', label: 'Suggestion' }
     ];
+    const WHERE = { personal: 'Contact details', summary: 'Professional summary', experience: 'Work experience', education: 'Education', skills: 'Skills', projects: 'Projects', academic: 'Academic and research' };
     groups.forEach(group => {
       const groupIssues = issues.filter(x => (x.type === 'error' || x.type === 'warning') ? x.type === group.type : group.type === 'info');
       if (!groupIssues.length) return;
       const heading = document.createElement('h4');
       heading.className = `review-group-title review-group-title--${group.type}`;
-      heading.innerHTML = `<i aria-hidden="true" class="fa-solid ${group.icon}"></i> ${group.title} <span class="review-group-count">${groupIssues.length}</span>`;
+      heading.innerHTML = `${group.title} <span class="review-group-count">${groupIssues.length}</span>`;
       checklist.appendChild(heading);
 
       groupIssues.forEach(iss => {
         const item = document.createElement('div');
         item.className = `review-item review-item--${group.type}`;
         item.innerHTML = `
-          <div class="review-item-content">
-            <i aria-hidden="true" class="fa-solid ${group.icon}"></i>
-            <span><span class="sr-only">${group.label}: </span>${escapeHTML(iss.message)}</span>
+          <i aria-hidden="true" class="fa-solid ${group.icon}"></i>
+          <div class="review-item__body">
+            <p class="review-item__msg"><span class="sr-only">${group.label}: </span>${escapeHTML(iss.message)}</p>
+            <p class="review-item__where">In ${escapeHTML(WHERE[iss.section] || 'your resume')}</p>
           </div>
-          <button type="button" class="btn-text review-jump-btn" data-target="${iss.targetField || iss.section}">
-            Go to section
-          </button>
+          <button type="button" class="btn btn-sm review-jump-btn" data-target="${iss.targetField || iss.section}" aria-label="Go to ${escapeHTML(WHERE[iss.section] || 'the section')} to fix this">Fix</button>
         `;
 
         item.querySelector('.review-jump-btn').addEventListener('click', () => {
-          // Switch to Content Tab
+          // Switch to Content Tab (on a phone, to the editor as well)
+          const tabEdit = getEl('tabEdit');
+          if (tabEdit && getComputedStyle(tabEdit.parentElement).display !== 'none') tabEdit.click();
           const tabContent = getEl('tabContent');
           if (tabContent) tabContent.click();
 
@@ -1950,6 +1799,20 @@
       lastTypingField = e.target; lastTypingAt = now;
       isDirty = true;
     }, true);
+
+    // Phones: the Edit/Preview bar steps aside only while the on-screen keyboard is actually open,
+    // so it never covers the field being typed in and never stays hidden once the keyboard is gone.
+    if (window.visualViewport) {
+      const vv = window.visualViewport;
+      const sync = () => {
+        const field = document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
+        document.body.classList.toggle('is-typing', !!field && window.innerHeight - vv.height > 150);
+      };
+      vv.addEventListener('resize', sync);
+      vv.addEventListener('scroll', sync);
+      document.addEventListener('focusin', () => setTimeout(sync, 150));
+      document.addEventListener('focusout', () => setTimeout(sync, 150));
+    }
 
     // Keyboard shortcuts for Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
     document.addEventListener('keydown', (e) => {
@@ -2111,6 +1974,7 @@
         resumeData.academic[key].push(Object.assign({ id: newEntryId(key) }, blank));
         renderOptionalSections();
         renderResumePreview();
+        focusNewEntry(id === 'btnAddPresentation' ? 'academicPresentationsList' : 'academicGrantsList');
       });
     });
 
@@ -2129,6 +1993,7 @@
         });
         renderExperienceList();
         renderResumePreview();
+        focusNewEntry('experienceList');
       });
     }
 
@@ -2146,6 +2011,7 @@
         });
         renderEducationList();
         renderResumePreview();
+        focusNewEntry('educationList');
       });
     }
 
@@ -2162,6 +2028,7 @@
         });
         renderProjectsList();
         renderResumePreview();
+        focusNewEntry('projectsList');
       });
     }
 
@@ -2202,6 +2069,15 @@
       });
     }
 
+    const optionalArea = getEl('optionalSectionsArea');
+    if (optionalArea) optionalArea.addEventListener('input', e => {
+      const entry = e.target.closest('.entry');
+      if (!entry || e.target.classList.contains('item-pub-text')) return;
+      const first = entry.querySelector('input');
+      const title = entry.querySelector('.entry__title');
+      if (first && title) title.textContent = first.value.trim() || title.dataset.fallback || title.textContent;
+    });
+
     // Add buttons for individual optional items
     const btnAddCert = getEl('btnAddCertification');
     if (btnAddCert) {
@@ -2211,6 +2087,7 @@
         resumeData.certifications.push({ id: newEntryId('cert'), name: '', issuer: '', year: '' });
         renderOptionalSections();
         renderResumePreview();
+        focusNewEntry('certificationsList');
       });
     }
     const btnAddAch = getEl('btnAddAchievement');
@@ -2221,6 +2098,7 @@
         resumeData.achievements.push('');
         renderOptionalSections();
         renderResumePreview();
+        focusNewEntry('achievementsList');
       });
     }
     const btnAddVol = getEl('btnAddVolunteering');
@@ -2231,6 +2109,7 @@
         resumeData.volunteering.push({ role: '', organization: '', duration: '' });
         renderOptionalSections();
         renderResumePreview();
+        focusNewEntry('volunteeringList');
       });
     }
     const btnAddLang = getEl('btnAddLanguage');
@@ -2241,6 +2120,7 @@
         resumeData.languages.push({ name: '', proficiency: '' });
         renderOptionalSections();
         renderResumePreview();
+        focusNewEntry('languagesList');
       });
     }
     const btnAddPub = getEl('btnAddPublication');
@@ -2252,6 +2132,7 @@
         resumeData.academic.publications.push({ title: '' });
         renderOptionalSections();
         renderResumePreview();
+        focusNewEntry('academicPubsList');
       });
     }
     const btnAddTeach = getEl('btnAddTeaching');
@@ -2263,15 +2144,17 @@
         resumeData.academic.teaching.push({ role: '', institution: '', term: '' });
         renderOptionalSections();
         renderResumePreview();
+        focusNewEntry('academicTeachingList');
       });
     }
 
     // Load Sample Button
     const btnLoadSample = getEl('btnLoadSample');
     if (btnLoadSample) {
-      btnLoadSample.addEventListener('click', () => {
+      btnLoadSample.addEventListener('click', async () => {
         if (!isDocumentEmpty()) {
-          if (!confirm('Populate the editor with demonstration sample data? This will overwrite your current fields.')) return;
+          const ok = await askConfirm({ title: 'Replace your content with the sample?', message: 'The sample overwrites what you have written so far. You can undo this straight afterwards.', confirmLabel: 'Use the sample' });
+          if (!ok) return;
         }
         pushHistoryState();
         resumeData = withCurrentDesign(SCHEMA.migrate(SAMPLE_DATA), SAMPLE_DATA.sectionVisibility);
@@ -2283,8 +2166,9 @@
     // Clear Form Button
     const btnClearForm = getEl('btnClearForm');
     if (btnClearForm) {
-      btnClearForm.addEventListener('click', () => {
-        if (!confirm('Are you sure you want to clear all resume fields?')) return;
+      btnClearForm.addEventListener('click', async () => {
+        const ok = await askConfirm({ title: 'Clear the whole resume?', message: 'Every field will be emptied. You can undo this straight afterwards.', confirmLabel: 'Clear resume', danger: true });
+        if (!ok) return;
         pushHistoryState();
         resumeData = withCurrentDesign(SCHEMA.migrate(EMPTY_DATA), EMPTY_DATA.sectionVisibility);
         isDirty = false;
@@ -2307,8 +2191,9 @@
 
     const btnDeleteDraft = getEl('btnDeleteDraft');
     if (btnDeleteDraft) {
-      btnDeleteDraft.addEventListener('click', () => {
-        if (!confirm('Delete your saved local draft from this device?')) return;
+      btnDeleteDraft.addEventListener('click', async () => {
+        const ok = await askConfirm({ title: 'Delete the saved draft?', message: 'The draft stored in this browser is removed. The resume on screen is not affected.', confirmLabel: 'Delete draft', danger: true });
+        if (!ok) return;
         autoSaveDraft = false;
         deleteDraftFromStorage();
         if (chkSaveDraft) chkSaveDraft.checked = false;
@@ -2360,14 +2245,15 @@
           notify('Could not read the backup file from disk.', true);
           fileImportInput.value = '';
         };
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
           try {
             const parsed = JSON.parse(event.target.result);
             if (!validateResumeSchema(parsed)) {
               throw new Error('Invalid resume schema');
             }
             if (!isDocumentEmpty()) {
-              if (!confirm('Importing this file will replace your current edits. Do you wish to continue?')) {
+              const ok = await askConfirm({ title: 'Replace your current resume?', message: 'Importing this backup replaces what is on screen. You can undo this straight afterwards.', confirmLabel: 'Import backup' });
+              if (!ok) {
                 fileImportInput.value = '';
                 return;
               }
@@ -2383,6 +2269,9 @@
             notify('Resume backup restored.');
             // Restored sections can change the page height substantially. Show the
             // restored identity instead of leaving a field beneath the sticky header.
+            // Backups are imported from the Download step; show the restored resume from its start.
+            const tabContent = getEl('tabContent');
+            if (tabContent) tabContent.click();
             const contactSection = getEl('sec-personal');
             contactSection.classList.add('open');
             contactSection.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
@@ -2421,14 +2310,17 @@
         tabPreview.classList.remove('active');
         tabEdit.setAttribute('aria-selected', 'true');
         tabPreview.setAttribute('aria-selected', 'false');
-        layout.className = 'resume-app-layout view-edit';
+        layout.className = 'resume-app-layout rb view-edit';
+        layout.dataset.view = 'edit';
       });
       tabPreview.addEventListener('click', () => {
         tabPreview.classList.add('active');
         tabEdit.classList.remove('active');
         tabPreview.setAttribute('aria-selected', 'true');
         tabEdit.setAttribute('aria-selected', 'false');
-        layout.className = 'resume-app-layout view-preview';
+        layout.className = 'resume-app-layout rb view-preview';
+        layout.dataset.view = 'preview';
+        window.scrollTo({ top: 0, behavior: 'auto' });
         setTimeout(updatePreviewScale, 50);
       });
     }
@@ -2446,6 +2338,7 @@
     if (e.target.classList.contains('item-duration')) item.duration = e.target.value;
     if (e.target.classList.contains('item-location')) item.location = e.target.value;
     if (e.target.classList.contains('item-bullets')) item.bulletsText = e.target.value;
+    refreshEntryTitle(parent, 'exp', item);
     renderResumePreview();
   }
 
@@ -2505,6 +2398,7 @@
     if (e.target.classList.contains('item-duration')) item.duration = e.target.value;
     if (e.target.classList.contains('item-location')) item.location = e.target.value;
     if (e.target.classList.contains('item-score')) item.score = e.target.value;
+    refreshEntryTitle(parent, 'edu', item);
     renderResumePreview();
   }
 
@@ -2563,6 +2457,7 @@
     if (e.target.classList.contains('item-tech')) item.tech = e.target.value;
     if (e.target.classList.contains('item-link')) item.link = e.target.value;
     if (e.target.classList.contains('item-bullets')) item.bulletsText = e.target.value;
+    refreshEntryTitle(parent, 'proj', item);
     renderResumePreview();
   }
 
