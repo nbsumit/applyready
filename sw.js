@@ -5,7 +5,7 @@
  * NOTE: Bump CACHE_NAME on every deploy to ensure clients receive updated assets.
  */
 
-const CACHE_NAME = 'applyready-v9';
+const CACHE_NAME = 'applyready-v10';
 
 const STATIC_ASSETS = [
   '/',
@@ -30,6 +30,21 @@ const STATIC_ASSETS = [
   '/guides/resume-summary-examples-indian-freshers.html',
   '/guides/cv-vs-resume-india-job-applications.html',
   '/guides/campus-placement-interview-prep-guide.html',
+  '/guides/how-to-reduce-photo-to-50kb-without-blur.html',
+  '/guides/digital-signature-for-online-forms.html',
+  '/guides/passport-photo-at-home-guide.html',
+  '/guides/compress-pdf-for-upload-portals.html',
+  '/guides/combine-documents-into-one-pdf.html',
+  '/guides/pixels-cm-inches-dpi-explained.html',
+  '/guides/fix-common-photo-upload-errors.html',
+  '/guides/phone-camera-tips-for-document-scans.html',
+  '/guides/document-checklist-before-online-application.html',
+  '/guides/staying-safe-with-document-uploads.html',
+  '/guides/resume-bullet-points-that-show-results.html',
+  '/guides/tailor-resume-to-a-job-description.html',
+  '/guides/resume-length-one-page-or-two.html',
+  '/guides/resume-skills-section-guide.html',
+  '/guides/application-email-and-cover-letter-for-freshers.html',
   '/hi/ssc-photo-signature-size.html',
   '/hi/upsc-photo-signature-size.html',
   '/hi/rrb-photo-signature-size.html',
