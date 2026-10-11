@@ -33,14 +33,14 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js"></script>
+  <script src="js/theme.js?v=20261101-1"></script>
 
   <!-- Icons & Styles -->
+  <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/style.css?v=20261014-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
-  <link rel="stylesheet" href="css/app.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261101-1">
+  <!-- shell:styles:end -->
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -117,59 +117,72 @@
 <body class="content-page">
 
   <!-- NAVIGATION -->
+  <!-- shell:header:start -->
   <a class="skip-link" href="#mainContent">Skip to content</a>
-  <nav class="navbar" aria-label="Main Navigation">
-    <div class="nav-container">
-      <a href="/" class="brand-logo" aria-label="ApplyReady Home">
-        <img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
-        <span>ApplyReady<span class="brand-dot">.</span></span>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="/" aria-label="ApplyReady home">
+        <img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span>ApplyReady</span>
       </a>
-      <div class="nav-links" id="navMenu">
-        <div class="tools-menu">
-          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
-          <div class="tools-menu__panel" role="menu">
-            <div class="tools-menu__group"><strong>Image tools</strong>
-              <a href="/" role="menuitem">Image resizer</a>
-              <a href="signature-cleaner.html" role="menuitem">Signature cleaner</a>
-              <a href="image-to-pdf.html" role="menuitem">Image to PDF</a>
-              <a href="compress-pdf.html" role="menuitem">Compress PDF</a>
-              <a href="passport-photo-print.html" role="menuitem">Passport photo print</a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+            <div class="menu__group">
+              <h2 class="menu__title">Image tools</h2>
+              <ul class="menu__list">
+                <li><a href="/">Image resizer</a></li>
+                <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+                <li><a href="image-to-pdf.html">Image to PDF</a></li>
+                <li><a href="compress-pdf.html">Compress PDF</a></li>
+                <li><a href="passport-photo-print.html">Passport photo print</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Exam specs</strong>
-              <a href="ssc-photo-signature-size.html" role="menuitem">SSC</a>
-              <a href="upsc-photo-signature-size.html" role="menuitem">UPSC</a>
-              <a href="ibps-photo-signature-size.html" role="menuitem">IBPS</a>
-              <a href="neet-photo-signature-size.html" role="menuitem">NEET</a>
-              <a href="rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Exam sizes</h2>
+              <ul class="menu__list">
+                <li><a href="ssc-photo-signature-size.html" aria-current="page">SSC</a></li>
+                <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
+                <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
+                <li><a href="neet-photo-signature-size.html">NEET</a></li>
+                <li><a href="rrb-photo-signature-size.html">RRB</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Resize to KB</strong>
-              <a href="resize-image-to-10kb.html" role="menuitem">10 KB</a>
-              <a href="resize-image-to-20kb.html" role="menuitem">20 KB</a>
-              <a href="resize-image-to-50kb.html" role="menuitem">50 KB</a>
-              <a href="resize-image-to-100kb.html" role="menuitem">100 KB</a>
-              <a href="resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Resize to KB</h2>
+              <ul class="menu__list">
+                <li><a href="resize-image-to-10kb.html">10 KB</a></li>
+                <li><a href="resize-image-to-20kb.html">20 KB</a></li>
+                <li><a href="resize-image-to-50kb.html">50 KB</a></li>
+                <li><a href="resize-image-to-100kb.html">100 KB</a></li>
+                <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+              </ul>
             </div>
-          </div>
-        </div>
-        <a href="/" class="nav-link">Image tools</a>
-        <a href="resume.html" class="nav-link">Resume builder</a>
-        <a href="guides/" class="nav-link">Guides</a>
-      </div>
-      <div class="nav-actions">
-        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
-        <button type="button" id="navMenuToggle" class="theme-toggle-btn nav-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navMenu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+            </div>
+          </li>
+          <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="guides/">Guides</a></li>
+          <li><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
     </div>
-  </nav>
+  </header>
+  <!-- shell:header:end -->
 
   <!-- MAIN CONTAINER -->
   <noscript><p class="noscript-note">Enable JavaScript to use the interactive resizing tool.</p></noscript>
-  <main id="mainContent" class="main-content">
-    <article class="guide-content">
+  <main id="mainContent" class="page">
+    <article class="article">
 
       <!-- Breadcrumb Navigation -->
-      <nav class="breadcrumb-nav" aria-label="Breadcrumb" style="display: flex; justify-content: space-between; align-items: center;">
-        <ol class="breadcrumb-list" style="margin: 0;">
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
           <li class="breadcrumb-item"><a href="guides/">Guides</a></li>
           <li class="breadcrumb-item active" aria-current="page">SSC Photo &amp; Signature</li>
@@ -177,22 +190,19 @@
         <a href="hi/ssc-photo-signature-size.html" class="lang-switch">हिन्दी संस्करण</a>
       </nav>
 
-      <header style="margin-bottom: 2rem;">
-        <h1 class="hero-title" style="text-align: left;">SSC Photo &amp; Signature Size: 2026 Requirements &amp; Free Resizer</h1>
-        <p class="hero-subtitle" style="text-align: left; margin: 0;">
-          Meet exact Staff Selection Commission specifications for CGL, CHSL, MTS, CPO, and GD online forms. Preloaded tool resizes your files directly in your browser.
-        </p>
+      <header class="page-head">
+        <h1 class="page-title">SSC Photo &amp; Signature Size: 2026 Requirements &amp; Free Resizer</h1>
+        <p class="page-lede">Meet exact Staff Selection Commission specifications for CGL, CHSL, MTS, CPO, and GD online forms. Preloaded tool resizes your files directly in your browser.</p>
         <p class="tool-jump"><a href="#resize-tool">Resize now</a></p>
       </header>
 
       <!-- Official Specifications Table -->
-      <section class="app-card" style="margin-bottom: 2rem;">
+      <section class="section prose">
         <h2>SSC Image Specifications (from the official notification)</h2>
         <p>
           According to recent Staff Selection Commission notifications, uploaded files must strictly satisfy the following criteria:
         </p>
-        <div style="overflow-x: auto; margin: 1rem 0;">
-          <table class="table-spec">
+        <div class="table-wrap"><table>
             <thead>
               <tr>
                 <th>Document</th>
@@ -218,190 +228,257 @@
                 <td>Running hand, black or dark blue ink, white unlined paper</td>
               </tr>
             </tbody>
-          </table>
-        </div>
+          </table></div>
 
         <div class="callout">
-          <p style="margin: 0;">
-            <strong>Official Verification Disclaimer:</strong> Guidelines are taken directly from SSC examination notices. Always verify with the latest notification published on the official Staff Selection Commission portal: <a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">ssc.gov.in</a>.
+          <p>
+            <strong>Official Verification Disclaimer:</strong> Guidelines are taken directly from SSC examination notices. Always verify with the latest notification published on the official Staff Selection Commission portal: <a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer">ssc.gov.in</a>.
           </p>
-          <p class="text-muted" style="margin: 0.5rem 0 0 0;">
-            Last verified: October 2026 — always confirm with the official notification on <a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">ssc.gov.in</a>.
+          <p class="text-muted">
+            Last verified: October 2026 — always confirm with the official notification on <a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer">ssc.gov.in</a>.
           </p>
         </div>
       </section>
 
 
         <div class="callout is-warning">
-          <p style="margin: 0;">
-            <strong>Important Notice on Live Photo Capture:</strong> Newer Staff Selection Commission recruitment notices (such as CGL, CHSL, MTS on the new <a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">ssc.gov.in</a> portal) capture candidate photographs live using a computer webcam or the official MySSC mobile application. Scanned signatures (10–20 KB, 400 × 200 px) continue to be uploaded as image files. Always check the official notification for your specific examination cycle.
+          <p>
+            <strong>Important Notice on Live Photo Capture:</strong> Newer Staff Selection Commission recruitment notices (such as CGL, CHSL, MTS on the new <a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer">ssc.gov.in</a> portal) capture candidate photographs live using a computer webcam or the official MySSC mobile application. Scanned signatures (10–20 KB, 400 × 200 px) continue to be uploaded as image files. Always check the official notification for your specific examination cycle.
           </p>
         </div>
 
       <!-- Interactive Resizer Tool Preloaded for SSC -->
-      <section id="resize-tool" style="margin-bottom: 2rem;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
-          <div>
-            <h2>Resize Your SSC File Online</h2>
-            <p class="text-muted" style="margin: 0;">Select your document type to automatically preload official dimensions and limits:</p>
-          </div>
-          <div class="preset-choice">
-            <button type="button" id="btnPresetSSCPhoto" class="btn btn-secondary btn-sm" data-preset="ssc-photo" aria-pressed="false">
-              <i class="fa-solid fa-image" aria-hidden="true"></i> Photo (20–50 KB)
-            </button>
-            <button type="button" id="btnPresetSSCSig" class="btn btn-secondary btn-sm" data-preset="ssc-signature" aria-pressed="false">
-              <i class="fa-solid fa-signature" aria-hidden="true"></i> Signature (10–20 KB)
-            </button>
+<!-- tool:start -->
+      <section class="section" id="resize-tool" aria-labelledby="toolHeading">
+        <h2 class="section-title" id="toolHeading">Resize Your SSC File Online</h2>
+        <section class="ws" id="resizerApp" data-preset="ssc-photo" data-state="empty" data-settings="closed" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="Image resizer and compressor">
+      <div class="ws-head">
+        <ol class="steps" aria-label="Progress">
+        <li data-step="add"><span class="steps__n" aria-hidden="true">1</span>Add image</li>
+        <li data-step="adjust"><span class="steps__n" aria-hidden="true">2</span>Adjust</li>
+        <li data-step="download"><span class="steps__n" aria-hidden="true">3</span>Download</li>
+        </ol>
+        <p class="ws-status" id="workspaceStatus" role="status">No image selected</p>
+      </div>
+
+      <div class="ws-stage image-stage">
+        <div id="processErrorBox" class="notice notice--error hidden" role="alert">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span class="notice__body" id="processErrorMessage"></span>
+        </div>
+
+        <div id="fileInfoBox" class="filebar hidden" aria-live="polite">
+          <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
+          <span id="fileInfoText" class="filebar__name"></span>
+          <div class="filebar__actions">
+            <button type="button" id="btnReplaceFile" class="btn btn-sm" title="Choose a different image">Replace</button>
+            <button type="button" id="btnRemoveFile" class="btn btn-sm btn-danger-ghost" title="Remove this image">Remove</button>
           </div>
         </div>
 
-        <!-- Embedded Resizer Workspace -->
-        <div class="app-container" id="resizerApp" data-preset="ssc-photo">
+        <div id="cropperPlaceholder" class="ws-empty">
+          <div class="chips ws-presets" role="group" aria-label="Quick presets">
+            <span class="ws-presets__label">Quick start</span>
+            <button type="button" class="chip" data-preset="ssc-photo" aria-pressed="false">Photo <span class="chip-sub">350 × 450</span></button>
+            <button type="button" class="chip" data-preset="ssc-signature" aria-pressed="false">Signature <span class="chip-sub">400 × 200</span></button>
+            <button type="button" class="chip" data-preset="passport" aria-pressed="false">ID photo <span class="chip-sub">350 × 450</span></button>
+            <button type="button" class="chip" data-preset="signature" aria-pressed="false">Signature <span class="chip-sub">300 × 100</span></button>
+          </div>
+          <div id="dropzone" class="dropzone" role="group" aria-label="Choose or drop an image">
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
+            <i class="fa-solid fa-arrow-up-from-bracket dropzone__icon" aria-hidden="true"></i>
+            <h3 class="dropzone__title">Drop an image here</h3>
+            <p class="dropzone__text">or choose one from your device</p>
+            <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose image</button>
+            <p class="dropzone__hint">JPG, PNG, WebP, GIF, BMP or AVIF, up to 50 MB. Animated images are exported as a still image.</p>
+          </div>
+        </div>
 
-          <!-- LEFT: Form Controls Panel -->
-          <section class="form-panel" id="formPanel" aria-labelledby="toolControlsHeading">
-            <h3 id="toolControlsHeading" class="sr-only">Image Configuration Controls</h3>
-
-            <div id="processErrorBox" class="alert-box alert-box-danger hidden" role="alert">
-              <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-              <span id="processErrorMessage"></span>
+        <div id="cropperActiveArea" class="ws-crop hidden">
+          <div class="cropper-container-wrapper" tabindex="0" role="group" aria-label="Image crop. Arrow keys move the crop selection; plus and minus zoom.">
+            <img id="imageToCrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Image to crop">
+          </div>
+          <div class="ws-toolbar" role="toolbar" aria-label="Crop tools">
+            <div class="ws-toolbar__group">
+              <button type="button" id="btnRotateLeft" class="btn btn-sm btn-icon" title="Rotate left 90 degrees" aria-label="Rotate left 90 degrees"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+              <button type="button" id="btnRotateRight" class="btn btn-sm btn-icon" title="Rotate right 90 degrees" aria-label="Rotate right 90 degrees"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+              <button type="button" id="btnZoomOut" class="btn btn-sm btn-icon" title="Zoom out" aria-label="Zoom out"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i></button>
+              <button type="button" id="btnZoomIn" class="btn btn-sm btn-icon" title="Zoom in" aria-label="Zoom in"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i></button>
             </div>
+            <button type="button" id="btnResetCrop" class="btn btn-sm btn-ghost" title="Reset crop"><i class="fa-solid fa-arrow-rotate-back" aria-hidden="true"></i> Reset</button>
+          </div>
+          <p class="ws-hint">Drag to position the crop. Arrow keys move it; + and − zoom.</p>
+        </div>
 
-            
-
-
-            <div class="file-upload-wrapper">
-              <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Upload photo or signature">
-              <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload photo or signature image">
-                <i class="fa-solid fa-cloud-arrow-up dropzone-icon" aria-hidden="true"></i>
-                <p class="dropzone-text"><strong>Click to select photo or signature</strong> or drop file here</p>
-                <p class="dropzone-sub">JPEG, PNG, WebP supported. Stays 100% on your device.</p>
-              </div>
+        <div id="resultArea" class="ws-result hidden" aria-live="polite">
+          <div class="ws-result__head">
+            <h3 class="ws-result__title"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Ready to download</h3>
+            <div class="segmented" role="group" aria-label="Compare">
+              <button type="button" id="btnViewProcessed" class="active" aria-pressed="true">Result <span id="compProcessedKB">-</span></button>
+              <button type="button" id="btnViewOriginal" aria-pressed="false">Original <span id="compOriginalKB">-</span></button>
             </div>
+          </div>
+          <p class="ws-result__ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> <span id="resultStatus" class="meta-stat-val status-ok"></span></p>
+          <div class="ws-preview checkerboard">
+            <img id="resultImage" src="" alt="Processed result preview">
+            <img id="originalComparisonImage" src="" alt="Original image preview" class="hidden">
+          </div>
+          <dl class="meta-stats">
+            <div class="meta-stat-item"><dt class="meta-stat-label">File size</dt><dd class="meta-stat-val status-ok" id="resultFileSize"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Limit</dt><dd class="meta-stat-val" id="resultTargetSize"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Output size</dt><dd class="meta-stat-val" id="resultDims"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Target size</dt><dd class="meta-stat-val" id="resultTargetDims"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Original size</dt><dd class="meta-stat-val" id="resultOrigDims"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Format</dt><dd class="meta-stat-val" id="resultFormat"></dd></div>
+          </dl>
+          <div class="ws-result__actions">
+            <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download image</a>
+            <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust and redo</button>
+          </div>
+        </div>
+      </div>
 
-            <div id="fileInfoBox" class="file-info-box hidden" aria-live="polite">
-              <span id="fileInfoText">No image loaded</span>
-              <div class="file-info-actions">
-                <button type="button" id="btnReplaceFile" class="btn-text" aria-label="Replace selected file">Replace</button>
-                <button type="button" id="btnRemoveFile" class="btn-text danger" aria-label="Remove selected file">Remove</button>
-              </div>
-            </div>
-
-            <div class="control-group">
-              <label for="presetSelect" class="control-label">Preset</label>
-              <select id="presetSelect" class="form-control custom-select-source">
-                <option value="ssc-photo" selected>SSC Photo (350 × 450 px, max 50 KB)</option>
-                <option value="ssc-signature">SSC Signature (400 × 200 px, max 20 KB)</option>
-                <option value="custom">Custom Dimensions</option>
+      <div class="ws-side">
+        <h2 class="ws-side__title">Output</h2>
+        <div class="field">
+          <label for="presetSelect" class="field-label">Preset</label>
+          <select id="presetSelect" class="custom-select-source">
+                <option value="ssc-photo" selected>SSC Photo (350 × 450 px, 20–50 KB)</option>
+                <option value="ssc-signature">SSC Signature (400 × 200 px, 10–20 KB)</option>
+                <option value="custom">Custom size</option>
                 <option value="passport">Passport Photo (350 × 450 px, max 50 KB)</option>
                 <option value="signature">Signature (300 × 100 px, max 30 KB)</option>
-              </select>
-            </div>
-
-            <div id="customControls">
-              <div class="dim-row">
-                <div class="control-group">
-                  <label for="customWidth" class="control-label">Width (px)</label>
-                  <input type="number" id="customWidth" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000">
-                </div>
-                <div class="aspect-lock-wrap">
-                  <button type="button" id="btnLockAspect" class="btn-lock-aspect active" title="Aspect ratio locked" aria-pressed="true">
-                    <i class="fa-solid fa-lock" aria-hidden="true"></i>
-                  </button>
-                </div>
-                <div class="control-group">
-                  <label for="customHeight" class="control-label">Height (px)</label>
-                  <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="450" min="20" max="8000">
-                </div>
-              </div>
-              <span id="dimError" class="field-error hidden" role="alert"></span>
-
-              <div class="control-group">
-                <label for="customMaxKB" class="control-label">Max file size (KB)</label>
-                <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="50" min="5" max="20000">
-              </div>
-              <span id="sizeError" class="field-error hidden" role="alert"></span>
-
-              <div class="form-row-2">
-                <div class="control-group">
-                  <label for="formatSelect" class="control-label">Output format</label>
-                  <select id="formatSelect" class="form-control custom-select-source">
-                    <option value="image/jpeg" selected>JPEG (.jpg)</option>
-                    <option value="image/png">PNG (.png)</option>
-                    <option value="image/webp">WebP (.webp)</option>
-                  </select>
-                </div>
-                <div class="control-group">
-                  <label for="bgFillSelect" class="control-label">Background</label>
-                  <select id="bgFillSelect" class="form-control">
-                    <option value="white" selected>White</option>
-                    <option value="transparent">Transparent</option>
-                    <option value="black">Black</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div style="display: none;">
-              <select id="aspectRatioSelect"><option value="target">Target</option></select>
-            </div>
-
-            <button type="button" id="btnProcess" class="btn btn-primary btn-block" aria-describedby="processSummary" disabled>
-              <i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize &amp; Compress for SSC
-            </button>
-            <p id="processSummary" class="process-summary" aria-live="polite"></p>
-          </section>
-
-          <!-- RIGHT: Preview Panel -->
-          <section class="preview-panel" id="previewPanel" aria-labelledby="previewHeading">
-            <h3 id="previewHeading" class="sr-only">Preview and Crop Workspace</h3>
-
-            <div id="cropperPlaceholder" class="cropper-placeholder">
-              <i class="fa-solid fa-image placeholder-icon" aria-hidden="true"></i>
-              <p>Upload your photograph or signature to begin framing and resizing.</p>
-            </div>
-
-            <div id="cropperActiveArea" class="cropper-active-area hidden">
-              <div class="cropper-container-wrapper">
-                <img id="imageToCrop" alt="Source for cropping" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
-              </div>
-              <div class="cropper-actions">
-                <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="Rotate left 90°"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> 90°</button>
-                <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="Rotate right 90°"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> 90°</button>
-                <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="Reset crop"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Reset</button>
-              </div>
-            </div>
-
-            <!-- Result Area -->
-            <div id="resultArea" class="result-area hidden" aria-live="polite">
-              <div class="result-head"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Ready to download</div>
-              <div class="result-card">
-                <img id="resultImage" alt="Resized SSC preview" class="result-img">
-              </div>
-              <div class="result-meta-stats">
-                <div><span class="text-muted">Dimensions:</span> <strong id="resultDims">350 × 450 px</strong></div>
-                <div><span class="text-muted">File Size:</span> <strong id="resultFileSize" class="status-ok">38 KB</strong></div>
-                <div><span class="text-muted">Format:</span> <strong id="resultFormat">JPEG</strong></div>
-              </div>
-              <div class="result-actions">
-                <a id="btnDownload" class="btn btn-success btn-block" download="SSC_Photo.jpg">
-                  <i class="fa-solid fa-download" aria-hidden="true"></i> Download SSC Ready File
-                </a>
-                <button type="button" id="btnCropAgain" class="btn btn-secondary btn-block">Edit Crop</button>
-              </div>
-            </div>
-
-            <div class="workspace-footnote">
-              <span><i class="fa-solid fa-lock" aria-hidden="true"></i> 100% Private (Processed in browser)</span>
-              <span id="workspaceStatus">No image selected</span>
-            </div>
-          </section>
-
+          </select>
         </div>
+        <dl class="meta-stats" id="presetSummaryBox" hidden>
+          <div><dt>Size</dt><dd id="specDims">350 × 450 px</dd></div>
+          <div><dt>File size limit</dt><dd id="specSize"></dd></div>
+          <div><dt>File format</dt><dd id="specFormat">JPEG</dd></div>
+        </dl>
+        <button type="button" class="btn btn-link btn-sm ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom">Edit size and limits</button>
+
+        <div class="ws-custom" id="wsCustom">
+          <div id="customControls" class="ws-group">
+            <h3 class="ws-group__title">Size</h3>
+            <div class="ws-dims">
+              <div class="field">
+                <label class="field-label" id="customWidthLabel" for="customWidth">Width (px)</label>
+                <input type="number" id="customWidth" class="input" aria-describedby="dimError" value="350" min="20" max="8000" step="1" inputmode="numeric">
+              </div>
+              <button type="button" id="btnLockAspect" class="btn btn-icon btn-lock active" title="Aspect ratio locked" aria-label="Keep aspect ratio" aria-pressed="true"><i class="fa-solid fa-lock" aria-hidden="true"></i></button>
+              <div class="field">
+                <label class="field-label" id="customHeightLabel" for="customHeight">Height (px)</label>
+                <input type="number" id="customHeight" class="input" aria-describedby="dimError" value="450" min="20" max="8000" step="1" inputmode="numeric">
+              </div>
+            </div>
+            <p id="dimError" class="field-error hidden" role="alert"></p>
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label" for="unitSelect">Unit</label>
+                <select id="unitSelect">
+                  <option value="px" selected>Pixels (px)</option>
+                  <option value="cm">Centimetres (cm)</option>
+                  <option value="inch">Inches (in)</option>
+                </select>
+              </div>
+              <div class="field" id="dpiGroup" style="display: none;">
+                <label class="field-label" for="dpiSelect">Print DPI</label>
+                <select id="dpiSelect">
+                  <option value="300" selected>300 DPI</option>
+                  <option value="200">200 DPI</option>
+                  <option value="150">150 DPI</option>
+                  <option value="72">72 DPI</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="ws-group">
+            <h3 class="ws-group__title">File size limit</h3>
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label" for="customMinKB">Min (KB) <span class="optional">(optional)</span></label>
+                <input type="number" id="customMinKB" class="input" aria-describedby="sizeError" value="20" placeholder="0" min="0" max="20000" step="1" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label class="field-label" for="customMaxKB">Max (KB)</label>
+                <input type="number" id="customMaxKB" class="input" aria-describedby="sizeError" value="50" min="1" max="20000" step="1" inputmode="numeric">
+              </div>
+            </div>
+            <p id="sizeError" class="field-error hidden" role="alert"></p>
+            <button type="button" id="btnOriginalSize" class="btn btn-sm" disabled><i class="fa-solid fa-expand" aria-hidden="true"></i> Use original size</button>
+            <p class="field-hint">Keeps the whole image at its own dimensions. Available once an image is added.</p>
+          </div>
+
+          <div class="ws-group">
+            <div class="field-row">
+              <div class="field">
+                <label for="formatSelect" class="field-label">File format</label>
+                <select id="formatSelect" class="custom-select-source">
+                  <option value="image/jpeg" selected>JPEG (.jpg)</option>
+                  <option value="image/png">PNG (.png)</option>
+                  <option value="image/webp">WebP (.webp)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="aspectRatioSelect" class="field-label">Crop ratio</label>
+                <select id="aspectRatioSelect">
+                <option value="target" selected>Match output size</option>
+                <option value="original">Original proportions</option>
+                <option value="1:1">Square (1:1)</option>
+                <option value="4:3">Standard (4:3)</option>
+                <option value="16:9">Widescreen (16:9)</option>
+                <option value="free">Free crop</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <details class="disclosure ws-advanced">
+            <summary>Background and name strip</summary>
+            <div class="disclosure__body">
+              <div class="field">
+                <label for="bgFillSelect" class="field-label">Background fill</label>
+                <select id="bgFillSelect">
+                <option value="white" selected>White (recommended)</option>
+                <option value="black">Black</option>
+                <option value="transparent" disabled>Transparent (PNG and WebP only)</option>
+                </select>
+                <p class="field-hint">JPEG cannot be transparent. Empty margins use this colour.</p>
+              </div>
+              <div id="dateOptionsBox" class="check-group">
+                <label class="switch" for="addDateCheckbox"><span>Add a name and date strip</span><input type="checkbox" id="addDateCheckbox" role="switch"></label>
+                <div id="dateInputGroup" class="check-group" style="display: none;">
+                  <div class="field">
+                    <label for="annotationDateInput" class="field-label">Printed date</label>
+                    <div class="input-group">
+                      <input type="date" id="annotationDateInput" class="input">
+                      <button type="button" id="btnTodayDate" class="btn">Today</button>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="candidateNameInput" class="field-label">Printed name or label <span class="optional">(optional)</span></label>
+                    <input type="text" id="candidateNameInput" class="input" placeholder="e.g. John Doe">
+                    <p class="field-hint">Text scales to fit the strip. Very long labels may be shortened.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div class="ws-action">
+        <p class="ws-action__need">Add an image to continue.</p>
+        <p id="processSummary" class="process-summary" aria-live="polite"></p>
+        <button type="button" id="btnProcess" class="btn btn-primary btn-lg btn-block" aria-describedby="processSummary" data-busy-label="Processing…" disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize &amp; compress</button>
+      </div>
+    </section>
       </section>
+      <!-- tool:end -->
 
       <!-- Reserved Ad Slot: Below Result Area -->
-      <div class="ad-slot-container ad-slot-result" aria-label="Advertisement">
+      <div class="ad-slot-container ad-slot-result" role="complementary" aria-label="Advertisement">
         <div class="ad-slot-inner">
           <span class="ad-slot-label">Advertisement</span>
           <!-- AdSense Unit: Below Tool Area -->
@@ -409,7 +486,7 @@
       </div>
 
       <!-- Common Rejection Pitfalls Section -->
-      <section class="app-card" style="margin-bottom: 2rem;">
+      <section class="section prose">
         <h2>Common Reasons SSC Rejects Applications</h2>
         <ul>
           <li><strong>Oversized Photos:</strong> Photos exceeding 50 KB or signatures exceeding 20 KB are instantly blocked by the online portal validator.</li>
@@ -421,16 +498,16 @@
       </section>
 
       <!-- What the limits mean: unique to the SSC page -->
-      <section class="app-card" data-unique-section="exam-ssc" style="margin-bottom: 2rem;">
+      <section class="section prose" data-unique-section="exam-ssc">
         <h2>What the SSC limits mean for your files</h2>
         <p>The sizes above are easy to read and hard to judge. Dividing each file-size range by the number of pixels shows how much detail each pixel can carry, and where the real risk is: a file that is too large, or one that comes out too small.</p>
-        <table>
+        <div class="table-wrap"><table>
 <thead><tr><th>File</th><th>Dimensions</th><th>Size range</th><th>Bits per pixel (low to high)</th><th>What to watch</th></tr></thead>
 <tbody>
 <tr><td>Passport photo</td><td>350 x 450</td><td>20 to 50 KB</td><td>1.0 to 2.6</td><td>Aim for the upper half of the range. Near 20 KB the face looks soft.</td></tr>
 <tr><td>Signature</td><td>400 x 200</td><td>10 to 20 KB</td><td>1.0 to 2.0</td><td>Plenty of room at the top end. Check the file is not below 10 KB: the preset pads it if needed.</td></tr>
 </tbody>
-</table>
+</table></div>
         <p><strong>Two files, two different risks.</strong> The photo is limited by the top of its range: a 350 x 450 portrait at 20 KB gets about one bit per pixel, while at 50 KB it gets about 2.6. So work towards the 40 to 50 KB end. The signature has the opposite risk: a clean black-on-white signature has little detail to store and can come out smaller than 10 KB.</p><p><strong>What the preset does for you.</strong> The photo and signature presets above carry both the minimum and the maximum, and the tool searches for the highest quality that fits. If a very clean signature comes out below the minimum, the tool adds harmless metadata to the file so the picture is unchanged and the size is in range.</p>
         <p>Always confirm the figures against the current official notification linked above before you upload. For the method behind these numbers, see <a href="guides/pixels-cm-inches-dpi-explained.html">pixels, centimetres and DPI</a> and <a href="guides/fix-common-photo-upload-errors.html">common upload errors and fixes</a>.</p>
       </section>
@@ -478,22 +555,22 @@
         <div class="related-guides-grid">
           <a href="upsc-photo-signature-size.html" class="guide-card">
             <strong>UPSC Photo &amp; Signature</strong>
-            <p class="text-muted mt-1">Official dimensions and file size guidelines for Civil Services &amp; NDA.</p>
+            <p class="text-muted">Official dimensions and file size guidelines for Civil Services &amp; NDA.</p>
             <span class="resource-link">View specs <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="ibps-photo-signature-size.html" class="guide-card">
             <strong>IBPS Bank Exam Formats</strong>
-            <p class="text-muted mt-1">Photo (20–50 KB), signature, thumb impression &amp; declaration limits.</p>
+            <p class="text-muted">Photo (20–50 KB), signature, thumb impression &amp; declaration limits.</p>
             <span class="resource-link">View specs <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="resize-image-to-20kb.html" class="guide-card">
             <strong>Resize Image to 20 KB</strong>
-            <p class="text-muted mt-1">Dedicated target resizer for government exam signature uploads.</p>
+            <p class="text-muted">Dedicated target resizer for government exam signature uploads.</p>
             <span class="resource-link">Open tool <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="resize-image-to-50kb.html" class="guide-card">
             <strong>Resize Image to 50 KB</strong>
-            <p class="text-muted mt-1">Target compression for online portal passport photo requirements.</p>
+            <p class="text-muted">Target compression for online portal passport photo requirements.</p>
             <span class="resource-link">Open tool <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
@@ -503,29 +580,56 @@
   </main>
 
   <!-- FOOTER -->
+  <!-- shell:footer:start -->
   <footer class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand-block">
-        <a href="/" class="brand-logo"><img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
         <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
       </div>
-      <nav class="footer-links" aria-label="Footer Links">
-        <a href="/" class="footer-link">Image tools</a>
-        <a href="resume.html" class="footer-link">Resume builder</a>
-        <a href="guides/" class="footer-link">Guides</a>
-        <a href="about.html" class="footer-link">About</a>
-        <a href="privacy.html" class="footer-link">Privacy</a>
-        <a href="terms.html" class="footer-link">Terms</a>
-        <a href="contact.html" class="footer-link">Contact</a>
-      </nav>
+      <div>
+        <h2 class="site-footer__title">Tools</h2>
+        <ul class="site-footer__list">
+          <li><a href="/">Image resizer</a></li>
+          <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="compress-pdf.html">Compress PDF</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">Exam sizes</h2>
+        <ul class="site-footer__list">
+          <li><a href="ssc-photo-signature-size.html">SSC</a></li>
+          <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
+          <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
+          <li><a href="neet-photo-signature-size.html">NEET</a></li>
+          <li><a href="rrb-photo-signature-size.html">RRB</a></li>
+          <li><a href="resize-image-to-20kb.html">Resize to 20KB</a></li>
+          <li><a href="resize-image-to-50kb.html">Resize to 50KB</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">ApplyReady</h2>
+        <ul class="site-footer__list">
+          <li><a href="guides/">Guides</a></li>
+          <li><a href="how-to-use.html">How to use</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="privacy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
+  <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261012-2" defer></script>
-  <script src="js/site.js?v=20261012-2"></script>
+  <script src="js/components.js?v=20261101-1" defer></script>
+  <script src="js/site.js?v=20261101-1"></script>
   <script src="js/vendor/cropper.min.js"></script>
-  <script src="js/presets.js?v=20261011-3"></script>
-  <script src="js/resizer.js?v=20261012-2"></script>
+  <script src="js/presets.js?v=20261101-1"></script>
+  <script src="js/resizer.js?v=20261101-1"></script>
 </body>
 </html>

@@ -33,14 +33,14 @@
   <link rel="manifest" href="../favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="../js/theme.js"></script>
+  <script src="../js/theme.js?v=20261101-1"></script>
 
   <!-- Icons & Styles -->
+  <!-- shell:styles:start -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
   <link rel="stylesheet" href="../css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="../css/style.css?v=20261014-1">
-  <link rel="stylesheet" href="../css/workspace.css?v=20261014-1">
-  <link rel="stylesheet" href="../css/app.css?v=20261014-1">
+  <link rel="stylesheet" href="../css/app.css?v=20261101-1">
+  <!-- shell:styles:end -->
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -109,59 +109,72 @@
 <body class="content-page">
 
   <!-- NAVIGATION -->
+  <!-- shell:header:start -->
   <a class="skip-link" href="#mainContent">Skip to content</a>
-  <nav class="navbar" aria-label="Main Navigation">
-    <div class="nav-container">
-      <a href="/" class="brand-logo" aria-label="ApplyReady Home">
-        <img src="../favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
-        <span>ApplyReady<span class="brand-dot">.</span></span>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="../" aria-label="ApplyReady home">
+        <img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span>ApplyReady</span>
       </a>
-      <div class="nav-links" id="navMenu">
-        <div class="tools-menu">
-          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
-          <div class="tools-menu__panel" role="menu">
-            <div class="tools-menu__group"><strong>Image tools</strong>
-              <a href="../" role="menuitem">Image resizer</a>
-              <a href="../signature-cleaner.html" role="menuitem">Signature cleaner</a>
-              <a href="../image-to-pdf.html" role="menuitem">Image to PDF</a>
-              <a href="../compress-pdf.html" role="menuitem">Compress PDF</a>
-              <a href="../passport-photo-print.html" role="menuitem">Passport photo print</a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+            <div class="menu__group">
+              <h2 class="menu__title">Image tools</h2>
+              <ul class="menu__list">
+                <li><a href="../">Image resizer</a></li>
+                <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+                <li><a href="../image-to-pdf.html">Image to PDF</a></li>
+                <li><a href="../compress-pdf.html">Compress PDF</a></li>
+                <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Exam specs</strong>
-              <a href="../ssc-photo-signature-size.html" role="menuitem">SSC</a>
-              <a href="../upsc-photo-signature-size.html" role="menuitem">UPSC</a>
-              <a href="../ibps-photo-signature-size.html" role="menuitem">IBPS</a>
-              <a href="../neet-photo-signature-size.html" role="menuitem">NEET</a>
-              <a href="../rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Exam sizes</h2>
+              <ul class="menu__list">
+                <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
+                <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
+                <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
+                <li><a href="../neet-photo-signature-size.html">NEET</a></li>
+                <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Resize to KB</strong>
-              <a href="../resize-image-to-10kb.html" role="menuitem">10 KB</a>
-              <a href="../resize-image-to-20kb.html" role="menuitem">20 KB</a>
-              <a href="../resize-image-to-50kb.html" role="menuitem">50 KB</a>
-              <a href="../resize-image-to-100kb.html" role="menuitem">100 KB</a>
-              <a href="../resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Resize to KB</h2>
+              <ul class="menu__list">
+                <li><a href="../resize-image-to-10kb.html">10 KB</a></li>
+                <li><a href="../resize-image-to-20kb.html">20 KB</a></li>
+                <li><a href="../resize-image-to-50kb.html">50 KB</a></li>
+                <li><a href="../resize-image-to-100kb.html">100 KB</a></li>
+                <li><a href="../resize-image-to-200kb.html">200 KB</a></li>
+              </ul>
             </div>
-          </div>
-        </div>
-        <a href="/" class="nav-link">Image tools</a>
-        <a href="../resume.html" class="nav-link">Resume builder</a>
-        <a href="../guides/" class="nav-link">Guides</a>
-      </div>
-      <div class="nav-actions">
-        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
-        <button type="button" id="navMenuToggle" class="theme-toggle-btn nav-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navMenu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+            </div>
+          </li>
+          <li><a class="site-nav__link" href="../resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="../guides/">Guides</a></li>
+          <li><a class="site-nav__link" href="../hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi" aria-current="page">हिन्दी</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
     </div>
-  </nav>
+  </header>
+  <!-- shell:header:end -->
 
   <!-- MAIN CONTAINER -->
   <noscript><p class="noscript-note">टूल का उपयोग करने के लिए कृपया जावास्क्रिप्ट सक्षम करें।</p></noscript>
-  <main id="mainContent" class="main-content">
-    <article class="guide-content">
+  <main id="mainContent" class="page">
+    <article class="article">
 
       <!-- Breadcrumb Navigation -->
-      <nav class="breadcrumb-nav" aria-label="Breadcrumb" style="display: flex; justify-content: space-between; align-items: center;">
-        <ol class="breadcrumb-list" style="margin: 0;">
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
           <li class="breadcrumb-item"><a href="../guides/">Guides</a></li>
           <li class="breadcrumb-item active" aria-current="page">SSC फोटो और सिग्नेचर</li>
@@ -169,22 +182,19 @@
         <a href="../ssc-photo-signature-size.html" class="lang-switch">English Version</a>
       </nav>
 
-      <header style="margin-bottom: 2rem;">
-        <h1 class="hero-title" style="text-align: left;">SSC फोटो और सिग्नेचर साइज: 2026 के नियम और ऑनलाइन रिसाइजर</h1>
-        <p class="hero-subtitle" style="text-align: left; margin: 0;">
-          SSC CGL, CHSL, MTS, GD और CPO ऑनलाइन फॉर्म के सटीक नियम। फोटो (20–50 KB) और हस्ताक्षर (10–20 KB) को सीधे अपने ब्राउज़र में सुरक्षित रिसाइज करें।
-        </p>
+      <header class="page-head">
+        <h1 class="page-title">SSC फोटो और सिग्नेचर साइज: 2026 के नियम और ऑनलाइन रिसाइजर</h1>
+        <p class="page-lede">SSC CGL, CHSL, MTS, GD और CPO ऑनलाइन फॉर्म के सटीक नियम। फोटो (20–50 KB) और हस्ताक्षर (10–20 KB) को सीधे अपने ब्राउज़र में सुरक्षित रिसाइज करें।</p>
         <p class="tool-jump"><a href="#resize-tool">अभी रिसाइज करें</a></p>
       </header>
 
       <!-- Specifications Table -->
-      <section class="app-card" style="margin-bottom: 2rem;">
+      <section class="section prose">
         <h2>कर्मचारी चयन आयोग (SSC) आधिकारिक दिशानिर्देश</h2>
         <p>
           आधिकारिक SSC नोटिफिकेशन के अनुसार अपलोड की जाने वाली फाइलों को निम्नलिखित मापदंडों को पूरा करना अनिवार्य है:
         </p>
-        <div style="overflow-x: auto; margin: 1rem 0;">
-          <table class="table-spec">
+        <div class="table-wrap"><table>
             <thead>
               <tr>
                 <th>दस्तावेज़</th>
@@ -210,162 +220,249 @@
                 <td>रनिंग हैंडराइटिंग, काली या नीली स्याही, सादा सफेद कागज</td>
               </tr>
             </tbody>
-          </table>
-        </div>
+          </table></div>
 
         <div class="callout">
           <strong>आधिकारिक सत्यापन:</strong> फॉर्म भरने से पहले हमेशा आधिकारिक पोर्टल (<a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer">ssc.gov.in</a>) के संबंधित भर्ती नोटिफिकेशन से जांच अवश्य कर लें।
-          <p class="text-muted" style="margin: 0.5rem 0 0 0;">अंतिम सत्यापन: अक्टूबर 2026 — हमेशा आधिकारिक स्रोत (<a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer">ssc.gov.in</a>) के नवीनतम नोटिफिकेशन से पुष्टि अवश्य करें।</p>
+          <p class="text-muted">अंतिम सत्यापन: अक्टूबर 2026 — हमेशा आधिकारिक स्रोत (<a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer">ssc.gov.in</a>) के नवीनतम नोटिफिकेशन से पुष्टि अवश्य करें।</p>
         </div>
       </section>
 
       <!-- Interactive Resizer Tool Preloaded -->
-      <section id="resize-tool" class="app-card" style="margin-bottom: 2rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;">
-          <div>
-            <h2>SSC फोटो व सिग्नेचर रिसाइजर टूल</h2>
-            <p class="text-muted" style="margin: 0.25rem 0 0 0;">100% प्राइवेट: आपकी फोटो किसी सर्वर पर अपलोड नहीं होती।</p>
-          </div>
-          <div class="preset-choice">
-            <button type="button" id="btnPresetSSCPhoto" class="btn btn-secondary btn-sm" data-preset="ssc-photo" aria-pressed="false">
-              <i class="fa-solid fa-image" aria-hidden="true"></i> फोटो (20–50 KB)
-            </button>
-            <button type="button" id="btnPresetSSCSig" class="btn btn-secondary btn-sm" data-preset="ssc-signature" aria-pressed="false">
-              <i class="fa-solid fa-signature" aria-hidden="true"></i> सिग्नेचर (10–20 KB)
-            </button>
+<!-- tool:start -->
+      <section class="section" id="resize-tool" aria-labelledby="toolHeading">
+        <h2 class="section-title" id="toolHeading">SSC फोटो व सिग्नेचर रिसाइजर टूल</h2>
+        <section class="ws" id="resizerApp" data-preset="ssc-photo" data-state="empty" data-settings="closed" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="इमेज रिसाइज़र और कंप्रेसर">
+      <div class="ws-head">
+        <ol class="steps" aria-label="प्रगति">
+        <li data-step="add"><span class="steps__n" aria-hidden="true">1</span>फोटो जोड़ें</li>
+        <li data-step="adjust"><span class="steps__n" aria-hidden="true">2</span>समायोजित करें</li>
+        <li data-step="download"><span class="steps__n" aria-hidden="true">3</span>डाउनलोड</li>
+        </ol>
+      </div>
+
+      <div class="ws-stage image-stage">
+        <div id="processErrorBox" class="notice notice--error hidden" role="alert">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span class="notice__body" id="processErrorMessage"></span>
+        </div>
+
+        <div id="fileInfoBox" class="filebar hidden" aria-live="polite">
+          <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
+          <span id="fileInfoText" class="filebar__name"></span>
+          <div class="filebar__actions">
+            <button type="button" id="btnReplaceFile" class="btn btn-sm" title="फाइल बदलें">बदलें</button>
+            <button type="button" id="btnRemoveFile" class="btn btn-sm btn-danger-ghost" title="फाइल हटाएं">हटाएं</button>
           </div>
         </div>
 
-        <!-- Embedded Resizer Workspace -->
-        <div class="app-container" id="resizerApp" data-preset="ssc-photo">
-          <section class="form-panel" id="formPanel" aria-labelledby="toolControlsHeading">
-            <h3 id="toolControlsHeading" class="sr-only">इमेज सेटिंग्स</h3>
+        <div id="cropperPlaceholder" class="ws-empty">
+          <div class="chips ws-presets" role="group" aria-label="त्वरित प्रीसेट">
+            <span class="ws-presets__label">तुरंत चुनें</span>
+            <button type="button" class="chip" data-preset="ssc-photo" aria-pressed="false">फोटो <span class="chip-sub">350 × 450</span></button>
+            <button type="button" class="chip" data-preset="ssc-signature" aria-pressed="false">सिग्नेचर <span class="chip-sub">400 × 200</span></button>
+          </div>
+          <div id="dropzone" class="dropzone" role="group" aria-label="फोटो या सिग्नेचर चुनें">
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
+            <i class="fa-solid fa-arrow-up-from-bracket dropzone__icon" aria-hidden="true"></i>
+            <h3 class="dropzone__title">यहाँ फोटो खींचकर छोड़ें</h3>
+            <p class="dropzone__text">या अपने डिवाइस से चुनें</p>
+            <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> फोटो या सिग्नेचर चुनें</button>
+            <p class="dropzone__hint">JPEG, PNG, WebP समर्थित। फाइल आपके फोन/कंप्यूटर पर ही रहती है।</p>
+          </div>
+        </div>
 
-            <div id="processErrorBox" class="alert-box alert-box-danger hidden" role="alert">
-              <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-              <span id="processErrorMessage"></span>
+        <div id="cropperActiveArea" class="ws-crop hidden">
+          <div class="cropper-container-wrapper" tabindex="0" role="group" aria-label="इमेज क्रॉप। तीर कुंजियाँ क्रॉप को हिलाती हैं; प्लस और माइनस ज़ूम करते हैं।">
+            <img id="imageToCrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="क्रॉप करने के लिए फोटो">
+          </div>
+          <div class="ws-toolbar" role="toolbar" aria-label="क्रॉप टूल">
+            <div class="ws-toolbar__group">
+              <button type="button" id="btnRotateLeft" class="btn btn-sm btn-icon" title="बाएं घुमाएं" aria-label="बाएं घुमाएं"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+              <button type="button" id="btnRotateRight" class="btn btn-sm btn-icon" title="दाएं घुमाएं" aria-label="दाएं घुमाएं"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+              <button type="button" id="btnZoomOut" class="btn btn-sm btn-icon" title="ज़ूम आउट" aria-label="ज़ूम आउट"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i></button>
+              <button type="button" id="btnZoomIn" class="btn btn-sm btn-icon" title="ज़ूम इन" aria-label="ज़ूम इन"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i></button>
             </div>
+            <button type="button" id="btnResetCrop" class="btn btn-sm btn-ghost" title="क्रॉप रीसेट करें"><i class="fa-solid fa-arrow-rotate-back" aria-hidden="true"></i> रीसेट</button>
+          </div>
+          <p class="ws-hint">क्रॉप की जगह तय करने के लिए खींचें। तीर कुंजियों से हिलाएं; + और − से ज़ूम करें।</p>
+        </div>
 
-            
-
-
-            <div class="file-upload-wrapper">
-              <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="hidden" tabindex="-1" aria-hidden="true" aria-label="फोटो या सिग्नेचर चुनें">
-              <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="फोटो या सिग्नेचर चुनें">
-                <i class="fa-solid fa-cloud-arrow-up dropzone-icon" aria-hidden="true"></i>
-                <p class="dropzone-text"><strong>फोटो या सिग्नेचर चुनने के लिए क्लिक करें</strong> या यहाँ खींचें</p>
-                <p class="dropzone-sub">JPEG, PNG, WebP समर्थित। फाइल आपके फोन/कंप्यूटर पर ही रहती है।</p>
-              </div>
+        <div id="resultArea" class="ws-result hidden" aria-live="polite">
+          <div class="ws-result__head">
+            <h3 class="ws-result__title"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> डाउनलोड के लिए तैयार</h3>
+            <div class="segmented" role="group" aria-label="तुलना">
+              <button type="button" id="btnViewProcessed" class="active" aria-pressed="true">परिणाम <span id="compProcessedKB">-</span></button>
+              <button type="button" id="btnViewOriginal" aria-pressed="false">मूल <span id="compOriginalKB">-</span></button>
             </div>
+          </div>
+          <p class="ws-result__ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> <span id="resultStatus" class="meta-stat-val status-ok"></span></p>
+          <div class="ws-preview checkerboard">
+            <img id="resultImage" src="" alt="रिसाइज की गई फोटो">
+            <img id="originalComparisonImage" src="" alt="मूल फोटो" class="hidden">
+          </div>
+          <dl class="meta-stats">
+            <div class="meta-stat-item"><dt class="meta-stat-label">फाइल साइज</dt><dd class="meta-stat-val status-ok" id="resultFileSize"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">सीमा</dt><dd class="meta-stat-val" id="resultTargetSize"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">आउटपुट साइज़</dt><dd class="meta-stat-val" id="resultDims"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">लक्ष्य साइज़</dt><dd class="meta-stat-val" id="resultTargetDims"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">मूल साइज़</dt><dd class="meta-stat-val" id="resultOrigDims"></dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">फॉर्मेट</dt><dd class="meta-stat-val" id="resultFormat"></dd></div>
+          </dl>
+          <div class="ws-result__actions">
+            <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> डाउनलोड करें</a>
+            <button type="button" id="btnCropAgain" class="btn btn-lg">बदलें और दोबारा करें</button>
+          </div>
+        </div>
+      </div>
 
-            <div id="fileInfoBox" class="file-info-box hidden" aria-live="polite">
-              <span id="fileInfoText">कोई इमेज लोड नहीं है</span>
-              <div class="file-info-actions">
-                <button type="button" id="btnReplaceFile" class="btn-text" aria-label="फाइल बदलें">बदलें</button>
-                <button type="button" id="btnRemoveFile" class="btn-text danger" aria-label="फाइल हटाएं">हटाएं</button>
-              </div>
-            </div>
-
-            <div class="control-group">
-              <label for="presetSelect" class="control-label">टारगेट प्रीसेट</label>
-              <select id="presetSelect" class="form-control custom-select-source">
+      <div class="ws-side">
+        <h2 class="ws-side__title">आउटपुट</h2>
+        <div class="field">
+          <label for="presetSelect" class="field-label">टारगेट प्रीसेट</label>
+          <select id="presetSelect" class="custom-select-source">
                 <option value="ssc-photo" selected>SSC फोटो (350 × 450 px, 20–50 KB)</option>
                 <option value="ssc-signature">SSC सिग्नेचर (400 × 200 px, 10–20 KB)</option>
-                <option value="custom">कस्टम डायमेंशन</option>
-              </select>
-            </div>
+                <option value="custom">कस्टम साइज़</option>
+          </select>
+        </div>
+        <dl class="meta-stats" id="presetSummaryBox" hidden>
+          <div><dt>साइज़</dt><dd id="specDims">350 × 450 px</dd></div>
+          <div><dt>फाइल साइज़ सीमा</dt><dd id="specSize"></dd></div>
+          <div><dt>फॉर्मेट</dt><dd id="specFormat">JPEG</dd></div>
+        </dl>
+        <button type="button" class="btn btn-link btn-sm ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom">साइज़ और सीमा बदलें</button>
 
-            <div class="control-group">
-              <div class="field-trio">
-                <div><label class="control-label" for="customWidth">चौड़ाई</label>
-                <input type="number" id="customWidth" aria-describedby="dimError" class="form-control" value="350" min="20" max="8000"></div>
-                <div><label class="control-label" for="customHeight">ऊंचाई</label>
-                <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="450" min="20" max="8000"></div>
-                <div><label class="control-label" for="unitSelect">यूनिट</label>
-                <select id="unitSelect" class="form-control">
+        <div class="ws-custom" id="wsCustom">
+          <div id="customControls" class="ws-group">
+            <h3 class="ws-group__title">साइज़</h3>
+            <div class="ws-dims">
+              <div class="field">
+                <label class="field-label" id="customWidthLabel" for="customWidth">चौड़ाई</label>
+                <input type="number" id="customWidth" class="input" aria-describedby="dimError" value="350" min="20" max="8000" step="1" inputmode="numeric">
+              </div>
+              <button type="button" id="btnLockAspect" class="btn btn-icon btn-lock active" title="अनुपात लॉक है" aria-label="अनुपात लॉक रखें" aria-pressed="true"><i class="fa-solid fa-lock" aria-hidden="true"></i></button>
+              <div class="field">
+                <label class="field-label" id="customHeightLabel" for="customHeight">ऊंचाई</label>
+                <input type="number" id="customHeight" class="input" aria-describedby="dimError" value="450" min="20" max="8000" step="1" inputmode="numeric">
+              </div>
+            </div>
+            <p id="dimError" class="field-error hidden" role="alert"></p>
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label" for="unitSelect">यूनिट</label>
+                <select id="unitSelect">
                   <option value="px" selected>Pixel (px)</option>
                   <option value="cm">cm</option>
                   <option value="inch">inch</option>
-                </select></div>
+                </select>
               </div>
-              <span id="dimError" class="field-error hidden" role="alert"></span>
+              <div class="field" id="dpiGroup" style="display: none;">
+                <label class="field-label" for="dpiSelect">प्रिंट DPI</label>
+                <select id="dpiSelect">
+                  <option value="300" selected>300 DPI</option>
+                  <option value="200">200 DPI</option>
+                  <option value="150">150 DPI</option>
+                  <option value="72">72 DPI</option>
+                </select>
+              </div>
             </div>
+          </div>
 
-            <div class="control-group">
-              <div class="field-pair">
-                <div><label class="control-label" for="customMinKB">न्यूनतम साइज (KB)</label>
-                <input type="number" id="customMinKB" aria-describedby="sizeError" class="form-control" value="20" min="0" max="5000"></div>
-                <div><label class="control-label" for="customMaxKB">अधिकतम साइज (KB)</label>
-                <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="50" min="1" max="10000"></div>
+          <div class="ws-group">
+            <h3 class="ws-group__title">फाइल साइज़ सीमा</h3>
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label" for="customMinKB">न्यूनतम साइज (KB)</label>
+                <input type="number" id="customMinKB" class="input" aria-describedby="sizeError" value="20" placeholder="0" min="0" max="20000" step="1" inputmode="numeric">
               </div>
-              <span id="sizeError" class="field-error hidden" role="alert"></span>
+              <div class="field">
+                <label class="field-label" for="customMaxKB">अधिकतम साइज (KB)</label>
+                <input type="number" id="customMaxKB" class="input" aria-describedby="sizeError" value="50" min="1" max="20000" step="1" inputmode="numeric">
+              </div>
             </div>
+            <p id="sizeError" class="field-error hidden" role="alert"></p>
+            <button type="button" id="btnOriginalSize" class="btn btn-sm" disabled><i class="fa-solid fa-expand" aria-hidden="true"></i> मूल साइज़ रखें</button>
+            <p class="field-hint">पूरी इमेज उसके अपने आयामों में रहती है। इमेज जोड़ने के बाद उपलब्ध।</p>
+          </div>
 
-            <div class="control-group">
-              <label for="formatSelect" class="control-label">फॉर्मेट</label>
-              <select id="formatSelect" class="form-control custom-select-source">
-                <option value="image/jpeg" selected>JPEG (.jpg) - SSC पोर्टल के लिए आवश्यक</option>
-                <option value="image/png">PNG (.png)</option>
-                <option value="image/webp">WebP (.webp)</option>
-              </select>
+          <div class="ws-group">
+            <div class="field-row">
+              <div class="field">
+                <label for="formatSelect" class="field-label">फॉर्मेट</label>
+                <select id="formatSelect" class="custom-select-source">
+                  <option value="image/jpeg" selected>JPEG (.jpg)</option>
+                  <option value="image/png">PNG (.png)</option>
+                  <option value="image/webp">WebP (.webp)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="aspectRatioSelect" class="field-label">क्रॉप अनुपात</label>
+                <select id="aspectRatioSelect">
+                <option value="target" selected>आउटपुट साइज़ के अनुसार</option>
+                <option value="original">मूल अनुपात</option>
+                <option value="1:1">वर्ग (1:1)</option>
+                <option value="4:3">मानक (4:3)</option>
+                <option value="16:9">वाइडस्क्रीन (16:9)</option>
+                <option value="free">फ्री क्रॉप</option>
+                </select>
+              </div>
             </div>
+          </div>
 
-            <div class="btn-group">
-              <button type="button" id="btnProcess" class="btn btn-primary btn-block" aria-describedby="processSummary" data-busy-label="प्रोसेस हो रहा है...">
-                <i class="fa-solid fa-sliders" aria-hidden="true"></i> रिसाइज और कंप्रेस करें
-              </button>
-            </div>
-            <p id="processSummary" class="process-summary" aria-live="polite" data-label-output="आउटपुट" data-size-under="{max} KB से कम" data-size-range="{min} से {max} KB" data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।" data-label-show="दिखाएं"></p>
-          </section>
-
-          <!-- RIGHT: Crop & Preview Panel -->
-          <section class="preview-panel" id="previewPanel">
-            <div id="cropperPlaceholder" class="cropper-placeholder">
-              <p>क्रॉप और प्रीव्यू देखने के लिए फोटो अपलोड करें</p>
-            </div>
-
-            <div id="cropperActiveArea" class="cropper-active-area hidden">
-              <div class="cropper-container-wrapper">
-                <img id="imageToCrop" alt="क्रॉप करने के लिए फोटो" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7">
+          <details class="disclosure ws-advanced">
+            <summary>बैकग्राउंड और नाम की पट्टी</summary>
+            <div class="disclosure__body">
+              <div class="field">
+                <label for="bgFillSelect" class="field-label">बैकग्राउंड</label>
+                <select id="bgFillSelect">
+                <option value="white" selected>सफेद (अनुशंसित)</option>
+                <option value="black">काला</option>
+                <option value="transparent" disabled>पारदर्शी (केवल PNG और WebP)</option>
+                </select>
+                <p class="field-hint">JPEG पारदर्शी नहीं हो सकता। खाली किनारे इसी रंग के होंगे।</p>
               </div>
-              <div class="cropper-actions">
-                <button type="button" id="btnRotateLeft" class="btn btn-secondary btn-sm" title="बाएं घुमाएं"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> 90°</button>
-                <button type="button" id="btnRotateRight" class="btn btn-secondary btn-sm" title="दाएं घुमाएं"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> 90°</button>
-                <button type="button" id="btnResetCrop" class="btn btn-secondary btn-sm" title="क्रॉप रीसेट करें"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> रीसेट</button>
-              </div>
-            </div>
-
-            <div id="resultArea" class="result-area hidden" aria-live="polite">
-              <div class="result-head"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> डाउनलोड के लिए तैयार</div>
-              <div class="result-card">
-                <img id="resultImage" alt="रिसाइज की गई फोटो" class="result-img">
-              </div>
-              <div class="result-meta-stats">
-                <div><span class="text-muted">आयाम:</span> <strong id="resultDims"></strong></div>
-                <div><span class="text-muted">फाइल साइज:</span> <strong id="resultFileSize" class="status-ok"></strong></div>
-                <div><span class="text-muted">फॉर्मेट:</span> <strong id="resultFormat"></strong></div>
-              </div>
-              <div class="result-actions">
-                <a id="btnDownload" class="btn btn-success btn-block" download="ssc_photo.jpg">
-                  <i class="fa-solid fa-download" aria-hidden="true"></i> डाउनलोड करें
-                </a>
-                <button type="button" id="btnCropAgain" class="btn btn-secondary btn-block">क्रॉप बदलें</button>
+              <div id="dateOptionsBox" class="check-group">
+                <label class="switch" for="addDateCheckbox"><span>नाम और तारीख की पट्टी जोड़ें</span><input type="checkbox" id="addDateCheckbox" role="switch"></label>
+                <div id="dateInputGroup" class="check-group" style="display: none;">
+                  <div class="field">
+                    <label for="annotationDateInput" class="field-label">तारीख</label>
+                    <div class="input-group">
+                      <input type="date" id="annotationDateInput" class="input">
+                      <button type="button" id="btnTodayDate" class="btn">आज</button>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="candidateNameInput" class="field-label">नाम या लेबल <span class="optional">(वैकल्पिक)</span></label>
+                    <input type="text" id="candidateNameInput" class="input" placeholder="जैसे: आपका पूरा नाम">
+                    <p class="field-hint">लंबा नाम पट्टी में फिट होने के लिए छोटा हो सकता है।</p>
+                  </div>
+                </div>
               </div>
             </div>
-          </section>
+          </details>
         </div>
+      </div>
+
+      <div class="ws-action">
+        <p class="ws-action__need">आगे बढ़ने के लिए इमेज जोड़ें।</p>
+        <p id="processSummary" class="process-summary" aria-live="polite" data-label-output="आउटपुट" data-size-under="{max} KB से कम" data-size-range="{min} से {max} KB" data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।" data-label-show="दिखाएं"></p>
+        <button type="button" id="btnProcess" class="btn btn-primary btn-lg btn-block" aria-describedby="processSummary" data-busy-label="प्रोसेस हो रहा है..." disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> रिसाइज और कंप्रेस करें</button>
+      </div>
+    </section>
       </section>
+      <!-- tool:end -->
 
 
         <div class="callout is-warning">
-          <p style="margin: 0;">
-            <strong>लाइव वेबकैम फोटो नोट:</strong> नए SSC पोर्टल (<a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">ssc.gov.in</a>) पर हालिया परीक्षाओं में फोटो वेबकैम या MySSC ऐप से लाइव कैप्चर की जाती है। हस्ताक्षर (10–20 KB, 400 × 200 px) फाइल के रूप में अपलोड होते हैं। हमेशा आधिकारिक विज्ञापन देखें।
+          <p>
+            <strong>लाइव वेबकैम फोटो नोट:</strong> नए SSC पोर्टल (<a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer">ssc.gov.in</a>) पर हालिया परीक्षाओं में फोटो वेबकैम या MySSC ऐप से लाइव कैप्चर की जाती है। हस्ताक्षर (10–20 KB, 400 × 200 px) फाइल के रूप में अपलोड होते हैं। हमेशा आधिकारिक विज्ञापन देखें।
           </p>
         </div>
 
 
       <!-- SSC Detailed Hindi Guide -->
-      <section class="app-card" style="margin-bottom: 2rem;">
+      <section class="section prose">
         <h2>SSC ऑनलाइन आवेदन के लिए जरूरी दिशानिर्देश (विस्तृत गाइड)</h2>
         <p>कर्मचारी चयन आयोग (Staff Selection Commission) द्वारा आयोजित की जाने वाली विभिन्न प्रमुख राष्ट्रीय परीक्षाओं — जैसे <strong>SSC CGL, CHSL, MTS, CPO, और Constable GD</strong> — में हर साल लाखों अभ्यर्थी ऑनलाइन आवेदन करते हैं। आयोग की स्क्रूटनी प्रक्रिया में हजारों फॉर्म केवल अमान्य फोटो या हस्ताक्षर के कारण बिना किसी पूर्व सूचना के सीधे निरस्त (Reject) कर दिए जाते हैं। नीचे दिए गए सभी तकनीकी और कानूनी बिंदुओं को ध्यानपूर्वक समझें:</p>
 
@@ -398,7 +495,7 @@
       </section>
 
       <!-- Common Rejection Reasons Section -->
-      <section class="app-card" style="margin-bottom: 2rem;">
+      <section class="section prose">
         <h2>SSC फॉर्म में फोटो रिजेक्ट होने के मुख्य कारण</h2>
         <ul>
           <li><strong>20 KB से कम साइज:</strong> कई छात्र फोटो कंप्रेस करते समय 15 या 18 KB कर देते हैं। SSC पोर्टल 20 KB से कम फाइल को स्वीकार नहीं करता।</li>
@@ -409,7 +506,7 @@
       </section>
 
       <!-- Reserved Ad Slot: Inside Guide Article -->
-      <div class="ad-slot-container ad-slot-article" aria-label="Advertisement">
+      <div class="ad-slot-container ad-slot-article" role="complementary" aria-label="Advertisement">
         <div class="ad-slot-inner">
           <span class="ad-slot-label">Advertisement</span>
           <!-- AdSense Unit: In-Article -->
@@ -422,17 +519,17 @@
         <div class="related-guides-grid">
           <a href="../signature-cleaner.html" class="guide-card">
             <strong>सिग्नेचर बैकग्राउंड क्लीनर</strong>
-            <p class="text-muted mt-1">कागज की छाया हटाएं और स्याही को गहरा व स्पष्ट बनाएं।</p>
+            <p class="text-muted">कागज की छाया हटाएं और स्याही को गहरा व स्पष्ट बनाएं।</p>
             <span class="resource-link">टूल खोलें <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="../guides/why-was-my-photo-rejected-online-applications.html" class="guide-card">
             <strong>फोटो रिजेक्ट क्यों होती है?</strong>
-            <p class="text-muted mt-1">सरकारी फॉर्म में फोटो रिजेक्शन से बचने के महत्वपूर्ण नियम।</p>
+            <p class="text-muted">सरकारी फॉर्म में फोटो रिजेक्शन से बचने के महत्वपूर्ण नियम।</p>
             <span class="resource-link">गाइड पढ़ें <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="../upsc-photo-signature-size.html" class="guide-card">
             <strong>UPSC फोटो और सिग्नेचर साइज</strong>
-            <p class="text-muted mt-1">UPSC OTR और सिविल सर्विसेज परीक्षा के लिए फोटो नियम।</p>
+            <p class="text-muted">UPSC OTR और सिविल सर्विसेज परीक्षा के लिए फोटो नियम।</p>
             <span class="resource-link">नियम देखें <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
@@ -442,29 +539,56 @@
   </main>
 
   <!-- FOOTER -->
+  <!-- shell:footer:start -->
   <footer class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand-block">
-        <a href="/" class="brand-logo"><img src="../favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="brand" href="../"><img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
         <p>छोटे टूल्स। अगली सीढ़ी आसान।<br>निःशुल्क उपयोग। आपकी फाइलें आपके डिवाइस पर ही रहती हैं।</p>
       </div>
-      <nav class="footer-links" aria-label="Footer Links">
-        <a href="/" class="footer-link">Image tools</a>
-        <a href="../resume.html" class="footer-link">Resume builder</a>
-        <a href="../guides/" class="footer-link">Guides</a>
-        <a href="../about.html" class="footer-link">About</a>
-        <a href="../privacy.html" class="footer-link">Privacy</a>
-        <a href="../terms.html" class="footer-link">Terms</a>
-        <a href="../contact.html" class="footer-link">Contact</a>
-      </nav>
+      <div>
+        <h2 class="site-footer__title">Tools</h2>
+        <ul class="site-footer__list">
+          <li><a href="../">Image resizer</a></li>
+          <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="../image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="../compress-pdf.html">Compress PDF</a></li>
+          <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="../resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">Exam sizes</h2>
+        <ul class="site-footer__list">
+          <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
+          <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
+          <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
+          <li><a href="../neet-photo-signature-size.html">NEET</a></li>
+          <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
+          <li><a href="../resize-image-to-20kb.html">Resize to 20KB</a></li>
+          <li><a href="../resize-image-to-50kb.html">Resize to 50KB</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">ApplyReady</h2>
+        <ul class="site-footer__list">
+          <li><a href="../guides/">Guides</a></li>
+          <li><a href="../how-to-use.html">How to use</a></li>
+          <li><a href="../about.html">About</a></li>
+          <li><a href="../privacy.html">Privacy</a></li>
+          <li><a href="../terms.html">Terms</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
+  <!-- shell:footer:end -->
 
-  <script src="../js/components.js?v=20261012-2" defer></script>
-  <script src="../js/site.js?v=20261012-2"></script>
+  <script src="../js/components.js?v=20261101-1" defer></script>
+  <script src="../js/site.js?v=20261101-1"></script>
   <script src="../js/vendor/cropper.min.js"></script>
-  <script src="../js/presets.js?v=20261011-3"></script>
-  <script src="../js/resizer.js?v=20261012-2"></script>
+  <script src="../js/presets.js?v=20261101-1"></script>
+  <script src="../js/resizer.js?v=20261101-1"></script>
 </body>
 </html>

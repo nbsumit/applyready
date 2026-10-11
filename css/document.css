@@ -1,0 +1,515 @@
+/* ApplyReady resume document styles.
+   This file styles the resume paper only: the sheet, its templates, paper sizes,
+   the paginated preview pages and the browser-print layout. Loaded by resume.html.
+   Everything here was carried over unchanged so the generated resume (preview,
+   print, PDF fallback) is identical. Interface styling lives in app.css. */
+
+/* ---- Paper base ---- */
+/* Strict ATS-Friendly Resume Sheet: ALWAYS White Paper with Dark Text */
+.ats-resume-sheet {
+  background: #FFFFFF !important;
+  color: #111827 !important;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 14mm 16mm;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 10pt;
+  line-height: 1.4;
+  margin: 0 auto;
+  transform-origin: top center;
+}
+
+/* Alternative Font: Modern Sans */
+.ats-resume-sheet.font-sans {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 9.5pt;
+  line-height: 1.4;
+}
+
+.resume-header {
+  text-align: center;
+  margin-bottom: 8pt;
+  border-bottom: 1.5pt solid #111827;
+  padding-bottom: 6pt;
+}
+
+.resume-name {
+  font-size: 18pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+  margin-top: 0;
+  margin-bottom: 2pt;
+  line-height: 1.2;
+  color: #000000 !important;
+}
+
+.resume-target-title {
+  font-size: 10.5pt;
+  font-style: italic;
+  margin-bottom: 4pt;
+  color: #374151 !important;
+}
+
+.resume-contact-line {
+  font-size: 9pt;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem 0.6rem;
+  color: #1F2937 !important;
+}
+
+.resume-contact-item {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.resume-contact-item a {
+  color: #1D4ED8;
+  text-decoration: none;
+}
+
+.resume-section {
+  margin-top: 8pt;
+  page-break-inside: avoid;
+}
+
+.resume-section-title {
+  font-size: 10.5pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+  color: #000000 !important;
+  border-bottom: 0.75pt solid #9CA3AF;
+  padding-bottom: 2pt;
+  margin-bottom: 5pt;
+}
+
+.resume-entry {
+  margin-bottom: 6pt;
+}
+
+.resume-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-weight: bold;
+  font-size: 9.5pt;
+  color: #000000 !important;
+  flex-wrap: wrap;
+}
+
+.resume-entry-sub {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-style: italic;
+  font-size: 9pt;
+  color: #4B5563 !important;
+  margin-top: 1pt;
+  margin-bottom: 2pt;
+  flex-wrap: wrap;
+}
+
+.resume-bullets {
+  list-style: disc;
+  margin-left: 14pt;
+  padding-left: 0;
+  font-size: 9pt;
+  color: #1F2937 !important;
+}
+
+.resume-bullets li {
+  margin-bottom: 2pt;
+  line-height: 1.35;
+}
+
+.resume-skills-row {
+  font-size: 9pt;
+  margin-bottom: 3pt;
+  color: #1F2937 !important;
+  line-height: 1.35;
+}
+
+.skills-category {
+  font-weight: bold;
+  color: #000000 !important;
+}
+
+/* ---- Templates, paper sizes, density, type size ---- */
+/* =========================================================
+   8 RESUME TEMPLATE VISUAL STYLES (ALWAYS WHITE PAPER)
+   ========================================================= */
+/* Template 1: Classic Professional (Serif, Centered, Clear Rules) */
+.ats-resume-sheet.template-classic-professional {
+  font-family: 'Times New Roman', Times, Georgia, serif;
+}
+.ats-resume-sheet.template-classic-professional .resume-header {
+  text-align: center;
+}
+.ats-resume-sheet.template-classic-professional .resume-contact-line {
+  justify-content: center;
+}
+.ats-resume-sheet.template-classic-professional .resume-section-title {
+  border-bottom: 1pt solid #111827;
+}
+
+/* Template 2: Modern Minimal (Sans-Serif, Left-Aligned, Minimal Rules) */
+.ats-resume-sheet.template-modern-minimal {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.ats-resume-sheet.template-modern-minimal .resume-header {
+  text-align: left;
+  border-bottom: 2pt solid #2563EB;
+}
+.ats-resume-sheet.template-modern-minimal .resume-contact-line {
+  justify-content: flex-start;
+}
+.ats-resume-sheet.template-modern-minimal .resume-section-title {
+  border-bottom: none;
+  font-weight: 800;
+  letter-spacing: 0.75pt;
+  color: #0F172A !important;
+}
+
+/* Template 3: Graduate / Early Career (Sans, Left-Aligned) */
+.ats-resume-sheet.template-graduate-early-career {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.ats-resume-sheet.template-graduate-early-career .resume-header {
+  text-align: left;
+  border-bottom: 1.5pt solid #111827;
+}
+.ats-resume-sheet.template-graduate-early-career .resume-contact-line {
+  justify-content: flex-start;
+}
+.ats-resume-sheet.template-graduate-early-career .resume-section-title {
+  border-bottom: 0.75pt solid #CBD5E1;
+}
+
+/* Template 4: Experienced Professional (Serif, Centered, Double Rule) */
+.ats-resume-sheet.template-experienced-professional {
+  font-family: 'Times New Roman', Times, Georgia, serif;
+}
+.ats-resume-sheet.template-experienced-professional .resume-header {
+  text-align: center;
+  border-bottom: 2.5pt double #0F172A;
+}
+.ats-resume-sheet.template-experienced-professional .resume-contact-line {
+  justify-content: center;
+}
+.ats-resume-sheet.template-experienced-professional .resume-section-title {
+  border-bottom: 0.75pt solid #64748B;
+}
+
+/* Template 5: Project Focused (Sans, Left-Aligned, Tech Emphasis) */
+.ats-resume-sheet.template-project-focused {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.ats-resume-sheet.template-project-focused .resume-header {
+  text-align: left;
+  border-bottom: 1.5pt solid #1E293B;
+}
+.ats-resume-sheet.template-project-focused .resume-contact-line {
+  justify-content: flex-start;
+}
+.ats-resume-sheet.template-project-focused .resume-section-title {
+  border-bottom: 1pt solid #CBD5E1;
+}
+
+/* Template 6: Career Transition (Sans, Left, Summary & Skills Highlighted) */
+.ats-resume-sheet.template-career-transition {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.ats-resume-sheet.template-career-transition .resume-header {
+  text-align: left;
+  border-bottom: 1.5pt solid #047857;
+}
+.ats-resume-sheet.template-career-transition .resume-contact-line {
+  justify-content: flex-start;
+}
+.ats-resume-sheet.template-career-transition .resume-section-title {
+  border-bottom: 0.75pt solid #CBD5E1;
+}
+
+/* Template 7: Compact Professional (Sans, Dense) */
+.ats-resume-sheet.template-compact-professional {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 10mm 12mm;
+  font-size: 8.75pt;
+  line-height: 1.32;
+}
+.ats-resume-sheet.template-compact-professional .resume-header {
+  text-align: left;
+  margin-bottom: 5pt;
+  padding-bottom: 4pt;
+  border-bottom: 1pt solid #0F172A;
+}
+.ats-resume-sheet.template-compact-professional .resume-name {
+  font-size: 15pt;
+}
+.ats-resume-sheet.template-compact-professional .resume-contact-line {
+  justify-content: flex-start;
+  font-size: 8.25pt;
+}
+.ats-resume-sheet.template-compact-professional .resume-section {
+  margin-top: 5pt;
+}
+.ats-resume-sheet.template-compact-professional .resume-section-title {
+  font-size: 9.5pt;
+  margin-bottom: 3pt;
+  padding-bottom: 1pt;
+}
+.ats-resume-sheet.template-compact-professional .resume-bullets {
+  font-size: 8.5pt;
+}
+
+/* Template 8: Academic / Research CV (Serif, Centered, Scholarly) */
+.ats-resume-sheet.template-academic-cv {
+  font-family: 'Times New Roman', Times, Georgia, serif;
+}
+.ats-resume-sheet.template-academic-cv .resume-header {
+  text-align: center;
+  border-bottom: 1.5pt solid #0F172A;
+}
+.ats-resume-sheet.template-academic-cv .resume-contact-line {
+  justify-content: center;
+}
+.ats-resume-sheet.template-academic-cv .resume-section-title {
+  border-bottom: 0.75pt solid #94A3B8;
+  letter-spacing: 1pt;
+}
+
+/* Page Sizes */
+.ats-resume-sheet.page-a4 {
+  width: 210mm;
+  min-height: 297mm;
+}
+
+.ats-resume-sheet.page-letter {
+  width: 8.5in;
+  min-height: 11in;
+}
+
+/* Density Controls */
+.ats-resume-sheet.density-compact {
+  padding: 10mm 12mm;
+  font-size: 9pt;
+  line-height: 1.33;
+}
+.ats-resume-sheet.density-compact .resume-section {
+  margin-top: 5pt;
+}
+.ats-resume-sheet.density-compact .resume-entry {
+  margin-bottom: 4pt;
+}
+
+/* Font Size Variants */
+.ats-resume-sheet.font-size-comfortable {
+  font-size: 10pt;
+  line-height: 1.45;
+}
+.ats-resume-sheet.font-size-comfortable .resume-section-title {
+  font-size: 11pt;
+}
+.ats-resume-sheet.font-size-compact {
+  font-size: 8.75pt;
+  line-height: 1.32;
+}
+.ats-resume-sheet.font-size-compact .resume-section-title {
+  font-size: 9.5pt;
+}
+.ats-resume-sheet.font-size-standard {
+  font-size: 9.5pt;
+  line-height: 1.4;
+}
+
+
+/* ---- Paper typography shared by screen and print ---- */
+/* Resume paper typography is shared by screen and print. */
+.ats-resume-sheet { --document-size: 11pt; font-size: var(--document-size) !important; }
+.ats-resume-sheet.font-size-comfortable { --document-size: 12pt; }
+.ats-resume-sheet.font-size-compact { --document-size: 10pt; }
+.ats-resume-sheet .resume-section > p, .ats-resume-sheet .resume-bullets, .ats-resume-sheet .resume-entry, .ats-resume-sheet .resume-skills-row { font-size: var(--document-size) !important; }
+.ats-resume-sheet .resume-entry-header { font-size: var(--document-size); gap: 2pt 10pt; align-items: baseline; }
+.ats-resume-sheet .resume-entry-header span { min-width: 0; overflow-wrap: anywhere; }
+.ats-resume-sheet .resume-contact-item { white-space: normal; overflow-wrap: anywhere; }
+.ats-resume-sheet .resume-section-title { font-size: calc(var(--document-size) + .5pt) !important; }
+/* Match the live paper's vertical rhythm to the vector PDF renderer. */
+.ats-resume-sheet { line-height: 1.36 !important; }
+.ats-resume-sheet .resume-header { margin-bottom: 4pt; padding-bottom: 4pt; }
+.ats-resume-sheet .resume-section { margin-top: 3pt; }
+.ats-resume-sheet .resume-section-title { line-height: 1.2; padding-bottom: 1.5pt; margin-bottom: 4pt; }
+.ats-resume-sheet .resume-entry { margin-bottom: 2pt; line-height: 1.35; }
+.ats-resume-sheet .resume-bullets li { margin-bottom: 0; line-height: 1.35; }
+.ats-resume-sheet .resume-skills-row { margin-bottom: 2pt; line-height: 1.35; }
+.ats-resume-sheet.density-compact .resume-section { margin-top: 2pt; }
+.ats-resume-sheet.density-compact .resume-entry { margin-bottom: 1pt; }
+.ats-resume-sheet.font-serif { font-family: 'Times New Roman', Times, 'ApplyReady Devanagari', serif !important; }
+.ats-resume-sheet.font-sans { font-family: Arial, Helvetica, 'ApplyReady Devanagari', sans-serif !important; }
+
+/* ---- Paginated preview pages (screen) ---- */
+@media screen {
+  .resume-visual-pages { display: flex; width: max-content; flex-direction: column; gap: 1.25rem; transform-origin: top left; }
+  .resume-visual-page { flex: none; margin: 0 !important; overflow: hidden; transform: none !important; transform-origin: top left; box-shadow: 0 12px 34px rgba(18,33,59,.16); }
+  .resume-visual-page.page-a4 { height: 297mm; min-height: 297mm; }
+  .resume-visual-page.page-letter { height: 11in; min-height: 11in; }
+  .resume-source-sheet { position: absolute !important; inset: 0 auto auto 0; visibility: hidden !important; pointer-events: none !important; margin: 0 !important; box-shadow: none !important; transform-origin: top left !important; }
+}
+
+/* ---- Print ---- */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+
+  .main-content,
+  .resume-app-layout,
+  .preview-panel,
+  .resume-preview-outer,
+  .resume-preview-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: block !important;
+    position: static !important;
+  }
+
+  .ats-resume-sheet {
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    box-shadow: none !important;
+  }
+
+  .resume-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .resume-entry {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+@media print {
+  /* Print the exact physical pages used by the live preview. */
+  .resume-source-sheet, .template-preview-backdrop { display: none !important; }
+
+  html, body {
+    width: auto !important;
+    min-height: 0 !important;
+    background: #fff !important;
+  }
+
+  .resume-preview-outer {
+    max-height: none !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .resume-preview-wrapper {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+  }
+
+  .resume-visual-pages {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    gap: 0 !important;
+    transform: none !important;
+  }
+
+  .resume-visual-page {
+    display: block !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    transform: none !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+    color-scheme: light;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .resume-visual-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .resume-visual-page.page-a4 {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    height: 297mm !important;
+    padding: 14mm 16mm !important;
+  }
+
+  .resume-visual-page.page-letter {
+    width: 8.5in !important;
+    min-height: 11in !important;
+    height: 11in !important;
+    padding: 14mm 16mm !important;
+  }
+
+  .resume-visual-page.density-compact {
+    padding: 10mm 12mm !important;
+  }
+
+  .resume-header { break-inside: avoid; }
+  .resume-section { break-inside: auto; }
+  .resume-section-title { break-after: avoid; }
+  .resume-bullets li { break-inside: avoid; }
+}
+
+
+/* PDF coordinates already include safe paper margins. */
+.ats-resume-sheet.resume-vector-page { padding: 0 !important; }
+.resume-vector-page > svg { display: block; overflow: hidden; }
+.resume-vector-page text { white-space: pre; }
+
+/* ---- Template visual rules for the HTML document ---- */
+/* Template visual rules for the HTML document (non-Latin print fallback).
+   Classes and colours come from the same template style as the PDF. */
+.ats-resume-sheet .resume-name { text-transform: none; }
+.ats-resume-sheet.header-left .resume-header { text-align: left; }
+.ats-resume-sheet.header-left .resume-contact-line { justify-content: flex-start; }
+.ats-resume-sheet.header-center .resume-header { text-align: center; }
+.ats-resume-sheet.header-center .resume-contact-line { justify-content: center; }
+.ats-resume-sheet.header-rule-single .resume-header { border-bottom: 1.2pt solid var(--resume-header-rule-color, #1a1a1a); }
+.ats-resume-sheet.header-rule-double .resume-header { border-bottom: 2.5pt double var(--resume-header-rule-color, #1a1a1a); }
+.ats-resume-sheet.header-rule-none .resume-header { border-bottom: 0; }
+.ats-resume-sheet .resume-section-title { color: var(--resume-heading-color, #000) !important; }
+.ats-resume-sheet.heading-rule-line .resume-section-title { border-bottom: .6pt solid var(--resume-rule-color, #a6b3bf); }
+.ats-resume-sheet.heading-rule-thick .resume-section-title { border-bottom: 1.4pt solid var(--resume-rule-color, #0f2a54); }
+.ats-resume-sheet.heading-rule-none .resume-section-title { border-bottom: 0; }
+.ats-resume-sheet .resume-entry-meta { font-weight: 400; font-style: italic; font-size: 9pt; color: var(--resume-meta-color, #5a6673); margin-left: auto; text-align: right; }
+.ats-resume-sheet .resume-entry-tech { font-weight: 400; font-style: italic; color: var(--resume-meta-color, #5a6673); }
+.ats-resume-sheet .resume-entry-header a, .ats-resume-sheet .resume-contact-item a { color: var(--resume-link-color, #1d4ed8); font-weight: 400; text-decoration: none; }
+.ats-resume-sheet.dates-below .resume-entry-header { display: block; }
+.ats-resume-sheet.dates-below .resume-entry-header > span { display: block; }
+.ats-resume-sheet.dates-below .resume-entry-meta { margin-left: 0; text-align: left; }
+.ats-resume-sheet .resume-contact-sep { color: #94a3b8; margin: 0 .35rem; }
+.ats-resume-sheet .resume-summary { margin: 0; line-height: 1.4; }
+.ats-resume-sheet .resume-list-entry { padding-left: 12pt; text-indent: -9pt; }
+.ats-resume-sheet .resume-list-entry::before { content: "\2022\00a0\00a0"; }

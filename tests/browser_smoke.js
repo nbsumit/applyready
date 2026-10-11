@@ -44,9 +44,9 @@ let checks = 0; const ok = (c, m) => { assert(c, m); checks++; };
   await page.goto(`${origin}/index.html`);
   await page.locator('#fileInput').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: png(1200, 1500) });
   await page.locator('#cropperActiveArea').waitFor({ state: 'visible' });
-  const trigger = page.locator('#presetSelect').locator('xpath=..').locator('.custom-select__button');
+  const trigger = page.locator('#presetSelect').locator('xpath=..').locator('.select-btn');
   await trigger.scrollIntoViewIfNeeded(); await trigger.click();
-  await page.locator('.custom-select__list:not([hidden]) [role=option]', { hasText: 'ID / Passport' }).click();
+  await page.locator('.select-list:not([hidden]) [role=option]', { hasText: 'Passport Photo' }).click();
   ok(await page.locator('#customWidth').inputValue() === '350', 'preset chosen through the visible menu');
   await page.locator('#btnProcess').click();
   await page.locator('#resultArea').waitFor({ state: 'visible' });
@@ -101,11 +101,11 @@ let checks = 0; const ok = (c, m) => { assert(c, m); checks++; };
 
   // Resume: import, export every format
   await page.goto(`${origin}/resume.html`);
-  await page.locator('.draft-options > summary').click();
+  await page.locator('#tabDownload').click();
   await page.locator('#fileImportInput').setInputFiles({ name: 'resume.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ version: 2, app: 'ApplyReady', data: resumeFixture() })) });
   await page.waitForFunction(() => document.getElementById('resumeSheet').textContent.includes('GRANT_MARKER'));
   for (const [button, ext, magic] of [['#btnQuickPDF', 'pdf', '%PDF'], ['#btnDownloadDOCX', 'docx', 'PK'], ['#btnDownloadText', 'txt', null]]) {
-    if (button !== '#btnQuickPDF') await page.locator('#tabReview').click();
+    if (button !== '#btnQuickPDF') await page.locator('#tabDownload').click();
     const d = page.waitForEvent('download'); await page.locator(button).click();
     const f = path.join(out, `resume.${ext}`); await (await d).saveAs(f);
     const bytes = fs.readFileSync(f);

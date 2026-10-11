@@ -29,7 +29,7 @@ Status as of 2026-10-11. This file records what the site already satisfies, what
 ## After approval
 
 1. In AdSense, create ad units and note each slot id.
-2. In `css/style.css`, remove `display: none !important` from `.ad-slot-container, .ad-container`.
+2. Nothing to change in `css/app.css`: `.ad-slot-container` is hidden while it holds no `<ins>` element and shows itself as soon as a live unit is added (`.ad-slot-container:has(ins)`).
 3. In each page's slot, replace the commented `<ins class="adsbygoogle" ...>` with a live unit that uses the real `data-ad-slot`.
 4. Place ads only on guides, exam pages and KB pages. Do not place ads inside the tool panels, result panels, error or empty states, the 404 page or the offline page.
 5. Set up the Google certified consent message under Privacy & messaging for visitors in the EEA, the UK and Switzerland.

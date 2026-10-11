@@ -5,7 +5,7 @@
   "description": "Private in-browser image tools and resume builder",
   "scripts": {
     "test": "node tests/run_tests.js && node tests/regression_tests.js && node tests/content_tests.js",
-    "test:browser": "node tests/browser_tests.js && node tests/ui_tests.js && node tests/browser_smoke.js",
+    "test:browser": "node tests/browser_tests.js && node tests/image_workflow_tests.js && node tests/resume_flow_tests.js && node tests/ui_tests.js && node tests/browser_smoke.js",
     "test:ui": "node tests/ui_tests.js",
     "test:smoke": "node tests/browser_smoke.js",
     "test:firefox": "BROWSER=firefox node tests/ui_tests.js && BROWSER=firefox node tests/browser_smoke.js",

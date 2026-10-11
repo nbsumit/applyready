@@ -90,14 +90,13 @@
   <link rel="manifest" href="../favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="../js/theme.js"></script>
+  <script src="../js/theme.js?v=20261101-1"></script>
 
-  <!-- Font Awesome Icons -->
+  <!-- shell:styles:start -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
+  <link rel="stylesheet" href="../css/app.css?v=20261101-1">
+  <!-- shell:styles:end -->
 
-  <link rel="stylesheet" href="../css/style.css?v=20261014-1">
-  <link rel="stylesheet" href="../css/workspace.css?v=20261014-1">
-  <link rel="stylesheet" href="../css/app.css?v=20261014-1">
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
   <meta name="google-adsense-account" content="ca-pub-2713609207324356">
@@ -105,52 +104,68 @@
 <body class="content-page">
 
   <!-- NAVIGATION -->
+  <!-- shell:header:start -->
   <a class="skip-link" href="#mainContent">Skip to content</a>
-  <nav class="navbar" aria-label="Main Navigation">
-    <div class="nav-container">
-      <a href="/" class="brand-logo" aria-label="ApplyReady Home">
-        <img src="../favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
-        <span>ApplyReady<span class="brand-dot">.</span></span>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="../" aria-label="ApplyReady home">
+        <img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span>ApplyReady</span>
       </a>
-      <div class="nav-links" id="navMenu">
-        <div class="tools-menu">
-          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
-          <div class="tools-menu__panel" role="menu">
-            <div class="tools-menu__group"><strong>Image tools</strong>
-              <a href="../" role="menuitem">Image resizer</a>
-              <a href="../signature-cleaner.html" role="menuitem">Signature cleaner</a>
-              <a href="../image-to-pdf.html" role="menuitem">Image to PDF</a>
-              <a href="../compress-pdf.html" role="menuitem">Compress PDF</a>
-              <a href="../passport-photo-print.html" role="menuitem">Passport photo print</a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+            <div class="menu__group">
+              <h2 class="menu__title">Image tools</h2>
+              <ul class="menu__list">
+                <li><a href="../">Image resizer</a></li>
+                <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+                <li><a href="../image-to-pdf.html">Image to PDF</a></li>
+                <li><a href="../compress-pdf.html">Compress PDF</a></li>
+                <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Exam specs</strong>
-              <a href="../ssc-photo-signature-size.html" role="menuitem">SSC</a>
-              <a href="../upsc-photo-signature-size.html" role="menuitem">UPSC</a>
-              <a href="../ibps-photo-signature-size.html" role="menuitem">IBPS</a>
-              <a href="../neet-photo-signature-size.html" role="menuitem">NEET</a>
-              <a href="../rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Exam sizes</h2>
+              <ul class="menu__list">
+                <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
+                <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
+                <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
+                <li><a href="../neet-photo-signature-size.html">NEET</a></li>
+                <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Resize to KB</strong>
-              <a href="../resize-image-to-10kb.html" role="menuitem">10 KB</a>
-              <a href="../resize-image-to-20kb.html" role="menuitem">20 KB</a>
-              <a href="../resize-image-to-50kb.html" role="menuitem">50 KB</a>
-              <a href="../resize-image-to-100kb.html" role="menuitem">100 KB</a>
-              <a href="../resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Resize to KB</h2>
+              <ul class="menu__list">
+                <li><a href="../resize-image-to-10kb.html">10 KB</a></li>
+                <li><a href="../resize-image-to-20kb.html">20 KB</a></li>
+                <li><a href="../resize-image-to-50kb.html">50 KB</a></li>
+                <li><a href="../resize-image-to-100kb.html">100 KB</a></li>
+                <li><a href="../resize-image-to-200kb.html">200 KB</a></li>
+              </ul>
             </div>
-          </div>
-        </div><a href="/" class="nav-link">Image tools</a><a href="../resume.html" class="nav-link">Resume builder</a><a href="../guides/" class="nav-link active" aria-current="page">Guides</a>        <a href="../hi/ssc-photo-signature-size.html" class="nav-link">हिन्दी</a>
-      </div>
-      <div class="nav-actions">
-        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
-        <button type="button" id="navMenuToggle" class="theme-toggle-btn nav-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navMenu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+            </div>
+          </li>
+          <li><a class="site-nav__link" href="../resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="../guides/" aria-current="page">Guides</a></li>
+          <li><a class="site-nav__link" href="../hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
     </div>
-  </nav>
+  </header>
+  <!-- shell:header:end -->
 
   <!-- MAIN CONTAINER -->
   <noscript><p class="noscript-note">Enable JavaScript to use the tools. The guides remain available without it.</p></noscript>
-  <main id="mainContent" class="main-content">
-    <article class="guide-content">
+  <main id="mainContent" class="page page--read">
+    <article class="article">
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
         <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -158,21 +173,19 @@
           <li class="breadcrumb-item active" aria-current="page">Passport Photo at Home</li>
         </ol>
       </nav>
-      <header style="margin-bottom: 2rem;">
-        <span class="eyebrow" style="color: var(--primary);">Photo and File Size</span>
-        <h1>Taking a Passport-Style Photo at Home: Light, Background and Framing</h1>
-        <p class="hero-subtitle" style="text-align: left; margin: 0;">
-          Most rejected photos fail on light and background, not on file size. Here is how to take one that passes the first time.
-        </p>
+      <header class="page-head">
+        <span class="eyebrow">Photo and File Size</span>
+        <h1 class="page-title">Taking a Passport-Style Photo at Home: Light, Background and Framing</h1>
+        <p class="page-lede">Most rejected photos fail on light and background, not on file size. Here is how to take one that passes the first time.</p>
         <p class="guide-meta">By <a href="../about.html">Sumit Sengar</a> | Last reviewed October 2026 | 5 min read</p>
       </header>
-<section class="app-card">
+<section class="section prose">
 <h2>What the checker is really looking at</h2>
 <p>Whether the check is done by software or by a person, the same few things decide the result: is the face fully visible and evenly lit, is the background plain and light, is the head the right size in the frame, and is the picture sharp. A phone can meet all four if you control the light and the distance.</p>
 <div class="callout"><strong>Always check the form's own instructions.</strong> Background colour, head position and clothing rules differ between portals and between exams. Treat this guide as a method, and follow your form's written requirements where they differ.</div>
 </section>
 
-<section class="app-card">
+<section class="section prose">
 <h2>Light: use a window, not the room light</h2>
 <ul>
 <li>Stand facing a window with daylight coming in, in the morning or afternoon. Avoid direct sun on your face, which creates squinting and hard shadows.</li>
@@ -185,7 +198,7 @@
 <p>A white or very light wall works well. Stand about a metre in front of it so your shadow does not fall on the wall. If you do not have a clear wall, hang a plain light sheet. Check the edges of the frame: curtains, photo frames and switches near the corners are easy to miss.</p>
 </section>
 
-<section class="app-card">
+<section class="section prose">
 <h2>Framing and distance</h2>
 <ul>
 <li><strong>Camera height:</strong> at eye level. A camera held low makes the chin look large; a camera held high shortens the face.</li>
@@ -197,7 +210,7 @@
 <p>Take at least five photos and pick the sharpest. Look at each at full size before you choose, because small blur is hard to see on the phone screen.</p>
 </section>
 
-<section class="app-card">
+<section class="section prose">
 <h2>Things that cause rejection</h2>
 <ul>
 <li>Beauty filters or auto retouching in the camera app. Turn them off in the camera settings.</li>
@@ -208,15 +221,15 @@
 </ul>
 </section>
 
-<section class="app-card">
+<section class="section prose">
 <h2>After the photo: crop, resize, then print if needed</h2>
 <p>Crop to the ratio the form uses, then resize to its dimensions and size limit. The <a href="how-to-reduce-photo-to-50kb-without-blur.html">50 KB guide</a> shows the order that keeps a face sharp. If you also need printed copies for a physical application or an offline document, the ApplyReady <a href="../passport-photo-print.html">passport photo print sheet</a> tiles several photos onto a 4 x 6 inch or A4 sheet so you can print them at a local studio or at home.</p>
 <p>
-<a href="../passport-photo-print.html" class="btn btn-primary" style="display: inline-flex; width: auto;"><i class="fa-solid fa-print" aria-hidden="true"></i> Make a printable photo sheet</a>
+<a href="../passport-photo-print.html" class="btn btn-primary"><i class="fa-solid fa-print" aria-hidden="true"></i> Make a printable photo sheet</a>
 </p>
 </section>
 
-<section class="app-card">
+<section class="section prose">
 <h2>Frequently asked questions</h2>
 <h3>Do I need a studio to get a photo accepted online?</h3>
 <p>Not usually. Many online forms check size, background, framing and clarity, which a phone can meet with window light and a plain wall. Some physical documents, such as a passport, have stricter photograph rules and may require a studio photo; check the instructions for the document you are applying for.</p>
@@ -233,7 +246,7 @@
 </section>
 
       <!-- Reserved Ad Slot: Inside Guide Article -->
-      <div class="ad-slot-container ad-slot-article" aria-label="Advertisement">
+      <div class="ad-slot-container ad-slot-article" role="complementary" aria-label="Advertisement">
         <div class="ad-slot-inner">
           <span class="ad-slot-label">Advertisement</span>
           <!-- AdSense Unit: In-Article -->
@@ -245,17 +258,17 @@
         <div class="related-guides-grid">
           <a href="why-was-my-photo-rejected-online-applications.html" class="guide-card">
             <strong>Why Was My Photo Rejected?</strong>
-            <p class="text-muted mt-1">Troubleshoot cryptic upload failures: minimum KB thresholds, EXIF orientation rotations, fake JPEGs, and AI face checks.</p>
+            <p class="text-muted">Troubleshoot cryptic upload failures: minimum KB thresholds, EXIF orientation rotations, fake JPEGs, and AI face checks.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="aadhaar-pan-passport-photo-specifications.html" class="guide-card">
             <strong>Aadhaar, PAN &amp; Passport Photo Specs</strong>
-            <p class="text-muted mt-1">Official physical dimensions in cm and inches, DPI standards, file sizes, and background rules for identity cards.</p>
+            <p class="text-muted">Official physical dimensions in cm and inches, DPI standards, file sizes, and background rules for identity cards.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="how-to-reduce-photo-to-50kb-without-blur.html" class="guide-card">
             <strong>How to Reduce a Photo to 50 KB Without Making It Blurry</strong>
-            <p class="text-muted mt-1">Crop first, fix the pixel size second, compress last, and only once. The order matters more than any setting.</p>
+            <p class="text-muted">Crop first, fix the pixel size second, compress last, and only once. The order matters more than any setting.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
@@ -264,26 +277,53 @@
   </main>
 
   <!-- FOOTER -->
+  <!-- shell:footer:start -->
   <footer class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand-block">
-        <a href="/" class="brand-logo"><img src="../favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="brand" href="../"><img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
         <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
       </div>
-      <nav class="footer-links" aria-label="Footer Links">
-        <a href="/" class="footer-link">Image tools</a>
-        <a href="../resume.html" class="footer-link">Resume builder</a>
-        <a href="../guides/" class="footer-link">Guides</a>
-        <a href="../about.html" class="footer-link">About</a>
-        <a href="../privacy.html" class="footer-link">Privacy</a>
-        <a href="../terms.html" class="footer-link">Terms</a>
-        <a href="../contact.html" class="footer-link">Contact</a>
-      </nav>
+      <div>
+        <h2 class="site-footer__title">Tools</h2>
+        <ul class="site-footer__list">
+          <li><a href="../">Image resizer</a></li>
+          <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="../image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="../compress-pdf.html">Compress PDF</a></li>
+          <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="../resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">Exam sizes</h2>
+        <ul class="site-footer__list">
+          <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
+          <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
+          <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
+          <li><a href="../neet-photo-signature-size.html">NEET</a></li>
+          <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
+          <li><a href="../resize-image-to-20kb.html">Resize to 20KB</a></li>
+          <li><a href="../resize-image-to-50kb.html">Resize to 50KB</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">ApplyReady</h2>
+        <ul class="site-footer__list">
+          <li><a href="../guides/">Guides</a></li>
+          <li><a href="../how-to-use.html">How to use</a></li>
+          <li><a href="../about.html">About</a></li>
+          <li><a href="../privacy.html">Privacy</a></li>
+          <li><a href="../terms.html">Terms</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
+  <!-- shell:footer:end -->
 
-  <script src="../js/components.js?v=20261012-2" defer></script>
-  <script src="../js/site.js?v=20261012-2"></script>
+  <script src="../js/components.js?v=20261101-1" defer></script>
+  <script src="../js/site.js?v=20261101-1"></script>
 </body>
 </html>

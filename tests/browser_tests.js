@@ -38,6 +38,12 @@ const server = http.createServer((req,res) => {
   page.on('dialog',d=>{dialogs.push(d.message()); return d[dialogAction]();});
   const visit=async file=>{const path=file.endsWith('/')?file+'index.html':file; await page.goto(`${origin}/${path}`);await page.evaluate(()=>document.fonts.ready);};
   const overflow=async()=>page.evaluate(()=>document.documentElement.scrollWidth > innerWidth+1);
+  // Before an image exists the output settings sit behind "Edit size and limits".
+  const openSettings=async()=>{const toggle=page.locator('.ws-customize:visible');if(await toggle.count())await toggle.click();};
+  // On a phone the settings fold away once a result exists; "Adjust and redo" brings them back.
+  const adjust=async()=>{if(await page.locator('#resultArea').isVisible())await page.locator('#btnCropAgain').click();};
+  const dialog=page.locator('.dialog--confirm');
+  const confirmIfAsked=async()=>{if(await dialog.waitFor({state:'visible',timeout:800}).then(()=>true,()=>false))await dialog.locator('[data-act="ok"]').click();};
   const audit=async label=>{
     // Audit the settled theme rather than an intermediate transition frame.
     await page.waitForTimeout(250);
@@ -52,7 +58,7 @@ const server = http.createServer((req,res) => {
       for(const width of [320,360,390,768,1024,1366,1440,1920]) {
         await page.setViewportSize({width,height:900});
         ok(!await overflow(),`${file}/${theme}/${width}: page overflows`);
-        if(file==='resume.html' && width<950) {
+        if(file==='resume.html' && width<1000) {
           await page.locator('#tabPreview').click();
           ok(!await overflow(),`Resume preview overflows at ${width}`);
           const bounds=await page.evaluate(()=>{const sheet=document.querySelector('#resumeVisualPages .resume-visual-page').getBoundingClientRect(),outer=document.getElementById('resumePreviewOuter').getBoundingClientRect();return {left:sheet.left,right:sheet.right,outerLeft:outer.left,outerRight:outer.right};});
@@ -71,6 +77,7 @@ const server = http.createServer((req,res) => {
   ok(await page.locator('#btnOriginalSize').isDisabled(), 'Original size requires a decoded source');
   await page.locator('[data-preset="passport"]').click();
   ok(await page.locator('#presetSelect').inputValue()==='passport', 'Quick photo preset updates the selected preset');
+  await openSettings();
   ok(await page.locator('#customWidth').isVisible(), 'Preset dimensions remain editable');
   await page.locator('#presetSelect').selectOption('custom');
   await page.locator('#customWidth').fill('700');
@@ -99,25 +106,27 @@ const server = http.createServer((req,res) => {
   await page.locator('#btnUndo').click();ok(await page.locator('#fullName').inputValue()==='', 'Typing undo restores previous text');
   await page.locator('#btnRedo').click();ok(await page.locator('#fullName').inputValue()==='Jordan Lee', 'Typing redo restores text');
   await page.locator('#email').fill('jordan@example.com');
-  await page.locator('.draft-options > summary').click();
+  await page.locator('#tabDownload').click();
   await page.locator('#chkSaveDraft').check();
   await page.locator('#tabDesign').click();await page.locator('#pageSizeSelect').selectOption('letter');await page.locator('#fontSelect').selectOption('sans');
   await page.reload();ok(await page.locator('#fullName').inputValue()==='Jordan Lee','Consented draft restores after reload');
   await page.locator('#tabDesign').click();ok(await page.locator('#pageSizeSelect').inputValue()==='letter','Restored design selector agrees with saved paper size');
   ok(await page.locator('#fontSelect').inputValue()==='sans','Restored typography selector agrees with saved draft');
   await page.locator('#tabContent').click();
-  const nameBefore=await page.locator('#fullName').inputValue();const dialogCount=dialogs.length;
-  await page.locator('#btnLoadSample').click();ok(dialogs.length===dialogCount+1,'Replacing an existing draft requires an explicit decision');
+  const nameBefore=await page.locator('#fullName').inputValue();
+  await page.locator('#btnLoadSample').click();await dialog.waitFor({state:'visible'});ok(await dialog.count()===1,'Replacing an existing draft requires an explicit decision');
+  await dialog.locator('[data-act="cancel"]').click();
   ok(await page.locator('#fullName').inputValue()===nameBefore,'Canceling sample replacement preserves content');
-  await page.locator('.draft-options > summary').click();
+  await page.locator('#tabDownload').click();
   await page.locator('#fileImportInput').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({version:2,data:{personal:{fullName:[]},experience:[],education:[],projects:[]}}))});
   await page.locator('#taskNotification').filter({hasText:'Could not import'}).waitFor();
   ok(await page.locator('#fullName').inputValue()===nameBefore,'Malformed backup cannot erase or crash the current resume');
-  const fixture=resumeFixture();dialogAction='accept';
+  const fixture=resumeFixture();
   await page.locator('#fileImportInput').setInputFiles({name:'resume.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({version:2,app:'ApplyReady',data:fixture}))});
+  await dialog.waitFor({state:'visible'});await dialog.locator('[data-act="ok"]').click();
   await page.waitForFunction(()=>document.getElementById('resumeSheet').textContent.includes('GRANT_MARKER'));
   ok(await page.locator('#fullName').evaluate(el=>el===document.activeElement), 'Restoring a backup focuses its contact details');
-  ok(await page.locator('#fullName').evaluate(el=>el.getBoundingClientRect().top>=document.querySelector('.navbar').getBoundingClientRect().bottom), 'Restored contact fields are clear of the sticky navigation');
+  ok(await page.locator('#fullName').evaluate(el=>el.getBoundingClientRect().top>=document.querySelector('.site-header').getBoundingClientRect().bottom), 'Restored contact fields are clear of the sticky navigation');
   for(const marker of ['VOLUNTEER_MARKER','LANGUAGE_MARKER','PUBLICATION_MARKER','TEACHING_MARKER','PRESENTATION_MARKER','GRANT_MARKER'])ok((await page.locator('#resumeSheet').textContent()).includes(marker),`Preview includes ${marker}`);
   await audit('resume-with-optional-sections');
   for(const [template,config] of Object.entries(TEMPLATES)) {
@@ -144,7 +153,7 @@ const server = http.createServer((req,res) => {
   await page.locator('#btnUseTmplModal').press('Tab');ok(await page.locator('#btnCloseTmplModal').evaluate(el=>el===document.activeElement),'Modal focus wraps forwards');
   ok(!await page.locator('.template-preview-modal-body').evaluate(el=>el.scrollWidth>el.clientWidth+1),'Full template preview fits the phone');
   await page.locator('#btnCloseTmplModal').press('Escape');ok(await preview.evaluate(el=>el===document.activeElement),'Closing modal restores the trigger focus');
-  await page.setViewportSize({width:1440,height:1000});await page.locator('#tabReview').click();
+  await page.setViewportSize({width:1440,height:1000});await page.locator('#tabDownload').click();
   for(const [button,ext] of [['btnDownloadDOCX','docx'],['btnDownloadText','txt']]) {
     const download=page.waitForEvent('download');await page.locator('#'+button).click();const file=await download;const target=path.join(output,`resume.${ext}`);await file.saveAs(target);
     if(ext==='docx'){
@@ -174,7 +183,7 @@ const server = http.createServer((req,res) => {
   const unicodeText=execFileSync('pdftotext',[unicodePdf,'-'],{encoding:'utf8'});
   for(const marker of ['सुमित','VOLUNTEER_MARKER','PUBLICATION_MARKER','GRANT_MARKER'])ok(unicodeText.includes(marker),`Browser print retains preview content: ${marker}`);
   // The real sample must fit, and the preview must use the same lines as the download.
-  await page.locator('#btnLoadSample').click();
+  await page.locator('#btnLoadSample').click();await confirmIfAsked();
   await page.locator('#tabDesign').click();
   await page.locator('#pageSizeSelect').selectOption('a4');
   await page.locator('#fontSelect').selectOption('serif');
@@ -190,12 +199,12 @@ const server = http.createServer((req,res) => {
   await page.screenshot({path:path.join(output,'sample-preview-desktop.png'),fullPage:true});
   // Sample content keeps the chosen template, and the gallery agrees with the preview.
   await page.locator('[data-template-id="software-engineer"] .btn-select-template').click();
-  await page.locator('#tabContent').click();await page.locator('#btnLoadSample').click();
+  await page.locator('#tabContent').click();await page.locator('#btnLoadSample').click();await confirmIfAsked();
   ok((await page.locator('#prevTemplateBadge').textContent()).trim()==='Software Engineer','Loading the sample keeps the selected template');
   ok(await page.locator('[data-template-id="software-engineer"] .btn-select-template').getAttribute('aria-pressed')==='true','Gallery still marks the template in use after loading the sample');
   ok((await page.locator('#resumeVisualPages').textContent()).includes('Frameworks & Libraries:'),'Template skill labels reach the preview');
   const openSection=async id=>{const header=page.locator(`#${id} .accordion-header`);if(await header.getAttribute('aria-expanded')!=='true')await header.click();};
-  await openSection('sec-experience');await page.locator('#experienceTitleInput').fill('Internships');
+  await openSection('sec-experience');await page.locator('#sec-experience .disclosure--quiet > summary').click();await page.locator('#experienceTitleInput').fill('Internships');
   ok((await page.locator('#resumeVisualPages').textContent()).includes('INTERNSHIPS'),'Edited section heading reaches the preview');
   await openSection('sec-skills');await page.locator('#skillLabelLanguages').fill('Programming');
   ok((await page.locator('#resumeVisualPages').textContent()).includes('Programming:'),'Renamed skill row label reaches the preview');
@@ -232,7 +241,7 @@ const server = http.createServer((req,res) => {
   await audit('resume-review-tab');
   await page.setViewportSize({width:320,height:800});
   await page.locator('#tabEdit').click();
-  await page.locator('#tabReview').click();
+  await page.locator('#tabDownload').click();
   for (const id of ['btnDownloadPDF','btnDownloadDOCX','btnDownloadText','btnPrintPDF']) {
     ok(await page.locator('#'+id).evaluate(el=>{
       const style=getComputedStyle(el);
@@ -265,13 +274,13 @@ const server = http.createServer((req,res) => {
   await audit('image-result-dark');
   await page.locator('#themeToggle').click();await audit('image-result-light');
   const priorDialogs=dialogs.length;for(let i=0;i<2;i++){const d=page.waitForEvent('download');await page.locator('#btnDownload').click();await (await d).saveAs(path.join(output,`image-${i}.jpg`));}ok(dialogs.length===priorDialogs,'Repeated image exports do not trigger popups');
-  await page.locator('.advanced-disclosure > summary').click();
+  await adjust();await page.locator('.ws-advanced > summary').click();
   await page.locator('#addDateCheckbox').check();await page.locator('#candidateNameInput').fill('सुमित');
   const ratio=await page.evaluate(()=>{const data=document.getElementById('imageToCrop').cropper.getData();return data.width/data.height;});
   ok(Math.abs(ratio-400/336)<.02,'Annotation crop matches the photo area instead of stretching the source');
   await page.locator('#btnProcess').click();await page.locator('#resultArea').waitFor({state:'visible'});
   ok((await page.locator('#resultDims').textContent()).startsWith('400 × 400'),'Annotated output retains exact dimensions');
-  await page.locator('#addDateCheckbox').uncheck();
+  await adjust();await page.locator('#addDateCheckbox').uncheck();
   const surface=page.locator('.cropper-container-wrapper');const leftBefore=await page.evaluate(()=>document.getElementById('imageToCrop').cropper.getCropBoxData().left);
   await surface.press('ArrowRight');ok(await page.evaluate(()=>document.getElementById('imageToCrop').cropper.getCropBoxData().left)>=leftBefore,'The crop can be adjusted with a keyboard');
   await page.locator('#presetSelect').selectOption('custom');
@@ -281,9 +290,9 @@ const server = http.createServer((req,res) => {
   await page.locator('#customMaxKB').fill('20000');await page.locator('#btnProcess').click();await page.locator('#resultArea').waitFor({state:'visible'});
   const alpha=await page.evaluate(async()=>{const blob=await fetch(document.getElementById('btnDownload').href).then(r=>r.blob());const img=await createImageBitmap(blob);const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const ctx=c.getContext('2d');ctx.drawImage(img,0,0);return ctx.getImageData(Math.floor(img.width/2),Math.floor(img.height/2),1,1).data[3];});
   ok(alpha===0,'PNG preserves source transparency');
-  await page.locator('#formatSelect').selectOption('image/webp');await page.locator('#customMaxKB').fill('50');await page.locator('#btnProcess').click();await page.locator('#resultArea').waitFor({state:'visible'});
+  await adjust();await page.locator('#formatSelect').selectOption('image/webp');await page.locator('#customMaxKB').fill('50');await page.locator('#btnProcess').click();await page.locator('#resultArea').waitFor({state:'visible'});
   ok((await page.locator('#resultFormat').textContent())==='WebP','WebP processing succeeds under a real file limit');
-  await page.locator('#customWidth').fill('999999');ok(await page.locator('#btnProcess').isDisabled(),'Invalid dimensions disable processing');ok(await page.locator('#customWidth').getAttribute('aria-invalid')==='true','Invalid dimensions are identified for assistive technology');
+  await adjust();await page.locator('#customWidth').fill('999999');ok(await page.locator('#btnProcess').isDisabled(),'Invalid dimensions disable processing');ok(await page.locator('#customWidth').getAttribute('aria-invalid')==='true','Invalid dimensions are identified for assistive technology');
   await page.locator('#customWidth').fill('400');
   // Slow a real encoding operation, then change its settings before it completes.
   await page.evaluate(()=>{const native=HTMLCanvasElement.prototype.toBlob;HTMLCanvasElement.prototype.toBlob=function(cb,...args){return native.call(this,blob=>setTimeout(()=>cb(blob),80),...args);};});
@@ -318,7 +327,7 @@ const server = http.createServer((req,res) => {
   for(const file of ['about.html','privacy.html','how-to-use.html','404.html','guides/ats-friendly-resume-guide.html','guides/image-dimensions-vs-file-size.html','guides/image-formats-guide.html','guides/compression-targets-guide.html']) {await visit(file);ok(!await overflow(),`${file} fits at 320px`);}
   await visit('nested/missing-page');
   ok((await page.title()).includes('404'), 'Deep missing routes display the recovery page');
-  ok(await page.locator('.navbar .brand-logo').getAttribute('href')==='/index.html','404 navigation resolves from nested missing routes');
+  ok(await page.locator('.site-header .brand').getAttribute('href')==='/','404 navigation resolves from nested missing routes');
   ok((await page.locator('body').evaluate(el=>getComputedStyle(el).fontFamily)).includes('Inter'), '404 assets load from nested missing routes');
   ok(!await overflow(), 'Nested recovery page fits a phone');
   await audit('404-phone');
@@ -354,36 +363,24 @@ const server = http.createServer((req,res) => {
       ok(persisted === after, `${file || 'index'}: theme persists after reload`);
       // restore
       await page.locator('#themeToggle').click();
-      // Mobile menu (only meaningful under 760)
+      // Mobile menu (a sheet under 860px)
       if (width === 390) {
         const toggle = page.locator('#navMenuToggle');
         await toggle.click();
         ok(await toggle.getAttribute('aria-expanded') === 'true', `${file || 'index'}: mobile menu opens with one click`);
+        ok(await page.locator('#siteNav .menu__list a').first().isVisible(), `${file || 'index'}: every tool link is listed in the mobile menu`);
         await toggle.click();
         ok(await toggle.getAttribute('aria-expanded') === 'false', `${file || 'index'}: mobile menu closes with one click`);
-      }
-      // Tools dropdown
-      const toolsBtn = page.locator('.tools-menu button').first();
-      if (await toolsBtn.count()) {
-        if (width === 390) {
-          const mt = page.locator('#navMenuToggle');
-          if (await mt.getAttribute('aria-expanded') !== 'true') await mt.click();
-          await toolsBtn.waitFor({ state: 'visible', timeout: 2000 });
-        }
-        if (await toolsBtn.isVisible()) {
-          await toolsBtn.click();
-          ok(await page.locator('.tools-menu').first().evaluate(el => el.classList.contains('is-open')), `${file || 'index'}: Tools dropdown opens`);
-          await page.keyboard.press('Escape');
-          ok(!(await page.locator('.tools-menu').first().evaluate(el => el.classList.contains('is-open'))), `${file || 'index'}: Tools closes on Esc`);
-          if (width === 390) {
-            const mt = page.locator('#navMenuToggle');
-            if (await mt.getAttribute('aria-expanded') !== 'true') await mt.click();
-            await toolsBtn.waitFor({ state: 'visible', timeout: 2000 });
-          }
-          await toolsBtn.click();
-          await page.locator('main, body').first().click({ position: { x: 10, y: 10 } });
-          ok(!(await page.locator('.tools-menu').first().evaluate(el => el.classList.contains('is-open'))), `${file || 'index'}: Tools closes on outside click`);
-        }
+      } else {
+        // Tools menu on a desktop: opens, closes on Escape and on an outside click
+        const toolsBtn = page.locator('#toolsMenuButton');
+        await toolsBtn.click();
+        ok(await toolsBtn.getAttribute('aria-expanded') === 'true' && await page.locator('#toolsMenu').isVisible(), `${file || 'index'}: Tools menu opens`);
+        await page.keyboard.press('Escape');
+        ok(await toolsBtn.getAttribute('aria-expanded') === 'false', `${file || 'index'}: Tools closes on Esc`);
+        await toolsBtn.click();
+        await page.locator('main').first().click({ position: { x: 10, y: 10 } });
+        ok(await toolsBtn.getAttribute('aria-expanded') === 'false', `${file || 'index'}: Tools closes on outside click`);
       }
     }
   }
