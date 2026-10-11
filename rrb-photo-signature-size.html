@@ -38,10 +38,10 @@
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261012-1">
-  <link rel="stylesheet" href="css/style.css?v=20261012-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261012-1">
-  <link rel="stylesheet" href="css/ux.css?v=20261012-1">
+  <link rel="stylesheet" href="css/design-system.css?v=20261012-2">
+  <link rel="stylesheet" href="css/style.css?v=20261012-2">
+  <link rel="stylesheet" href="css/workspace.css?v=20261012-2">
+  <link rel="stylesheet" href="css/ux.css?v=20261012-2">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -256,6 +256,14 @@
           <section class="form-panel" id="formPanel" aria-labelledby="toolControlsHeading">
             <h3 id="toolControlsHeading" class="sr-only">Image Configuration Controls</h3>
 
+            <div id="processErrorBox" class="alert-box alert-box-danger hidden" role="alert">
+              <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+              <span id="processErrorMessage"></span>
+            </div>
+
+            
+
+
             <div class="file-upload-wrapper">
               <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="hidden" tabindex="-1" aria-hidden="true" aria-label="Upload photo or signature">
               <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload photo or signature image">
@@ -288,7 +296,7 @@
               <div class="dim-row" style="display: flex; gap: 0.5rem; align-items: flex-end;">
                 <div class="control-group" style="flex: 1;">
                   <label for="customWidth" class="control-label">Width (px)</label>
-                  <input type="number" id="customWidth" class="form-control" value="320" min="20" max="8000">
+                  <input type="number" id="customWidth" aria-describedby="dimError" class="form-control" value="320" min="20" max="8000">
                 </div>
                 <div class="aspect-lock-wrap">
                   <button type="button" id="btnLockAspect" class="btn-lock-aspect active" title="Aspect ratio locked" aria-pressed="true">
@@ -297,13 +305,13 @@
                 </div>
                 <div class="control-group" style="flex: 1;">
                   <label for="customHeight" class="control-label">Height (px)</label>
-                  <input type="number" id="customHeight" class="form-control" value="240" min="20" max="8000">
+                  <input type="number" id="customHeight" aria-describedby="dimError" class="form-control" value="240" min="20" max="8000">
                 </div>
               </div>
 
               <div class="control-group" style="margin-top: 0.75rem;">
                 <label for="customMaxKB" class="control-label">Max File Size (KB)</label>
-                <input type="number" id="customMaxKB" class="form-control" value="70" min="5" max="20000">
+                <input type="number" id="customMaxKB" aria-describedby="sizeError" class="form-control" value="70" min="5" max="20000">
               </div>
 
               <div class="form-row-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 0.75rem;">
@@ -329,6 +337,9 @@
             <div style="display: none;">
               <select id="aspectRatioSelect"><option value="target">Target</option></select>
             </div>
+
+            <span id="dimError" class="field-error hidden" role="alert"></span>
+            <span id="sizeError" class="field-error hidden" role="alert"></span>
 
             <button type="button" id="btnProcess" class="btn btn-primary btn-block" style="margin-top: 1rem;" disabled>
               <i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize &amp; Compress for RRB
@@ -490,10 +501,10 @@
     <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
-  <script src="js/components.js?v=20261012-1" defer></script>
-  <script src="js/site.js?v=20261011-3"></script>
+  <script src="js/components.js?v=20261012-2" defer></script>
+  <script src="js/site.js?v=20261012-2"></script>
   <script src="js/vendor/cropper.min.js"></script>
   <script src="js/presets.js?v=20261011-3"></script>
-  <script src="js/resizer.js?v=20261011-3"></script>
+  <script src="js/resizer.js?v=20261012-2"></script>
 </body>
 </html>

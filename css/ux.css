@@ -903,6 +903,8 @@
   #resizerApp .form-panel > .control-group { order: 4; }
   #resizerApp #customControls { order: 5; }
   #resizerApp #btnProcess { order: 6; margin-top: 0 !important; min-height: 48px; }
+  #resizerApp > .form-panel > .field-error { order: 5; }
+  #resizerApp > .form-panel > .alert-box { margin: 0; }
   #resizerApp .btn-group { order: 6; margin-top: 0 !important; }
   #resizerApp .workspace-footnote { order: 7; margin-top: 0 !important; }
   .field-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-2); }

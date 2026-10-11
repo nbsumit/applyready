@@ -218,6 +218,18 @@ const server = http.createServer((req, res) => {
     }), 'base64');
     const embedded = pages.filter(f => /photo-signature-size\.html$|resize-image-to-\d+kb\.html$/.test(f));
     ok(embedded.length === 15, `found the 15 embedded tool pages (${embedded.length})`);
+    // Errors must be visible on every embedded tool, not only on the home page.
+    for (const file of embedded) {
+      await page.goto(`${origin}/${file}`);
+      await page.locator('#customWidth').fill('5');
+      await page.locator('#customWidth').blur();
+      await page.locator('#dimError').waitFor({ state: 'visible', timeout: 4000 });
+      ok((await page.locator('#dimError').innerText()).trim().length > 5, `${file}: a too small width explains itself`);
+      await page.goto(`${origin}/${file}`);
+      await page.locator('#fileInput').setInputFiles({ name: 'broken.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('this is not an image') });
+      await page.locator('#processErrorBox').waitFor({ state: 'visible', timeout: 4000 });
+      ok((await page.locator('#processErrorMessage').innerText()).trim().length > 10, `${file}: a broken image explains what happened`);
+    }
     for (const file of embedded) {
       await page.goto(`${origin}/${file}`);
       const hindi = file.startsWith('hi/');
@@ -240,6 +252,27 @@ const server = http.createServer((req, res) => {
     await context.close();
   }
   console.log('✓ Exam, KB and Hindi tools: order, folded dropzone, Hindi label, result facts');
+  // 7. Secondary tools explain a bad file in the page, never with a blocking browser dialog,
+  //    and never leave the person wondering whether anything happened.
+  {
+    const { context, page } = await open(390, 800);
+    let dialogs = 0; page.on('dialog', d => { dialogs++; d.dismiss(); });
+    const cases = [['compress-pdf.html', '#compressFileInput', async () => { await page.locator('#btnStartCompress').click(); }], ['image-to-pdf.html', 'input[type=file]', null], ['passport-photo-print.html', 'input[type=file]', null], ['signature-cleaner.html', 'input[type=file]', null]];
+    for (const [file, input, after] of cases) {
+      for (const [name, type] of [['notes.txt', 'text/plain'], ['broken.jpg', 'image/jpeg']]) {
+        await page.goto(`${origin}/${file}`);
+        await page.locator(input).first().setInputFiles({ name, mimeType: type, buffer: Buffer.from('this is not an image') });
+        if (after && type === 'image/jpeg') await after();
+        await page.locator('#taskNotification.is-visible').waitFor({ state: 'visible', timeout: 6000 });
+        const text = (await page.locator('#taskNotification').innerText()).trim();
+        ok(/choose|try|check/i.test(text) && text.length > 25, `${file} ${name}: the message says what to do (${text})`);
+      }
+    }
+    ok(dialogs === 0, `no blocking browser dialog was shown (${dialogs})`);
+    await context.close();
+  }
+  console.log('✓ Secondary tools: errors are shown in the page and say what to do');
+
 
   await browser.close();
   server.close();

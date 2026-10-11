@@ -354,5 +354,6 @@
   }
 
   // Expose for tests
-  window.ApplyReadyUI = { init, showToast };
+  // Merge: site.js owns notify(); replacing the object removed it on pages where site.js loads first.
+  window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, { init, showToast });
 })();

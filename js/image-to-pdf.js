@@ -8,6 +8,8 @@
 
 (function () {
   'use strict';
+  // Errors use the site's notification instead of a blocking browser dialog.
+  const notifyError = message => (window.ApplyReadyUI && window.ApplyReadyUI.notify) ? window.ApplyReadyUI.notify(message, true) : window.alert(message);
 
   const doc = typeof document !== 'undefined' ? document : null;
   if (!doc) return;
@@ -109,7 +111,7 @@
   function handleFiles(fileList) {
     const validFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
     if (!validFiles.length) {
-      alert('Please choose valid images (JPEG, PNG, or WebP).');
+      notifyError('Those files could not be used. Choose JPG, PNG or WebP images.');
       return;
     }
 
@@ -132,6 +134,11 @@
           if (loaded === validFiles.length) {
             renderList();
           }
+        };
+        img.onerror = () => {
+          loaded++;
+          notifyError('"' + file.name + '" could not be read as an image. Choose JPG, PNG or WebP files that open on your device.');
+          if (loaded === validFiles.length) renderList();
         };
         img.src = e.target.result;
       };
@@ -331,7 +338,7 @@
       }
 
     } catch (e) {
-      alert('Error creating PDF: ' + e.message);
+      notifyError('The PDF could not be created. ' + String(e.message).replace(/\.$/, '') + '. Remove the last image you added and try again.');
     } finally {
       isConverting = false;
       btnConvert.disabled = false;

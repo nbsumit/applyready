@@ -8,6 +8,8 @@
 
 (function () {
   'use strict';
+  // Errors use the site's notification instead of a blocking browser dialog.
+  const notifyError = message => (window.ApplyReadyUI && window.ApplyReadyUI.notify) ? window.ApplyReadyUI.notify(message, true) : window.alert(message);
 
   const doc = typeof document !== 'undefined' ? document : null;
   if (!doc) return;
@@ -119,7 +121,7 @@
     const isImg = file.type.startsWith('image/');
 
     if (!isPdf && !isImg) {
-      alert('Please upload a PDF file or document image (JPG, PNG).');
+      notifyError('That file is not a PDF, JPG or PNG. Choose a PDF or a photo of the document.');
       return;
     }
 
@@ -169,7 +171,7 @@
         });
         const img = new Image();
         img.src = dataUrl;
-        await new Promise(res => { img.onload = res; });
+        await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('The image could not be read')); });
         pages.push({
           width: img.naturalWidth,
           height: img.naturalHeight,
@@ -201,7 +203,7 @@
       displayResult(outputBlob, pages.length);
 
     } catch (err) {
-      alert('Compression notice: ' + err.message);
+      notifyError('Compression did not finish. ' + String(err.message).replace(/\.$/, '') + '. Check that the file opens on your device, then try again.');
     } finally {
       isCompressing = false;
       btnStartCompress.disabled = false;
