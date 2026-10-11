@@ -87,13 +87,12 @@
   <link rel="manifest" href="../favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="../js/theme.js"></script>
+  <script src="../js/theme.js?v=20261101-1"></script>
 
-  <!-- Font Awesome Icons -->
+  <!-- shell:styles:start -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
-  <link rel="stylesheet" href="../css/style.css?v=20261014-1">
-  <link rel="stylesheet" href="../css/workspace.css?v=20261014-1">
-  <link rel="stylesheet" href="../css/app.css?v=20261014-1">
+  <link rel="stylesheet" href="../css/app.css?v=20261101-1">
+  <!-- shell:styles:end -->
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
   <meta name="google-adsense-account" content="ca-pub-2713609207324356">
@@ -101,56 +100,68 @@
 <body class="content-page">
 
   <!-- NAVIGATION -->
+  <!-- shell:header:start -->
   <a class="skip-link" href="#mainContent">Skip to content</a>
-  <nav class="navbar" aria-label="Main Navigation">
-    <div class="nav-container">
-      <a href="/" class="brand-logo" aria-label="ApplyReady Home">
-        <img src="../favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
-        <span>ApplyReady<span class="brand-dot">.</span></span>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="../" aria-label="ApplyReady home">
+        <img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span>ApplyReady</span>
       </a>
-      <div class="nav-links" id="navMenu">
-        <div class="tools-menu">
-          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
-          <div class="tools-menu__panel" role="menu">
-            <div class="tools-menu__group"><strong>Image tools</strong>
-              <a href="../" role="menuitem">Image resizer</a>
-              <a href="../signature-cleaner.html" role="menuitem">Signature cleaner</a>
-              <a href="../image-to-pdf.html" role="menuitem">Image to PDF</a>
-              <a href="../compress-pdf.html" role="menuitem">Compress PDF</a>
-              <a href="../passport-photo-print.html" role="menuitem">Passport photo print</a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+            <div class="menu__group">
+              <h2 class="menu__title">Image tools</h2>
+              <ul class="menu__list">
+                <li><a href="../">Image resizer</a></li>
+                <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+                <li><a href="../image-to-pdf.html">Image to PDF</a></li>
+                <li><a href="../compress-pdf.html">Compress PDF</a></li>
+                <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Exam specs</strong>
-              <a href="../ssc-photo-signature-size.html" role="menuitem">SSC</a>
-              <a href="../upsc-photo-signature-size.html" role="menuitem">UPSC</a>
-              <a href="../ibps-photo-signature-size.html" role="menuitem">IBPS</a>
-              <a href="../neet-photo-signature-size.html" role="menuitem">NEET</a>
-              <a href="../rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Exam sizes</h2>
+              <ul class="menu__list">
+                <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
+                <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
+                <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
+                <li><a href="../neet-photo-signature-size.html">NEET</a></li>
+                <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Resize to KB</strong>
-              <a href="../resize-image-to-10kb.html" role="menuitem">10 KB</a>
-              <a href="../resize-image-to-20kb.html" role="menuitem">20 KB</a>
-              <a href="../resize-image-to-50kb.html" role="menuitem">50 KB</a>
-              <a href="../resize-image-to-100kb.html" role="menuitem">100 KB</a>
-              <a href="../resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Resize to KB</h2>
+              <ul class="menu__list">
+                <li><a href="../resize-image-to-10kb.html">10 KB</a></li>
+                <li><a href="../resize-image-to-20kb.html">20 KB</a></li>
+                <li><a href="../resize-image-to-50kb.html">50 KB</a></li>
+                <li><a href="../resize-image-to-100kb.html">100 KB</a></li>
+                <li><a href="../resize-image-to-200kb.html">200 KB</a></li>
+              </ul>
             </div>
-          </div>
-        </div>
-        <a href="/" class="nav-link">Image tools</a>
-        <a href="../resume.html" class="nav-link">Resume builder</a>
-        <a href="../guides/" class="nav-link active" aria-current="page">Guides</a>
-              <a href="../hi/ssc-photo-signature-size.html" class="nav-link">हिन्दी</a>
-      </div>
-      <div class="nav-actions">
-        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
-        <button type="button" id="navMenuToggle" class="theme-toggle-btn nav-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navMenu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+            </div>
+          </li>
+          <li><a class="site-nav__link" href="../resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="../guides/" aria-current="page">Guides</a></li>
+          <li><a class="site-nav__link" href="../hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
     </div>
-  </nav>
+  </header>
+  <!-- shell:header:end -->
 
   <!-- MAIN CONTAINER -->
   <noscript><p class="noscript-note">Enable JavaScript to use the tools. The guides remain available without it.</p></noscript>
-  <main id="mainContent" class="main-content">
-    <article class="guide-content">
+  <main id="mainContent" class="page page--read">
+    <article class="article">
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
         <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -159,19 +170,17 @@
         </ol>
       </nav>
 
-      <header style="margin-bottom: 2rem;">
+      <header class="page-head">
         <span class="eyebrow">Resume Crafting &amp; Keyword Strategy</span>
-        <h1>Resume Summary Examples for Indian Freshers: The 3-Sentence Formula</h1>
-        <p class="hero-subtitle" style="text-align: left; margin: 0;">
-          Why the old "Career Objective" is hurting your interview call rates, and how a crisp 3-sentence professional summary grabs recruiter attention in under 7 seconds.
-        </p>
+        <h1 class="page-title">Resume Summary Examples for Indian Freshers: The 3-Sentence Formula</h1>
+        <p class="page-lede">Why the old "Career Objective" is hurting your interview call rates, and how a crisp 3-sentence professional summary grabs recruiter attention in under 7 seconds.</p>
       </header>
 
-      <section class="app-card">
+      <section class="section prose">
         <p>
           Look at almost any standard college resume template in India, and the top section under the candidate name is almost invariably titled <strong>"Career Objective"</strong>, followed by:
         </p>
-        <blockquote style="margin: 1rem 0; padding: 0.75rem 1rem; border-left: 3px solid var(--border); font-style: italic; color: var(--text-muted);">
+        <blockquote>
           "To secure a challenging position in a reputed organization where I can apply my knowledge, enhance my skills, and contribute to the organizational growth."
         </blockquote>
         <p>
@@ -185,10 +194,10 @@
         <p>
           Even without years of professional experience, you have academic coursework, laboratory training, certifications, and capstone projects. Structure your summary in three focused sentences:
         </p>
-        <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.5rem 0;">
-          <ol style="margin: 0; padding-left: 1.25rem;">
-            <li style="margin-bottom: 0.75rem;"><strong>Sentence 1 (Who You Are &amp; Your Core Toolkit):</strong> State your degree, your target role, and 2 or 3 primary technical skills or frameworks.</li>
-            <li style="margin-bottom: 0.75rem;"><strong>Sentence 2 (Demonstrated Evidence / Project Impact):</strong> Cite your strongest capstone project, internship, or hackathon achievement with a measurable outcome.</li>
+        <div>
+          <ol>
+            <li><strong>Sentence 1 (Who You Are &amp; Your Core Toolkit):</strong> State your degree, your target role, and 2 or 3 primary technical skills or frameworks.</li>
+            <li><strong>Sentence 2 (Demonstrated Evidence / Project Impact):</strong> Cite your strongest capstone project, internship, or hackathon achievement with a measurable outcome.</li>
             <li><strong>Sentence 3 (The Value Proposition):</strong> State how your foundational knowledge and fast-learning capability solve the employer's specific engineering or business needs.</li>
           </ol>
         </div>
@@ -197,42 +206,42 @@
 
         <h3>1. B.Tech Computer Science / IT (Full-Stack &amp; Software)</h3>
         <div class="callout">
-          <p style="margin: 0;">
+          <p>
             <em>"Computer Science graduate with strong foundations in Data Structures, Java, and modern React.js web development. Developed a full-stack campus event portal handling 400+ active student registrations with sub-150ms response times. Eager to contribute scalable code and clean architectural patterns to high-growth engineering teams."</em>
           </p>
         </div>
 
         <h3>2. Backend / Python &amp; Data Engineering Fresher</h3>
         <div class="callout">
-          <p style="margin: 0;">
+          <p>
             <em>"B.Tech graduate proficient in Python, SQL, and RESTful API architecture with hands-on PostgreSQL and Docker exposure. Built an automated web-scraping and data extraction pipeline processing 10,000+ daily ecommerce records for price trend analysis. Looking to leverage data-modeling and backend optimization skills in an entry-level software engineering role."</em>
           </p>
         </div>
 
         <h3>3. Electronics &amp; Communication (Embedded Systems &amp; IoT)</h3>
         <div class="callout">
-          <p style="margin: 0;">
+          <p>
             <em>"ECE graduate trained in Embedded C, Microcontrollers (ESP32 / ARM Cortex-M), and communication protocols (I2C, SPI, UART). Designed an IoT smart agriculture monitoring prototype featuring sensor telemetry and cloud MQTT integration. Seeking to apply firmware development and hardware debugging fundamentals within an innovative IoT team."</em>
           </p>
         </div>
 
         <h3>4. Mechanical &amp; Automotive Engineering Fresher</h3>
         <div class="callout">
-          <p style="margin: 0;">
+          <p>
             <em>"Mechanical Engineering graduate with advanced proficiency in SolidWorks 3D CAD modeling, GD&amp;T standards, and ANSYS static structural simulation. Spearheaded chassis weight reduction by 14% as part of a 6-member Formula Bharat collegiate racing team. Ready to support production engineering, CAD design, and quality inspection workflows."</em>
           </p>
         </div>
 
         <h3>5. Commerce &amp; Finance Fresher (B.Com / BBA Finance)</h3>
         <div class="callout">
-          <p style="margin: 0;">
+          <p>
             <em>"Commerce graduate with thorough training in Financial Accounting, Advanced Excel (VLOOKUP, Pivot Tables, XLOOKUP), and TallyPrime. Analyzed 15,000+ simulated retail transaction records to identify working capital variance patterns during an academic capstone. Seeking an entry-level financial analyst or accounting associate role."</em>
           </p>
         </div>
 
         <h3>6. Career Pivot / Non-CS Graduate Moving Into Tech</h3>
         <div class="callout">
-          <p style="margin: 0;">
+          <p>
             <em>"Engineering graduate with strong analytical acumen and self-directed mastery in JavaScript, HTML/CSS, and Node.js backend development. Built and deployed 3 responsive, full-stack applications with MongoDB authentication and GitHub version control. Bringing disciplined problem-solving and rapid learning agility to a junior developer position."</em>
           </p>
         </div>
@@ -241,7 +250,7 @@
         <p>
           Every word on a single-page fresher resume must earn its place. Eliminate these low-value fillers:
         </p>
-        <table class="data-table">
+        <div class="table-wrap"><table>
           <thead>
             <tr>
               <th>Outdated / Vague Cliché</th>
@@ -266,7 +275,7 @@
               <td>Targeted value: <em>"Aiming to build clean, maintainable microservices"</em></td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
 
         <h2>Formatting Your Summary in ApplyReady</h2>
         <p>
@@ -276,18 +285,18 @@
           Keep your summary strictly between <strong>40 and 65 words (3 to 4 lines of printed text)</strong>. This leaves maximum space below for your Education, Skills, and Projects sections.
         </p>
 
-        <p style="margin-top: 1.5rem;">
-          <a href="../resume.html" class="btn btn-primary" style="display: inline-flex; width: auto;">
+        <p>
+          <a href="../resume.html" class="btn btn-primary">
             <i class="fa-regular fa-file-lines" aria-hidden="true"></i> Create Your Resume in ApplyReady
           </a>
-          <a href="fresher-resume-examples-by-role.html" class="btn btn-outline" style="display: inline-flex; width: auto; margin-left: 0.5rem;">
+          <a href="fresher-resume-examples-by-role.html" class="btn">
             <i class="fa-solid fa-list-check" aria-hidden="true"></i> View Role-By-Role Templates
           </a>
         </p>
       </section>
 
       <!-- Reserved Ad Slot: Inside Guide Article -->
-      <div class="ad-slot-container ad-slot-article" aria-label="Advertisement">
+      <div class="ad-slot-container ad-slot-article" role="complementary" aria-label="Advertisement">
         <div class="ad-slot-inner">
           <span class="ad-slot-label">Advertisement</span>
           <!-- AdSense Unit: In-Article -->
@@ -299,17 +308,17 @@
         <div class="related-guides-grid">
           <a href="fresher-resume-examples-by-role.html" class="guide-card">
             <strong>Fresher resume examples</strong>
-            <p class="text-muted mt-1">Real project bullets and skill layouts for B.Tech, B.Com, and BBA graduates.</p>
+            <p class="text-muted">Real project bullets and skill layouts for B.Tech, B.Com, and BBA graduates.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="cv-vs-resume-india-job-applications.html" class="guide-card">
             <strong>CV vs Resume in India</strong>
-            <p class="text-muted mt-1">When to send a 1-page corporate resume versus a multi-page academic CV.</p>
+            <p class="text-muted">When to send a 1-page corporate resume versus a multi-page academic CV.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="ats-friendly-resume-guide.html" class="guide-card">
             <strong>ATS formatting rules</strong>
-            <p class="text-muted mt-1">Why single-column layouts and true vector text beat graphical templates.</p>
+            <p class="text-muted">Why single-column layouts and true vector text beat graphical templates.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
@@ -318,26 +327,53 @@
   </main>
 
   <!-- FOOTER -->
+  <!-- shell:footer:start -->
   <footer class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand-block">
-        <a href="/" class="brand-logo"><img src="../favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="brand" href="../"><img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
         <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
       </div>
-      <nav class="footer-links" aria-label="Footer Links">
-        <a href="/" class="footer-link">Image tools</a>
-        <a href="../resume.html" class="footer-link">Resume builder</a>
-        <a href="../guides/" class="footer-link">Guides</a>
-        <a href="../about.html" class="footer-link">About</a>
-        <a href="../privacy.html" class="footer-link">Privacy</a>
-        <a href="../terms.html" class="footer-link">Terms</a>
-        <a href="../contact.html" class="footer-link">Contact</a>
-      </nav>
+      <div>
+        <h2 class="site-footer__title">Tools</h2>
+        <ul class="site-footer__list">
+          <li><a href="../">Image resizer</a></li>
+          <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="../image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="../compress-pdf.html">Compress PDF</a></li>
+          <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="../resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">Exam sizes</h2>
+        <ul class="site-footer__list">
+          <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
+          <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
+          <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
+          <li><a href="../neet-photo-signature-size.html">NEET</a></li>
+          <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
+          <li><a href="../resize-image-to-20kb.html">Resize to 20KB</a></li>
+          <li><a href="../resize-image-to-50kb.html">Resize to 50KB</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">ApplyReady</h2>
+        <ul class="site-footer__list">
+          <li><a href="../guides/">Guides</a></li>
+          <li><a href="../how-to-use.html">How to use</a></li>
+          <li><a href="../about.html">About</a></li>
+          <li><a href="../privacy.html">Privacy</a></li>
+          <li><a href="../terms.html">Terms</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
+  <!-- shell:footer:end -->
 
-  <script src="../js/components.js?v=20261012-2" defer></script>
-  <script src="../js/site.js?v=20261012-2"></script>
+  <script src="../js/components.js?v=20261101-1" defer></script>
+  <script src="../js/site.js?v=20261101-1"></script>
 </body>
 </html>

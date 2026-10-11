@@ -74,13 +74,12 @@
   <link rel="manifest" href="../favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="../js/theme.js"></script>
+  <script src="../js/theme.js?v=20261101-1"></script>
 
-  <!-- Font Awesome Icons -->
+  <!-- shell:styles:start -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
-  <link rel="stylesheet" href="../css/style.css?v=20261014-1">
-  <link rel="stylesheet" href="../css/workspace.css?v=20261014-1">
-  <link rel="stylesheet" href="../css/app.css?v=20261014-1">
+  <link rel="stylesheet" href="../css/app.css?v=20261101-1">
+  <!-- shell:styles:end -->
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
   <meta name="google-adsense-account" content="ca-pub-2713609207324356">
@@ -88,55 +87,67 @@
 <body class="content-page">
 
   <!-- NAVIGATION -->
+  <!-- shell:header:start -->
   <a class="skip-link" href="#mainContent">Skip to content</a>
-  <nav class="navbar" aria-label="Main Navigation">
-    <div class="nav-container">
-      <a href="/" class="brand-logo" aria-label="ApplyReady Home">
-        <img src="../favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
-        <span>ApplyReady<span class="brand-dot">.</span></span>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="../" aria-label="ApplyReady home">
+        <img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span>ApplyReady</span>
       </a>
-      <div class="nav-links" id="navMenu">
-        <div class="tools-menu">
-          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
-          <div class="tools-menu__panel" role="menu">
-            <div class="tools-menu__group"><strong>Image tools</strong>
-              <a href="../" role="menuitem">Image resizer</a>
-              <a href="../signature-cleaner.html" role="menuitem">Signature cleaner</a>
-              <a href="../image-to-pdf.html" role="menuitem">Image to PDF</a>
-              <a href="../compress-pdf.html" role="menuitem">Compress PDF</a>
-              <a href="../passport-photo-print.html" role="menuitem">Passport photo print</a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+            <div class="menu__group">
+              <h2 class="menu__title">Image tools</h2>
+              <ul class="menu__list">
+                <li><a href="../">Image resizer</a></li>
+                <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+                <li><a href="../image-to-pdf.html">Image to PDF</a></li>
+                <li><a href="../compress-pdf.html">Compress PDF</a></li>
+                <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Exam specs</strong>
-              <a href="../ssc-photo-signature-size.html" role="menuitem">SSC</a>
-              <a href="../upsc-photo-signature-size.html" role="menuitem">UPSC</a>
-              <a href="../ibps-photo-signature-size.html" role="menuitem">IBPS</a>
-              <a href="../neet-photo-signature-size.html" role="menuitem">NEET</a>
-              <a href="../rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Exam sizes</h2>
+              <ul class="menu__list">
+                <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
+                <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
+                <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
+                <li><a href="../neet-photo-signature-size.html">NEET</a></li>
+                <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Resize to KB</strong>
-              <a href="../resize-image-to-10kb.html" role="menuitem">10 KB</a>
-              <a href="../resize-image-to-20kb.html" role="menuitem">20 KB</a>
-              <a href="../resize-image-to-50kb.html" role="menuitem">50 KB</a>
-              <a href="../resize-image-to-100kb.html" role="menuitem">100 KB</a>
-              <a href="../resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Resize to KB</h2>
+              <ul class="menu__list">
+                <li><a href="../resize-image-to-10kb.html">10 KB</a></li>
+                <li><a href="../resize-image-to-20kb.html">20 KB</a></li>
+                <li><a href="../resize-image-to-50kb.html">50 KB</a></li>
+                <li><a href="../resize-image-to-100kb.html">100 KB</a></li>
+                <li><a href="../resize-image-to-200kb.html">200 KB</a></li>
+              </ul>
             </div>
-          </div>
-        </div>
-        <a href="/" class="nav-link">Image tools</a>
-        <a href="../resume.html" class="nav-link">Resume builder</a>
-        <a href="../guides/" class="nav-link active" aria-current="page">Guides</a>
-              <a href="../hi/ssc-photo-signature-size.html" class="nav-link">हिन्दी</a>
-      </div>
-      <div class="nav-actions">
-        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
-        <button type="button" id="navMenuToggle" class="theme-toggle-btn nav-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navMenu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+            </div>
+          </li>
+          <li><a class="site-nav__link" href="../resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="../guides/" aria-current="page">Guides</a></li>
+          <li><a class="site-nav__link" href="../hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
     </div>
-  </nav>
+  </header>
+  <!-- shell:header:end -->
 
   <!-- MAIN CONTAINER -->
   <noscript><p class="noscript-note">Enable JavaScript to use the interactive tools. All guides remain fully readable without it.</p></noscript>
-  <main id="mainContent" class="main-content">
+  <main id="mainContent" class="page">
     <div class="guide-content">
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
         <ol class="breadcrumb-list">
@@ -145,75 +156,73 @@
         </ol>
       </nav>
 
-      <header style="margin-bottom: 2.5rem;">
-        <span class="eyebrow" style="color: var(--primary);">Knowledge Hub &amp; Documentation</span>
-        <h1>Practical Guides for Job &amp; Exam Applications</h1>
-        <p class="hero-subtitle" style="max-width: 680px; margin: 0.5rem 0 0;">
-          Original, practical reference material designed to help Indian applicants clear portal document checks, bypass ATS filters, and ace campus placement interviews.
-        </p>
+      <header class="page-head">
+        <span class="eyebrow">Knowledge Hub &amp; Documentation</span>
+        <h1 class="page-title">Practical Guides for Job &amp; Exam Applications</h1>
+        <p class="page-lede">Original, practical reference material designed to help Indian applicants clear portal document checks, bypass ATS filters, and ace campus placement interviews.</p>
       </header>
 
       <!-- Category 1: Resume & Career Guides -->
-      <section style="margin-bottom: 3rem;">
+      <section class="section prose">
         <h2>
-          <i class="fa-regular fa-file-lines" style="color: var(--primary); margin-right: 0.5rem;" aria-hidden="true"></i> Resume Building &amp; Career Preparation
+          <i class="fa-regular fa-file-lines" aria-hidden="true"></i> Resume Building &amp; Career Preparation
         </h2>
-        <div class="related-guides-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+        <div class="related-guides-grid">
           <a href="ats-friendly-resume-guide.html" class="guide-card">
             <strong>What Makes a Resume ATS-Friendly?</strong>
-            <p class="text-muted mt-1">Demystifying ATS parsers, why single-column layouts win, and how selectable vector text outperforms raster PDFs.</p>
+            <p class="text-muted">Demystifying ATS parsers, why single-column layouts win, and how selectable vector text outperforms raster PDFs.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="fresher-resume-examples-by-role.html" class="guide-card">
             <strong>Fresher Resume Examples by Role</strong>
-            <p class="text-muted mt-1">Proven project descriptions and skill layouts for B.Tech CSE, Core Engineering, Marketing, Finance, and Support.</p>
+            <p class="text-muted">Proven project descriptions and skill layouts for B.Tech CSE, Core Engineering, Marketing, Finance, and Support.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="resume-summary-examples-indian-freshers.html" class="guide-card">
             <strong>Resume Summary Examples for Freshers</strong>
-            <p class="text-muted mt-1">The 3-sentence formula that replaces outdated "career objectives" with quantifiable, role-aligned value.</p>
+            <p class="text-muted">The 3-sentence formula that replaces outdated "career objectives" with quantifiable, role-aligned value.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="cv-vs-resume-india-job-applications.html" class="guide-card">
             <strong>CV vs Resume in India</strong>
-            <p class="text-muted mt-1">When to send a 1-page corporate resume versus a multi-page academic CV, and why you should avoid "Bio-data".</p>
+            <p class="text-muted">When to send a 1-page corporate resume versus a multi-page academic CV, and why you should avoid "Bio-data".</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="campus-placement-interview-prep-guide.html" class="guide-card">
             <strong>Campus Placement &amp; Interview Prep</strong>
-            <p class="text-muted mt-1">The Indian graduate playbook for clearing aptitude tests, Group Discussions (GD), technical and HR rounds.</p>
+            <p class="text-muted">The Indian graduate playbook for clearing aptitude tests, Group Discussions (GD), technical and HR rounds.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="resume-bullet-points-that-show-results.html" class="guide-card">
             <strong>How to Write Resume Bullet Points That Show Results</strong>
-            <p class="text-muted mt-1">A simple formula for resume bullets, ten before and after rewrites, and how to write results when you have no numbers, for freshers and experienced applicants.</p>
+            <p class="text-muted">A simple formula for resume bullets, ten before and after rewrites, and how to write results when you have no numbers, for freshers and experienced applicants.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="tailor-resume-to-a-job-description.html" class="guide-card">
             <strong>How to Tailor Your Resume to a Job Description in 15 Minutes</strong>
-            <p class="text-muted mt-1">A 15-minute process for matching your resume to a job advert honestly: find the key terms, reorder your content, and check coverage with an on-device keyword comparison.</p>
+            <p class="text-muted">A 15-minute process for matching your resume to a job advert honestly: find the key terms, reorder your content, and check coverage with an on-device keyword comparison.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="resume-skills-section-guide.html" class="guide-card">
             <strong>How to Write the Skills Section of a Resume</strong>
-            <p class="text-muted mt-1">How to group, order and word the skills section so it is honest, scannable and matched to the job: categories, tools versus soft skills, proficiency and examples.</p>
+            <p class="text-muted">How to group, order and word the skills section so it is honest, scannable and matched to the job: categories, tools versus soft skills, proficiency and examples.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="resume-length-one-page-or-two.html" class="guide-card">
             <strong>One Page or Two? How to Decide the Length of Your Resume</strong>
-            <p class="text-muted mt-1">When a one-page resume is right, when two pages are justified, and how to trim or expand with density, font size and content choices without cramming.</p>
+            <p class="text-muted">When a one-page resume is right, when two pages are justified, and how to trim or expand with density, font size and content choices without cramming.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="application-email-and-cover-letter-for-freshers.html" class="guide-card">
             <strong>Writing a Short Application Email or Cover Letter as a Fresher</strong>
-            <p class="text-muted mt-1">A four-paragraph structure for an application email or cover letter, a subject line formula, two worked examples, and what to attach and how to name the file.</p>
+            <p class="text-muted">A four-paragraph structure for an application email or cover letter, a subject line formula, two worked examples, and what to attach and how to name the file.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
       </section>
 
       <!-- Reserved Ad Slot: Between Categories -->
-      <div class="ad-slot-container ad-slot-article" aria-label="Advertisement">
+      <div class="ad-slot-container ad-slot-article" role="complementary" aria-label="Advertisement">
         <div class="ad-slot-inner">
           <span class="ad-slot-label">Advertisement</span>
           <!-- AdSense Unit: In-Article -->
@@ -221,127 +230,127 @@
       </div>
 
       <!-- Category 2: Photo, Signature & Document Specs -->
-      <section style="margin-bottom: 3rem;">
+      <section class="section prose">
         <h2>
-          <i class="fa-solid fa-camera" style="color: var(--primary); margin-right: 0.5rem;" aria-hidden="true"></i> Photo, Signature &amp; Document Guidelines
+          <i class="fa-solid fa-camera" aria-hidden="true"></i> Photo, Signature &amp; Document Guidelines
         </h2>
-        <div class="related-guides-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+        <div class="related-guides-grid">
           <a href="aadhaar-pan-passport-photo-specifications.html" class="guide-card">
             <strong>Aadhaar, PAN &amp; Passport Photo Specs</strong>
-            <p class="text-muted mt-1">Official physical dimensions in cm and inches, DPI standards, file sizes, and background rules for identity cards.</p>
+            <p class="text-muted">Official physical dimensions in cm and inches, DPI standards, file sizes, and background rules for identity cards.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="why-was-my-photo-rejected-online-applications.html" class="guide-card">
             <strong>Why Was My Photo Rejected?</strong>
-            <p class="text-muted mt-1">Troubleshoot cryptic upload failures: minimum KB thresholds, EXIF orientation rotations, fake JPEGs, and AI face checks.</p>
+            <p class="text-muted">Troubleshoot cryptic upload failures: minimum KB thresholds, EXIF orientation rotations, fake JPEGs, and AI face checks.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="image-dimensions-vs-file-size.html" class="guide-card">
             <strong>Image Dimensions vs File Size</strong>
-            <p class="text-muted mt-1">Understand the difference between pixel dimensions (width × height) and storage weight (kilobytes) for online forms.</p>
+            <p class="text-muted">Understand the difference between pixel dimensions (width × height) and storage weight (kilobytes) for online forms.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="compression-targets-guide.html" class="guide-card">
             <strong>Meeting Strict Compression Targets</strong>
-            <p class="text-muted mt-1">How to hit tough 20 KB, 50 KB, and 100 KB targets without blurry compression artifacts or pixel distortion.</p>
+            <p class="text-muted">How to hit tough 20 KB, 50 KB, and 100 KB targets without blurry compression artifacts or pixel distortion.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="image-formats-guide.html" class="guide-card">
             <strong>Choosing the Right Image Format</strong>
-            <p class="text-muted mt-1">A practical comparison of JPEG, PNG, and WebP for online application portals, signatures, and document scans.</p>
+            <p class="text-muted">A practical comparison of JPEG, PNG, and WebP for online application portals, signatures, and document scans.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="how-to-reduce-photo-to-50kb-without-blur.html" class="guide-card">
             <strong>How to Reduce a Photo to 50 KB Without Making It Blurry</strong>
-            <p class="text-muted mt-1">A step-by-step method to bring a phone photo under 50 KB for an online form: crop first, set the pixel size, then compress once.</p>
+            <p class="text-muted">A step-by-step method to bring a phone photo under 50 KB for an online form: crop first, set the pixel size, then compress once.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="digital-signature-for-online-forms.html" class="guide-card">
             <strong>How to Make a Clean Signature Image for Online Forms</strong>
-            <p class="text-muted mt-1">How to sign, photograph and prepare a signature image that passes size and clarity checks: pen, paper, light, cropping, background cleanup and file size.</p>
+            <p class="text-muted">How to sign, photograph and prepare a signature image that passes size and clarity checks: pen, paper, light, cropping, background cleanup and file size.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="passport-photo-at-home-guide.html" class="guide-card">
             <strong>Taking a Passport-Style Photo at Home: Light, Background and Framing</strong>
-            <p class="text-muted mt-1">How to take a photo that passes online form checks using only a phone: window light, plain background, eye-level framing, distance, and what to avoid.</p>
+            <p class="text-muted">How to take a photo that passes online form checks using only a phone: window light, plain background, eye-level framing, distance, and what to avoid.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="pixels-cm-inches-dpi-explained.html" class="guide-card">
             <strong>Pixels, Centimetres, Inches and DPI: Converting a Form's Photo Size</strong>
-            <p class="text-muted mt-1">How to convert a form's photo size from centimetres or inches to pixels, with the exact formula and a conversion table for 3.5 x 4.5 cm, 2 x 2 inch, signatures and A4.</p>
+            <p class="text-muted">How to convert a form's photo size from centimetres or inches to pixels, with the exact formula and a conversion table for 3.5 x 4.5 cm, 2 x 2 inch, signatures and A4.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="compress-pdf-for-upload-portals.html" class="guide-card">
             <strong>How to Reduce a Scanned PDF to 200 KB Without Making It Unreadable</strong>
-            <p class="text-muted mt-1">Why scanned PDFs are large, which settings shrink them safely (resolution, colour, pages) and which break readability.</p>
+            <p class="text-muted">Why scanned PDFs are large, which settings shrink them safely (resolution, colour, pages) and which break readability.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
       </section>
 
       <!-- Category: Preparing and Troubleshooting -->
-      <section style="margin-bottom: 3rem;">
+      <section class="section prose">
         <h2>
-          <i class="fa-solid fa-list-check" style="color: var(--primary); margin-right: 0.5rem;" aria-hidden="true"></i> Preparing and Troubleshooting Your Application
+          <i class="fa-solid fa-list-check" aria-hidden="true"></i> Preparing and Troubleshooting Your Application
         </h2>
-        <div class="related-guides-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+        <div class="related-guides-grid">
           <a href="document-checklist-before-online-application.html" class="guide-card">
             <strong>The Document Checklist to Finish Before You Start an Online Application</strong>
-            <p class="text-muted mt-1">A practical checklist of photos, signatures, IDs and certificates to prepare, name and test before opening an application form, so you do not lose time at the deadline.</p>
+            <p class="text-muted">A practical checklist of photos, signatures, IDs and certificates to prepare, name and test before opening an application form, so you do not lose time at the deadline.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="combine-documents-into-one-pdf.html" class="guide-card">
             <strong>How to Combine Certificates and Scans into One PDF for an Application</strong>
-            <p class="text-muted mt-1">How to order, name and merge several document images into one clean PDF that stays under the portal limit, with a checklist for the final file.</p>
+            <p class="text-muted">How to order, name and merge several document images into one clean PDF that stays under the portal limit, with a checklist for the final file.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="phone-camera-tips-for-document-scans.html" class="guide-card">
             <strong>Scanning Documents with a Phone Camera: Settings That Keep Text Sharp</strong>
-            <p class="text-muted mt-1">Light, angle, focus, resolution and file settings for phone scans of certificates, ID and marksheets that stay readable after compression.</p>
+            <p class="text-muted">Light, angle, focus, resolution and file settings for phone scans of certificates, ID and marksheets that stay readable after compression.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="fix-common-photo-upload-errors.html" class="guide-card">
             <strong>Twelve Common Photo and Document Upload Errors and How to Fix Each</strong>
-            <p class="text-muted mt-1">Plain-language fixes for the upload error messages on exam and job portals: file too large, invalid format, wrong dimensions, blurred image, corrupt file and more.</p>
+            <p class="text-muted">Plain-language fixes for the upload error messages on exam and job portals: file too large, invalid format, wrong dimensions, blurred image, corrupt file and more.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="staying-safe-with-document-uploads.html" class="guide-card">
             <strong>How to Protect Your Photos and ID Documents When Using Online Tools</strong>
-            <p class="text-muted mt-1">How to tell whether a website uploads your files, how to test a tool in airplane mode, and simple habits for sharing ID documents safely.</p>
+            <p class="text-muted">How to tell whether a website uploads your files, how to test a tool in airplane mode, and simple habits for sharing ID documents safely.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
       </section>
 
       <!-- Category 3: Exam Fast-Specs -->
-      <section style="margin-bottom: 2rem;">
+      <section class="section prose">
         <h2>
-          <i class="fa-solid fa-graduation-cap" style="color: var(--primary); margin-right: 0.5rem;" aria-hidden="true"></i> Official Exam Photo &amp; Signature Specs
+          <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i> Official Exam Photo &amp; Signature Specs
         </h2>
-        <div class="related-guides-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+        <div class="related-guides-grid">
           <a href="../ssc-photo-signature-size.html" class="guide-card">
             <strong>SSC Photo &amp; Signature</strong>
-            <p class="text-muted mt-1">20–50 KB photo, 10–20 KB signature for CGL, CHSL, MTS, and GD.</p>
+            <p class="text-muted">20–50 KB photo, 10–20 KB signature for CGL, CHSL, MTS, and GD.</p>
             <span class="resource-link">Open specs &amp; tool <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="../upsc-photo-signature-size.html" class="guide-card">
             <strong>UPSC Photo &amp; Signature</strong>
-            <p class="text-muted mt-1">Square aspect ratio (350×350 to 1000×1000 px), name and date strip guidelines.</p>
+            <p class="text-muted">Square aspect ratio (350×350 to 1000×1000 px), name and date strip guidelines.</p>
             <span class="resource-link">Open specs &amp; tool <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="../ibps-photo-signature-size.html" class="guide-card">
             <strong>IBPS Bank Exam Specs</strong>
-            <p class="text-muted mt-1">200×230 px photo, 140×60 px signature, thumb impression and declaration.</p>
+            <p class="text-muted">200×230 px photo, 140×60 px signature, thumb impression and declaration.</p>
             <span class="resource-link">Open specs &amp; tool <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="../neet-photo-signature-size.html" class="guide-card">
             <strong>NTA NEET-UG Photo Specs</strong>
-            <p class="text-muted mt-1">Passport &amp; 4×6 postcard photos, 80% face coverage with visible ears.</p>
+            <p class="text-muted">Passport &amp; 4×6 postcard photos, 80% face coverage with visible ears.</p>
             <span class="resource-link">Open specs &amp; tool <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="../rrb-photo-signature-size.html" class="guide-card">
             <strong>RRB Railway Specs</strong>
-            <p class="text-muted mt-1">Strict 30–70 KB range for photo and signature in ALP, NTPC, and Group D.</p>
+            <p class="text-muted">Strict 30–70 KB range for photo and signature in ALP, NTPC, and Group D.</p>
             <span class="resource-link">Open specs &amp; tool <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
@@ -350,26 +359,53 @@
   </main>
 
   <!-- FOOTER -->
+  <!-- shell:footer:start -->
   <footer class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand-block">
-        <a href="/" class="brand-logo"><img src="../favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="brand" href="../"><img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
         <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
       </div>
-      <nav class="footer-links" aria-label="Footer Links">
-        <a href="/" class="footer-link">Image tools</a>
-        <a href="../resume.html" class="footer-link">Resume builder</a>
-        <a href="../guides/" class="footer-link">Guides</a>
-        <a href="../about.html" class="footer-link">About</a>
-        <a href="../privacy.html" class="footer-link">Privacy</a>
-        <a href="../terms.html" class="footer-link">Terms</a>
-        <a href="../contact.html" class="footer-link">Contact</a>
-      </nav>
+      <div>
+        <h2 class="site-footer__title">Tools</h2>
+        <ul class="site-footer__list">
+          <li><a href="../">Image resizer</a></li>
+          <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="../image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="../compress-pdf.html">Compress PDF</a></li>
+          <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="../resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">Exam sizes</h2>
+        <ul class="site-footer__list">
+          <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
+          <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
+          <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
+          <li><a href="../neet-photo-signature-size.html">NEET</a></li>
+          <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
+          <li><a href="../resize-image-to-20kb.html">Resize to 20KB</a></li>
+          <li><a href="../resize-image-to-50kb.html">Resize to 50KB</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">ApplyReady</h2>
+        <ul class="site-footer__list">
+          <li><a href="../guides/">Guides</a></li>
+          <li><a href="../how-to-use.html">How to use</a></li>
+          <li><a href="../about.html">About</a></li>
+          <li><a href="../privacy.html">Privacy</a></li>
+          <li><a href="../terms.html">Terms</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
+  <!-- shell:footer:end -->
 
-  <script src="../js/components.js?v=20261012-2" defer></script>
-  <script src="../js/site.js?v=20261012-2"></script>
+  <script src="../js/components.js?v=20261101-1" defer></script>
+  <script src="../js/site.js?v=20261101-1"></script>
 </body>
 </html>
