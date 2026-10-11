@@ -78,17 +78,24 @@
 
     function options() { return Array.from(list.querySelectorAll('[role="option"]')); }
 
-    function setActive(idx, focus) {
+    function setActive(idx, focus, step) {
       const items = options();
       if (!items.length) return;
       idx = Math.max(0, Math.min(idx, items.length - 1));
+      // Arrow, Home and End skip disabled options.
+      const dir = step || 1;
+      let guard = items.length;
+      while (items[idx].getAttribute('aria-disabled') === 'true' && guard-- > 0) {
+        const next = idx + dir;
+        if (next < 0 || next >= items.length) { idx = Math.max(0, Math.min(activeIndex, items.length - 1)); break; }
+        idx = next;
+      }
       activeIndex = idx;
       items.forEach((item, i) => {
         item.setAttribute('aria-selected', String(i === native.selectedIndex));
         item.classList.toggle('is-active', i === idx);
         item.tabIndex = i === idx ? 0 : -1;
       });
-      list.setAttribute('aria-activedescendant', items[idx].id);
       if (focus) items[idx].focus();
     }
 
@@ -118,20 +125,32 @@
 
     function place() {
       const rect = btn.getBoundingClientRect();
-      const width = Math.max(rect.width, 180);
+      const width = Math.min(Math.max(rect.width, 180), window.innerWidth - 16);
       list.style.width = width + 'px';
+      list.style.maxHeight = '';
       list.hidden = false;
-      const listHeight = Math.min(list.scrollHeight, 240);
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const openUp = spaceBelow < listHeight + 12 && rect.top > spaceBelow;
-      const top = openUp ? Math.max(8, rect.top - listHeight - 4) : rect.bottom + 4;
+      const gap = 4;
+      const margin = 8;
+      const spaceBelow = window.innerHeight - rect.bottom - gap - margin;
+      const spaceAbove = rect.top - gap - margin;
+      const natural = list.scrollHeight + 2;
+      const openUp = natural > spaceBelow && spaceAbove > spaceBelow;
+      const room = Math.max(120, openUp ? spaceAbove : spaceBelow);
+      const height = Math.min(natural, room, 320);
+      list.style.maxHeight = height + 'px';
+      const top = openUp ? rect.top - gap - height : rect.bottom + gap;
       let left = rect.left;
-      if (left + width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - width - 8);
+      if (left + width > window.innerWidth - margin) left = Math.max(margin, window.innerWidth - width - margin);
       list.style.left = left + 'px';
-      list.style.top = top + 'px';
+      list.style.top = Math.max(margin, top) + 'px';
     }
 
-    function onReflow() { if (!list.hidden) place(); }
+    function onReflow() {
+      if (list.hidden) return;
+      const r = btn.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) { close(); return; }
+      place();
+    }
 
     function choose(i) {
       native.selectedIndex = i;
@@ -168,13 +187,13 @@
       const items = options();
       if (!items.length) return;
       const key = e.key;
-      if (key === 'ArrowDown') { e.preventDefault(); if (list.hidden) open(); else setActive(activeIndex + 1, true); }
-      else if (key === 'ArrowUp') { e.preventDefault(); if (list.hidden) open(); else setActive(activeIndex - 1, true); }
-      else if (key === 'Home') { e.preventDefault(); if (list.hidden) open(); else setActive(0, true); }
-      else if (key === 'End') { e.preventDefault(); if (list.hidden) open(); else setActive(items.length - 1, true); }
+      if (key === 'ArrowDown') { e.preventDefault(); if (list.hidden) open(); else setActive(activeIndex + 1, true, 1); }
+      else if (key === 'ArrowUp') { e.preventDefault(); if (list.hidden) open(); else setActive(activeIndex - 1, true, -1); }
+      else if (key === 'Home') { e.preventDefault(); if (list.hidden) open(); setActive(0, true, 1); }
+      else if (key === 'End') { e.preventDefault(); if (list.hidden) open(); setActive(items.length - 1, true, -1); }
       else if (key === 'Enter' || key === ' ') { e.preventDefault(); if (list.hidden) open(); else if (!native.options[activeIndex].disabled) choose(activeIndex); }
       else if (key === 'Escape') { if (!list.hidden) { e.preventDefault(); e.stopPropagation(); close(); btn.focus(); } }
-      else if (key === 'Tab') { close(); }
+      else if (key === 'Tab') { if (!list.hidden) { close(); btn.focus(); } }
       else if (key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         typeBuffer += key.toLowerCase();
         clearTimeout(typeTimer);
@@ -335,5 +354,6 @@
   }
 
   // Expose for tests
-  window.ApplyReadyUI = { init, showToast };
+  // Merge: site.js owns notify(); replacing the object removed it on pages where site.js loads first.
+  window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, { init, showToast });
 })();

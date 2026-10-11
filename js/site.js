@@ -67,7 +67,7 @@
   });
 
   let notificationTimer;
-  window.ApplyReadyUI = {
+  window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, {
     notify(message, error = false) {
       let node = document.getElementById('taskNotification');
       if (!node) {
@@ -81,7 +81,7 @@
       node.classList.add('is-visible');
       notificationTimer = setTimeout(() => node.classList.remove('is-visible'), error ? 9000 : 4500);
     }
-  };
+  });
 
   // Register Service Worker for PWA Offline Support
   if (typeof window !== 'undefined' && 'serviceWorker' in navigator && window.location.protocol.startsWith('http')) {

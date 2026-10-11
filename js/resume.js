@@ -754,7 +754,7 @@
     activeModalTemplateId = templateId;
 
     if (title) {
-      title.textContent = `${tmpl.name} — Full Template Preview`;
+      title.textContent = `${tmpl.name} | Full template preview`;
     }
 
     const sample = SCHEMA.migrate(SAMPLE_DATA);
@@ -1827,9 +1827,9 @@
     checklist.innerHTML = '';
     if (issues.length === 0) {
       checklist.innerHTML = `
-        <div class="review-item" style="border-left: 3px solid var(--accent-green);">
+        <div class="review-item review-item--ok">
           <div class="review-item-content">
-            <i aria-hidden="true" class="fa-solid fa-circle-check" style="color: var(--accent-green); margin-top: 0.15rem;"></i>
+            <i aria-hidden="true" class="fa-solid fa-circle-check"></i>
             <span>All contact information, links, and sections conform to clean ATS formatting standards.</span>
           </div>
         </div>
@@ -1837,52 +1837,57 @@
       return;
     }
 
-    issues.forEach(iss => {
-      const item = document.createElement('div');
-      item.className = 'review-item';
-      let icon = 'fa-circle-info text-muted';
-      let borderColor = 'var(--border-color)';
-      if (iss.type === 'error') {
-        icon = 'fa-triangle-exclamation text-danger';
-        borderColor = 'var(--accent-danger)';
-      } else if (iss.type === 'warning') {
-        icon = 'fa-circle-exclamation text-warning';
-        borderColor = 'var(--accent-warning)';
-      }
-      item.style.borderLeft = `3px solid ${borderColor}`;
+    // Blocking errors first, then warnings, then suggestions. Each group is named
+    // so severity is never carried by colour alone.
+    const groups = [
+      { type: 'error', title: 'Fix before sending', icon: 'fa-triangle-exclamation', label: 'Required fix' },
+      { type: 'warning', title: 'Worth checking', icon: 'fa-circle-exclamation', label: 'Warning' },
+      { type: 'info', title: 'Suggestions', icon: 'fa-circle-info', label: 'Suggestion' }
+    ];
+    groups.forEach(group => {
+      const groupIssues = issues.filter(x => (x.type === 'error' || x.type === 'warning') ? x.type === group.type : group.type === 'info');
+      if (!groupIssues.length) return;
+      const heading = document.createElement('h4');
+      heading.className = `review-group-title review-group-title--${group.type}`;
+      heading.innerHTML = `<i aria-hidden="true" class="fa-solid ${group.icon}"></i> ${group.title} <span class="review-group-count">${groupIssues.length}</span>`;
+      checklist.appendChild(heading);
 
-      item.innerHTML = `
-        <div class="review-item-content">
-          <i aria-hidden="true" class="fa-solid ${icon}" style="margin-top: 0.15rem;"></i>
-          <span>${escapeHTML(iss.message)}</span>
-        </div>
-        <button type="button" class="btn btn-secondary btn-sm review-jump-btn" data-target="${iss.targetField || iss.section}">
-          Go to Section
-        </button>
-      `;
+      groupIssues.forEach(iss => {
+        const item = document.createElement('div');
+        item.className = `review-item review-item--${group.type}`;
+        item.innerHTML = `
+          <div class="review-item-content">
+            <i aria-hidden="true" class="fa-solid ${group.icon}"></i>
+            <span><span class="sr-only">${group.label}: </span>${escapeHTML(iss.message)}</span>
+          </div>
+          <button type="button" class="btn-text review-jump-btn" data-target="${iss.targetField || iss.section}">
+            Go to section
+          </button>
+        `;
 
-      item.querySelector('.review-jump-btn').addEventListener('click', () => {
-        // Switch to Content Tab
-        const tabContent = getEl('tabContent');
-        if (tabContent) tabContent.click();
+        item.querySelector('.review-jump-btn').addEventListener('click', () => {
+          // Switch to Content Tab
+          const tabContent = getEl('tabContent');
+          if (tabContent) tabContent.click();
 
-        // Focus and scroll
-        setTimeout(() => {
-          const target = getEl(iss.targetField) || getEl('sec-' + iss.section);
-          if (target) {
-            const section = target.closest('.accordion-section') || target;
-            if (section.classList.contains('accordion-section')) {
-              section.classList.add('open');
-              section.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
+          // Focus and scroll
+          setTimeout(() => {
+            const target = getEl(iss.targetField) || getEl('sec-' + iss.section);
+            if (target) {
+              const section = target.closest('.accordion-section') || target;
+              if (section.classList.contains('accordion-section')) {
+                section.classList.add('open');
+                section.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
+              }
+              if (!iss.targetField) section.querySelector('.accordion-header').focus();
+              else target.focus();
+              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-            if (!iss.targetField) section.querySelector('.accordion-header').focus();
-            else target.focus();
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 100);
-      });
+          }, 100);
+        });
 
-      checklist.appendChild(item);
+        checklist.appendChild(item);
+      });
     });
   }
 

@@ -254,18 +254,18 @@
   display: flex; align-items: center; justify-content: space-between;
   cursor: pointer;
 }
+/* The listbox is portalled to <body> by components.js, so it is styled and shown
+   by its own [hidden] state, never by a .custom-select ancestor. */
 .custom-select__list {
-  position: absolute; top: 100%; left: 0; right: 0;
+  position: fixed;
   max-height: 240px; overflow: auto;
   background: var(--color-surface-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   z-index: var(--z-dropdown);
-  display: none;
-  margin-top: 4px;
 }
-.custom-select.is-open .custom-select__list { display: block; }
+.custom-select__list[hidden] { display: none; }
 .custom-select__option {
   padding: var(--space-2) var(--space-3);
   cursor: pointer;

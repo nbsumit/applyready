@@ -104,7 +104,9 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
 `-- tests/
     |-- run_tests.js         # Node.js unit suite (438 assertions)
     |-- regression_tests.js  # Behaviour regression checks (46)
-    `-- browser_tests.js     # Playwright end-to-end, accessibility and download checks (2,500+)
+    |-- browser_tests.js     # Playwright end-to-end, accessibility and download checks (2,900+)
+    |-- ui_tests.js          # Visible-control checks: dropdowns, button labels, focus, errors, axe on every page (990)
+    `-- browser_smoke.js     # Real image, PDF and resume exports; run with BROWSER=firefox for Firefox
 ```
 
 ---
@@ -124,7 +126,7 @@ The unit suite in `tests/run_tests.js` covers 14 test suites and 438 assertions,
 
 For the workspace changes and current verification workflow, see [docs/WORKSPACE_REFRESH.md](docs/WORKSPACE_REFRESH.md) and [docs/PROFESSIONAL_WORKSPACE.md](docs/PROFESSIONAL_WORKSPACE.md). The additional behavior and browser suites validate actual exports, draft recovery, responsive layouts, editable presets, original-size compression, and accessibility.
 
-Run the complete checks with `npm ci`, `npm test`, `npx playwright install chromium`, and `npm run test:browser`. Browser verification requires Poppler (`pdftotext`, `pdfinfo`) and `unzip`; CI installs these and retains screenshots and exported documents. This includes 60 long PDF cases across all templates, paper sizes, and font families. If Playwright's bundled browser is not installed, set `BROWSER_EXECUTABLE_PATH` to a local Chromium.
+Run the complete checks with `npm ci`, `npm test`, `npx playwright install chromium`, and `npm run test:browser`. Browser verification requires Poppler (`pdftotext`, `pdfinfo`) and `unzip`; CI installs these and retains screenshots and exported documents. This includes 60 long PDF cases across all templates, paper sizes, and font families. If Playwright's bundled browser is not installed, set `BROWSER_EXECUTABLE_PATH` to a local Chromium. `npm run test:firefox` runs the UI and smoke tests in Firefox (`npx playwright install firefox`). The UI audit, plan and post-audit are in `UI_UX_ASTRA_AUDIT.md`, `UI_UX_ASTRA_PLAN.md` and `UI_UX_ASTRA_POST_AUDIT.md`.
 
 To run the original verification suite:
 ```bash

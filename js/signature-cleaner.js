@@ -7,6 +7,8 @@
 
 (function () {
   'use strict';
+  // Errors use the site's notification instead of a blocking browser dialog.
+  const notifyError = message => (window.ApplyReadyUI && window.ApplyReadyUI.notify) ? window.ApplyReadyUI.notify(message, true) : window.alert(message);
 
   const doc = typeof document !== 'undefined' ? document : null;
   if (!doc) return;
@@ -153,7 +155,7 @@
 
   function handleFile(file) {
     if (!file || !file.type.startsWith('image/')) {
-      alert('Please upload a valid image file (JPEG, PNG, or WebP).');
+      notifyError('That file is not a JPG, PNG or WebP image. Choose a photo of your signature.');
       return;
     }
 
@@ -179,6 +181,7 @@
 
         processSignature();
       };
+      img.onerror = () => { originalFile = null; notifyError('That image could not be read. Choose a JPG, PNG or WebP photo that opens on your device, then try again.'); };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);

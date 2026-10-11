@@ -9,6 +9,8 @@
 
 (function () {
   'use strict';
+  // Errors use the site's notification instead of a blocking browser dialog.
+  const notifyError = message => (window.ApplyReadyUI && window.ApplyReadyUI.notify) ? window.ApplyReadyUI.notify(message, true) : window.alert(message);
 
   const doc = typeof document !== 'undefined' ? document : null;
   if (!doc) return;
@@ -116,7 +118,7 @@
 
   function handleFile(file) {
     if (!file || !file.type.startsWith('image/')) {
-      alert('Please upload a valid passport photo image (JPEG, PNG).');
+      notifyError('That file is not a JPG or PNG photo. Choose a passport photo and try again.');
       return;
     }
 
@@ -133,6 +135,7 @@
         if (previewArea) previewArea.classList.remove('hidden');
         renderSheet();
       };
+      img.onerror = () => { loadedFile = null; notifyError('That photo could not be read. Choose a JPG or PNG that opens on your device, then try again.'); };
       img.src = e.target.result;
     };
     reader.readAsDataURL(file);

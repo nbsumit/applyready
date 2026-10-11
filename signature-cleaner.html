@@ -34,10 +34,10 @@
 
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/design-system.css?v=20261011-4">
-  <link rel="stylesheet" href="css/style.css?v=20261011-3">
-  <link rel="stylesheet" href="css/workspace.css?v=20261011-3">
-  <link rel="stylesheet" href="css/ux.css?v=20261011-8">
+  <link rel="stylesheet" href="css/design-system.css?v=20261012-2">
+  <link rel="stylesheet" href="css/style.css?v=20261012-2">
+  <link rel="stylesheet" href="css/workspace.css?v=20261012-2">
+  <link rel="stylesheet" href="css/ux.css?v=20261012-2">
 
   <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
@@ -209,19 +209,19 @@
         </ol>
       </nav>
 
-      <header style="margin-bottom: 2rem;">
-        <h1 class="hero-title" style="text-align: left;">Online Signature Background Cleaner: Whiten Paper &amp; Darken Ink</h1>
-        <p class="hero-subtitle" style="text-align: left; margin: 0;">
-          Eliminate camera shadows, yellow paper tint, and scan noise. Produce high-contrast, pure-white signatures ready for SSC, UPSC, IBPS, and state government forms. 100% private in your browser.
-        </p>
-        <div class="workspace-assurance" style="margin-top: 1rem;">
+      <header class="hero-header workspace-hero">
+        <div class="hero-copy">
+          <h1 class="hero-title">Online Signature Background Cleaner: Whiten Paper &amp; Darken Ink</h1>
+          <p class="hero-subtitle">Eliminate camera shadows, yellow paper tint, and scan noise. Produce high-contrast, pure-white signatures ready for SSC, UPSC, IBPS, and state government forms. 100% private in your browser.</p>
+        </div>
+        <div class="workspace-assurance">
           <i class="fa-solid fa-lock" aria-hidden="true"></i>
           <div><strong>Your files never leave your device</strong><span>All image filtering runs locally in browser memory.</span></div>
         </div>
       </header>
 
       <!-- Signature Cleaner Workspace -->
-      <div class="resizer-grid" style="margin-bottom: 3rem;">
+      <div class="resizer-grid" data-layout="input-first" style="margin-bottom: 3rem;">
 
         <!-- Controls Column -->
         <section class="app-card image-controls" aria-labelledby="cleanerControlsHeading">
@@ -247,7 +247,7 @@
           </div>
 
           <!-- Upload Dropzone -->
-          <div id="cleanerDropzone" class="dropzone" tabindex="0" role="button" aria-label="Upload signature image">
+          <div id="cleanerDropzone" class="dropzone" role="group" aria-label="Upload signature image">
             <input type="file" id="cleanerFileInput" accept="image/jpeg,image/png,image/webp" style="display: none;" aria-hidden="true">
             <div class="upload-symbol"><i class="fa-solid fa-signature" aria-hidden="true"></i></div>
             <h3>Upload Signature Image</h3>
@@ -498,43 +498,38 @@
   </main>
 
   <!-- FOOTER -->
-  <footer class="footer">
-    <div class="footer-container">
-      <div class="footer-brand">
-        <a href="/" class="brand-logo" aria-label="ApplyReady Home">
-          <img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32">
-          <span>ApplyReady<span class="brand-dot">.</span></span>
-        </a>
-        <p class="footer-tagline">100% private, client-side image resizer and ATS resume builder for Indian job seekers and students.</p>
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand-block">
+        <a href="/" class="brand-logo"><img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+        <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
       </div>
-      <div class="footer-nav">
-        <div class="footer-col">
-          <h4>Tools</h4>
-          <ul>
-            <li><a href="/" class="footer-link">Image Resizer</a></li>
-            <li><a href="signature-cleaner.html" class="footer-link">Signature Cleaner</a></li>
-            <li><a href="resume.html" class="footer-link">Resume Builder</a></li>
-            <li><a href="how-to-use.html" class="footer-link">All Tools</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h4>Company</h4>
-          <ul>
-            <li><a href="about.html" class="footer-link">About Us</a></li>
-            <li><a href="privacy.html" class="footer-link">Privacy Policy</a></li>
-            <li><a href="terms.html" class="footer-link">Terms of Use</a></li>
-            <li><a href="contact.html" class="footer-link">Contact</a></li>
-          </ul>
-        </div>
-      </div>
+            <nav class="footer-links" aria-label="Footer Links">
+        <a href="/" class="footer-link">Image tools</a>
+        <a href="resume.html" class="footer-link">Resume builder</a>
+        <a href="signature-cleaner.html" class="footer-link">Signature cleaner</a>
+        <a href="image-to-pdf.html" class="footer-link">Image to PDF</a>
+        <a href="compress-pdf.html" class="footer-link">Compress PDF</a>
+        <a href="passport-photo-print.html" class="footer-link">Passport print</a>
+        <a href="ssc-photo-signature-size.html" class="footer-link">SSC specs</a>
+        <a href="upsc-photo-signature-size.html" class="footer-link">UPSC specs</a>
+        <a href="rrb-photo-signature-size.html" class="footer-link">RRB specs</a>
+        <a href="ibps-photo-signature-size.html" class="footer-link">IBPS specs</a>
+        <a href="neet-photo-signature-size.html" class="footer-link">NEET specs</a>
+        <a href="resize-image-to-20kb.html" class="footer-link">Resize to 20KB</a>
+        <a href="resize-image-to-50kb.html" class="footer-link">Resize to 50KB</a>
+        <a href="guides/" class="footer-link">Guides</a>
+        <a href="about.html" class="footer-link">About</a>
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <a href="terms.html" class="footer-link">Terms</a>
+        <a href="contact.html" class="footer-link">Contact</a>
+      </nav>
     </div>
-    <div class="footer-bottom">
-      <p>&copy; 2026 ApplyReady. All rights reserved. Runs 100% in your browser.</p>
-    </div>
+    <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
-  <script src="js/components.js?v=20261011-8" defer></script>
-  <script src="js/site.js"></script>
-  <script src="js/signature-cleaner.js"></script>
+  <script src="js/components.js?v=20261012-2" defer></script>
+  <script src="js/site.js?v=20261012-2"></script>
+  <script src="js/signature-cleaner.js?v=20261012-2"></script>
 </body>
 </html>

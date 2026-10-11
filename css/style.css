@@ -265,7 +265,7 @@ body {
 .trust-badge-pill {
   background: var(--accent-green);
   color: white;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-full);
   text-transform: uppercase;
@@ -587,7 +587,7 @@ textarea.form-control {
 
 .meta-stat-label {
   display: block;
-  font-size: 0.725rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1350,7 +1350,7 @@ textarea.form-control {
 }
 
 .template-badge {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 0.15rem 0.45rem;
   border-radius: var(--radius-full);
@@ -2125,7 +2125,7 @@ textarea.form-control {
   padding: 1rem;
 }
 .ad-slot-label {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
