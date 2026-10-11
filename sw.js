@@ -1,9 +1,11 @@
 /**
  * ApplyReady.in - Service Worker (PWA Offline Support)
  * 100% Client-Side Caching for Offline Resizer, Resume Builder & PDF Tools
+ *
+ * NOTE: Bump CACHE_NAME on every deploy to ensure clients receive updated assets.
  */
 
-const CACHE_NAME = 'applyready-v3';
+const CACHE_NAME = 'applyready-v4';
 
 const STATIC_ASSETS = [
   '/',
@@ -14,6 +16,7 @@ const STATIC_ASSETS = [
   '/privacy.html',
   '/terms.html',
   '/contact.html',
+  '/offline.html',
   '/404.html',
   '/guides/',
   '/guides/index.html',
@@ -52,6 +55,7 @@ const STATIC_ASSETS = [
   '/css/vendor/cropper.min.css',
   '/js/site.js',
   '/js/theme.js',
+  '/js/presets.js',
   '/js/resizer.js',
   '/js/signature-cleaner.js',
   '/js/image-to-pdf.js',
@@ -78,7 +82,9 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
-      .catch(() => {})
+      .catch(err => {
+        console.error('[SW] Precache failed:', err);
+      })
   );
 });
 
@@ -100,22 +106,40 @@ self.addEventListener('fetch', event => {
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
+  const isNavigation = request.mode === 'navigate' || (request.headers.get('accept') && request.headers.get('accept').includes('text/html'));
 
-      return fetch(request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
+  if (isNavigation) {
+    // HTML / navigation requests: network-first with cache fallback, then offline.html
+    event.respondWith(
+      fetch(request)
+        .then(response => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const cloned = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, cloned));
+          }
           return response;
-        }
-        const cloned = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, cloned));
-        return response;
-      }).catch(() => {
-        if (request.headers.get('accept') && request.headers.get('accept').includes('text/html')) {
-          return caches.match('/404.html');
-        }
-      });
-    })
-  );
+        })
+        .catch(() => {
+          return caches.match(request).then(cached => {
+            if (cached) return cached;
+            return caches.match('/offline.html');
+          });
+        })
+    );
+  } else {
+    // Static assets: stale-while-revalidate
+    event.respondWith(
+      caches.match(request).then(cachedResponse => {
+        const fetchPromise = fetch(request).then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, responseToCache));
+          }
+          return networkResponse;
+        }).catch(() => null);
+
+        return cachedResponse || fetchPromise;
+      })
+    );
+  }
 });

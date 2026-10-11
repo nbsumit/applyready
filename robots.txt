@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /offline.html
 
 Sitemap: https://applyready.in/sitemap.xml
