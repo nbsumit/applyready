@@ -33,9 +33,6 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <!-- Google AdSense -->
-
-
   <script src="js/theme.js"></script>
 
   <!-- Icons & Styles -->
@@ -187,8 +184,8 @@
               </tr>
               <tr style="border-bottom: 1px solid var(--border-color);">
                 <td style="padding: 0.75rem 1rem; font-weight: 600;">Signature</td>
-                <td style="padding: 0.75rem 1rem;"><strong>30 KB – 70 KB</strong></td>
-                <td style="padding: 0.75rem 1rem;">300 × 120 px (50 × 20 mm)</td>
+                <td style="padding: 0.75rem 1rem;"><strong>30 KB – 49 KB</strong></td>
+                <td style="padding: 0.75rem 1rem;">300 × 120 px (minimum 140 × 60 px)</td>
                 <td style="padding: 0.75rem 1rem;">JPG / JPEG</td>
                 <td style="padding: 0.75rem 1rem;">Black or blue ink on plain white paper, cursive/running handwriting (no all-caps)</td>
               </tr>
@@ -199,6 +196,9 @@
         <div style="background: var(--bg-card-subtle); border-left: 4px solid var(--primary); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-top: 1rem;">
           <p style="margin: 0; font-size: 0.9rem; color: var(--text-main);">
             <strong>Official Verification Disclaimer:</strong> Extracted directly from official CEN notices. Always verify with the latest notification published on the official Railway portal: <a href="https://www.rrbapply.gov.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">rrbapply.gov.in</a>.
+          </p>
+          <p class="text-muted" style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">
+            Last verified: October 2026 — always confirm with the official notification on <a href="https://www.rrbapply.gov.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">rrbapply.gov.in</a>.
           </p>
         </div>
       </section>
@@ -215,7 +215,7 @@
               <i class="fa-solid fa-image" aria-hidden="true"></i> Photo (30–70 KB)
             </button>
             <button type="button" id="btnPresetRRBSig" class="btn btn-secondary btn-sm" onclick="window.ApplyReadyResizer?.applyPreset('rrb-signature')">
-              <i class="fa-solid fa-signature" aria-hidden="true"></i> Signature (30–70 KB)
+              <i class="fa-solid fa-signature" aria-hidden="true"></i> Signature (30–49 KB)
             </button>
           </div>
         </div>
@@ -248,7 +248,7 @@
               <label for="presetSelect" class="control-label">Target Preset</label>
               <select id="presetSelect" class="form-control">
                 <option value="rrb-photo" selected>RRB Photo (320 × 240 px, max 70 KB)</option>
-                <option value="rrb-signature">RRB Signature (300 × 120 px, max 70 KB)</option>
+                <option value="rrb-signature">RRB Signature (300 × 120 px, max 49 KB)</option>
                 <option value="custom">Custom Dimensions</option>
                 <option value="passport">Passport Photo (350 × 450 px, max 50 KB)</option>
                 <option value="signature">Signature (300 × 100 px, max 30 KB)</option>

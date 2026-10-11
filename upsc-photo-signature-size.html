@@ -33,9 +33,6 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <!-- Google AdSense -->
-
-
   <script src="js/theme.js"></script>
 
   <!-- Icons & Styles -->
@@ -55,7 +52,7 @@
         "name": "What are the official photo specifications for UPSC online applications?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "The photograph for UPSC applications must be in JPG/JPEG format, with file size between 20 KB and 300 KB. The pixel dimensions must be at least 350 × 350 pixels and at most 1000 × 1000 pixels (square aspect ratio). The face should occupy approximately 75% of the frame against a plain light/white background."
+          "text": "The photograph for UPSC applications must be in JPG/JPEG format, with file size between 20 KB and 200 KB. The face should occupy approximately 75% of the frame against a plain light/white background."
         }
       },
       {
@@ -63,7 +60,7 @@
         "name": "What are the signature requirements for UPSC exams?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "The scanned signature for UPSC must also be between 20 KB and 100 KB in JPG format, with dimensions between 350 × 350 pixels and 500 × 500 pixels. The candidate must sign three times (triple signature) on a plain white paper with a black ballpoint pen. The signature must be made with a black ballpoint pen on plain white paper."
+          "text": "The scanned signature for UPSC must be between 20 KB and 100 KB in JPG format, with dimensions between 350 × 350 pixels and 500 × 500 pixels. The candidate must sign three times (triple signature, one below the other) on a plain white paper with a black ballpoint pen."
         }
       },
       {
@@ -181,16 +178,16 @@
               <tr style="border-bottom: 1px solid var(--border-color);">
                 <td style="padding: 0.75rem 1rem; font-weight: 600;">Scanned Photo</td>
                 <td style="padding: 0.75rem 1rem;"><strong>20 KB – 200 KB</strong></td>
-                <td style="padding: 0.75rem 1rem;">Min 350 × 350 px, Max 1000 × 1000 px</td>
+                <td style="padding: 0.75rem 1rem;">Check official notification (350 × 350 px recommended)</td>
                 <td style="padding: 0.75rem 1rem;">JPG / JPEG</td>
                 <td style="padding: 0.75rem 1rem;">3/4th face coverage, plain light background, frontal view</td>
               </tr>
               <tr style="border-bottom: 1px solid var(--border-color);">
-                <td style="padding: 0.75rem 1rem; font-weight: 600;">Scanned Signature</td>
-                <td style="padding: 0.75rem 1rem;"><strong>20 KB – 200 KB</strong></td>
-                <td style="padding: 0.75rem 1rem;">Min 350 × 350 px, Max 1000 × 1000 px</td>
+                <td style="padding: 0.75rem 1rem; font-weight: 600;">Triple Signature (Scanned Signature)</td>
+                <td style="padding: 0.75rem 1rem;"><strong>20 KB – 100 KB</strong></td>
+                <td style="padding: 0.75rem 1rem;">350 × 350 px to 500 × 500 px</td>
                 <td style="padding: 0.75rem 1rem;">JPG / JPEG</td>
-                <td style="padding: 0.75rem 1rem;">Black ballpoint pen on plain white paper, square aspect ratio, clearly legible</td>
+                <td style="padding: 0.75rem 1rem;">Candidate must sign three times (one below the other) on plain white paper with a black ballpoint pen. UPSC requires a triple signature in a single image for identity verification.</td>
               </tr>
             </tbody>
           </table>
@@ -199,6 +196,9 @@
         <div style="background: var(--bg-card-subtle); border-left: 4px solid var(--primary); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-top: 1rem;">
           <p style="margin: 0; font-size: 0.9rem; color: var(--text-main);">
             <strong>Official Verification Disclaimer:</strong> Guidelines are sourced directly from UPSC examination notifications. Always verify with the latest notification published on the official Union Public Service Commission portal: <a href="https://upsconline.nic.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">upsconline.nic.in</a>.
+          </p>
+          <p class="text-muted" style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">
+            Last verified: October 2026 — always confirm with the official notification on <a href="https://upsconline.nic.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">upsconline.nic.in</a>.
           </p>
         </div>
       </section>
@@ -212,10 +212,10 @@
           </div>
           <div style="display: inline-flex; gap: 0.5rem;">
             <button type="button" id="btnPresetUPSCPhoto" class="btn btn-primary btn-sm" onclick="window.ApplyReadyResizer?.applyPreset('upsc-photo')">
-              <i class="fa-solid fa-image" aria-hidden="true"></i> Photo (350×350, &lt;100 KB)
+              <i class="fa-solid fa-image" aria-hidden="true"></i> Photo (350×350, 20–200 KB)
             </button>
             <button type="button" id="btnPresetUPSCSig" class="btn btn-secondary btn-sm" onclick="window.ApplyReadyResizer?.applyPreset('upsc-signature')">
-              <i class="fa-solid fa-signature" aria-hidden="true"></i> Signature (350×350, &lt;100 KB)
+              <i class="fa-solid fa-signature" aria-hidden="true"></i> Triple Signature (400×400, 20–100 KB)
             </button>
           </div>
         </div>
@@ -247,8 +247,8 @@
             <div class="control-group">
               <label for="presetSelect" class="control-label">Target Preset</label>
               <select id="presetSelect" class="form-control">
-                <option value="upsc-photo" selected>UPSC Photo (350 × 350 px, max 100 KB)</option>
-                <option value="upsc-signature">UPSC Signature (350 × 350 px, max 100 KB)</option>
+                <option value="upsc-photo" selected>UPSC Photo (350 × 350 px, 20–200 KB)</option>
+                <option value="upsc-signature">UPSC Triple Signature (400 × 400 px, 20–100 KB)</option>
                 <option value="custom">Custom Dimensions</option>
                 <option value="passport">Passport Photo (350 × 450 px, max 50 KB)</option>
                 <option value="signature">Signature (300 × 100 px, max 30 KB)</option>
@@ -387,9 +387,8 @@
         <h2>Common Reasons UPSC Uploads Get Rejected</h2>
         <ul>
           <li><strong>Resolution Below 350 × 350 Pixels:</strong> The UPSC portal system blocks any image where either width or height is less than 350 pixels.</li>
-          <li><strong>Resolution Exceeding 1000 × 1000 Pixels:</strong> High-resolution mobile phone camera photos often exceed 1000 pixels and fail the upload test.</li>
-          <li><strong>File Size Outside 20 KB – 300 KB:</strong> Overly compressed images under 20 KB and original camera images above 300 KB will not be uploaded.</li>
-          <li><strong>Outdated Appearance:</strong> UPSC rules require the photo to show a contemporary likeness taken within 10 days before filling the application.</li>
+          <li><strong>File Size Outside Allowed Limits:</strong> Uploads must be 20 KB – 200 KB for photographs and 20 KB – 100 KB for triple signatures. Compressed images under 20 KB or files over the limit will be rejected.</li>
+          <li><strong>Single Signature Instead of Triple:</strong> UPSC mandates signing three times, one below the other, in black ballpoint ink on plain white paper within a single scanned image.</li>
           <li><strong>Signature in Blue or Gel Ink:</strong> UPSC explicitly advises signing with a black ballpoint pen on plain white paper for sharp contrast.</li>
         </ul>
       </section>
@@ -407,7 +406,7 @@
               <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
             </summary>
             <div class="faq-answer">
-              <p>Both width and height must be between 350 and 1000 pixels in a square 1:1 aspect ratio (e.g. 350 × 350 px or 500 × 500 px). ApplyReady defaults to 350 × 350 pixels to ensure rapid processing while staying within the legal boundary.</p>
+              <p>For triple signatures, pixel dimensions must be between 350 × 350 px and 500 × 500 px. For photographs, verify dimensions against your examination notice (square 350 × 350 px is commonly recommended). ApplyReady defaults to 350 × 350 pixels to ensure swift compliance.</p>
             </div>
           </details>
           <details class="faq-item">
@@ -416,7 +415,7 @@
               <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
             </summary>
             <div class="faq-answer">
-              <p>The file size must be between 20 KB and 300 KB in JPEG/JPG format. Files under 20 KB or above 300 KB will be rejected by the portal validator.</p>
+              <p>The file size must be between 20 KB and 200 KB for photographs (and 20 KB to 100 KB for signatures) in JPEG/JPG format. Files outside these limits will be rejected by the portal validator.</p>
             </div>
           </details>
           <details class="faq-item">

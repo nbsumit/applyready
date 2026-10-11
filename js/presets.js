@@ -99,7 +99,7 @@
       defaultPrefix: 'UPSC_Photo'
     },
     'upsc-signature': {
-      name: 'UPSC Signature (400 × 400 px, 20–100 KB)',
+      name: 'UPSC Triple Signature (400 × 400 px, 20–100 KB)',
       width: 400,
       height: 400,
       minKB: 20,
