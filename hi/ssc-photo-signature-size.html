@@ -34,15 +34,15 @@
   <meta name="theme-color" content="#2563EB">
 
   <!-- Google AdSense -->
-  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=[PUB-ID]" crossorigin="anonymous"></script> -->
+
 
   <script src="../js/theme.js"></script>
 
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
   <link rel="stylesheet" href="../css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="../css/style.css?v=20261011-1">
-  <link rel="stylesheet" href="../css/workspace.css?v=20261011-1">
+  <link rel="stylesheet" href="../css/style.css?v=20261011-3">
+  <link rel="stylesheet" href="../css/workspace.css?v=20261011-3">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -77,6 +77,36 @@
     ]
   }
   </script>
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
+  <meta name="google-adsense-account" content="ca-pub-2713609207324356">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://applyready.in/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Guides",
+        "item": "https://applyready.in/guides/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "SSC फोटो और सिग्नेचर",
+        "item": "https://applyready.in/hi/ssc-photo-signature-size.html"
+      }
+    ]
+  }
+  </script>
 </head>
 <body class="content-page">
 
@@ -104,7 +134,7 @@
   <noscript><p class="noscript-note">टूल का उपयोग करने के लिए कृपया जावास्क्रिप्ट सक्षम करें।</p></noscript>
   <main id="mainContent" class="main-content">
     <article class="guide-content">
-      
+
       <!-- Breadcrumb Navigation -->
       <nav class="breadcrumb-nav" aria-label="Breadcrumb" style="display: flex; justify-content: space-between; align-items: center;">
         <ol class="breadcrumb-list" style="margin: 0;">
@@ -184,7 +214,7 @@
         <div class="app-container" id="resizerApp" data-preset="ssc-photo">
           <section class="form-panel" id="formPanel" aria-labelledby="toolControlsHeading">
             <h3 id="toolControlsHeading" class="sr-only">इमेज सेटिंग्स</h3>
-            
+
             <div class="file-upload-wrapper">
               <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="file-input-hidden" aria-label="फोटो या सिग्नेचर चुनें">
               <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="फोटो या सिग्नेचर चुनें">
@@ -235,9 +265,9 @@
             <div class="control-group">
               <label for="formatSelect" class="control-label">फॉर्मेट</label>
               <select id="formatSelect" class="form-control">
-                <option value="jpeg" selected>JPEG (.jpg) - SSC पोर्टल के लिए आवश्यक</option>
-                <option value="png">PNG (.png)</option>
-                <option value="webp">WebP (.webp)</option>
+                <option value="image/jpeg" selected>JPEG (.jpg) - SSC पोर्टल के लिए आवश्यक</option>
+                <option value="image/png">PNG (.png)</option>
+                <option value="image/webp">WebP (.webp)</option>
               </select>
             </div>
 
@@ -275,6 +305,47 @@
             </div>
           </section>
         </div>
+      </section>
+
+
+        <div style="background: var(--bg-surface); border-left: 4px solid #f59e0b; padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-top: 1rem;">
+          <p style="margin: 0; font-size: 0.9rem; color: var(--text-main);">
+            <strong>लाइव वेबकैम फोटो नोट:</strong> नए SSC पोर्टल (<a href="https://ssc.gov.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary); text-decoration: underline;">ssc.gov.in</a>) पर हालिया परीक्षाओं में फोटो वेबकैम या MySSC ऐप से लाइव कैप्चर की जाती है। हस्ताक्षर (10–20 KB, 400 × 200 px) फाइल के रूप में अपलोड होते हैं। हमेशा आधिकारिक विज्ञापन देखें।
+          </p>
+        </div>
+
+
+      <!-- SSC Detailed Hindi Guide -->
+      <section class="app-card" style="margin-bottom: 2rem;">
+        <h2>SSC ऑनलाइन आवेदन के लिए जरूरी दिशानिर्देश (विस्तृत गाइड)</h2>
+        <p>कर्मचारी चयन आयोग (Staff Selection Commission) द्वारा आयोजित की जाने वाली विभिन्न प्रमुख राष्ट्रीय परीक्षाओं — जैसे <strong>SSC CGL, CHSL, MTS, CPO, और Constable GD</strong> — में हर साल लाखों अभ्यर्थी ऑनलाइन आवेदन करते हैं। आयोग की स्क्रूटनी प्रक्रिया में हजारों फॉर्म केवल अमान्य फोटो या हस्ताक्षर के कारण बिना किसी पूर्व सूचना के सीधे निरस्त (Reject) कर दिए जाते हैं। नीचे दिए गए सभी तकनीकी और कानूनी बिंदुओं को ध्यानपूर्वक समझें:</p>
+
+        <h3>1. लाइव वेबकैम फोटो कैप्चर और MySSC ऐप के नियम</h3>
+        <p>नए SSC पोर्टल (ssc.gov.in) पर हालिया भर्ती अधिसूचनाओं से आयोग ने पुरानी पासपोर्ट फोटो अपलोड प्रणाली के स्थान पर <strong>लाइव फोटो कैप्चर</strong> की व्यवस्था लागू की है। लाइव फोटो लेते समय निम्नलिखित सावधानियां बरतें:</p>
+        <ul>
+          <li><strong>पर्याप्त रोशनी (Proper Lighting):</strong> चेहरे पर सीधी और अच्छी रोशनी होनी चाहिए ताकि चेहरा पूरी तरह स्पष्ट नजर आए। पीछे से आने वाली रोशनी (Backlighting) से बचें।</li>
+          <li><strong>सादा व हल्का बैकग्राउंड:</strong> फोटो खींचते समय अपने पीछे सफेद या किसी हल्के रंग की दीवार रखें। पृष्ठभूमि में कोई वस्तु, कैलेंडर या अन्य व्यक्ति नहीं होना चाहिए।</li>
+          <li><strong>कैमरे के सामने सीधा रुख:</strong> दोनों आंखें खुली हों और सीधी कैमरे की ओर देखें। सिर किसी भी तरफ झुका हुआ या तिरछा नहीं होना चाहिए।</li>
+          <li><strong>चश्मा और कैप सख्त वर्जित:</strong> किसी भी प्रकार का नजर का चश्मा, धूप का चश्मा या टोपी पहनकर ली गई लाइव फोटो पोर्टल द्वारा तुरंत अमान्य कर दी जाएगी।</li>
+        </ul>
+
+        <h3>2. हस्ताक्षर (Signature) अपलोड के सख्त नियम</h3>
+        <p>हस्ताक्षर का स्कैन किया हुआ डिजिटल प्रारूप पोर्टल पर सीधे फाइल के रूप में अपलोड किया जाता है। हस्ताक्षर अपलोड करते समय ये बातें अनिवार्य हैं:</p>
+        <ul>
+          <li><strong>फाइल साइज (10 KB से 20 KB):</strong> आपके हस्ताक्षर का डिजिटल साइज 10,240 बाइट्स से 20,480 बाइट्स के बीच होना अनिवार्य है। 9 KB या 21 KB की फाइल पोर्टल द्वारा स्वीकार नहीं की जाएगी।</li>
+          <li><strong>पिक्सेल डायमेंशन (400 × 200 px):</strong> चौड़ाई 4.0 सेमी (~400 पिक्सेल) और ऊंचाई 2.0 सेमी (~200 पिक्सेल) के अनुपात में होनी चाहिए।</li>
+          <li><strong>काली या नीली स्याही:</strong> केवल सादे सफेद अनलाइन्ड कागज पर गहरे नीले या काले बॉलपॉइंट पेन से हस्ताक्षर करें। पेंसिल या स्केच पेन मान्य नहीं हैं।</li>
+          <li><strong>रनिंग हैंडराइटिंग (Cursive):</strong> हस्ताक्षर सामान्य प्रवाहपूर्ण लिखावट में होने चाहिए। यदि कोई अभ्यर्थी अपने पूरे नाम को केवल बड़े अक्षरों (BLOCK/CAPITAL LETTERS) में लिखता है, तो SSC उसका आवेदन निरस्त कर देता है।</li>
+        </ul>
+
+        <h3>3. मोबाइल से फोटो और सिग्नेचर कैसे रिसाइज करें?</h3>
+        <p>ApplyReady टूल का उपयोग करके आप बिना किसी साइबर कैफे जाए अपने मोबाइल फोन से ही 1 मिनट में सही साइज की फाइल तैयार कर सकते हैं:</p>
+        <ol>
+          <li>ऊपर दिए गए टूल में <strong>'फोटो या सिग्नेचर चुनने के लिए क्लिक करें'</strong> पर टैप करें।</li>
+          <li>'SSC फोटो' या 'SSC सिग्नेचर' प्रीसेट चुनें, जिससे सही चौड़ाई, ऊंचाई और KB सीमा अपने आप सेट हो जाती है।</li>
+          <li>क्रॉप बॉक्स को अपनी फोटो या हस्ताक्षर के अनुसार एडजस्ट करें और <strong>'रिसाइज और कंप्रेस करें'</strong> बटन दबाएं।</li>
+          <li>सफलतापूर्वक प्रोसेस होने के बाद <strong>'डाउनलोड करें'</strong> पर क्लिक करके प्रमाणित फाइल सीधे अपने फोन में सेव करें।</li>
+        </ol>
       </section>
 
       <!-- Common Rejection Reasons Section -->
@@ -341,8 +412,9 @@
     <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
-  <script src="../js/site.js?v=20261001-2"></script>
+  <script src="../js/site.js?v=20261011-3"></script>
   <script src="../js/vendor/cropper.min.js"></script>
-  <script src="../js/resizer.js?v=20261001-2"></script>
+  <script src="../js/presets.js?v=20261011-3"></script>
+  <script src="../js/resizer.js?v=20261011-3"></script>
 </body>
 </html>

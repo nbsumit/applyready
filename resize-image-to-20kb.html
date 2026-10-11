@@ -31,15 +31,15 @@
   <meta name="theme-color" content="#2563EB">
 
   <!-- Google AdSense -->
-  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=[PUB-ID]" crossorigin="anonymous"></script> -->
+
 
   <script src="js/theme.js"></script>
 
   <!-- Icons & Styles -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/style.css?v=20261011-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261011-1">
+  <link rel="stylesheet" href="css/style.css?v=20261011-3">
+  <link rel="stylesheet" href="css/workspace.css?v=20261011-3">
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
@@ -74,6 +74,9 @@
     ]
   }
   </script>
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
+  <meta name="google-adsense-account" content="ca-pub-2713609207324356">
 </head>
 <body class="content-page">
 
@@ -88,7 +91,7 @@
       <div class="nav-links" id="navMenu">
         <a href="/" class="nav-link">Image tools</a>
         <a href="resume.html" class="nav-link">Resume builder</a>
-        <a href="how-to-use.html" class="nav-link">Guides</a>
+        <a href="guides/" class="nav-link">Guides</a>
       </div>
       <div class="nav-actions">
         <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
@@ -101,12 +104,12 @@
   <noscript><p class="noscript-note">Enable JavaScript to use the interactive resizing tool.</p></noscript>
   <main id="mainContent" class="main-content">
     <article class="guide-content">
-      
+
       <!-- Breadcrumb Navigation -->
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
         <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
-          <li class="breadcrumb-item"><a href="how-to-use.html">Guides</a></li>
+          <li class="breadcrumb-item"><a href="guides/">Guides</a></li>
           <li class="breadcrumb-item active" aria-current="page">Resize Image to 20 KB</li>
         </ol>
       </nav>
@@ -122,7 +125,7 @@
       <section class="app-card" style="margin-bottom: 2rem;">
         <h2>The Standard Signature Limit for Indian Online Applications</h2>
         <p>
-          Almost all major competitive examinations in India — including <strong>SSC CGL/CHSL/MTS, IBPS PO/Clerk, SBI, Railway RRB, and State PSCs</strong> — establish a strict maximum ceiling of <strong>20 KB</strong> for candidate signatures. Uploading a 21 KB file triggers an immediate validation failure on the submission portal.
+          Almost all major competitive examinations in India — including <strong>SSC CGL/CHSL/MTS, IBPS PO/Clerk, SBI, and State PSCs</strong> (note: Railway RRB signatures require 30–49 KB, not under 20 KB) — establish a strict maximum ceiling of <strong>20 KB</strong> for candidate signatures. Uploading a 21 KB file triggers an immediate validation failure on the submission portal.
         </p>
         <p>
           With ApplyReady, your file is processed directly inside your web browser. You can rotate, crop out margins, set custom dimensions, and download a guaranteed sub-20 KB image without compromising the clarity of your handwritten signature.
@@ -140,11 +143,11 @@
 
         <!-- Embedded Resizer Workspace -->
         <div class="app-container" id="resizerApp" data-preset="kb-20" data-max-kb="20">
-          
+
           <!-- LEFT: Form Controls Panel -->
           <section class="form-panel" id="formPanel" aria-labelledby="toolControlsHeading">
             <h3 id="toolControlsHeading" class="sr-only">Image Configuration Controls</h3>
-            
+
             <div class="file-upload-wrapper">
               <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" class="file-input-hidden" aria-label="Upload photo or signature">
               <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload photo or signature image">
@@ -356,7 +359,7 @@
       <nav class="footer-links" aria-label="Footer Links">
         <a href="/" class="footer-link">Image tools</a>
         <a href="resume.html" class="footer-link">Resume builder</a>
-        <a href="how-to-use.html" class="footer-link">Guides</a>
+        <a href="guides/" class="footer-link">Guides</a>
         <a href="about.html" class="footer-link">About</a>
         <a href="privacy.html" class="footer-link">Privacy</a>
         <a href="terms.html" class="footer-link">Terms</a>
@@ -366,8 +369,9 @@
     <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
 
-  <script src="js/site.js?v=20261001-2"></script>
+  <script src="js/site.js?v=20261011-3"></script>
   <script src="js/vendor/cropper.min.js"></script>
-  <script src="js/resizer.js?v=20261001-2"></script>
+  <script src="js/presets.js?v=20261011-3"></script>
+  <script src="js/resizer.js?v=20261011-3"></script>
 </body>
 </html>
