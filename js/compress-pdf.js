@@ -158,7 +158,7 @@
             displayResult(currentFile, 1);
             return;
           }
-          throw new Error('This PDF contains vector text/forms rather than scanned images. It is already compact or protected.');
+          throw new Error('This tool works best for scanned documents and image-based PDFs. Your PDF appears to contain selectable text or vector forms with no embedded page images to compress. If your file is already under the portal size limit, you can upload it directly.');
         }
       } else {
         updateProgress(30, 'Processing document image…');
@@ -313,25 +313,17 @@
     const jpegBuf = await bestBlob.arrayBuffer();
     const jpegBytes = new Uint8Array(jpegBuf);
 
-    // Standard A4 dimensions
-    const isLandscape = page.width > page.height;
-    const pw = isLandscape ? 841.89 : 595.28;
-    const ph = isLandscape ? 595.28 : 841.89;
-
-    const margin = 18;
-    const availW = pw - (margin * 2);
-    const availH = ph - (margin * 2);
-    const drawScale = Math.min(availW / page.width, availH / page.height);
-    const drawW = page.width * drawScale;
-    const drawH = page.height * drawScale;
+    // Preserve original aspect ratio and dimensions in PDF points (0.75 pt/px assuming standard 96 DPI)
+    const pw = Number((page.width * 0.75).toFixed(2));
+    const ph = Number((page.height * 0.75).toFixed(2));
 
     return {
       pageWidth: pw,
       pageHeight: ph,
-      drawW,
-      drawH,
-      posX: margin + (availW - drawW) / 2,
-      posY: margin + (availH - drawH) / 2,
+      drawW: pw,
+      drawH: ph,
+      posX: 0,
+      posY: 0,
       imgWidthPx: canvas.width,
       imgHeightPx: canvas.height,
       jpegBytes
