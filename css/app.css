@@ -1862,3 +1862,12 @@
 @media screen and (max-width: 400px) {
   .preset-choice .btn { white-space: normal; text-align: center; min-width: 0; }
 }
+@media screen and (max-width: 949px) {
+  .cropper-toolbar, .cropper-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--sp-1); }
+  #resizerApp .cropper-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cropper-toolbar .btn, .cropper-actions .btn { width: 100%; min-width: 0; padding: 0 var(--sp-1); gap: var(--sp-1); }
+}
+@media screen {
+  /* The optional name and date strip belongs with the settings, after the image */
+  #resizerApp .annotation-wrapper { order: 5; padding-top: var(--sp-3); }
+}

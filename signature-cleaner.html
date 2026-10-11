@@ -226,7 +226,7 @@
         <section class="app-card image-controls" aria-labelledby="cleanerControlsHeading">
           <h2 id="cleanerControlsHeading" class="card-title">
             <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-            <span>Cleaner Controls</span>
+            <span>Cleaning settings</span>
           </h2>
 
           <!-- File Upload Info -->
@@ -249,7 +249,7 @@
           <div id="cleanerDropzone" class="dropzone" role="group" aria-label="Upload signature image">
             <input type="file" id="cleanerFileInput" accept="image/jpeg,image/png,image/webp" style="display: none;" aria-hidden="true">
             <div class="upload-symbol"><i class="fa-solid fa-signature" aria-hidden="true"></i></div>
-            <h3>Upload Signature Image</h3>
+            <h3>Add a signature photo</h3>
             <p class="dropzone-text">Drop a photo or scan of your signature here, or browse files</p>
             <button type="button" id="btnCleanerBrowse" class="btn btn-primary"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> Choose signature photo</button>
             <p class="dropzone-sub">Supports JPG, PNG, and WebP. 100% private.</p>
@@ -258,7 +258,7 @@
           <!-- Adjustments Form -->
           <div class="form-group">
             <div class="range-head">
-              <label for="whitenessInput" class="form-label">Paper Whiteness / Threshold</label>
+              <label for="whitenessInput" class="form-label">Paper whiteness</label>
               <span id="whitenessVal" class="range-value">70</span>
             </div>
             <input type="range" id="whitenessInput" min="20" max="100" value="70" class="form-control">
@@ -267,7 +267,7 @@
 
           <div class="form-group">
             <div class="range-head">
-              <label for="contrastInput" class="form-label">Ink Darkness &amp; Sharpness</label>
+              <label for="contrastInput" class="form-label">Ink darkness</label>
               <span id="contrastVal" class="range-value">80</span>
             </div>
             <input type="range" id="contrastInput" min="20" max="100" value="80" class="form-control">
@@ -275,7 +275,7 @@
           </div>
 
           <div class="form-group">
-            <label for="inkColorSelect" class="form-label">Ink Color Option</label>
+            <label for="inkColorSelect" class="form-label">Ink colour</label>
             <select id="inkColorSelect" class="form-select">
               <option value="original" selected>Keep original ink color (auto-cleaned)</option>
               <option value="black">Convert to Pure Black ink (#000000)</option>
@@ -284,7 +284,7 @@
           </div>
 
           <div class="form-group">
-            <label for="cleanerFormatSelect" class="form-label">Output Format</label>
+            <label for="cleanerFormatSelect" class="form-label">Output format</label>
             <select id="cleanerFormatSelect" class="form-select">
               <option value="image/jpeg" selected>Crisp White JPEG (.jpg) - Recommended for Exams</option>
               <option value="image/png">White PNG (.png)</option>
@@ -309,7 +309,7 @@
           <div class="panel-head">
             <h2 id="previewHeading" class="card-title">
               <i class="fa-solid fa-eye" aria-hidden="true"></i>
-              <span>Live Preview</span>
+              <span>Preview</span>
             </h2>
             <div class="comparison-view-toggle" role="group" aria-label="Toggle preview comparison">
               <button type="button" id="btnViewCleaned" class="btn-toggle active" aria-pressed="true">Cleaned</button>

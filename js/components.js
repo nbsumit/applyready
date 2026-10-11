@@ -18,9 +18,12 @@
         btn.setAttribute('aria-expanded', 'false');
       });
       document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' && menu.classList.contains('is-open')) {
+          const inside = menu.contains(document.activeElement);
           menu.classList.remove('is-open');
           btn.setAttribute('aria-expanded', 'false');
+          // Return focus to the button that opened the menu
+          if (inside) btn.focus();
         }
       });
     });

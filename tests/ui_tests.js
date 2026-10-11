@@ -311,6 +311,92 @@ const server = http.createServer((req, res) => {
   }
   console.log('✓ Secondary tools: errors are shown in the page and say what to do');
 
+  // 8. The interface says what will happen and whether it worked.
+  {
+    const noisePng = async (page, w, h) => Buffer.from(await page.evaluate(([w, h]) => {
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+      const d = x.createImageData(w, h); for (let i = 0; i < d.data.length; i += 4) { d.data[i] = Math.random() * 255; d.data[i + 1] = Math.random() * 255; d.data[i + 2] = Math.random() * 255; d.data[i + 3] = 255; }
+      x.putImageData(d, 0, 0); return c.toDataURL('image/png').split(',')[1];
+    }, [w, h]), 'base64');
+
+    // Output summary under the main action, and errors next to the field at fault
+    const { context, page } = await open(390, 844);
+    await page.goto(`${origin}/index.html`);
+    await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await noisePng(page, 600, 800) });
+    await page.locator('#cropperActiveArea:not(.hidden)').waitFor();
+    const summary = async () => (await page.locator('#processSummary').innerText()).replace(/\s+/g, ' ').trim();
+    ok(/350 × 350 px/.test(await summary()) && /under 50 KB/.test(await summary()), `summary names the output before processing (${await summary()})`);
+    await page.locator('.preset-shortcut[data-preset="passport"]').click();
+    ok(/350 × 450 px/.test(await summary()), `summary follows the preset (${await summary()})`);
+    await page.locator('#customWidth').fill('5');
+    await page.locator('#customWidth').dispatchEvent('input');
+    ok(await page.locator('#btnProcess').isDisabled(), 'an invalid width disables the action');
+    ok(/Fix the setting/.test(await summary()), 'summary says why the action is disabled');
+    const gap = await page.evaluate(() => document.getElementById('dimError').getBoundingClientRect().top - document.getElementById('customWidth').getBoundingClientRect().bottom);
+    ok(gap >= 0 && gap < 40, `the width error sits right under the field (${Math.round(gap)} px)`);
+    ok(await page.locator('#customWidth').evaluate(e => getComputedStyle(e).borderTopColor !== getComputedStyle(document.getElementById('customMaxKB')).borderTopColor), 'the invalid field is marked');
+    await page.locator('#processSummary button').click();
+    ok(await page.evaluate(() => document.activeElement && document.activeElement.id === 'customWidth'), '"Show me" moves focus to the field');
+
+    // Phone: passport sheet and signature cleaner bring the result into view after upload
+    for (const [file, input, area] of [['passport-photo-print.html', '#printFileInput', '#printPreviewArea'], ['signature-cleaner.html', '#cleanerFileInput', '#cleanerPreviewArea']]) {
+      await page.goto(`${origin}/${file}`);
+      await page.locator(input).setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await noisePng(page, 500, 400) });
+      await page.locator(`${area}:not(.hidden)`).waitFor();
+      await page.waitForTimeout(900);
+      const top = await page.evaluate(sel => document.querySelector(sel).getBoundingClientRect().top, area);
+      ok(top >= 0 && top < 844 * 0.6, `${file}: the preview is on screen after upload on a phone (${Math.round(top)} px)`);
+    }
+
+    // Compress PDF: a target that cannot be met is said plainly
+    for (const [target, expectWarning] of [['5', true], ['5000', false]]) {
+      await page.goto(`${origin}/compress-pdf.html`);
+      await page.locator('#compressFileInput').setInputFiles({ name: 'scan.png', mimeType: 'image/png', buffer: await noisePng(page, 900, 1200) });
+      await page.locator('#targetKbInput').fill(target);
+      await page.locator('#btnStartCompress').click();
+      await page.locator('#compressResultArea:not(.hidden)').waitFor({ timeout: 30000 });
+      const status = await page.locator('#compressStatus').innerText();
+      const warned = await page.locator('#compressStatus').evaluate(e => e.classList.contains('is-warning'));
+      ok(warned === expectWarning && (expectWarning ? /could not get under 5 KB/.test(status) : /Under 5000 KB/.test(status)), `compress ${target} KB: status says ${status}`);
+    }
+
+    // Exam page: the preset switch shows which preset is in use
+    await page.goto(`${origin}/ssc-photo-signature-size.html`);
+    ok(await page.locator('#btnPresetSSCPhoto').getAttribute('aria-pressed') === 'true', 'SSC photo preset is marked as selected on load');
+    await page.locator('#btnPresetSSCSig').click();
+    ok(await page.locator('#btnPresetSSCSig').getAttribute('aria-pressed') === 'true' && await page.locator('#btnPresetSSCPhoto').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
+
+    // Resume: example text never looks like a value
+    await page.goto(`${origin}/resume.html`);
+    const placeholders = await page.evaluate(() => ['fullName', 'targetTitle', 'email', 'phone', 'location', 'linkedin', 'github', 'website'].map(id => document.getElementById(id).placeholder));
+    ok(placeholders.every(p => /^e\.g\. /.test(p)), `resume contact placeholders start with "e.g." (${placeholders.join(' | ')})`);
+    await context.close();
+
+    // Field edges are visible: at least 3:1 against the panel, in both themes
+    for (const scheme of ['light', 'dark']) {
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: scheme });
+      await ctx.route('**/*', route => /^(http:\/\/127\.|blob:|data:)/.test(route.request().url()) ? route.continue() : route.abort());
+      const p = await ctx.newPage();
+      await p.goto(`${origin}/index.html`);
+      await p.evaluate(s => document.documentElement.setAttribute('data-theme', s), scheme);
+      const ratio = await p.evaluate(() => {
+        const lum = c => { const [r, g, b] = c.match(/\d+/g).slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+        const field = getComputedStyle(document.getElementById('customMaxKB')).borderTopColor;
+        const panel = getComputedStyle(document.querySelector('.image-controls')).backgroundColor;
+        const [a, b] = [lum(field), lum(panel)].sort((x, y) => y - x);
+        return (a + 0.05) / (b + 0.05);
+      });
+      ok(ratio >= 3, `${scheme}: field edge contrast is ${ratio.toFixed(2)}:1`);
+      // Tools menu: Escape closes it and gives focus back to its button
+      await p.locator('.tools-menu > button').click();
+      await p.keyboard.press('Tab');
+      await p.keyboard.press('Escape');
+      ok(await p.evaluate(() => !document.querySelector('.tools-menu').classList.contains('is-open') && document.activeElement === document.querySelector('.tools-menu > button')), `${scheme}: Escape closes the Tools menu and returns focus`);
+      await ctx.close();
+    }
+  }
+  console.log('✓ Output summary, inline errors, compress target status, phone reveal, preset state, placeholders, field contrast, menu focus');
+
 
   await browser.close();
   server.close();

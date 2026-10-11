@@ -226,11 +226,11 @@
         <section class="app-card image-controls" aria-labelledby="imgPdfControlsHeading">
           <h2 id="imgPdfControlsHeading" class="card-title">
             <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-            <span>Document Settings</span>
+            <span>PDF settings</span>
           </h2>
 
           <div class="form-group">
-            <label for="pageSizeSelect" class="form-label">Page Format</label>
+            <label for="pageSizeSelect" class="form-label">Page size</label>
             <select id="pageSizeSelect" class="form-select">
               <option value="a4" selected>A4 (210 × 297 mm) - Standard for India</option>
               <option value="letter">US Letter (8.5 × 11 in)</option>
@@ -239,7 +239,7 @@
           </div>
 
           <div class="form-group">
-            <label for="orientationSelect" class="form-label">Page Orientation</label>
+            <label for="orientationSelect" class="form-label">Orientation</label>
             <select id="orientationSelect" class="form-select">
               <option value="auto" selected>Auto (Matches each image)</option>
               <option value="portrait">Portrait (Vertical)</option>
@@ -248,7 +248,7 @@
           </div>
 
           <div class="form-group">
-            <label for="marginSelect" class="form-label">Page Margins</label>
+            <label for="marginSelect" class="form-label">Margins</label>
             <select id="marginSelect" class="form-select">
               <option value="0">No Margin (Full Bleed)</option>
               <option value="20" selected>Small Margin (0.25 inch / 18 pt)</option>
@@ -257,7 +257,7 @@
           </div>
 
           <div class="form-group">
-            <label for="pdfQualitySelect" class="form-label">Image Quality / Compression</label>
+            <label for="pdfQualitySelect" class="form-label">Image quality</label>
             <select id="pdfQualitySelect" class="form-select">
               <option value="0.92">High Quality (Clear text scans)</option>
               <option value="0.80" selected>Balanced (Standard submission)</option>
@@ -286,7 +286,7 @@
           <div class="panel-head">
             <h2 id="imagesHeading" class="card-title">
               <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
-              <span>Uploaded Images</span>
+              <span>Pages</span>
             </h2>
           </div>
 
@@ -294,7 +294,7 @@
           <div id="imgPdfDropzone" class="dropzone" role="group" aria-label="Upload images for PDF conversion">
             <input type="file" id="imgPdfFileInput" accept="image/jpeg,image/png,image/webp" multiple style="display: none;" aria-hidden="true">
             <div class="upload-symbol"><i class="fa-solid fa-file-image" aria-hidden="true"></i></div>
-            <h3>Upload Images to Convert</h3>
+            <h3>Add images to convert</h3>
             <p class="dropzone-text">Drop one or more images here to create your PDF</p>
             <button type="button" id="btnImgPdfBrowse" class="btn btn-primary"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> Choose photos or scans</button>
             <p class="dropzone-sub">Supports JPG, PNG, WebP. Multiple files allowed.</p>

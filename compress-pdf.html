@@ -226,7 +226,7 @@
         <section class="app-card image-controls" aria-labelledby="compressControlsHeading">
           <h2 id="compressControlsHeading" class="card-title">
             <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-            <span>Compression Target</span>
+            <span>Compression target</span>
           </h2>
 
           <!-- File Upload Info -->
@@ -249,7 +249,7 @@
           <div id="compressDropzone" class="dropzone" role="group" aria-label="Upload PDF to compress">
             <input type="file" id="compressFileInput" accept="application/pdf,image/jpeg,image/png" style="display: none;" aria-hidden="true">
             <div class="upload-symbol"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i></div>
-            <h3>Upload PDF or Document Image</h3>
+            <h3>Add a PDF or document image</h3>
             <p class="dropzone-text">Drop your certificate PDF or photo scan here</p>
             <button type="button" id="btnCompressBrowse" class="btn btn-primary"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> Choose file</button>
             <p class="dropzone-sub">Supports PDF, JPG, and PNG files. 100% private.</p>
@@ -257,7 +257,7 @@
 
           <!-- Target KB Presets -->
           <div class="form-group">
-            <label class="form-label">Select Target File Limit</label>
+            <label class="form-label">Target file size</label>
             <div class="choice-grid">
               <button type="button" class="btn btn-secondary btn-sm preset-kb-btn" data-kb="100" aria-pressed="false">Under 100 KB</button>
               <button type="button" class="btn btn-secondary btn-sm preset-kb-btn active" data-kb="200" aria-pressed="true">Under 200 KB (Popular)</button>
@@ -265,7 +265,7 @@
               <button type="button" class="btn btn-secondary btn-sm preset-kb-btn" data-kb="500" aria-pressed="false">Under 500 KB</button>
             </div>
 
-            <label for="targetKbInput" class="form-label">Or Custom Target (KB)</label>
+            <label for="targetKbInput" class="form-label">Or a custom limit (KB)</label>
             <input type="number" id="targetKbInput" class="form-control" value="200" min="20" max="10000" step="10">
             <p class="form-hint">The compressor optimizes document image quality to guarantee the file stays under this limit.</p>
           </div>
@@ -280,7 +280,7 @@
           <div class="panel-head">
             <h2 id="statusHeading" class="card-title">
               <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
-              <span>Compression Status</span>
+              <span>Result</span>
             </h2>
           </div>
 
