@@ -30,13 +30,13 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js"></script>
+  <script src="js/theme.js?v=20261101-1"></script>
 
   <!-- Icons & Styles -->
+  <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/style.css?v=20261014-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
-  <link rel="stylesheet" href="css/app.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261101-1">
+  <!-- shell:styles:end -->
 
   <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
@@ -148,56 +148,68 @@
 <body class="content-page">
 
   <!-- NAVIGATION -->
+  <!-- shell:header:start -->
   <a class="skip-link" href="#mainContent">Skip to content</a>
-  <nav class="navbar" aria-label="Main Navigation">
-    <div class="nav-container">
-      <a href="/" class="brand-logo" aria-label="ApplyReady Home">
-        <img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
-        <span>ApplyReady<span class="brand-dot">.</span></span>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="/" aria-label="ApplyReady home">
+        <img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span>ApplyReady</span>
       </a>
-      <div class="nav-links" id="navMenu">
-        <div class="tools-menu">
-          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
-          <div class="tools-menu__panel" role="menu">
-            <div class="tools-menu__group"><strong>Image tools</strong>
-              <a href="/" role="menuitem">Image resizer</a>
-              <a href="signature-cleaner.html" role="menuitem">Signature cleaner</a>
-              <a href="image-to-pdf.html" role="menuitem">Image to PDF</a>
-              <a href="compress-pdf.html" role="menuitem">Compress PDF</a>
-              <a href="passport-photo-print.html" role="menuitem">Passport photo print</a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+            <div class="menu__group">
+              <h2 class="menu__title">Image tools</h2>
+              <ul class="menu__list">
+                <li><a href="/">Image resizer</a></li>
+                <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+                <li><a href="image-to-pdf.html" aria-current="page">Image to PDF</a></li>
+                <li><a href="compress-pdf.html">Compress PDF</a></li>
+                <li><a href="passport-photo-print.html">Passport photo print</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Exam specs</strong>
-              <a href="ssc-photo-signature-size.html" role="menuitem">SSC</a>
-              <a href="upsc-photo-signature-size.html" role="menuitem">UPSC</a>
-              <a href="ibps-photo-signature-size.html" role="menuitem">IBPS</a>
-              <a href="neet-photo-signature-size.html" role="menuitem">NEET</a>
-              <a href="rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Exam sizes</h2>
+              <ul class="menu__list">
+                <li><a href="ssc-photo-signature-size.html">SSC</a></li>
+                <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
+                <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
+                <li><a href="neet-photo-signature-size.html">NEET</a></li>
+                <li><a href="rrb-photo-signature-size.html">RRB</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Resize to KB</strong>
-              <a href="resize-image-to-10kb.html" role="menuitem">10 KB</a>
-              <a href="resize-image-to-20kb.html" role="menuitem">20 KB</a>
-              <a href="resize-image-to-50kb.html" role="menuitem">50 KB</a>
-              <a href="resize-image-to-100kb.html" role="menuitem">100 KB</a>
-              <a href="resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Resize to KB</h2>
+              <ul class="menu__list">
+                <li><a href="resize-image-to-10kb.html">10 KB</a></li>
+                <li><a href="resize-image-to-20kb.html">20 KB</a></li>
+                <li><a href="resize-image-to-50kb.html">50 KB</a></li>
+                <li><a href="resize-image-to-100kb.html">100 KB</a></li>
+                <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+              </ul>
             </div>
-          </div>
-        </div>
-        <a href="/" class="nav-link">Image tools</a>
-        <a href="resume.html" class="nav-link">Resume builder</a>
-        <a href="guides/" class="nav-link">Guides</a>
-              <a href="hi/ssc-photo-signature-size.html" class="nav-link">हिन्दी</a>
-      </div>
-      <div class="nav-actions">
-        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
-        <button type="button" id="navMenuToggle" class="theme-toggle-btn nav-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navMenu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+            </div>
+          </li>
+          <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="guides/">Guides</a></li>
+          <li><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
     </div>
-  </nav>
+  </header>
+  <!-- shell:header:end -->
 
   <!-- MAIN CONTAINER -->
   <noscript><p class="noscript-note">Enable JavaScript to convert images to PDF.</p></noscript>
-  <main id="mainContent" class="main-content">
-    <article class="guide-content">
+  <main id="mainContent" class="page">
+    <article class="article">
 
       <!-- Breadcrumb Navigation -->
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
@@ -208,161 +220,116 @@
         </ol>
       </nav>
 
-      <header class="hero-header workspace-hero">
-        <div class="hero-copy">
-          <h1 class="hero-title">Image to PDF Converter Online: Combine JPG, PNG &amp; WebP to PDF</h1>
-          <p class="hero-subtitle">Combine multiple photos, certificate scans, or document images into a clean, standardized PDF. Choose A4 page size, customize margins, reorder pages, and export instantly. 100% private in your browser.</p>
-        </div>
-        <div class="workspace-assurance">
-          <i class="fa-solid fa-lock" aria-hidden="true"></i>
-          <div><strong>Your documents never leave your browser</strong><span>Pure client-side binary PDF generation with zero server uploads.</span></div>
-        </div>
+      <header class="page-head">
+        <h1 class="page-title">Image to PDF Converter Online: Combine JPG, PNG &amp; WebP to PDF</h1>
+        <p class="page-lede">Combine multiple photos, certificate scans, or document images into a clean, standardized PDF. Choose A4 page size, customize margins, reorder pages, and export instantly. 100% private in your browser.</p>
+        <p class="assurance"><i class="fa-solid fa-lock" aria-hidden="true"></i> <span><strong>Your documents never leave your browser.</strong> Pure client-side binary PDF generation with zero server uploads.</span></p>
       </header>
 
       <!-- Image to PDF Workspace -->
-      <div class="resizer-grid">
-
-        <!-- Controls Column -->
-        <section class="app-card image-controls" aria-labelledby="imgPdfControlsHeading">
-          <h2 id="imgPdfControlsHeading" class="card-title">
-            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-            <span>PDF settings</span>
-          </h2>
-
-          <div class="form-group">
-            <label for="pageSizeSelect" class="form-label">Page size</label>
-            <select id="pageSizeSelect" class="form-select">
-              <option value="a4" selected>A4 (210 × 297 mm) - Standard for India</option>
-              <option value="letter">US Letter (8.5 × 11 in)</option>
-              <option value="fit">Fit to Image (No extra margins)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="orientationSelect" class="form-label">Orientation</label>
-            <select id="orientationSelect" class="form-select">
-              <option value="auto" selected>Auto (Matches each image)</option>
-              <option value="portrait">Portrait (Vertical)</option>
-              <option value="landscape">Landscape (Horizontal)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="marginSelect" class="form-label">Margins</label>
-            <select id="marginSelect" class="form-select">
-              <option value="0">No Margin (Full Bleed)</option>
-              <option value="20" selected>Small Margin (0.25 inch / 18 pt)</option>
-              <option value="36">Normal Margin (0.5 inch / 36 pt)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="pdfQualitySelect" class="form-label">Image quality</label>
-            <select id="pdfQualitySelect" class="form-select">
-              <option value="0.92">High Quality (Clear text scans)</option>
-              <option value="0.80" selected>Balanced (Standard submission)</option>
-              <option value="0.65">Compact (Smaller PDF file size)</option>
-            </select>
-          </div>
-
-          <div id="workspaceControls" class="panel-actions hidden">
-            <button type="button" id="btnConvertToPdf" class="btn btn-primary btn-block">
-              <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Convert to PDF
-            </button>
-            <div class="panel-actions__row">
-              <button type="button" id="btnAddMoreImages" class="btn btn-secondary btn-sm">
-                <i class="fa-solid fa-plus" aria-hidden="true"></i> Add More Images
-              </button>
-              <button type="button" id="btnClearAllImages" class="btn btn-outline-danger btn-sm">
-                <i class="fa-regular fa-trash-can" aria-hidden="true"></i> Clear
-              </button>
-              <input type="file" id="addMoreFileInput" accept="image/jpeg,image/png,image/webp" multiple style="display: none;" aria-hidden="true">
-            </div>
-          </div>
-        </section>
-
-        <!-- Image List Column -->
-        <section class="app-card" aria-labelledby="imagesHeading">
-          <div class="panel-head">
-            <h2 id="imagesHeading" class="card-title">
-              <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
-              <span>Pages</span>
-            </h2>
-          </div>
-
-          <!-- Upload Dropzone -->
-          <div id="imgPdfDropzone" class="dropzone" role="group" aria-label="Upload images for PDF conversion">
-            <input type="file" id="imgPdfFileInput" accept="image/jpeg,image/png,image/webp" multiple style="display: none;" aria-hidden="true">
-            <div class="upload-symbol"><i class="fa-solid fa-file-image" aria-hidden="true"></i></div>
-            <h3>Add images to convert</h3>
-            <p class="dropzone-text">Drop one or more images here to create your PDF</p>
-            <button type="button" id="btnImgPdfBrowse" class="btn btn-primary"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> Choose photos or scans</button>
-            <p class="dropzone-sub">Supports JPG, PNG, WebP. Multiple files allowed.</p>
-          </div>
-
-          <div id="imgPdfEmptyState" class="crop-empty empty-state">
-            <p class="empty-state__title">No images uploaded yet</p>
-            <p class="empty-state__text">Uploaded photos will appear here with reorder and delete options.</p>
-          </div>
-
-          <!-- Reorderable List of Images -->
-          <div id="imageListContainer"></div>
-
-          <!-- PDF Result Display -->
-          <div id="pdfResultArea" class="result-block hidden">
-            <div class="meta-stats">
-              <div class="meta-stat-item">
-                <span class="meta-stat-label">Total Pages</span>
-                <span class="meta-stat-val" id="statPdfPages">--</span>
-              </div>
-              <div class="meta-stat-item">
-                <span class="meta-stat-label">PDF File Size</span>
-                <span class="meta-stat-val" id="statPdfSize">--</span>
-              </div>
-              <div class="meta-stat-item">
-                <span class="meta-stat-label">Document Standard</span>
-                <span class="meta-stat-val">PDF 1.4 Compatible</span>
-              </div>
-            </div>
-
-            <div class="result-actions">
-              <a id="btnDownloadPdf" class="btn btn-primary" href="#" download="Document.pdf">
-                <i class="fa-solid fa-download" aria-hidden="true"></i> Download PDF
-              </a>
-              <a href="compress-pdf.html" class="btn btn-secondary">
-                <i class="fa-solid fa-compress" aria-hidden="true"></i> Compress to Target KB
-              </a>
-            </div>
-          </div>
-        </section>
+    <!-- tool:start -->
+    <section class="ws" id="pdfApp" data-state="empty" data-simple-empty data-compact-drop data-keep data-ws-file="#workspaceControls" data-ws-result="#pdfResultArea" aria-label="Image to PDF converter">
+      <div class="ws-head">
+        <ol class="steps" aria-label="Progress">
+          <li data-step="add"><span class="steps__n" aria-hidden="true">1</span>Add images</li>
+          <li data-step="adjust"><span class="steps__n" aria-hidden="true">2</span>Adjust</li>
+          <li data-step="download"><span class="steps__n" aria-hidden="true">3</span>Download</li>
+        </ol>
       </div>
+      <div class="ws-stage">
+        <div id="imgPdfDropzone" class="dropzone" role="group" aria-label="Upload images for PDF conversion">
+          <input type="file" id="imgPdfFileInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" tabindex="-1" aria-hidden="true">
+          <i class="fa-solid fa-arrow-up-from-bracket dropzone__icon" aria-hidden="true"></i>
+          <h3 class="dropzone__title">Add images to convert</h3>
+          <p class="dropzone__text">Drop one or more images here to create your PDF</p>
+          <button type="button" id="btnImgPdfBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose photos or scans</button>
+          <p class="dropzone__hint">JPG, PNG or WebP. Add as many pages as you need, then reorder them.</p>
+        </div>
+        <div id="imageListContainer" class="pagelist"></div>
+        <div id="pdfResultArea" class="ws-result hidden" aria-live="polite">
+          <div class="ws-result__head"><h3 class="ws-result__title"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Your PDF is ready</h3></div>
+          <dl class="meta-stats">
+            <div class="meta-stat-item"><dt class="meta-stat-label">Pages</dt><dd class="meta-stat-val" id="statPdfPages">--</dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">PDF file size</dt><dd class="meta-stat-val" id="statPdfSize">--</dd></div>
+          </dl>
+          <div class="ws-result__actions">
+            <a id="btnDownloadPdf" class="btn btn-primary btn-lg" href="#" download="Document.pdf"><i class="fa-solid fa-download" aria-hidden="true"></i> Download PDF</a>
+            <a href="compress-pdf.html" class="btn btn-lg"><i class="fa-solid fa-compress" aria-hidden="true"></i> Compress to a target size</a>
+          </div>
+        </div>
+      </div>
+      <div class="ws-side">
+        <h2 class="ws-side__title">PDF settings</h2>
+        <div class="field">
+          <label for="pageSizeSelect" class="field-label">Page size</label>
+          <select id="pageSizeSelect">
+            <option value="a4" selected>A4 (210 × 297 mm), standard in India</option>
+            <option value="letter">US Letter (8.5 × 11 in)</option>
+            <option value="fit">Fit to image, no extra margins</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="orientationSelect" class="field-label">Orientation</label>
+          <select id="orientationSelect">
+            <option value="auto" selected>Auto, matches each image</option>
+            <option value="portrait">Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="marginSelect" class="field-label">Margins</label>
+          <select id="marginSelect">
+            <option value="0">None (full bleed)</option>
+            <option value="20" selected>Small (0.25 inch)</option>
+            <option value="36">Normal (0.5 inch)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="pdfQualitySelect" class="field-label">Image quality</label>
+          <select id="pdfQualitySelect">
+            <option value="0.92">High, for clear text scans</option>
+            <option value="0.80" selected>Balanced, for standard submissions</option>
+            <option value="0.65">Compact, for a smaller file</option>
+          </select>
+        </div>
+      </div>
+      <div id="workspaceControls" class="ws-action hidden">
+        <button type="button" id="btnConvertToPdf" class="btn btn-primary btn-lg btn-block"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Convert to PDF</button>
+        <div class="row">
+          <button type="button" id="btnAddMoreImages" class="btn btn-sm"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add more images</button>
+          <button type="button" id="btnClearAllImages" class="btn btn-sm btn-danger-ghost">Clear all</button>
+          <input type="file" id="addMoreFileInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" tabindex="-1" aria-hidden="true">
+        </div>
+      </div>
+    </section>
+    <!-- tool:end -->
 
       <!-- Google AdSense Slot -->
       <!-- Reserved Ad Slot: Below Tool Result Area -->
-    <div class="ad-slot-container ad-slot-result" aria-label="Advertisement">
+    <div class="ad-slot-container ad-slot-result" role="complementary" aria-label="Advertisement">
       <div class="ad-slot-inner">
         <span class="ad-slot-label">Advertisement</span>
-        <!-- <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2713609207324356" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins> -->
+        <!-- <ins class="adsbygoogle" data-ad-client="ca-pub-2713609207324356" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins> -->
       </div>
     </div>
 
       <!-- Educational Content Section -->
-      <section style="margin-top: 3rem;">
+      <section class="section prose">
         <h2>Tips for Creating Clean PDF Submissions for Online Exams</h2>
         <p>
           Recruitment bodies including UPSC, SSC, state PSCs, and public sector banks frequently ask applicants to upload all marksheets or category proofs combined as a single PDF.
         </p>
 
-        <div class="guide-card-grid" style="margin: 1.5rem 0;">
-          <div class="app-card">
+        <div class="guide-card-grid">
+          <div class="guide-card">
             <h3>Correct Document Order</h3>
             <p>Ensure your pages are ordered logically (e.g. 10th marksheet, 12th marksheet, graduation degree, caste certificate). Use our Up and Down buttons to arrange pages before compiling.</p>
           </div>
-          <div class="app-card">
+          <div class="guide-card">
             <h3>Standard A4 Paper Dimensions</h3>
             <p>Almost all official document scanners in India expect standard A4 paper size. Selecting A4 ensures your certificates print with uniform borders without being cropped.</p>
           </div>
-          <div class="app-card">
+          <div class="guide-card">
             <h3>Maintain Legibility</h3>
             <p>Select 'Balanced' or 'High Quality' compression to ensure roll numbers, dates of birth, and university stamps remain razor sharp when inspected by verification officers.</p>
           </div>
@@ -370,7 +337,7 @@
       </section>
 
       <!-- Frequently Asked Questions (FAQ) Section -->
-      <section class="faq-section" style="margin-top: 3.5rem;">
+      <section class="faq-section">
         <h2>Frequently Asked Questions</h2>
 
         <details class="faq-item">
@@ -416,43 +383,34 @@
         </details>
       </section>
 
-      <section class="related-guides-section" aria-labelledby="guidesHeading" style="margin-top: 3rem;">
+      <section class="related-guides-section" aria-labelledby="guidesHeading">
         <h2 id="guidesHeading" class="related-guides-title">Guides that help with this tool</h2>
         <div class="related-guides-grid">
           <a href="guides/combine-documents-into-one-pdf.html" class="guide-card">
             <strong>How to Combine Certificates and Scans into One PDF for an Application</strong>
-            <p class="text-muted mt-1">One tidy PDF in the right order is easier for a reviewer to read, and less likely to be rejected, than six loose files.</p>
+            <p class="text-muted">One tidy PDF in the right order is easier for a reviewer to read, and less likely to be rejected, than six loose files.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="guides/compress-pdf-for-upload-portals.html" class="guide-card">
             <strong>How to Reduce a Scanned PDF to 200 KB Without Making It Unreadable</strong>
-            <p class="text-muted mt-1">A scan is a picture of a page. Making it smaller means choosing how much of that picture to keep.</p>
+            <p class="text-muted">A scan is a picture of a page. Making it smaller means choosing how much of that picture to keep.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="guides/document-checklist-before-online-application.html" class="guide-card">
             <strong>The Document Checklist to Finish Before You Start an Online Application</strong>
-            <p class="text-muted mt-1">Applications fail at the last hour, when the portal is slow and the file is wrong. Do the file work first.</p>
+            <p class="text-muted">Applications fail at the last hour, when the portal is slow and the file is wrong. Do the file work first.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
       </section>
 
       <!-- Related Tools Navigation -->
-      <section class="related-tools-section" style="margin-top: 3.5rem;">
-        <h2>Related Tools &amp; Guides</h2>
-        <div class="tool-links-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
-          <a href="compress-pdf.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3><i class="fa-solid fa-file-pdf" aria-hidden="true" style="color: var(--primary);"></i> Compress PDF to Target KB</h3>
-            <p style="margin: 0;">Reduce scanned PDF certificate sizes to under 100 KB, 200 KB, or 500 KB.</p>
-          </a>
-          <a href="/" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3><i class="fa-solid fa-crop-simple" aria-hidden="true" style="color: var(--primary);"></i> Image Resizer &amp; Compressor</h3>
-            <p style="margin: 0;">Resize photos and signatures to exact dimensions and KB limits.</p>
-          </a>
-          <a href="signature-cleaner.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3><i class="fa-solid fa-signature" aria-hidden="true" style="color: var(--primary);"></i> Signature Background Cleaner</h3>
-            <p style="margin: 0;">Whiten paper shadows and darken ink lines on signature scans.</p>
-          </a>
+      <section class="section related-tools" aria-labelledby="relatedToolsHeading">
+        <h2 class="section-title" id="relatedToolsHeading">Related Tools &amp; Guides</h2>
+        <div class="guide-card-grid">
+          <a href="compress-pdf.html" class="guide-card"><strong>Compress PDF to Target KB</strong><p>Reduce scanned PDF certificate sizes to under 100 KB, 200 KB, or 500 KB.</p></a>
+          <a href="/" class="guide-card"><strong>Image Resizer &amp; Compressor</strong><p>Resize photos and signatures to exact dimensions and KB limits.</p></a>
+          <a href="signature-cleaner.html" class="guide-card"><strong>Signature Background Cleaner</strong><p>Whiten paper shadows and darken ink lines on signature scans.</p></a>
         </div>
       </section>
 
@@ -460,38 +418,54 @@
   </main>
 
   <!-- FOOTER -->
+  <!-- shell:footer:start -->
   <footer class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand-block">
-        <a href="/" class="brand-logo"><img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
         <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
       </div>
-            <nav class="footer-links" aria-label="Footer Links">
-        <a href="/" class="footer-link">Image tools</a>
-        <a href="resume.html" class="footer-link">Resume builder</a>
-        <a href="signature-cleaner.html" class="footer-link">Signature cleaner</a>
-        <a href="image-to-pdf.html" class="footer-link">Image to PDF</a>
-        <a href="compress-pdf.html" class="footer-link">Compress PDF</a>
-        <a href="passport-photo-print.html" class="footer-link">Passport print</a>
-        <a href="ssc-photo-signature-size.html" class="footer-link">SSC specs</a>
-        <a href="upsc-photo-signature-size.html" class="footer-link">UPSC specs</a>
-        <a href="rrb-photo-signature-size.html" class="footer-link">RRB specs</a>
-        <a href="ibps-photo-signature-size.html" class="footer-link">IBPS specs</a>
-        <a href="neet-photo-signature-size.html" class="footer-link">NEET specs</a>
-        <a href="resize-image-to-20kb.html" class="footer-link">Resize to 20KB</a>
-        <a href="resize-image-to-50kb.html" class="footer-link">Resize to 50KB</a>
-        <a href="guides/" class="footer-link">Guides</a>
-        <a href="about.html" class="footer-link">About</a>
-        <a href="privacy.html" class="footer-link">Privacy</a>
-        <a href="terms.html" class="footer-link">Terms</a>
-        <a href="contact.html" class="footer-link">Contact</a>
-      </nav>
+      <div>
+        <h2 class="site-footer__title">Tools</h2>
+        <ul class="site-footer__list">
+          <li><a href="/">Image resizer</a></li>
+          <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="compress-pdf.html">Compress PDF</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">Exam sizes</h2>
+        <ul class="site-footer__list">
+          <li><a href="ssc-photo-signature-size.html">SSC</a></li>
+          <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
+          <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
+          <li><a href="neet-photo-signature-size.html">NEET</a></li>
+          <li><a href="rrb-photo-signature-size.html">RRB</a></li>
+          <li><a href="resize-image-to-20kb.html">Resize to 20KB</a></li>
+          <li><a href="resize-image-to-50kb.html">Resize to 50KB</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">ApplyReady</h2>
+        <ul class="site-footer__list">
+          <li><a href="guides/">Guides</a></li>
+          <li><a href="how-to-use.html">How to use</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="privacy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
+  <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261012-2" defer></script>
-  <script src="js/site.js?v=20261012-2"></script>
-  <script src="js/image-to-pdf.js?v=20261012-2"></script>
+  <script src="js/components.js?v=20261101-1" defer></script>
+  <script src="js/site.js?v=20261101-1"></script>
+  <script src="js/image-to-pdf.js?v=20261101-1"></script>
 </body>
 </html>

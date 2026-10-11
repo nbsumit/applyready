@@ -30,13 +30,13 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js"></script>
+  <script src="js/theme.js?v=20261101-1"></script>
 
   <!-- Icons & Styles -->
+  <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/style.css?v=20261014-1">
-  <link rel="stylesheet" href="css/workspace.css?v=20261014-1">
-  <link rel="stylesheet" href="css/app.css?v=20261014-1">
+  <link rel="stylesheet" href="css/app.css?v=20261101-1">
+  <!-- shell:styles:end -->
 
   <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
@@ -148,56 +148,68 @@
 <body class="content-page">
 
   <!-- NAVIGATION -->
+  <!-- shell:header:start -->
   <a class="skip-link" href="#mainContent">Skip to content</a>
-  <nav class="navbar" aria-label="Main Navigation">
-    <div class="nav-container">
-      <a href="/" class="brand-logo" aria-label="ApplyReady Home">
-        <img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="36" height="36">
-        <span>ApplyReady<span class="brand-dot">.</span></span>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="/" aria-label="ApplyReady home">
+        <img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span>ApplyReady</span>
       </a>
-      <div class="nav-links" id="navMenu">
-        <div class="tools-menu">
-          <button type="button" class="nav-link" aria-haspopup="true" aria-expanded="false">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
-          <div class="tools-menu__panel" role="menu">
-            <div class="tools-menu__group"><strong>Image tools</strong>
-              <a href="/" role="menuitem">Image resizer</a>
-              <a href="signature-cleaner.html" role="menuitem">Signature cleaner</a>
-              <a href="image-to-pdf.html" role="menuitem">Image to PDF</a>
-              <a href="compress-pdf.html" role="menuitem">Compress PDF</a>
-              <a href="passport-photo-print.html" role="menuitem">Passport photo print</a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+            <div class="menu__group">
+              <h2 class="menu__title">Image tools</h2>
+              <ul class="menu__list">
+                <li><a href="/">Image resizer</a></li>
+                <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+                <li><a href="image-to-pdf.html">Image to PDF</a></li>
+                <li><a href="compress-pdf.html">Compress PDF</a></li>
+                <li><a href="passport-photo-print.html" aria-current="page">Passport photo print</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Exam specs</strong>
-              <a href="ssc-photo-signature-size.html" role="menuitem">SSC</a>
-              <a href="upsc-photo-signature-size.html" role="menuitem">UPSC</a>
-              <a href="ibps-photo-signature-size.html" role="menuitem">IBPS</a>
-              <a href="neet-photo-signature-size.html" role="menuitem">NEET</a>
-              <a href="rrb-photo-signature-size.html" role="menuitem">RRB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Exam sizes</h2>
+              <ul class="menu__list">
+                <li><a href="ssc-photo-signature-size.html">SSC</a></li>
+                <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
+                <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
+                <li><a href="neet-photo-signature-size.html">NEET</a></li>
+                <li><a href="rrb-photo-signature-size.html">RRB</a></li>
+              </ul>
             </div>
-            <div class="tools-menu__group"><strong>Resize to KB</strong>
-              <a href="resize-image-to-10kb.html" role="menuitem">10 KB</a>
-              <a href="resize-image-to-20kb.html" role="menuitem">20 KB</a>
-              <a href="resize-image-to-50kb.html" role="menuitem">50 KB</a>
-              <a href="resize-image-to-100kb.html" role="menuitem">100 KB</a>
-              <a href="resize-image-to-200kb.html" role="menuitem">200 KB</a>
+            <div class="menu__group">
+              <h2 class="menu__title">Resize to KB</h2>
+              <ul class="menu__list">
+                <li><a href="resize-image-to-10kb.html">10 KB</a></li>
+                <li><a href="resize-image-to-20kb.html">20 KB</a></li>
+                <li><a href="resize-image-to-50kb.html">50 KB</a></li>
+                <li><a href="resize-image-to-100kb.html">100 KB</a></li>
+                <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+              </ul>
             </div>
-          </div>
-        </div>
-        <a href="/" class="nav-link">Image tools</a>
-        <a href="resume.html" class="nav-link">Resume builder</a>
-        <a href="guides/" class="nav-link">Guides</a>
-              <a href="hi/ssc-photo-signature-size.html" class="nav-link">हिन्दी</a>
-      </div>
-      <div class="nav-actions">
-        <button type="button" id="themeToggle" class="theme-toggle-btn" aria-label="Switch to dark theme"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
-        <button type="button" id="navMenuToggle" class="theme-toggle-btn nav-menu-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="navMenu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+            </div>
+          </li>
+          <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="guides/">Guides</a></li>
+          <li><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
     </div>
-  </nav>
+  </header>
+  <!-- shell:header:end -->
 
   <!-- MAIN CONTAINER -->
   <noscript><p class="noscript-note">Enable JavaScript to create passport photo print sheets.</p></noscript>
-  <main id="mainContent" class="main-content">
-    <article class="guide-content">
+  <main id="mainContent" class="page">
+    <article class="article">
 
       <!-- Breadcrumb Navigation -->
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
@@ -208,188 +220,132 @@
         </ol>
       </nav>
 
-      <header class="hero-header workspace-hero">
-        <div class="hero-copy">
-          <h1 class="hero-title">Passport Photo Print Sheet Maker: Tile Multiple Photos on 4×6 &amp; A4</h1>
-          <p class="hero-subtitle">Create a 300 DPI printable sheet of 6, 8, 12, or 16 passport photos on standard 4×6 inch photo card paper or A4 sheets. Print at home or any local studio for ₹5. 100% private in your browser.</p>
-        </div>
-        <div class="workspace-assurance">
-          <i class="fa-solid fa-lock" aria-hidden="true"></i>
-          <div><strong>Your photos stay private on your device</strong><span>Rendered 100% in local browser memory with zero server uploads.</span></div>
-        </div>
+      <header class="page-head">
+        <h1 class="page-title">Passport Photo Print Sheet Maker: Tile Multiple Photos on 4×6 &amp; A4</h1>
+        <p class="page-lede">Create a 300 DPI printable sheet of 6, 8, 12, or 16 passport photos on standard 4×6 inch photo card paper or A4 sheets. Print at home or any local studio for ₹5. 100% private in your browser.</p>
+        <p class="assurance"><i class="fa-solid fa-lock" aria-hidden="true"></i> <span><strong>Your photos stay private on your device.</strong> Rendered 100% in local browser memory with zero server uploads.</span></p>
       </header>
 
       <!-- Print Sheet Workspace Grid -->
-      <div class="resizer-grid" data-layout="input-first">
-
-        <!-- Controls Column -->
-        <section class="app-card image-controls" aria-labelledby="printControlsHeading">
-          <h2 id="printControlsHeading" class="card-title">
-            <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-            <span>Sheet settings</span>
-          </h2>
-
-          <!-- File Upload Info -->
-          <div id="printFileInfoBox" class="file-bar hidden">
-            <div class="file-bar__main">
-              <i class="fa-solid fa-file-image" aria-hidden="true"></i>
-              <span id="printFileInfoText" class="file-bar__name"></span>
-            </div>
-            <div class="file-bar__actions">
-              <button type="button" id="btnPrintReplace" class="btn btn-secondary btn-sm" title="Select a different photo">
-                <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i> Replace
-              </button>
-              <button type="button" id="btnPrintRemove" class="btn btn-outline-danger btn-sm" title="Remove selected photo">
-                <i class="fa-regular fa-trash-can" aria-hidden="true"></i> Remove
-              </button>
-            </div>
-          </div>
-
-          <!-- Upload Dropzone -->
-          <div id="printDropzone" class="dropzone" role="group" aria-label="Upload photo to create print sheet">
-            <input type="file" id="printFileInput" accept="image/jpeg,image/png,image/webp" style="display: none;" aria-hidden="true">
-            <div class="upload-symbol"><i class="fa-solid fa-id-card" aria-hidden="true"></i></div>
-            <h3>Add a passport photo</h3>
-            <p class="dropzone-text">Drop your passport size photo here</p>
-            <button type="button" id="btnPrintBrowse" class="btn btn-primary"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i> Choose photo</button>
-            <p class="dropzone-sub">Supports JPG, PNG, WebP. 100% private.</p>
-          </div>
-
-          <!-- Photo Specs Form -->
-          <div class="form-group">
-            <label for="photoSizeSelect" class="form-label">Photo size</label>
-            <select id="photoSizeSelect" class="form-select">
-              <option value="in-passport" selected>Indian Passport / Exam (3.5 × 4.5 cm / 35 × 45 mm)</option>
-              <option value="us-visa">US / OCI / International Visa (2 × 2 in / 5.1 × 5.1 cm)</option>
-              <option value="stamp">Stamp Size (2.5 × 3.5 cm / 25 × 35 mm)</option>
-              <option value="schengen">Schengen Visa (3.5 × 4.5 cm)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="paperSizeSelect" class="form-label">Paper size</label>
-            <select id="paperSizeSelect" class="form-select">
-              <option value="4x6" selected>4 × 6 inch Photo Paper (10 × 15 cm) - Lab Standard</option>
-              <option value="a4">A4 Sheet (210 × 297 mm) - Home / Office Printer</option>
-              <option value="5x7">5 × 7 inch Photo Paper (13 × 18 cm)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="photoCountSelect" class="form-label">Number of copies</label>
-            <select id="photoCountSelect" class="form-select">
-              <option value="auto" selected>Fill entire sheet (Maximum copies)</option>
-              <option value="4">4 Photos</option>
-              <option value="6">6 Photos</option>
-              <option value="8">8 Photos</option>
-              <option value="12">12 Photos</option>
-              <option value="16">16 Photos</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="gapSelect" class="form-label">Spacing between photos</label>
-            <select id="gapSelect" class="form-select">
-              <option value="1.5">Compact (1.5 mm)</option>
-              <option value="2.5" selected>Standard (2.5 mm / Easy cutting)</option>
-              <option value="4">Wide (4.0 mm)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="checkbox-label" for="guideLinesCheckbox">
-              <input type="checkbox" id="guideLinesCheckbox" checked>
-              <span>Show dashed scissor cutting guidelines</span>
-            </label>
-            <label class="checkbox-label" for="photoBorderCheckbox">
-              <input type="checkbox" id="photoBorderCheckbox" checked>
-              <span>Draw thin border outline around photos</span>
-            </label>
-          </div>
-        </section>
-
-        <!-- Preview Column -->
-        <section class="app-card" aria-labelledby="sheetPreviewHeading">
-          <div class="panel-head">
-            <h2 id="sheetPreviewHeading" class="card-title">
-              <i class="fa-solid fa-print" aria-hidden="true"></i>
-              <span>Print sheet preview</span>
-            </h2>
-          </div>
-
-          <div id="printEmptyState" class="crop-empty empty-state">
-            <div class="empty-state-symbol"><i class="fa-solid fa-id-card" aria-hidden="true"></i></div>
-            <p class="empty-state__title">No photo uploaded yet</p>
-            <p class="empty-state__text">Upload a photo to see the tiled 300 DPI print sheet.</p>
-          </div>
-
-          <div id="printPreviewArea" class="hidden">
-            <div class="sheet-frame">
-              <canvas id="sheetCanvas" class="sheet-canvas"></canvas>
-            </div>
-
-            <!-- Stats -->
-            <div class="meta-stats">
-              <div class="meta-stat-item">
-                <span class="meta-stat-label">Paper Type</span>
-                <span class="meta-stat-val" id="statPrintPaper">4 × 6 inch</span>
-              </div>
-              <div class="meta-stat-item">
-                <span class="meta-stat-label">Copies Rendered</span>
-                <span class="meta-stat-val status-ok" id="statPrintCount">8 Photos</span>
-              </div>
-              <div class="meta-stat-item">
-                <span class="meta-stat-label">Resolution</span>
-                <span class="meta-stat-val" id="statPrintDpi">300 DPI</span>
-              </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="result-actions">
-              <a id="btnDownloadPrintJpg" class="btn btn-primary" href="#" download="Passport_Photos_300DPI.jpg">
-                <i class="fa-solid fa-download" aria-hidden="true"></i> Download 300 DPI Image (JPEG)
-              </a>
-              <button type="button" id="btnDownloadPrintPdf" class="btn btn-secondary">
-                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Download Print PDF
-              </button>
-            </div>
-          </div>
-        </section>
+    <!-- tool:start -->
+    <section class="ws" id="printApp" data-state="empty" data-simple-empty data-compact-drop data-ws-file="#printFileInfoBox" aria-label="Passport photo print sheet">
+      <div class="ws-head">
+        <ol class="steps" aria-label="Progress">
+          <li data-step="add"><span class="steps__n" aria-hidden="true">1</span>Add photo</li>
+          <li data-step="adjust"><span class="steps__n" aria-hidden="true">2</span>Adjust</li>
+          <li data-step="download"><span class="steps__n" aria-hidden="true">3</span>Download</li>
+        </ol>
       </div>
+      <div class="ws-stage">
+        <div id="printFileInfoBox" class="filebar hidden" aria-live="polite">
+          <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
+          <span id="printFileInfoText" class="filebar__name"></span>
+          <div class="filebar__actions">
+            <button type="button" id="btnPrintReplace" class="btn btn-sm" title="Choose a different photo">Replace</button>
+            <button type="button" id="btnPrintRemove" class="btn btn-sm btn-danger-ghost" title="Remove this photo">Remove</button>
+          </div>
+        </div>
+        <div id="printDropzone" class="dropzone" role="group" aria-label="Upload a photo to create a print sheet">
+          <input type="file" id="printFileInput" accept="image/jpeg,image/png,image/webp" class="hidden" tabindex="-1" aria-hidden="true">
+          <i class="fa-solid fa-arrow-up-from-bracket dropzone__icon" aria-hidden="true"></i>
+          <h3 class="dropzone__title">Add a passport photo</h3>
+          <p class="dropzone__text">Drop your passport size photo here</p>
+          <button type="button" id="btnPrintBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose photo</button>
+          <p class="dropzone__hint">JPG, PNG or WebP. Everything stays on your device.</p>
+        </div>
+        <div id="printPreviewArea" class="ws-result hidden">
+          <div class="ws-result__head"><h3 class="ws-result__title">Print sheet preview</h3></div>
+          <div class="ws-preview"><canvas id="sheetCanvas" class="sheet-canvas"></canvas></div>
+          <dl class="meta-stats">
+            <div class="meta-stat-item"><dt class="meta-stat-label">Paper</dt><dd class="meta-stat-val" id="statPrintPaper">4 × 6 inch</dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Copies</dt><dd class="meta-stat-val status-ok" id="statPrintCount">8 Photos</dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Resolution</dt><dd class="meta-stat-val" id="statPrintDpi">300 DPI</dd></div>
+          </dl>
+        </div>
+      </div>
+      <div class="ws-side">
+        <h2 class="ws-side__title">Sheet settings</h2>
+        <div class="field">
+          <label for="photoSizeSelect" class="field-label">Photo size</label>
+          <select id="photoSizeSelect">
+            <option value="in-passport" selected>Indian passport or exam (3.5 × 4.5 cm)</option>
+            <option value="us-visa">US, OCI or international visa (2 × 2 in)</option>
+            <option value="stamp">Stamp size (2.5 × 3.5 cm)</option>
+            <option value="schengen">Schengen visa (3.5 × 4.5 cm)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="paperSizeSelect" class="field-label">Paper size</label>
+          <select id="paperSizeSelect">
+            <option value="4x6" selected>4 × 6 inch photo paper, lab standard</option>
+            <option value="a4">A4 sheet, home or office printer</option>
+            <option value="5x7">5 × 7 inch photo paper</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="photoCountSelect" class="field-label">Number of copies</label>
+          <select id="photoCountSelect">
+            <option value="auto" selected>Fill the whole sheet</option>
+            <option value="4">4 photos</option>
+            <option value="6">6 photos</option>
+            <option value="8">8 photos</option>
+            <option value="12">12 photos</option>
+            <option value="16">16 photos</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="gapSelect" class="field-label">Spacing between photos</label>
+          <select id="gapSelect">
+            <option value="1.5">Compact (1.5 mm)</option>
+            <option value="2.5" selected>Standard (2.5 mm), easy to cut</option>
+            <option value="4">Wide (4 mm)</option>
+          </select>
+        </div>
+        <div class="check-group">
+          <label class="switch" for="guideLinesCheckbox"><span>Dashed cutting guides</span><input type="checkbox" id="guideLinesCheckbox" role="switch" checked></label>
+          <label class="switch" for="photoBorderCheckbox"><span>Thin border around photos</span><input type="checkbox" id="photoBorderCheckbox" role="switch" checked></label>
+        </div>
+      </div>
+      <div class="ws-action">
+        <a id="btnDownloadPrintJpg" class="btn btn-primary btn-lg btn-block" href="#" download="Passport_Photos_300DPI.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download 300 DPI image (JPEG)</a>
+        <button type="button" id="btnDownloadPrintPdf" class="btn btn-sm btn-block"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Download print PDF</button>
+      </div>
+    </section>
+    <!-- tool:end -->
 
       <!-- Google AdSense Slot -->
       <!-- Reserved Ad Slot: Below Tool Result Area -->
-    <div class="ad-slot-container ad-slot-result" aria-label="Advertisement">
+    <div class="ad-slot-container ad-slot-result" role="complementary" aria-label="Advertisement">
       <div class="ad-slot-inner">
         <span class="ad-slot-label">Advertisement</span>
-        <!-- <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2713609207324356" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins> -->
+        <!-- <ins class="adsbygoogle" data-ad-client="ca-pub-2713609207324356" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins> -->
       </div>
     </div>
 
       <!-- Educational Content Section -->
-      <section style="margin-top: 3rem;">
+      <section class="section prose">
         <h2>How to Print Passport Photos at Local Labs for ₹5</h2>
         <p>
           When you walk into a photo studio asking for "passport photos," studios charge ₹60 to ₹100 for a set of 8 copies. However, when you ask to print a standard "4×6 photo card print," digital color labs and studio kiosks in India charge only <strong>₹5 to ₹10</strong> for the entire card.
         </p>
 
-        <div class="guide-card-grid" style="margin: 1.5rem 0;">
-          <div class="app-card">
+        <div class="guide-card-grid">
+          <div class="guide-card">
             <h3>1. Prepare Your Photo</h3>
             <p>Take a clear passport photo against a plain light wall. Crop it using ApplyReady's resizer or upload it directly here.</p>
           </div>
-          <div class="app-card">
+          <div class="guide-card">
             <h3>2. Download 4×6 Sheet</h3>
             <p>Select 4×6 inch paper size. ApplyReady will tile 8 copies with scissor cutting guidelines at exact 300 DPI resolution.</p>
           </div>
-          <div class="app-card">
+          <div class="guide-card">
             <h3>3. Print at 100% Scale</h3>
             <p>Transfer the JPEG file to a flash drive or send via WhatsApp/Email to your local photo print shop. Instruct them: "Print as 4×6 photo without borders at 100% scale".</p>
           </div>
         </div>
 
         <h3>Standard Passport &amp; Visa Photo Dimensions in India</h3>
-        <table class="table-responsive">
+        <div class="table-wrap"><table>
           <thead>
             <tr>
               <th>Document Type</th>
@@ -424,11 +380,11 @@
               <td>295 × 413 px</td>
             </tr>
           </tbody>
-        </table>
+        </table></div>
       </section>
 
       <!-- Frequently Asked Questions (FAQ) Section -->
-      <section class="faq-section" style="margin-top: 3.5rem;">
+      <section class="faq-section">
         <h2>Frequently Asked Questions</h2>
 
         <details class="faq-item">
@@ -474,43 +430,34 @@
         </details>
       </section>
 
-      <section class="related-guides-section" aria-labelledby="guidesHeading" style="margin-top: 3rem;">
+      <section class="related-guides-section" aria-labelledby="guidesHeading">
         <h2 id="guidesHeading" class="related-guides-title">Guides that help with this tool</h2>
         <div class="related-guides-grid">
           <a href="guides/passport-photo-at-home-guide.html" class="guide-card">
             <strong>Taking a Passport-Style Photo at Home: Light, Background and Framing</strong>
-            <p class="text-muted mt-1">Most rejected photos fail on light and background, not on file size. Here is how to take one that passes the first time.</p>
+            <p class="text-muted">Most rejected photos fail on light and background, not on file size. Here is how to take one that passes the first time.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="guides/pixels-cm-inches-dpi-explained.html" class="guide-card">
             <strong>Pixels, Centimetres, Inches and DPI: Converting a Form's Photo Size</strong>
-            <p class="text-muted mt-1">A form says 3.5 x 4.5 cm. Your tool asks for pixels. This is the one formula that connects them.</p>
+            <p class="text-muted">A form says 3.5 x 4.5 cm. Your tool asks for pixels. This is the one formula that connects them.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="guides/fix-common-photo-upload-errors.html" class="guide-card">
             <strong>Twelve Common Photo and Document Upload Errors and How to Fix Each</strong>
-            <p class="text-muted mt-1">Match the message on your screen to its usual cause and the fastest fix.</p>
+            <p class="text-muted">Match the message on your screen to its usual cause and the fastest fix.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
         </div>
       </section>
 
       <!-- Related Tools Navigation -->
-      <section class="related-tools-section" style="margin-top: 3.5rem;">
-        <h2>Related Tools &amp; Guides</h2>
-        <div class="tool-links-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem;">
-          <a href="/" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3><i class="fa-solid fa-crop-simple" aria-hidden="true" style="color: var(--primary);"></i> Image Resizer &amp; Compressor</h3>
-            <p style="margin: 0;">Resize photos to 350 × 450 px and under 50 KB for online portals.</p>
-          </a>
-          <a href="signature-cleaner.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3><i class="fa-solid fa-signature" aria-hidden="true" style="color: var(--primary);"></i> Signature Background Cleaner</h3>
-            <p style="margin: 0;">Whiten paper shadows and darken ink lines on signature scans.</p>
-          </a>
-          <a href="image-to-pdf.html" class="app-card" style="text-decoration: none; color: inherit;">
-            <h3><i class="fa-solid fa-file-pdf" aria-hidden="true" style="color: var(--primary);"></i> Image to PDF Converter</h3>
-            <p style="margin: 0;">Compile photos into a single standardized A4 PDF document.</p>
-          </a>
+      <section class="section related-tools" aria-labelledby="relatedToolsHeading">
+        <h2 class="section-title" id="relatedToolsHeading">Related Tools &amp; Guides</h2>
+        <div class="guide-card-grid">
+          <a href="/" class="guide-card"><strong>Image Resizer &amp; Compressor</strong><p>Resize photos to 350 × 450 px and under 50 KB for online portals.</p></a>
+          <a href="signature-cleaner.html" class="guide-card"><strong>Signature Background Cleaner</strong><p>Whiten paper shadows and darken ink lines on signature scans.</p></a>
+          <a href="image-to-pdf.html" class="guide-card"><strong>Image to PDF Converter</strong><p>Compile photos into a single standardized A4 PDF document.</p></a>
         </div>
       </section>
 
@@ -518,38 +465,54 @@
   </main>
 
   <!-- FOOTER -->
+  <!-- shell:footer:start -->
   <footer class="site-footer">
-    <div class="footer-content">
-      <div class="footer-brand-block">
-        <a href="/" class="brand-logo"><img src="favicon/android-chrome-192x192.png" alt="" class="brand-img" width="32" height="32"><span>ApplyReady<span class="brand-dot">.</span></span></a>
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
         <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
       </div>
-            <nav class="footer-links" aria-label="Footer Links">
-        <a href="/" class="footer-link">Image tools</a>
-        <a href="resume.html" class="footer-link">Resume builder</a>
-        <a href="signature-cleaner.html" class="footer-link">Signature cleaner</a>
-        <a href="image-to-pdf.html" class="footer-link">Image to PDF</a>
-        <a href="compress-pdf.html" class="footer-link">Compress PDF</a>
-        <a href="passport-photo-print.html" class="footer-link">Passport print</a>
-        <a href="ssc-photo-signature-size.html" class="footer-link">SSC specs</a>
-        <a href="upsc-photo-signature-size.html" class="footer-link">UPSC specs</a>
-        <a href="rrb-photo-signature-size.html" class="footer-link">RRB specs</a>
-        <a href="ibps-photo-signature-size.html" class="footer-link">IBPS specs</a>
-        <a href="neet-photo-signature-size.html" class="footer-link">NEET specs</a>
-        <a href="resize-image-to-20kb.html" class="footer-link">Resize to 20KB</a>
-        <a href="resize-image-to-50kb.html" class="footer-link">Resize to 50KB</a>
-        <a href="guides/" class="footer-link">Guides</a>
-        <a href="about.html" class="footer-link">About</a>
-        <a href="privacy.html" class="footer-link">Privacy</a>
-        <a href="terms.html" class="footer-link">Terms</a>
-        <a href="contact.html" class="footer-link">Contact</a>
-      </nav>
+      <div>
+        <h2 class="site-footer__title">Tools</h2>
+        <ul class="site-footer__list">
+          <li><a href="/">Image resizer</a></li>
+          <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="compress-pdf.html">Compress PDF</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">Exam sizes</h2>
+        <ul class="site-footer__list">
+          <li><a href="ssc-photo-signature-size.html">SSC</a></li>
+          <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
+          <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
+          <li><a href="neet-photo-signature-size.html">NEET</a></li>
+          <li><a href="rrb-photo-signature-size.html">RRB</a></li>
+          <li><a href="resize-image-to-20kb.html">Resize to 20KB</a></li>
+          <li><a href="resize-image-to-50kb.html">Resize to 50KB</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2 class="site-footer__title">ApplyReady</h2>
+        <ul class="site-footer__list">
+          <li><a href="guides/">Guides</a></li>
+          <li><a href="how-to-use.html">How to use</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="privacy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="footer-bottom"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
   </footer>
+  <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261012-2" defer></script>
-  <script src="js/site.js?v=20261012-2"></script>
-  <script src="js/passport-photo-print.js?v=20261012-2"></script>
+  <script src="js/components.js?v=20261101-1" defer></script>
+  <script src="js/site.js?v=20261101-1"></script>
+  <script src="js/passport-photo-print.js?v=20261101-1"></script>
 </body>
 </html>
