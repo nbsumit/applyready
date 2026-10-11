@@ -26,7 +26,7 @@ Every page loads `style.css`, `workspace.css`, `app.css` (plus the vendor icon a
 
 | Group | Values |
 |---|---|
-| Text sizes | 12 caption, 13 help and secondary, 14 interface (labels, fields, buttons, table text), 16 reading and phone fields, 18 panel title, 20 section heading, 24 tool page title, 28 reading page title (22 on phones) |
+| Text sizes | 12 caption, 13 help and secondary, 14 interface (labels, fields, buttons, table text), 16 reading, panel titles and phone fields, 18 lead and h3, 22 section heading, 24 tool page title (22 on phones), 30 reading page title (24 on phones). Final values; the first draft of this plan said 18 for panel titles and 28 for reading titles. |
 | Weights | 400 text, 500 buttons and tabs, 600 labels, titles and headings |
 | Control height | 36 default, 32 small, 44 primary action; on phones and touch 44 / 40 / 48 |
 | Radius | 6 controls, 8 panels, dialogs and menus, 999 pills |

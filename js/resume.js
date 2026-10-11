@@ -1592,20 +1592,18 @@
       const isVis = resumeData.sectionVisibility[key] !== false;
 
       const row = document.createElement('div');
-      row.className = 'dynamic-item';
-      row.style.marginBottom = '0.35rem';
-      row.style.padding = '0.5rem 0.75rem';
+      row.className = 'section-order-row';
       row.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+        <div class="section-order-row__inner">
           <label class="checkbox-label">
             <input type="checkbox" class="chk-section-vis" data-key="${key}" ${isVis ? 'checked' : ''}>
             <span>${escapeHTML(labels[key])}</span>
           </label>
-          <div style="display: flex; gap: 0.3rem;">
-            <button type="button" class="btn btn-secondary btn-sm" data-action="order-up" data-index="${index}" title="Move Up" aria-label="Move ${escapeHTML(labels[key])} up" ${index === 0 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
+          <div class="section-order-row__actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="order-up" data-index="${index}" title="Move Up" aria-label="Move ${escapeHTML(labels[key])} up" ${index === 0 ? 'disabled' : ''}>
               <i aria-hidden="true" class="fa-solid fa-arrow-up"></i>
             </button>
-            <button type="button" class="btn btn-secondary btn-sm" data-action="order-down" data-index="${index}" title="Move Down" aria-label="Move ${escapeHTML(labels[key])} down" ${index === order.length - 1 ? 'disabled' : ''} style="min-height: 28px; padding: 0.15rem 0.45rem;">
+            <button type="button" class="btn btn-secondary btn-sm" data-action="order-down" data-index="${index}" title="Move Down" aria-label="Move ${escapeHTML(labels[key])} down" ${index === order.length - 1 ? 'disabled' : ''}>
               <i aria-hidden="true" class="fa-solid fa-arrow-down"></i>
             </button>
           </div>

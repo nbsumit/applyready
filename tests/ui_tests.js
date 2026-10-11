@@ -334,7 +334,8 @@ const server = http.createServer((req, res) => {
     ok(/Fix the setting/.test(await summary()), 'summary says why the action is disabled');
     const gap = await page.evaluate(() => document.getElementById('dimError').getBoundingClientRect().top - document.getElementById('customWidth').getBoundingClientRect().bottom);
     ok(gap >= 0 && gap < 40, `the width error sits right under the field (${Math.round(gap)} px)`);
-    ok(await page.locator('#customWidth').evaluate(e => getComputedStyle(e).borderTopColor !== getComputedStyle(document.getElementById('customMaxKB')).borderTopColor), 'the invalid field is marked');
+    // Border colours animate, so wait for the marked state instead of sampling mid-transition
+    ok(await page.waitForFunction(() => { const w = document.getElementById('customWidth'); return w.getAttribute('aria-invalid') === 'true' && getComputedStyle(w).borderTopColor !== getComputedStyle(document.getElementById('customMaxKB')).borderTopColor; }, null, { timeout: 3000 }).then(() => true, () => false), 'the invalid field is marked');
     await page.locator('#processSummary button').click();
     ok(await page.evaluate(() => document.activeElement && document.activeElement.id === 'customWidth'), '"Show me" moves focus to the field');
 

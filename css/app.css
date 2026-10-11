@@ -1871,3 +1871,34 @@
   /* The optional name and date strip belongs with the settings, after the image */
   #resizerApp .annotation-wrapper { order: 5; padding-top: var(--sp-3); }
 }
+@media screen {
+  /* Section titles outside the article body use the same steps */
+  .faq-title { font-size: var(--fs-22); font-weight: 600; }
+  .related-guides-title { font-size: var(--fs-18); font-weight: 600; }
+  .content-page .guide-content h3 { font-size: var(--fs-18); font-weight: 600; }
+  small { font-size: var(--fs-13); }
+  .content-page .guide-content code, .content-page .guide-content > .app-card code { border-radius: 4px; font-size: var(--fs-14); }
+  /* Plain question-and-answer disclosures in page content */
+  .content-page .guide-content details > summary:not([class]) { display: flex; align-items: center; min-height: 44px; padding: var(--sp-2) 0; font-weight: 600; color: var(--text-heading); cursor: pointer; }
+  .example-link { padding: 10px var(--sp-2); }
+}
+@media screen and (max-width: 760px) {
+  .comparison-view-toggle .btn, .comparison-view-toggle .btn-toggle { min-height: 36px; }
+  .resource-link { min-height: 40px; }
+}
+@media screen {
+  /* Section order: one list, rows separated by lines */
+  .section-order-list { gap: 0 !important; border: 1px solid var(--border-color); border-radius: var(--r-panel); overflow: hidden; background: var(--bg-card); }
+  .section-order-row { padding: var(--sp-1) var(--sp-2) var(--sp-1) var(--sp-3); border-bottom: 1px solid var(--border-color); }
+  .section-order-row:last-child { border-bottom: 0; }
+  .section-order-row__inner { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+  .section-order-row__actions { display: flex; gap: var(--sp-1); }
+  .section-order-row__actions .btn { min-width: var(--ctl-sm); padding: 0 var(--sp-2); border-color: transparent; background: transparent; color: var(--text-muted); }
+  .section-order-row__actions .btn:hover:not(:disabled) { background: var(--bg-card-subtle); border-color: var(--border-color); color: var(--text-heading); }
+  .section-order-row .checkbox-label { flex: 1 1 auto; min-width: 0; }
+}
+@media screen and (max-width: 430px) {
+  /* Width, height and unit: unit gets its own row on phones */
+  .field-trio { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .field-trio > :nth-child(3) { grid-column: 1 / -1; }
+}
