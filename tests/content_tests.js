@@ -103,4 +103,26 @@ for (const f of pages) {
   ok(!/lorem ipsum|TODO|FIXME|\[Company\]\b.*\[Role\]\b.*\[Name\]/i.test(t.replace(/\[Company\]|\[College\]|\[website\]|\[specific area\]|\[number\]|\[email\]/g, '')), `${f}: placeholder text`);
 }
 
+// 8. One design system: shared stylesheet, generated shell in sync, no inline styling, no em dash in interface chrome
+const { spawnSync } = require('node:child_process');
+for (const f of pages) {
+  const s = read(f);
+  ok(/href="[^"]*css\/app\.css/.test(s), `${f}: loads css/app.css`);
+  ok(!/css\/(style|workspace|design-system|ux|ui)\.css/.test(s), `${f}: references a retired stylesheet`);
+  ok(f === 'resume.html' ? /css\/document\.css/.test(s) : !/css\/document\.css/.test(s), `${f}: css/document.css belongs to the resume builder only`);
+  if (f !== 'resume.html') {
+    const inline = (s.match(/ style="[^"]*"/g) || []).filter(x => !/^ style="(display: ?none;?|width: ?0%;?)"$/.test(x));
+    ok(inline.length === 0, `${f}: inline styles other than script-controlled state (${inline[0]})`);
+  }
+  ok(/<header class="site-header"/.test(s) && /<footer class="site-footer"/.test(s), `${f}: shared header and footer`);
+}
+// The resume sheet, templates and print layout are the output format: change them on purpose, then update this hash.
+ok(require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, 'css/document.css'))).digest('hex') === '8b569558fa22be9e9f0be8833bb6da023d6282930df6c23242d2f5b2279b388b', 'css/document.css (resume sheet and print layout) changed; confirm the exported resume is meant to change, then update the hash');
+ok(!fs.existsSync(path.join(root, 'css/style.css')) && !fs.existsSync(path.join(root, 'css/workspace.css')), 'retired stylesheets are deleted');
+const sync = spawnSync(process.execPath, [path.join(root, 'scripts/sync-shell.js'), '--check'], { encoding: 'utf8' });
+ok(sync.status === 0, `shared header and footer are in sync on every page: ${sync.stdout}${sync.stderr}`);
+for (const f of ['css/app.css', 'js/site.js', 'js/components.js', 'scripts/lib/shell.js', 'scripts/lib/image-workspace.js']) {
+  ok(!read(f).includes('—'), `${f}: no em dash in interface code`);
+}
+
 console.log(`✓ ${pages.length} pages checked: titles, descriptions, canonicals, links, sitemap, offline cache, ad requirements, depth (${checks} assertions)`);

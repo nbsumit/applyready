@@ -31,8 +31,8 @@ const server = http.createServer((req, res) => {
   const origin = `http://127.0.0.1:${server.address().port}`;
   const exe = process.env.BROWSER_EXECUTABLE_PATH;
   const browser = await engine.launch(engine === chromium ? { headless: true, ...(exe ? { executablePath: exe } : {}), args: ['--no-sandbox', '--disable-dev-shm-usage'] } : { headless: true });
-  const open = async (width, height) => {
-    const context = await browser.newContext({ viewport: { width, height }, colorScheme: 'light' });
+  const open = async (width, height, touch = false) => {
+    const context = await browser.newContext({ viewport: { width, height }, colorScheme: 'light', ...(touch ? { hasTouch: true, isMobile: engine === chromium } : {}) });
     await context.route('**/*', route => { const u = route.request().url(); return /^(http:\/\/127\.|blob:|data:)/.test(u) ? route.continue() : route.abort(); });
     return { context, page: await context.newPage() };
   };
@@ -78,25 +78,27 @@ const server = http.createServer((req, res) => {
   console.log(`✓ ${pages.length} pages: readable buttons, no native file input, no default buttons, 12px text floor`);
 
   // 1b. One scale for icons and controls on every page, on a desktop and a phone-sized viewport.
-  //     Icons use five sizes. Fields and buttons use the control heights from css/app.css.
+  //     Icons use four sizes. Fields and buttons use the control heights from css/app.css
+  //     (40 on a pointer, 44 on touch; buttons 32/40/48 or 40/44/48).
   {
-    const ICONS = [12, 14, 16, 20, 24];
-    for (const [width, height, fieldMax, fieldMin, btnSizes] of [[1280, 900, 37, 35, [32, 36, 44]], [390, 780, 45, 43, [40, 44, 48]]]) {
-      const { context, page } = await open(width, height);
+    const ICONS = [12, 16, 20, 28];
+    for (const [width, height, fieldMax, fieldMin, btnSizes, touch] of [[1280, 900, 41, 39, [32, 40, 48], false], [390, 780, 45, 43, [40, 44, 48], true]]) {
+      const { context, page } = await open(width, height, touch);
       for (const file of pages) {
         await page.goto(`${origin}/${file}`);
         if (file === 'resume.html') await page.evaluate(() => { document.querySelectorAll('.accordion-section').forEach(s => s.classList.add('open')); });
+        if (file !== 'resume.html') await page.evaluate(() => document.querySelectorAll('.ws').forEach(ws => { ws.dataset.settings = 'open'; }));
         const found = await page.evaluate(() => {
           const sheet = '.resume-source-sheet, .resume-visual-pages, #tmplModalPreviewSheet, .template-thumb, .template-card-thumb, .ats-resume-sheet, .cropper-container';
           const shown = e => { const cs = getComputedStyle(e), r = e.getBoundingClientRect(); return !e.closest(sheet) && cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 1 && r.height > 1; };
           const icons = [], fields = [], buttons = [];
           document.querySelectorAll('i[class*="fa-"]').forEach(e => { if (shown(e)) icons.push(Math.round(parseFloat(getComputedStyle(e).fontSize))); });
-          document.querySelectorAll('input.form-control, select.form-select, select.form-control, .custom-select__button').forEach(e => {
+          document.querySelectorAll('input.input, .select-btn').forEach(e => {
             if (!shown(e) || ['range', 'file', 'checkbox', 'radio'].includes(e.type)) return;
             fields.push(Math.round(e.getBoundingClientRect().height));
           });
           document.querySelectorAll('.btn').forEach(e => {
-            if (!shown(e) || e.closest('.comparison-view-toggle')) return;
+            if (!shown(e) || e.closest('.segmented, .tabs')) return;
             const h = Math.round(e.getBoundingClientRect().height);
             if (h <= 46) buttons.push(h);
           });
@@ -112,44 +114,44 @@ const server = http.createServer((req, res) => {
       await context.close();
     }
   }
-  console.log(`✓ ${pages.length} pages: icons use the 5-size scale; fields and buttons use the control heights (desktop and phone)`);
+  console.log(`✓ ${pages.length} pages: icons use the 4-size scale; fields and buttons use the control heights (desktop and phone)`);
 
   // 2. Custom select with a mouse and with the keyboard, at phone and desktop sizes.
   for (const [width, height] of [[390, 780], [1280, 900]]) {
     const { context, page } = await open(width, height);
     await page.goto(`${origin}/index.html`);
-    const trigger = page.locator('.custom-select__button').first();
+    const trigger = page.locator('.select-btn').first();
     await trigger.scrollIntoViewIfNeeded();
     await trigger.click();
-    const list = page.locator('.custom-select__list:not([hidden])');
+    const list = page.locator('.select-list:not([hidden])');
     ok(await list.isVisible(), `${width}: opening the preset menu shows its options`);
     const box = await list.boundingBox();
     ok(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height, `${width}: menu stays inside the viewport`);
     ok(await list.locator('[role=option]').count() >= 7, `${width}: all presets are listed`);
     ok(await list.locator('[role=option][aria-selected=true]').count() === 1, `${width}: exactly one option is marked selected`);
-    await list.locator('[role=option]', { hasText: 'ID / Passport' }).click();
+    await list.locator('[role=option]', { hasText: 'Passport Photo' }).click();
     ok(await page.locator('#presetSelect').inputValue() === 'passport', `${width}: clicking an option changes the preset`);
-    ok(await page.locator('.custom-select__list:not([hidden])').count() === 0, `${width}: menu closes after choosing`);
+    ok(await page.locator('.select-list:not([hidden])').count() === 0, `${width}: menu closes after choosing`);
     ok(await trigger.evaluate(el => el === document.activeElement), `${width}: focus returns to the trigger`);
     ok((await trigger.textContent()).includes('Passport'), `${width}: trigger shows the chosen value`);
     ok(await page.locator('#customWidth').inputValue() === '350', `${width}: preset dimensions are applied`);
     // keyboard: open, move, choose, then escape
     await trigger.focus();
     await page.keyboard.press('ArrowDown');
-    ok(await page.locator('.custom-select__list:not([hidden])').isVisible(), `${width}: ArrowDown opens the menu`);
+    ok(await page.locator('.select-list:not([hidden])').isVisible(), `${width}: ArrowDown opens the menu`);
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Enter');
     ok(await page.locator('#presetSelect').inputValue() === 'signature', `${width}: arrow keys and Enter choose an option`);
     await page.keyboard.press('Space');
-    ok(await page.locator('.custom-select__list:not([hidden])').isVisible(), `${width}: Space opens the menu`);
+    ok(await page.locator('.select-list:not([hidden])').isVisible(), `${width}: Space opens the menu`);
     await page.keyboard.press('Escape');
-    ok(await page.locator('.custom-select__list:not([hidden])').count() === 0, `${width}: Escape closes the menu`);
+    ok(await page.locator('.select-list:not([hidden])').count() === 0, `${width}: Escape closes the menu`);
     ok(await trigger.evaluate(el => el === document.activeElement), `${width}: Escape keeps focus on the trigger`);
     await page.keyboard.press('End'); await page.keyboard.press('Enter');
     ok(await page.locator('#presetSelect').inputValue() === 'document', `${width}: End jumps to the last option`);
     // Tab leaves the control without trapping focus
     await trigger.focus(); await page.keyboard.press('ArrowDown'); await page.keyboard.press('Tab');
-    ok(await page.locator('.custom-select__list:not([hidden])').count() === 0, `${width}: Tab closes the menu`);
+    ok(await page.locator('.select-list:not([hidden])').count() === 0, `${width}: Tab closes the menu`);
     ok(await page.evaluate(() => document.activeElement !== document.body), `${width}: Tab keeps focus in the page`);
     await context.close();
   }
@@ -158,10 +160,10 @@ const server = http.createServer((req, res) => {
     const { context, page } = await open(390, 780);
     await page.goto(`${origin}/resume.html`);
     await page.locator('#tabDesign').click();
-    const font = page.locator('#fontSelect').locator('xpath=..').locator('.custom-select__button');
+    const font = page.locator('#fontSelect').locator('xpath=..').locator('.select-btn');
     await font.scrollIntoViewIfNeeded(); await font.click();
-    ok(await page.locator('.custom-select__list:not([hidden])').isVisible(), 'Resume font menu opens on a phone');
-    await page.locator('.custom-select__list:not([hidden]) [role=option]').nth(1).click();
+    ok(await page.locator('.select-list:not([hidden])').isVisible(), 'Resume font menu opens on a phone');
+    await page.locator('.select-list:not([hidden]) [role=option]').nth(1).click();
     ok(await page.locator('#fontSelect').evaluate(el => el.selectedIndex) === 1, 'Resume font menu changes the font');
     await context.close();
   }
@@ -174,6 +176,7 @@ const server = http.createServer((req, res) => {
     for (const [file, selector] of cases) {
       await page.goto(`${origin}/${file}`);
       if (selector === '#summaryText') await page.locator('#sec-summary .accordion-header').click();
+      if (selector === '#customWidth') await page.locator('.ws-customize').click();
       const field = page.locator(selector).first();
       await field.focus();
       const ring = await field.evaluate(el => { const cs = getComputedStyle(el); return { shadow: cs.boxShadow, outline: cs.outlineStyle, outlineWidth: parseFloat(cs.outlineWidth), border: cs.borderTopColor }; });
@@ -187,7 +190,7 @@ const server = http.createServer((req, res) => {
         const state = await page.evaluate(() => {
           const el = document.activeElement; if (!el || el === document.body) return null;
           const cs = getComputedStyle(el); const r = el.getBoundingClientRect();
-          const hostRing = el.closest('.custom-select, .range-wrap, .checkbox-label');
+          const hostRing = el.closest('.select') || (el.type === 'range' ? el : null);
           const visible = (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) || (cs.boxShadow && cs.boxShadow !== 'none') || !!hostRing;
           return { id: el.id || el.className || el.tagName, visible, tiny: r.width < 2 || r.height < 2 };
         });
@@ -259,6 +262,7 @@ const server = http.createServer((req, res) => {
     // Errors must be visible on every embedded tool, not only on the home page.
     for (const file of embedded) {
       await page.goto(`${origin}/${file}`);
+      await page.locator('.ws-customize').click();
       await page.locator('#customWidth').fill('5');
       await page.locator('#customWidth').blur();
       await page.locator('#dimError').waitFor({ state: 'visible', timeout: 4000 });
@@ -271,21 +275,20 @@ const server = http.createServer((req, res) => {
     for (const file of embedded) {
       await page.goto(`${origin}/${file}`);
       const hindi = file.startsWith('hi/');
-      const label = (await page.locator('#btnProcess').innerText()).trim();
+      const label = (await page.locator('#btnProcess').textContent()).trim();
       await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await canvasPng() });
       await page.locator('#cropperActiveArea').waitFor({ state: 'visible' });
-      ok(await page.locator('.file-upload-wrapper').isHidden(), `${file}: the dropzone folds away once a file is chosen`);
-      const before = await page.evaluate(() => { const i = document.getElementById('cropperActiveArea').getBoundingClientRect().top, b = document.getElementById('btnProcess').getBoundingClientRect().top; return i < b; });
+      ok(await page.locator('#dropzone').isHidden(), `${file}: the dropzone folds away once a file is chosen`);
+      const before = await page.evaluate(() => { const i = document.getElementById('cropperActiveArea').getBoundingClientRect().top, b = document.getElementById('btnProcess').getBoundingClientRect().top; return i <= b; });
       ok(before, `${file}: the image appears above the Resize button`);
-      ok((await page.locator('#btnProcess').innerText()).trim() === label || !hindi, `${file}: button label is not replaced by another language`);
+      ok((await page.locator('#btnProcess').textContent()).trim() === label || !hindi, `${file}: button label is not replaced by another language`);
       await page.locator('#btnProcess').click();
       await page.locator('#resultArea').waitFor({ state: 'visible' });
       await page.waitForFunction(() => document.getElementById('resultFileSize') && document.getElementById('resultFileSize').textContent.trim().length > 2);
       ok((await page.locator('#resultDims').innerText()).trim().length > 3, `${file}: result shows dimensions`);
       ok((await page.locator('#resultFileSize').innerText()).includes('KB'), `${file}: result shows file size`);
-      const top = await page.evaluate(() => ['resultArea', 'btnProcess'].map(id => document.getElementById(id).getBoundingClientRect().top));
-      ok(top[0] < top[1], `${file}: the result sits above the settings and Resize button`);
-      if (hindi) ok(/[\u0900-\u097F]/.test(await page.locator('#btnProcess').innerText()), `${file}: Resize button stays in Hindi after processing`);
+      ok(await page.locator('#btnProcess').isHidden() && await page.locator('#btnDownload').isVisible(), `${file}: once finished, Download replaces the Resize button`);
+      if (hindi) ok(/[\u0900-\u097F]/.test(await page.locator('#btnProcess').textContent()), `${file}: Resize button stays in Hindi after processing`);
     }
     await context.close();
   }
@@ -326,7 +329,7 @@ const server = http.createServer((req, res) => {
     await page.locator('#cropperActiveArea:not(.hidden)').waitFor();
     const summary = async () => (await page.locator('#processSummary').innerText()).replace(/\s+/g, ' ').trim();
     ok(/350 × 350 px/.test(await summary()) && /under 50 KB/.test(await summary()), `summary names the output before processing (${await summary()})`);
-    await page.locator('.preset-shortcut[data-preset="passport"]').click();
+    await page.locator('#presetSelect').selectOption('passport');
     ok(/350 × 450 px/.test(await summary()), `summary follows the preset (${await summary()})`);
     await page.locator('#customWidth').fill('5');
     await page.locator('#customWidth').dispatchEvent('input');
@@ -363,9 +366,9 @@ const server = http.createServer((req, res) => {
 
     // Exam page: the preset switch shows which preset is in use
     await page.goto(`${origin}/ssc-photo-signature-size.html`);
-    ok(await page.locator('#btnPresetSSCPhoto').getAttribute('aria-pressed') === 'true', 'SSC photo preset is marked as selected on load');
-    await page.locator('#btnPresetSSCSig').click();
-    ok(await page.locator('#btnPresetSSCSig').getAttribute('aria-pressed') === 'true' && await page.locator('#btnPresetSSCPhoto').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
+    ok(await page.locator('.chip[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'true', 'SSC photo preset is marked as selected on load');
+    await page.locator('.chip[data-preset="ssc-signature"]').click();
+    ok(await page.locator('.chip[data-preset="ssc-signature"]').getAttribute('aria-pressed') === 'true' && await page.locator('.chip[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
 
     // Resume: example text never looks like a value
     await page.goto(`${origin}/resume.html`);
@@ -383,16 +386,16 @@ const server = http.createServer((req, res) => {
       const ratio = await p.evaluate(() => {
         const lum = c => { const [r, g, b] = c.match(/\d+/g).slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
         const field = getComputedStyle(document.getElementById('customMaxKB')).borderTopColor;
-        const panel = getComputedStyle(document.querySelector('.image-controls')).backgroundColor;
+        const panel = getComputedStyle(document.querySelector('.ws')).backgroundColor;
         const [a, b] = [lum(field), lum(panel)].sort((x, y) => y - x);
         return (a + 0.05) / (b + 0.05);
       });
       ok(ratio >= 3, `${scheme}: field edge contrast is ${ratio.toFixed(2)}:1`);
       // Tools menu: Escape closes it and gives focus back to its button
-      await p.locator('.tools-menu > button').click();
+      await p.locator('#toolsMenuButton').click();
       await p.keyboard.press('Tab');
       await p.keyboard.press('Escape');
-      ok(await p.evaluate(() => !document.querySelector('.tools-menu').classList.contains('is-open') && document.activeElement === document.querySelector('.tools-menu > button')), `${scheme}: Escape closes the Tools menu and returns focus`);
+      ok(await p.evaluate(() => document.getElementById('toolsMenuButton').getAttribute('aria-expanded') === 'false' && document.activeElement === document.getElementById('toolsMenuButton')), `${scheme}: Escape closes the Tools menu and returns focus`);
       await ctx.close();
     }
   }

@@ -490,28 +490,33 @@ function getContrastRatio(rgb1, rgb2) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-// Check white text on green button: #047857 (Our WCAG AA color) vs #10B981 (Old failing color)
-const whiteRGB = [255, 255, 255];
-const oldGreenRGB = [16, 185, 129];   // #10B981
-const newGreenRGB = [4, 120, 87];     // #047857
-const primaryBlueRGB = [37, 99, 235]; // #2563EB
-
-const oldContrast = getContrastRatio(oldGreenRGB, whiteRGB);
-const newContrast = getContrastRatio(newGreenRGB, whiteRGB);
-const primaryContrast = getContrastRatio(primaryBlueRGB, whiteRGB);
-
-assert(oldContrast < 3.0, `Confirmed old green (#10B981) had insufficient contrast: ${oldContrast.toFixed(2)}:1 (Fails WCAG AA)`);
-assert(newContrast >= 4.5, `New green button color (#047857) satisfies WCAG AA normal text criteria: ${newContrast.toFixed(2)}:1 (>= 4.5:1)`);
-assert(primaryContrast >= 4.0, `Primary button color (#2563EB) satisfies UI component contrast: ${primaryContrast.toFixed(2)}:1 (>= 3:1)`);
-
-// Verify dark theme --accent-green compliance directly from style.css
-const styleCssContent = fs.readFileSync(path.join(repoRoot, 'css', 'style.css'), 'utf8');
-const darkThemeMatch = styleCssContent.match(/\[data-theme="dark"\]\s*\{([^}]+)\}/);
-assert(Boolean(darkThemeMatch), 'CSS contains [data-theme="dark"] ruleset');
-const darkGreenMatch = darkThemeMatch ? darkThemeMatch[1].match(/--accent-green:\s*([^;]+);/) : null;
-assert(Boolean(darkGreenMatch), 'Dark theme defines --accent-green variable');
-const darkGreenVal = darkGreenMatch ? darkGreenMatch[1].trim() : '';
-assert(darkGreenVal === '#047857', `Dark theme --accent-green is accessible (#047857, actual: ${darkGreenVal})`);
+// The design tokens live in css/app.css. Every text, control and status pairing is checked
+// against WCAG AA in the light and the dark theme, straight from the stylesheet.
+const appCss = fs.readFileSync(path.join(repoRoot, 'css', 'app.css'), 'utf8');
+const tokenBlock = selector => {
+  const start = appCss.indexOf(selector);
+  assert(start >= 0, `app.css defines ${selector}`);
+  return appCss.slice(start, appCss.indexOf('\n}', start));
+};
+const parseTokens = block => Object.fromEntries([...block.matchAll(/(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{6})\b/g)].map(m => [m[1], m[2]]));
+const hexToRgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+const lightTokens = parseTokens(tokenBlock(':root {\n  color-scheme: light;'));
+const darkTokens = Object.assign({}, lightTokens, parseTokens(tokenBlock("[data-theme='dark'] {")));
+const PAIRS = [
+  ['--c-text', '--c-surface', 4.5], ['--c-text-2', '--c-surface', 4.5], ['--c-text-3', '--c-surface', 4.5], ['--c-text-3', '--c-bg', 4.5],
+  ['--c-text-3', '--c-surface-2', 4.5], ['--c-on-accent', '--c-accent', 4.5], ['--c-accent', '--c-surface', 4.5], ['--c-accent', '--c-accent-soft', 4.5],
+  ['--c-field-line', '--c-surface', 3], ['--c-field-line', '--c-bg', 3],
+  ['--c-success', '--c-success-soft', 4.5], ['--c-warning', '--c-warning-soft', 4.5], ['--c-danger', '--c-danger-soft', 4.5],
+  ['--c-success', '--c-surface', 4.5], ['--c-danger', '--c-surface', 4.5]
+];
+for (const [themeName, tokens] of [['light', lightTokens], ['dark', darkTokens]]) {
+  for (const [fg, bg, min] of PAIRS) {
+    assert(tokens[fg] && tokens[bg], `${themeName} theme defines ${fg} and ${bg}`);
+    const ratio = getContrastRatio(hexToRgb(tokens[fg]), hexToRgb(tokens[bg]));
+    assert(ratio >= min, `${themeName}: ${fg} on ${bg} is ${ratio.toFixed(2)}:1 (needs ${min}:1)`);
+  }
+}
+assert(Boolean(darkTokens['--c-bg']) && darkTokens['--c-bg'] !== lightTokens['--c-bg'], 'Dark theme redefines the page surface');
 
 console.log('');
 
@@ -780,13 +785,13 @@ console.log('');
 console.log('SUITE 13: Strict Prohibition of Support Popups, Modals, Nags, or Timed Overlays');
 
 // 1. Check style.css has zero modal rules
-const styleContent = fs.readFileSync(path.join(repoRoot, 'css', 'style.css'), 'utf8');
-assert(!styleContent.includes('.modal-overlay'), 'style.css contains NO .modal-overlay selector');
-assert(!styleContent.includes('.modal-card'), 'style.css contains NO .modal-card selector');
-assert(!styleContent.includes('.modal-close-btn'), 'style.css contains NO .modal-close-btn selector');
-assert(!styleContent.includes('.btn-chai'), 'style.css contains NO .btn-chai selector');
-assert(!styleContent.includes('.nav-support-link'), 'style.css contains NO .nav-support-link selector');
-assert(!styleContent.includes('--razorpay'), 'style.css contains NO --razorpay variables');
+const styleContent = fs.readFileSync(path.join(repoRoot, 'css', 'app.css'), 'utf8');
+assert(!styleContent.includes('.modal-overlay'), 'app.css contains NO .modal-overlay selector');
+assert(!styleContent.includes('.modal-card'), 'app.css contains NO .modal-card selector');
+assert(!styleContent.includes('.modal-close-btn'), 'app.css contains NO .modal-close-btn selector');
+assert(!styleContent.includes('.btn-chai'), 'app.css contains NO .btn-chai selector');
+assert(!styleContent.includes('.nav-support-link'), 'app.css contains NO .nav-support-link selector');
+assert(!styleContent.includes('--razorpay'), 'app.css contains NO --razorpay variables');
 
 // 2. Check HTML files contain NO modal HTML markup
 htmlFiles.forEach(file => {
@@ -802,7 +807,7 @@ htmlFiles.forEach(file => {
   assert(!content.includes('fa-mug-hot'), `${file} contains NO fa-mug-hot icon`);
 
   // Assert footer link exists
-  assert(content.includes('class="footer-link"'), `${file} contains .footer-link`);
+  assert(content.includes('class="site-footer__list"'), `${file} contains the footer link lists`);
 });
 
 // 3. Check JS files contain NO popups, modals, or timed donation prompts
@@ -862,7 +867,7 @@ assert(indexHtmlContent.includes('id="btnReplaceFile"'), 'index.html contains re
 assert(indexHtmlContent.includes('id="originalComparisonImage"'), 'index.html contains original comparison image (#originalComparisonImage)');
 assert(indexHtmlContent.includes('id="btnViewProcessed"'), 'index.html contains view processed toggle button (#btnViewProcessed)');
 assert(indexHtmlContent.includes('id="btnViewOriginal"'), 'index.html contains view original toggle button (#btnViewOriginal)');
-assert(indexHtmlContent.includes('checkerboard-pattern'), 'index.html contains checkerboard pattern class for transparent image viewing');
+assert(indexHtmlContent.includes('class="ws-preview checkerboard"'), 'index.html contains a checkerboard preview for transparent images');
 
 // 5. HTML verification for resume builder controls & preview modal
 const resumeHtmlContent = fs.readFileSync(path.join(repoRoot, 'resume.html'), 'utf8');
