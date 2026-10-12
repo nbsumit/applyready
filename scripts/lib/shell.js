@@ -51,7 +51,7 @@ function headerHTML(page) {
   const rel = p => href(p, prefix);
   const cur = p => (isCurrent(p, page) ? ' aria-current="page"' : '');
   const groups = TOOLS.map(g => `            <div class="menu__group">
-              <h2 class="menu__title">${esc(g.title)}</h2>
+              <p class="menu__title">${esc(g.title)}</p>
               <ul class="menu__list">
 ${g.links.map(([label, p]) => `                <li><a href="${rel(p)}"${cur(p)}>${esc(label)}</a></li>`).join('\n')}
               </ul>
