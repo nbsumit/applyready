@@ -97,12 +97,14 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
 |   |-- docx-engine.js  # Pure client-side OOXML DOCX document generator
 |   |-- keywords.js     # On-device job description keyword matching
 |   `-- resume-schema.js # Backup validation and lossless migration
-|-- scripts/            # Developer tooling: shell sync and page generators (not shipped logic)
+|-- scripts/            # Developer tooling: shell sync, page generators, enable-ads.js
 |-- favicon/            # Brand favicons, touch icons, and webmanifest
 |-- assets/             # Brand vector SVG assets
 |-- guides/             # In-depth workflow optimization guides
 |-- docs/
 |   |-- DESIGN_SYSTEM.md    # Tokens, components, rules and the tests that guard them
+|   |-- ADSENSE_READINESS.md     # What the site satisfies before an AdSense application
+|   |-- ADSENSE_AFTER_APPROVAL.md # Step by step: turn ads on after approval
 |   |-- PRODUCT_UPGRADE.md  # Architectural specification and upgrade details
 |   |-- UX_TASK_TESTS.md    # End-to-end task tests and verification records
 |   `-- SEO_SETUP.md        # Google Search Console, Bing and IndexNow setup

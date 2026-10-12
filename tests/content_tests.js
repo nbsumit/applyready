@@ -77,7 +77,20 @@ for (const f of pages) {
   const s = read(f);
   const has = s.includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle.js');
   ok(utility.has(f) ? !has : has, `${f}: AdSense loader should ${utility.has(f) ? 'not ' : ''}be present`);
-  ok(!/<ins class="adsbygoogle"/.test(s.replace(/<!--[\s\S]*?-->/g, '')), `${f}: a live ad unit is present before approval`);
+  // Ad units are placed by scripts/enable-ads.js after approval. Until then every slot is an empty placeholder;
+  // afterwards a live unit is only allowed inside a labelled slot, with a real unit id, and never in a tool.
+  const live = s.replace(/<!--[\s\S]*?-->/g, '').match(/<ins class="adsbygoogle"[^>]*>/g) || [];
+  for (const unit of live) ok(/data-ad-slot="\d{6,}"/.test(unit) && !/1234567890/.test(unit), `${f}: ad unit without a real slot id`);
+  const slots = (s.match(/<div class="ad-slot-container/g) || []).length;
+  ok(slots <= 2, `${f}: ${slots} ad slots (keep ads clearly secondary to the content)`);
+  ok(live.length <= slots, `${f}: ad unit outside a labelled slot`);
+  ok(!utility.has(f) || slots === 0, `${f}: ad slot on a page without publisher content`);
+  ok(f !== 'resume.html' || slots === 0, 'the resume builder carries no ad slots');
+  for (const m of s.matchAll(/<div class="ad-slot-container[^"]*"([^>]*)>/g)) ok(/role="complementary"/.test(m[1]) && /aria-label="Advertisement"/.test(m[1]), `${f}: ad slot is not labelled`);
+  ok(!/<section class="ws"[^>]*>(?:(?!<\/section>)[\s\S])*ad-slot-container/.test(s), `${f}: ad slot inside a tool workspace`);
+  const body = textOf(s).toLowerCase();
+  ok(!/click (on )?(the |our )?ads?\b|support us by clicking|please click/.test(body), `${f}: asks visitors to click ads`);
+  if (!utility.has(f)) for (const link of ['privacy.html', 'terms.html', 'about.html', 'contact.html']) ok(s.includes(link), `${f}: footer link to ${link}`);
 }
 
 // 5. Depth of content: guides and landing pages are not thin
