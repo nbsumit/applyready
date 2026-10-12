@@ -30,12 +30,12 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261101-1"></script>
+  <script src="js/theme.js?v=20261102-1"></script>
 
   <!-- Icons & Styles -->
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261101-1">
+  <link rel="stylesheet" href="css/app.css?v=20261102-1">
   <!-- shell:styles:end -->
 
   <!-- SoftwareApplication Schema -->
@@ -299,16 +299,7 @@
     </section>
     <!-- tool:end -->
 
-      <!-- Google AdSense Slot -->
-      <!-- Reserved Ad Slot: Below Tool Result Area -->
-    <div class="ad-slot-container ad-slot-result" role="complementary" aria-label="Advertisement">
-      <div class="ad-slot-inner">
-        <span class="ad-slot-label">Advertisement</span>
-        <!-- <ins class="adsbygoogle" data-ad-client="ca-pub-2713609207324356" data-ad-slot="1234567890" data-ad-format="auto" data-full-width-responsive="true"></ins> -->
-      </div>
-    </div>
-
-      <!-- Educational Content Section -->
+<!-- Educational Content Section -->
       <section class="section prose">
         <h2>Official Document PDF Size Limits in India</h2>
         <div class="table-wrap"><table>
@@ -348,6 +339,31 @@
           </tbody>
         </table></div>
       </section>
+
+      <section class="section prose" id="before-you-compress">
+        <h2>Before you compress: a short checklist</h2>
+        <p>Most rejected uploads fail for a small, avoidable reason. Run through these points once, and the compressed file will usually pass on the first attempt.</p>
+        <ol>
+          <li><strong>Read the portal's limit exactly.</strong> Note the unit (KB or MB), whether it is a maximum or a range, and whether the file must be a PDF. A portal that says "200 KB" means 200 KB or less, so aim a little under it.</li>
+          <li><strong>Combine pages first, compress second.</strong> If the portal takes one file for several certificates, put them in one PDF with the <a href="image-to-pdf.html">image to PDF tool</a>, then compress the result. Compressing each page separately and then joining them can push the total over the limit again.</li>
+          <li><strong>Scan for the screen, not for print.</strong> A scan at 150 to 200 DPI is easy to read on a screen and far smaller than one at 600 DPI. Grayscale is enough for marksheets that have no coloured seals.</li>
+          <li><strong>Pick the largest target that is allowed.</strong> A higher target keeps more detail. Choose the biggest preset that is still under the portal's limit, and only go lower if the result is still too large.</li>
+          <li><strong>Check the result before you upload.</strong> Open the download and zoom in on roll numbers, dates, signatures and stamps. If any of them is hard to read, a verifier will find it hard too, so try a higher target or rescan the page.</li>
+          <li><strong>Keep your original.</strong> Compression is meant for the upload copy. Store the untouched scan in a safe place for later applications and for the document verification round.</li>
+        </ol>
+        <h3>Why a PDF can stay large</h3>
+        <p>A PDF made from photos or scans is mostly picture data, and picture data can be reduced. Very large pages, many pages, or photographs taken at the full resolution of a modern phone camera are the usual causes of large files. If a file is still above the limit at the lowest target you can use, split the document into the sections the portal asks for, or retake the photos with the page filling the frame so that no pixels are wasted on the desk around it.</p>
+        <h3>What happens to your file</h3>
+        <p>The document is read, compressed and rebuilt inside your browser tab. Nothing is sent to a server, so a marksheet or identity proof never leaves your device. Closing the tab clears it.</p>
+      </section>
+
+      <!-- Reserved Ad Slot: Between Content Sections -->
+      <div class="ad-slot-container ad-slot-article" role="complementary" aria-label="Advertisement">
+        <div class="ad-slot-inner">
+          <span class="ad-slot-label">Advertisement</span>
+          <!-- AdSense Unit: In-Article -->
+        </div>
+      </div>
 
       <!-- Frequently Asked Questions (FAQ) Section -->
       <section class="faq-section">
@@ -477,8 +493,8 @@
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261101-1" defer></script>
-  <script src="js/site.js?v=20261101-1"></script>
-  <script src="js/compress-pdf.js?v=20261101-1"></script>
+  <script src="js/components.js?v=20261102-1" defer></script>
+  <script src="js/site.js?v=20261102-1"></script>
+  <script src="js/compress-pdf.js?v=20261102-1"></script>
 </body>
 </html>
