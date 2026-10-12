@@ -3,7 +3,7 @@
    checks that no page has drifted, so all pages look and behave like one product. */
 'use strict';
 
-const ASSET_VERSION = '20261101-1';
+const ASSET_VERSION = '20261102-1';
 
 const TOOLS = [
   { title: 'Image tools', links: [
