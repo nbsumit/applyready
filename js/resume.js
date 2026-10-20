@@ -972,9 +972,9 @@
           <span class="template-meta-row">
             <strong class="template-card-title">${escapeHTML(tmpl.name)}</strong>
             <span class="template-badge">${escapeHTML(tmpl.badge || 'ATS')}</span>
+            <span class="template-check" aria-hidden="true"><i class="fa-solid fa-check"></i> In use</span>
           </span>
           <span class="template-card-desc">${escapeHTML(tmpl.description)}</span>
-          <span class="template-check" aria-hidden="true"><i class="fa-solid fa-check"></i></span>
         </button>
         <button type="button" class="btn btn-sm btn-icon btn-preview-template" data-template="${key}" title="Preview ${escapeHTML(tmpl.name)}" aria-label="Full preview of ${escapeHTML(tmpl.name)}">
           <i aria-hidden="true" class="fa-regular fa-eye"></i>
@@ -1157,20 +1157,35 @@
             <input type="text" id="${id}" class="input ${cls}" placeholder="${placeholder}" value="${escapeHTML(value)}">
           </div>`;
 
+  // Entries can be folded to their title so a long history stays scannable. The folded set
+  // lives only in this page view; it survives re-rendering but is never saved.
+  const collapsedEntries = new Set();
   function entryFrame(kind, item, index, count, noun, body) {
+    const open = !collapsedEntries.has(item.id);
+    const bodyId = `entry-body-${item.id}`;
     return `<div class="entry__head dynamic-item-header">
-          <span class="entry__num" aria-hidden="true">${index + 1}</span>
-          <strong class="entry__title">${escapeHTML(entryTitle(kind, item, index))}</strong>
+          <button type="button" class="entry__toggle" aria-expanded="${open}" aria-controls="${bodyId}" data-entry-toggle="${item.id}">
+            <span class="entry__num" aria-hidden="true">${index + 1}</span>
+            <strong class="entry__title">${escapeHTML(entryTitle(kind, item, index))}</strong>
+          </button>
           ${entryActions(kind, item.id, index, count, noun)}
         </div>
-        <div class="entry__body">${body}</div>`;
+        <div class="entry__body" id="${bodyId}">${body}</div>`;
+  }
+
+  function setEntryOpen(entry, open) {
+    if (!entry) return;
+    const toggle = entry.querySelector('.entry__toggle');
+    entry.classList.toggle('is-collapsed', !open);
+    if (toggle) toggle.setAttribute('aria-expanded', String(open));
+    if (open) collapsedEntries.delete(entry.dataset.id); else collapsedEntries.add(entry.dataset.id);
   }
 
   function mountEntries(list, kind, items, noun, bodyFor) {
     list.innerHTML = '';
     items.forEach((item, index) => {
       const el = document.createElement('div');
-      el.className = 'dynamic-item entry';
+      el.className = `dynamic-item entry${collapsedEntries.has(item.id) ? ' is-collapsed' : ''}`;
       el.dataset.id = item.id;
       el.setAttribute('role', 'group');
       el.setAttribute('aria-label', `${noun[0].toUpperCase()}${noun.slice(1)} ${index + 1}`);
@@ -1499,6 +1514,39 @@
     });
   }
 
+  // One quiet line per section header says what is in it, so the outline doubles as a status view.
+  function updateSectionMeta() {
+    const t = value => (typeof value === 'string' ? value.trim() : '');
+    const count = (items, one, many) => {
+      const n = (items || []).filter(x => x && (typeof x === 'string' ? t(x) : Object.keys(x).some(k => k !== 'id' && t(x[k])))).length;
+      return n ? `${n} ${n === 1 ? one : many}` : '';
+    };
+    const p = resumeData.personal || {};
+    const words = t(resumeData.summary) ? t(resumeData.summary).split(/\s+/).length : 0;
+    const skills = resumeData.skills || {};
+    const skillCount = ['languages', 'frameworks', 'tools', 'other'].reduce((n, k) => n + t(skills[k]).split(',').filter(x => x.trim()).length, 0);
+    const academic = resumeData.academic || {};
+    const academicCount = ['publications', 'teaching', 'presentations', 'grants'].reduce((n, k) => n + (academic[k] || []).length, 0);
+    const meta = {
+      personal: t(p.fullName) || '',
+      summary: words ? `${words} words` : '',
+      experience: count(resumeData.experience, 'role', 'roles'),
+      education: count(resumeData.education, 'entry', 'entries'),
+      projects: count(resumeData.projects, 'project', 'projects'),
+      skills: skillCount ? `${skillCount} skills` : '',
+      certifications: count(resumeData.certifications, 'item', 'items'),
+      achievements: count(resumeData.achievements, 'item', 'items'),
+      volunteering: count(resumeData.volunteering, 'entry', 'entries'),
+      languages: count(resumeData.languages, 'language', 'languages'),
+      academic: academicCount ? `${academicCount} items` : ''
+    };
+    document.querySelectorAll('.accordion-meta[data-meta]').forEach(el => {
+      const text = meta[el.dataset.meta] || '';
+      el.textContent = text || 'Empty';
+      el.classList.toggle('is-empty', !text);
+    });
+  }
+
   /**
    * Render Resume Live Preview (DOM Updates)
    */
@@ -1522,6 +1570,7 @@
     }
     saveDraftToStorage();
     updatePreviewScale();
+    updateSectionMeta();
   }
 
   /**
@@ -1596,11 +1645,12 @@
     if (!experience.length && shown('experience') && !studentTemplate) add('info', 'No work experience added yet. Internships, freelance and volunteer roles count.', 'experience');
     experience.forEach((exp, index) => {
       const label = t(exp.role) || t(exp.company) || `Entry ${index + 1}`;
-      if (!t(exp.role)) add('warning', `Experience "${label}" has no job title.`, 'experience');
-      if (!t(exp.company)) add('info', `Experience "${label}" has no company or organisation.`, 'experience');
-      if (!t(exp.duration)) add('warning', `Experience "${label}" has no dates. Applicant tracking systems use dates to calculate experience.`, 'experience');
-      if (!splitBullets(exp.bulletsText).length) add('info', `Experience "${label}" has no bullet points describing your work.`, 'experience');
-      if (splitBullets(exp.bulletsText).length > 8) add('info', `Experience "${label}" has ${splitBullets(exp.bulletsText).length} bullets. Keep the strongest 3 to 6.`, 'experience');
+      const field = name => (exp.id ? `exp-${name}-${exp.id}` : undefined);
+      if (!t(exp.role)) add('warning', `Experience "${label}" has no job title.`, 'experience', field('role'));
+      if (!t(exp.company)) add('info', `Experience "${label}" has no company or organisation.`, 'experience', field('comp'));
+      if (!t(exp.duration)) add('warning', `Experience "${label}" has no dates. Applicant tracking systems use dates to calculate experience.`, 'experience', field('dur'));
+      if (!splitBullets(exp.bulletsText).length) add('info', `Experience "${label}" has no bullet points describing your work.`, 'experience', field('bul'));
+      if (splitBullets(exp.bulletsText).length > 8) add('info', `Experience "${label}" has ${splitBullets(exp.bulletsText).length} bullets. Keep the strongest 3 to 6.`, 'experience', field('bul'));
     });
 
     // Bullet quality across experience and projects
@@ -1619,7 +1669,7 @@
     // Education and skills
     const education = (data.education || []).filter(x => x && (t(x.degree) || t(x.institution)));
     if (!education.length && shown('education')) add('warning', 'Education history is empty.', 'education');
-    education.forEach(edu => { if (!t(edu.duration)) add('info', `Education "${t(edu.degree) || t(edu.institution)}" has no dates or graduation year.`, 'education'); });
+    education.forEach(edu => { if (!t(edu.duration)) add('info', `Education "${t(edu.degree) || t(edu.institution)}" has no dates or graduation year.`, 'education', edu.id ? `edu-dur-${edu.id}` : undefined); });
     const skills = data.skills || {};
     if (shown('skills') && !['languages', 'frameworks', 'tools', 'other'].some(key => t(skills[key]))) add('warning', 'Skills section is empty. Applicant tracking systems match job keywords against it.', 'skills', 'skillLanguages');
 
@@ -1671,6 +1721,16 @@
       pageEstPill.textContent = pdfPageCount ? `${pdfPageCount} PDF page${pdfPageCount > 1 ? 's' : ''}` : 'Browser PDF';
     }
 
+    const tabCount = getEl('reviewTabCount');
+    if (tabCount) {
+      const errors = issues.filter(x => x.type === 'error').length;
+      const open = errors + issues.filter(x => x.type === 'warning').length;
+      tabCount.hidden = !open;
+      tabCount.textContent = open ? String(open) : '';
+      tabCount.className = `tab-count${errors ? ' tab-count--error' : ''}`;
+      tabCount.setAttribute('aria-label', open ? `${open} to check` : '');
+    }
+
     renderKeywordMatch();
     checklist.innerHTML = '';
     if (issues.length === 0) {
@@ -1714,7 +1774,8 @@
         item.querySelector('.review-jump-btn').addEventListener('click', () => {
           // Switch to Content Tab (on a phone, to the editor as well)
           const tabEdit = getEl('tabEdit');
-          if (tabEdit && getComputedStyle(tabEdit.parentElement).display !== 'none') tabEdit.click();
+          const bar = tabEdit && tabEdit.closest('.rb-bar');
+          if (bar && getComputedStyle(bar).display !== 'none') tabEdit.click();
           const tabContent = getEl('tabContent');
           if (tabContent) tabContent.click();
 
@@ -1727,6 +1788,7 @@
                 section.classList.add('open');
                 section.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
               }
+              setEntryOpen(target.closest('.entry'), true);
               if (!iss.targetField) section.querySelector('.accordion-header').focus();
               else target.focus();
               target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1856,6 +1918,21 @@
       });
     }
 
+    // Fold or unfold an entry from its title row.
+    const formPanel = getEl('formPanel');
+    if (formPanel) formPanel.addEventListener('click', e => {
+      const toggle = e.target.closest('[data-entry-toggle]');
+      if (toggle) setEntryOpen(toggle.closest('.entry'), toggle.getAttribute('aria-expanded') !== 'true');
+    });
+    // Phone: Download is always one tap away in the bottom bar.
+    const mobileDownload = getEl('btnMobileDownload');
+    if (mobileDownload) mobileDownload.addEventListener('click', () => {
+      getEl('tabEdit').click();
+      getEl('tabDownload').click();
+      const panel = getEl('formPanel');
+      if (panel) panel.scrollIntoView({ block: 'start', behavior: 'auto' });
+      getEl('tabDownload').focus({ preventScroll: true });
+    });
     const openExport = getEl('btnOpenExport');
     if (openExport) openExport.addEventListener('click', () => { getEl('tabEdit').click(); getEl('tabReview').click(); getEl('formPanel').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
 

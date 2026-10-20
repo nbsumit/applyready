@@ -324,7 +324,9 @@
       const targetHeight = (params && params.get('height')) || (appEl && appEl.dataset.height);
 
       if (targetPreset && PRESETS[targetPreset]) {
+        initializing = true;
         applyPreset(targetPreset);
+        initializing = false;
       } else if (targetKB) {
         if (customMaxKBInput) customMaxKBInput.value = targetKB;
         if (targetWidth && customWidthInput) customWidthInput.value = targetWidth;
@@ -333,6 +335,14 @@
         updatePresetUI();
       }
     } catch (_) {}
+  }
+
+  // Settings are folded by default; anything that needs a value typed in opens them.
+  let initializing = false;
+  function revealSettings() {
+    if (initializing) return;
+    const appEl = getEl('resizerApp');
+    if (appEl && typeof CustomEvent === 'function') appEl.dispatchEvent(new CustomEvent('ws:reveal-settings'));
   }
 
   function setWorkspaceStatus(message) {
@@ -358,6 +368,7 @@
       }
       presetSelect.value = key;
     }
+    if (key === 'custom') revealSettings();
     if (key !== 'custom') {
       const preset = PRESETS[key];
       if (unitSelect) unitSelect.value = 'px';
@@ -643,6 +654,7 @@
   }
 
   function showDimError(msg, wErr, hErr) {
+    revealSettings();
     if (dimError) {
       dimError.textContent = msg;
       dimError.classList.remove('hidden');
@@ -652,6 +664,7 @@
   }
 
   function showSizeError(msg) {
+    revealSettings();
     if (sizeError) {
       sizeError.textContent = msg;
       sizeError.classList.remove('hidden');
@@ -679,6 +692,13 @@
     });
 
     const specs = getActiveSpecs();
+    const customSpec = doc ? doc.querySelector('[data-custom-spec]') : null;
+    if (customSpec) {
+      if (!customSpec.dataset.empty) customSpec.dataset.empty = customSpec.textContent;
+      const hindi = doc.documentElement.lang === 'hi';
+      const kb = specs.minKB > 0 ? `${specs.minKB}–${specs.maxKB} KB` : (hindi ? `${specs.maxKB} KB से कम` : `under ${specs.maxKB} KB`);
+      customSpec.textContent = currentPresetKey === 'custom' && specs.isValid ? `${specs.width} × ${specs.height} px · ${kb}` : customSpec.dataset.empty;
+    }
     if (specs.isValid) {
       if (specDims) specDims.textContent = `${specs.width} × ${specs.height} px`;
       if (specSize) {
@@ -722,6 +742,7 @@
         const show = el('button', d.labelShow || 'Show me');
         show.type = 'button';
         show.addEventListener('click', () => {
+          revealSettings();
           const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
           firstInvalid.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
           firstInvalid.focus({ preventScroll: true });
@@ -1639,7 +1660,7 @@
         resultTargetDims.textContent = `${specs.width} × ${specs.height} px`;
       }
       if (resultDims) {
-        resultDims.textContent = `${validationImg.naturalWidth} × ${validationImg.naturalHeight} px (Measured)`;
+        resultDims.textContent = `${validationImg.naturalWidth} × ${validationImg.naturalHeight} px, verified`;
       }
       if (resultTargetSize) {
         if (specs.minKB > 0) {
@@ -1652,7 +1673,7 @@
       const actualBytes = compressedBlob.size;
       const actualKB = (actualBytes / 1024).toFixed(2);
       if (resultFileSize) {
-        resultFileSize.textContent = `${actualBytes.toLocaleString()} bytes (${actualKB} KB, 1 KB = 1024 B)`;
+        resultFileSize.textContent = `${actualKB} KB (${actualBytes.toLocaleString()} bytes)`;
       }
 
       if (compProcessedKB) {
@@ -1667,9 +1688,9 @@
 
       if (resultStatus) {
         if (specs.minKB > 0) {
-          resultStatus.textContent = `Satisfies target range of ${specs.minKB}–${specs.maxKB} KB`;
+          resultStatus.textContent = `Within the ${specs.minKB}–${specs.maxKB} KB range, at the exact size requested.`;
         } else {
-          resultStatus.textContent = `Satisfies target of under ${specs.maxKB} KB`;
+          resultStatus.textContent = `Under the ${specs.maxKB} KB limit, at the exact size requested.`;
         }
         resultStatus.className = 'meta-stat-val status-ok';
       }

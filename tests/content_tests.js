@@ -116,6 +116,15 @@ for (const f of pages) {
   ok(!/lorem ipsum|TODO|FIXME|\[Company\]\b.*\[Role\]\b.*\[Name\]/i.test(t.replace(/\[Company\]|\[College\]|\[website\]|\[specific area\]|\[number\]|\[email\]/g, '')), `${f}: placeholder text`);
 }
 
+// 7b. Landing pages put the tool straight after the page head, before the reference content
+for (const f of pages.filter(f => /(^|\/)(resize-image-to-\d+kb|[a-z]+-photo-signature-size)\.html$/.test(f))) {
+  const s = read(f);
+  const head = s.indexOf('</header>', s.indexOf('<header class="page-head">'));
+  const tool = s.indexOf('<!-- tool:start -->');
+  const prose = s.indexOf('class="section prose"');
+  ok(head > 0 && tool > head && /^\s*$/.test(s.slice(head + '</header>'.length, tool)) && (prose < 0 || tool < prose), `${f}: the tool follows the page head, before the reference content`);
+}
+
 // 8. One design system: shared stylesheet, generated shell in sync, no inline styling, no em dash in interface chrome
 const { spawnSync } = require('node:child_process');
 for (const f of pages) {

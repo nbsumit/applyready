@@ -1,7 +1,7 @@
 /* Image workflow regression test: drives the resizer through presets, units, DPI, aspect lock, crop ratios,
    rotate, zoom, reset, retry, formats, size limits, original size, annotations, drag and drop and invalid files,
    and checks every measured result against the values the engine produced before the interface was rebuilt.
-   It uses element ids and sets selects through the DOM, so it does not depend on the layout. Chromium only. */
+   It uses element ids and sets selects through the DOM; the only layout step is opening the settings disclosure. Chromium only. */
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), crypto = require('node:crypto');
 const repo = path.resolve(__dirname, '..');
 const { chromium } = require(path.join(repo, 'node_modules/playwright'));
@@ -26,8 +26,8 @@ const EXPECTED = {
   "h": 450,
   "type": "image/jpeg",
   "dl": "Passport_Photo_350x450.jpg",
-  "status": "Satisfies target of under 50 KB",
-  "dims": "350 × 450 px (Measured)",
+  "status": "Under the 50 KB limit, at the exact size requested.",
+  "dims": "350 × 450 px, verified",
   "fmt": "JPEG",
   "limit": "Under 50 KB (51,200 bytes)",
   "bytesOk": true
@@ -47,8 +47,8 @@ const EXPECTED = {
   "h": 100,
   "type": "image/jpeg",
   "dl": "Signature_300x100.jpg",
-  "status": "Satisfies target of under 30 KB",
-  "dims": "300 × 100 px (Measured)",
+  "status": "Under the 30 KB limit, at the exact size requested.",
+  "dims": "300 × 100 px, verified",
   "fmt": "JPEG",
   "limit": "Under 30 KB (30,720 bytes)",
   "bytesOk": true
@@ -68,8 +68,8 @@ const EXPECTED = {
   "h": 240,
   "type": "image/jpeg",
   "dl": "Thumb_Impression_240x240.jpg",
-  "status": "Satisfies target range of 20–50 KB",
-  "dims": "240 × 240 px (Measured)",
+  "status": "Within the 20–50 KB range, at the exact size requested.",
+  "dims": "240 × 240 px, verified",
   "fmt": "JPEG",
   "limit": "20–50 KB (20,480 – 51,200 bytes)",
   "bytesOk": true
@@ -89,8 +89,8 @@ const EXPECTED = {
   "h": 400,
   "type": "image/jpeg",
   "dl": "Declaration_800x400.jpg",
-  "status": "Satisfies target range of 50–100 KB",
-  "dims": "800 × 400 px (Measured)",
+  "status": "Within the 50–100 KB range, at the exact size requested.",
+  "dims": "800 × 400 px, verified",
   "fmt": "JPEG",
   "limit": "50–100 KB (51,200 – 102,400 bytes)",
   "bytesOk": true
@@ -110,8 +110,8 @@ const EXPECTED = {
   "h": 400,
   "type": "image/jpeg",
   "dl": "Avatar_400x400.jpg",
-  "status": "Satisfies target of under 100 KB",
-  "dims": "400 × 400 px (Measured)",
+  "status": "Under the 100 KB limit, at the exact size requested.",
+  "dims": "400 × 400 px, verified",
   "fmt": "JPEG",
   "limit": "Under 100 KB (102,400 bytes)",
   "bytesOk": true
@@ -131,8 +131,8 @@ const EXPECTED = {
   "h": 630,
   "type": "image/jpeg",
   "dl": "Banner_1200x630.jpg",
-  "status": "Satisfies target of under 300 KB",
-  "dims": "1200 × 630 px (Measured)",
+  "status": "Under the 300 KB limit, at the exact size requested.",
+  "dims": "1200 × 630 px, verified",
   "fmt": "JPEG",
   "limit": "Under 300 KB (307,200 bytes)",
   "bytesOk": true
@@ -152,8 +152,8 @@ const EXPECTED = {
   "h": 1754,
   "type": "image/jpeg",
   "dl": "Document_1240x1754.jpg",
-  "status": "Satisfies target of under 500 KB",
-  "dims": "1240 × 1754 px (Measured)",
+  "status": "Under the 500 KB limit, at the exact size requested.",
+  "dims": "1240 × 1754 px, verified",
   "fmt": "JPEG",
   "limit": "Under 500 KB (512,000 bytes)",
   "bytesOk": true
@@ -174,8 +174,8 @@ const EXPECTED = {
   "h": 354,
   "type": "image/jpeg",
   "dl": "Custom_413x354.jpg",
-  "status": "Satisfies target of under 60 KB",
-  "dims": "413 × 354 px (Measured)",
+  "status": "Under the 60 KB limit, at the exact size requested.",
+  "dims": "413 × 354 px, verified",
   "fmt": "JPEG",
   "limit": "Under 60 KB (61,440 bytes)",
   "bytesOk": true
@@ -193,8 +193,8 @@ const EXPECTED = {
   "h": 300,
   "type": "image/jpeg",
   "dl": "Custom_300x300.jpg",
-  "status": "Satisfies target of under 40 KB",
-  "dims": "300 × 300 px (Measured)",
+  "status": "Under the 40 KB limit, at the exact size requested.",
+  "dims": "300 × 300 px, verified",
   "fmt": "JPEG",
   "limit": "Under 40 KB (40,960 bytes)",
   "bytesOk": true
@@ -255,8 +255,8 @@ const EXPECTED = {
   "h": 400,
   "type": "image/jpeg",
   "dl": "Avatar_400x400.jpg",
-  "status": "Satisfies target of under 100 KB",
-  "dims": "400 × 400 px (Measured)",
+  "status": "Under the 100 KB limit, at the exact size requested.",
+  "dims": "400 × 400 px, verified",
   "fmt": "JPEG",
   "limit": "Under 100 KB (102,400 bytes)",
   "bytesOk": true
@@ -269,8 +269,8 @@ const EXPECTED = {
   "h": 240,
   "type": "image/jpeg",
   "dl": "Thumb_Impression_240x240.jpg",
-  "status": "Satisfies target range of 20–50 KB",
-  "dims": "240 × 240 px (Measured)",
+  "status": "Within the 20–50 KB range, at the exact size requested.",
+  "dims": "240 × 240 px, verified",
   "fmt": "JPEG",
   "limit": "20–50 KB (20,480 – 51,200 bytes)",
   "bytesOk": true
@@ -287,8 +287,8 @@ const EXPECTED = {
   "h": 400,
   "type": "image/png",
   "dl": "Custom_400x400.png",
-  "status": "Satisfies target of under 20000 KB",
-  "dims": "400 × 400 px (Measured)",
+  "status": "Under the 20000 KB limit, at the exact size requested.",
+  "dims": "400 × 400 px, verified",
   "fmt": "PNG",
   "limit": "Under 20000 KB (20,480,000 bytes)",
   "bytesOk": true
@@ -300,8 +300,8 @@ const EXPECTED = {
   "h": 400,
   "type": "image/webp",
   "dl": "Custom_400x400.webp",
-  "status": "Satisfies target of under 50 KB",
-  "dims": "400 × 400 px (Measured)",
+  "status": "Under the 50 KB limit, at the exact size requested.",
+  "dims": "400 × 400 px, verified",
   "fmt": "WebP",
   "limit": "Under 50 KB (51,200 bytes)",
   "bytesOk": true
@@ -313,8 +313,8 @@ const EXPECTED = {
   "h": 400,
   "type": "image/jpeg",
   "dl": "Custom_400x400.jpg",
-  "status": "Satisfies target range of 30–60 KB",
-  "dims": "400 × 400 px (Measured)",
+  "status": "Within the 30–60 KB range, at the exact size requested.",
+  "dims": "400 × 400 px, verified",
   "fmt": "JPEG",
   "limit": "30–60 KB (30,720 – 61,440 bytes)",
   "bytesOk": true
@@ -338,8 +338,8 @@ const EXPECTED = {
   "h": 1100,
   "type": "image/jpeg",
   "dl": "Custom_900x1100.jpg",
-  "status": "Satisfies target of under 200 KB",
-  "dims": "900 × 1100 px (Measured)",
+  "status": "Under the 200 KB limit, at the exact size requested.",
+  "dims": "900 × 1100 px, verified",
   "fmt": "JPEG",
   "limit": "Under 200 KB (204,800 bytes)",
   "bytesOk": true
@@ -354,8 +354,8 @@ const EXPECTED = {
   "h": 450,
   "type": "image/jpeg",
   "dl": "Passport_Photo_Dated_350x450.jpg",
-  "status": "Satisfies target of under 50 KB",
-  "dims": "350 × 450 px (Measured)",
+  "status": "Under the 50 KB limit, at the exact size requested.",
+  "dims": "350 × 450 px, verified",
   "fmt": "JPEG",
   "limit": "Under 50 KB (51,200 bytes)",
   "bytesOk": true
@@ -391,6 +391,9 @@ const EXPECTED = {
     await page.goto(`${origin}/index.html`);
     await page.locator('#fileInput').setInputFiles({ name, mimeType: 'image/png', buffer: png });
     await page.waitForFunction(() => document.getElementById('imageToCrop') && document.getElementById('imageToCrop').cropper && !document.getElementById('btnProcess').disabled, null, { timeout: 15000 });
+    // Size, limit and format sit behind one disclosure; open it the way a person would.
+    const toggle = page.locator('.ws-customize');
+    if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
   };
   const crop = () => page.evaluate(() => { const c = document.getElementById('imageToCrop').cropper; const d = c.getData(true); const b = c.getCropBoxData(); const cv = c.getCanvasData(); return { x: d.x, y: d.y, w: d.width, h: d.height, rot: d.rotate, canvasW: Math.round(cv.width), box: [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)] }; });
   const runProc = async name => {

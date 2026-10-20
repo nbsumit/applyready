@@ -49,13 +49,13 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
 - **Transparent Review Panel**: Explainable checks for contact details, missing dates and job titles, measurable results, passive openers ("Responsible for"), first-person wording, bullet length and count, empty skills, placeholders and page count. Zero fake ATS scores or arbitrary percentages.
 - **Job Description Comparison**: Paste a job advert in the Download tab to see which of its key terms (including multi-word names such as *Power BI* or *Lean Six Sigma*) already appear in your resume and which are missing. Matching handles word forms (*reports* / *reporting*), runs entirely on the device, and the advert is never stored.
 - **Unsaved-Work Protection**: With device saving off, the page asks before closing or reloading over edits that have not been downloaded or backed up.
-- **Structured 3-Tab Editor**: Content editing, Design & Templates, and Review & Export tabs with bounded undo/redo (up to 30 states) and focus restoration.
+- **Editor and Live Preview Workspace**: Write, Style, Review and Download stages you can move between freely, an outline of sections with a status line each, collapsible entries, a review count on the Review tab, bounded undo/redo (up to 30 states) and focus restoration.
 - **Draft Persistence and JSON Backup**: Local device saving (`localStorage`) with deletion controls and versioned JSON backup and restore with schema migration.
 
 ### 3. Responsive Design and Accessible Themes
 - **Light and Dark Themes**: System-driven with manual toggle, persisted in local storage with zero theme flash.
 - **Accessibility**: High-contrast themes, visible focus, keyboard controls, and automated WCAG accessibility checks. Physical-device and assistive-technology testing remain useful.
-- **Mobile First**: Clean split view on desktop and dedicated Edit / Preview tab navigation on mobile screens.
+- **Mobile First**: Editor and sticky preview side by side on desktop; on phones an Edit / Preview / Download bar, sticky tool actions and full-width layouts designed from 320 px up.
 
 ---
 
@@ -85,7 +85,7 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
 |-- sitemap.xml         # Canonical Public URL Index
 |-- CNAME               # Custom Domain: applyready.in
 |-- css/
-|   |-- app.css         # The whole interface: tokens, controls, tool workspace, resume builder shell
+|   |-- app.css         # The whole interface: tokens, shell, controls, tool workspace, reading pages, resume builder
 |   `-- document.css    # Resume sheet, templates and print layout (resume.html only)
 |-- js/
 |   |-- site.js         # Header, navigation, theme, toasts, confirm dialog
@@ -107,7 +107,9 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
 |   |-- ADSENSE_AFTER_APPROVAL.md # Step by step: turn ads on after approval
 |   |-- PRODUCT_UPGRADE.md  # Architectural specification and upgrade details
 |   |-- UX_TASK_TESTS.md    # End-to-end task tests and verification records
-|   `-- SEO_SETUP.md        # Google Search Console, Bing and IndexNow setup
+|   |-- UI_UX_REBUILD_PLAN.md # Why the interface was rebuilt and which contracts it preserves
+|   |-- SEO_SETUP.md        # Google Search Console, Bing and IndexNow setup
+|   `-- archive/            # Earlier interface audits and plans, kept as history
 `-- tests/
     |-- run_tests.js         # Node.js unit suite (438 assertions)
     |-- regression_tests.js  # Behaviour regression checks (46)
@@ -133,7 +135,7 @@ The unit suite in `tests/run_tests.js` covers 14 test suites and 438 assertions,
 - Sitemap XML validity, canonical link consistency, and robots.txt rules.
 - Responsive styling, focus preservation, and WCAG AA color contrast ratios.
 
-For the workspace changes and current verification workflow, see [docs/WORKSPACE_REFRESH.md](docs/WORKSPACE_REFRESH.md) and [docs/PROFESSIONAL_WORKSPACE.md](docs/PROFESSIONAL_WORKSPACE.md). The additional behavior and browser suites validate actual exports, draft recovery, responsive layouts, editable presets, original-size compression, and accessibility.
+For the current interface, see [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) and [docs/UI_UX_REBUILD_PLAN.md](docs/UI_UX_REBUILD_PLAN.md). The additional behavior and browser suites validate actual exports, draft recovery, responsive layouts, editable presets, original-size compression, and accessibility.
 
 Run the complete checks with `npm ci`, `npm test`, `npx playwright install chromium`, and `npm run test:browser`. Browser verification requires Poppler (`pdftotext`, `pdfinfo`) and `unzip`; CI installs these and retains screenshots and exported documents. This includes 60 long PDF cases across all templates, paper sizes, and font families. If Playwright's bundled browser is not installed, set `BROWSER_EXECUTABLE_PATH` to a local Chromium. `npm run test:firefox` runs the UI and smoke tests in Firefox (`npx playwright install firefox`). To run the same browser suites in Google Chrome or Microsoft Edge, point `BROWSER_EXECUTABLE_PATH` at that browser's binary. The interface was rebuilt as one design system; its tokens, components and rules are in `docs/DESIGN_SYSTEM.md`. Shared page chrome and the tool pages are generated by `scripts/sync-shell.js`, `scripts/build-image-pages.js` and `scripts/build-tool-pages.js` (`node scripts/sync-shell.js --check` verifies every page is in sync).
 

@@ -90,11 +90,11 @@
   <link rel="manifest" href="../favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="../js/theme.js?v=20261102-1"></script>
+  <script src="../js/theme.js?v=20261120-1"></script>
 
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20261102-1">
+  <link rel="stylesheet" href="../css/app.css?v=20261120-1">
   <!-- shell:styles:end -->
 
   <!-- Google AdSense -->
@@ -110,48 +110,49 @@
     <div class="site-header__inner">
       <a class="brand" href="../" aria-label="ApplyReady home">
         <img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28">
-        <span>ApplyReady</span>
+        <span class="brand__name">ApplyReady</span>
       </a>
       <nav class="site-nav" id="siteNav" aria-label="Main">
         <ul class="site-nav__list">
           <li class="site-nav__item">
             <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
             <div class="menu" id="toolsMenu" hidden>
-            <div class="menu__group">
+              <div class="menu__group menu__group--tools">
               <p class="menu__title">Image tools</p>
               <ul class="menu__list">
-                <li><a href="../">Image resizer</a></li>
-                <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
-                <li><a href="../image-to-pdf.html">Image to PDF</a></li>
-                <li><a href="../compress-pdf.html">Compress PDF</a></li>
-                <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+                <li><a class="menu__item" href="../"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixels and KB limits</span></span></a></li>
+                <li><a class="menu__item" href="../signature-cleaner.html"><i class="fa-solid fa-signature menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper, dark ink</span></span></a></li>
+                <li><a class="menu__item" href="../passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print</span><span class="menu__desc">A printable sheet of copies</span></span></a></li>
               </ul>
-            </div>
-            <div class="menu__group">
-              <p class="menu__title">Exam sizes</p>
+              <p class="menu__title">PDF tools</p>
               <ul class="menu__list">
+                <li><a class="menu__item" href="../image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans</span></span></a></li>
+                <li><a class="menu__item" href="../compress-pdf.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Fit a portal size limit</span></span></a></li>
+              </ul>
+              </div>
+              <div class="menu__group menu__group--refs">
+              <p class="menu__title">Exam requirements</p>
+              <ul class="menu__list menu__list--exams">
                 <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
                 <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
                 <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
                 <li><a href="../neet-photo-signature-size.html">NEET</a></li>
                 <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
               </ul>
-            </div>
-            <div class="menu__group">
-              <p class="menu__title">Resize to KB</p>
-              <ul class="menu__list">
+              <p class="menu__title">Resize to a file size</p>
+              <ul class="menu__list menu__list--sizes">
                 <li><a href="../resize-image-to-10kb.html">10 KB</a></li>
                 <li><a href="../resize-image-to-20kb.html">20 KB</a></li>
                 <li><a href="../resize-image-to-50kb.html">50 KB</a></li>
                 <li><a href="../resize-image-to-100kb.html">100 KB</a></li>
                 <li><a href="../resize-image-to-200kb.html">200 KB</a></li>
               </ul>
-            </div>
+              </div>
             </div>
           </li>
           <li><a class="site-nav__link" href="../resume.html">Resume builder</a></li>
           <li><a class="site-nav__link" href="../guides/" aria-current="page">Guides</a></li>
-          <li><a class="site-nav__link" href="../hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+          <li class="site-nav__lang"><a class="site-nav__link" href="../hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
@@ -280,33 +281,38 @@
   <footer class="site-footer">
     <div class="site-footer__inner">
       <div class="site-footer__brand">
-        <a class="brand" href="../"><img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
-        <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
+        <a class="brand" href="../"><img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
+        <p>Photos, signatures, PDFs and resumes, prepared to the exact requirement. Everything runs in your browser. Files are never uploaded.</p>
       </div>
-      <div>
-        <h2 class="site-footer__title">Tools</h2>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Image tools</h2>
         <ul class="site-footer__list">
           <li><a href="../">Image resizer</a></li>
           <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="../resize-image-to-20kb.html">Resize to 20 KB</a></li>
+          <li><a href="../resize-image-to-50kb.html">Resize to 50 KB</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">PDF and resume</h2>
+        <ul class="site-footer__list">
           <li><a href="../image-to-pdf.html">Image to PDF</a></li>
           <li><a href="../compress-pdf.html">Compress PDF</a></li>
-          <li><a href="../passport-photo-print.html">Passport photo print</a></li>
           <li><a href="../resume.html">Resume builder</a></li>
         </ul>
       </div>
-      <div>
-        <h2 class="site-footer__title">Exam sizes</h2>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Exam requirements</h2>
         <ul class="site-footer__list">
           <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
           <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
           <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
           <li><a href="../neet-photo-signature-size.html">NEET</a></li>
           <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
-          <li><a href="../resize-image-to-20kb.html">Resize to 20KB</a></li>
-          <li><a href="../resize-image-to-50kb.html">Resize to 50KB</a></li>
         </ul>
       </div>
-      <div>
+      <div class="site-footer__col">
         <h2 class="site-footer__title">ApplyReady</h2>
         <ul class="site-footer__list">
           <li><a href="../guides/">Guides</a></li>
@@ -318,11 +324,11 @@
         </ul>
       </div>
     </div>
-    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Files are processed on your device.</span></div>
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="../js/components.js?v=20261102-1" defer></script>
-  <script src="../js/site.js?v=20261102-1"></script>
+  <script src="../js/components.js?v=20261120-1" defer></script>
+  <script src="../js/site.js?v=20261120-1"></script>
 </body>
 </html>

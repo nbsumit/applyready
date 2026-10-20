@@ -117,42 +117,49 @@ const server = http.createServer((req, res) => {
   console.log(`✓ ${pages.length} pages: icons use the 4-size scale; fields and buttons use the control heights (desktop and phone)`);
 
   // 2. Custom select with a mouse and with the keyboard, at phone and desktop sizes.
+  //    The crop-shape menu is the longest select in the image settings.
   for (const [width, height] of [[390, 780], [1280, 900]]) {
     const { context, page } = await open(width, height);
     await page.goto(`${origin}/index.html`);
-    const trigger = page.locator('.select-btn').first();
+    await page.locator('.ws-customize').click();
+    const trigger = page.locator('#aspectRatioSelect').locator('xpath=..').locator('.select-btn');
     await trigger.scrollIntoViewIfNeeded();
     await trigger.click();
     const list = page.locator('.select-list:not([hidden])');
-    ok(await list.isVisible(), `${width}: opening the preset menu shows its options`);
+    ok(await list.isVisible(), `${width}: opening the crop menu shows its options`);
     const box = await list.boundingBox();
     ok(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height, `${width}: menu stays inside the viewport`);
-    ok(await list.locator('[role=option]').count() >= 7, `${width}: all presets are listed`);
+    ok(await list.locator('[role=option]').count() === 6, `${width}: all crop shapes are listed`);
     ok(await list.locator('[role=option][aria-selected=true]').count() === 1, `${width}: exactly one option is marked selected`);
-    await list.locator('[role=option]', { hasText: 'Passport Photo' }).click();
-    ok(await page.locator('#presetSelect').inputValue() === 'passport', `${width}: clicking an option changes the preset`);
+    await list.locator('[role=option]', { hasText: 'Square (1:1)' }).click();
+    ok(await page.locator('#aspectRatioSelect').inputValue() === '1:1', `${width}: clicking an option changes the value`);
     ok(await page.locator('.select-list:not([hidden])').count() === 0, `${width}: menu closes after choosing`);
     ok(await trigger.evaluate(el => el === document.activeElement), `${width}: focus returns to the trigger`);
-    ok((await trigger.textContent()).includes('Passport'), `${width}: trigger shows the chosen value`);
-    ok(await page.locator('#customWidth').inputValue() === '350', `${width}: preset dimensions are applied`);
+    ok((await trigger.textContent()).includes('Square'), `${width}: trigger shows the chosen value`);
     // keyboard: open, move, choose, then escape
     await trigger.focus();
     await page.keyboard.press('ArrowDown');
     ok(await page.locator('.select-list:not([hidden])').isVisible(), `${width}: ArrowDown opens the menu`);
     await page.keyboard.press('ArrowDown');
     await page.keyboard.press('Enter');
-    ok(await page.locator('#presetSelect').inputValue() === 'signature', `${width}: arrow keys and Enter choose an option`);
+    ok(await page.locator('#aspectRatioSelect').inputValue() === '4:3', `${width}: arrow keys and Enter choose an option`);
     await page.keyboard.press('Space');
     ok(await page.locator('.select-list:not([hidden])').isVisible(), `${width}: Space opens the menu`);
     await page.keyboard.press('Escape');
     ok(await page.locator('.select-list:not([hidden])').count() === 0, `${width}: Escape closes the menu`);
     ok(await trigger.evaluate(el => el === document.activeElement), `${width}: Escape keeps focus on the trigger`);
     await page.keyboard.press('End'); await page.keyboard.press('Enter');
-    ok(await page.locator('#presetSelect').inputValue() === 'document', `${width}: End jumps to the last option`);
+    ok(await page.locator('#aspectRatioSelect').inputValue() === 'free', `${width}: End jumps to the last option`);
     // Tab leaves the control without trapping focus
     await trigger.focus(); await page.keyboard.press('ArrowDown'); await page.keyboard.press('Tab');
     ok(await page.locator('.select-list:not([hidden])').count() === 0, `${width}: Tab closes the menu`);
     ok(await page.evaluate(() => document.activeElement !== document.body), `${width}: Tab keeps focus in the page`);
+    // The requirement list is a set of toggle buttons; choosing one applies its values and is announced.
+    const passport = page.locator('.choice[data-preset="passport"]');
+    await passport.click();
+    ok(await page.locator('#presetSelect').inputValue() === 'passport' && await passport.getAttribute('aria-pressed') === 'true', `${width}: choosing a requirement selects it`);
+    ok(await page.locator('#customWidth').inputValue() === '350' && await page.locator('#customHeight').inputValue() === '450', `${width}: requirement dimensions are applied`);
+    ok(await page.locator('.choice[aria-pressed="true"]').count() === 1, `${width}: exactly one requirement is pressed`);
     await context.close();
   }
   // Resume font and paper menus use the same control
@@ -329,11 +336,14 @@ const server = http.createServer((req, res) => {
     await page.locator('#cropperActiveArea:not(.hidden)').waitFor();
     const summary = async () => (await page.locator('#processSummary').innerText()).replace(/\s+/g, ' ').trim();
     ok(/350 × 350 px/.test(await summary()) && /under 50 KB/.test(await summary()), `summary names the output before processing (${await summary()})`);
-    await page.locator('#presetSelect').selectOption('passport');
+    await page.locator('.choice[data-preset="passport"]').click();
     ok(/350 × 450 px/.test(await summary()), `summary follows the preset (${await summary()})`);
+    ok(await page.locator('#resizerApp').getAttribute('data-settings') === 'closed', 'a chosen requirement keeps the detailed settings folded');
+    await page.locator('.ws-customize').click();
     await page.locator('#customWidth').fill('5');
     await page.locator('#customWidth').dispatchEvent('input');
     ok(await page.locator('#btnProcess').isDisabled(), 'an invalid width disables the action');
+    ok(await page.locator('.choice[data-preset="custom"]').getAttribute('aria-pressed') === 'true' && await page.locator('.choice[data-preset="passport"]').getAttribute('aria-pressed') === 'false', 'editing a value moves the requirement to Custom size');
     ok(/Fix the setting/.test(await summary()), 'summary says why the action is disabled');
     const gap = await page.evaluate(() => document.getElementById('dimError').getBoundingClientRect().top - document.getElementById('customWidth').getBoundingClientRect().bottom);
     ok(gap >= 0 && gap < 40, `the width error sits right under the field (${Math.round(gap)} px)`);
@@ -366,9 +376,10 @@ const server = http.createServer((req, res) => {
 
     // Exam page: the preset switch shows which preset is in use
     await page.goto(`${origin}/ssc-photo-signature-size.html`);
-    ok(await page.locator('.chip[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'true', 'SSC photo preset is marked as selected on load');
-    await page.locator('.chip[data-preset="ssc-signature"]').click();
-    ok(await page.locator('.chip[data-preset="ssc-signature"]').getAttribute('aria-pressed') === 'true' && await page.locator('.chip[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
+    ok(await page.locator('.choice[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'true', 'SSC photo preset is marked as selected on load');
+    await page.locator('.choice[data-preset="ssc-signature"]').click();
+    ok(await page.locator('.choice[data-preset="ssc-signature"]').getAttribute('aria-pressed') === 'true' && await page.locator('.choice[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
+    ok(await page.locator('.choice').count() === 3, 'an exam page offers only that exam\'s photo, signature and a custom size');
 
     // Resume: example text never looks like a value
     await page.goto(`${origin}/resume.html`);
@@ -401,6 +412,71 @@ const server = http.createServer((req, res) => {
   }
   console.log('✓ Output summary, inline errors, compress target status, phone reveal, preset state, placeholders, field contrast, menu focus');
 
+
+  // 9. Interactions introduced by the interface rebuild.
+  {
+    const { context, page } = await open(1280, 900);
+    const pngOf = async (w, h) => Buffer.from(await page.evaluate(([w, h]) => {
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+      x.fillStyle = '#345'; x.fillRect(0, 0, w, h); x.fillStyle = '#fc0'; x.fillRect(10, 10, w / 3, h / 3);
+      return c.toDataURL('image/png').split(',')[1];
+    }, [w, h]), 'base64');
+    await page.goto(`${origin}/image-to-pdf.html`);
+    await page.locator('#imgPdfFileInput').setInputFiles([{ name: 'wide.png', mimeType: 'image/png', buffer: await pngOf(1200, 600) }, { name: 'tall.png', mimeType: 'image/png', buffer: await pngOf(600, 900) }]);
+    await page.locator('.page-row').nth(1).waitFor();
+    const mediaBoxes = async () => page.evaluate(async () => { const t = await fetch(document.getElementById('btnDownloadPdf').href).then(r => r.text()); return [...t.matchAll(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/g)].map(m => Number(m[1]) > Number(m[2]) ? 'landscape' : 'portrait'); });
+    await page.locator('#btnConvertToPdf').click();
+    await page.locator('#pdfResultArea:not(.hidden)').waitFor();
+    ok(JSON.stringify(await mediaBoxes()) === '["landscape","portrait"]', 'image to PDF: pages follow each image by default');
+    await page.locator('.page-row').first().locator('.btn-rotate').click();
+    ok(await page.locator('#pdfResultArea').isHidden(), 'image to PDF: changing a page hides the stale PDF');
+    ok(await page.evaluate(() => document.activeElement && document.activeElement.classList.contains('btn-rotate')), 'image to PDF: focus stays on the rotate button');
+    await page.locator('.page-row').first().locator('.btn-move-down').click();
+    ok((await page.locator('.page-row__name').first().textContent()).includes('tall'), 'image to PDF: moving a page reorders the list');
+    ok(await page.evaluate(() => document.activeElement && document.activeElement.closest('.page-row') === document.querySelectorAll('.page-row')[1]), 'image to PDF: focus follows the moved page');
+    await page.locator('#btnConvertToPdf').click();
+    await page.locator('#pdfResultArea:not(.hidden)').waitFor();
+    ok(JSON.stringify(await mediaBoxes()) === '["portrait","portrait"]', 'image to PDF: a rotated landscape image becomes a portrait page');
+    await page.locator('#pageSizeSelect').selectOption('letter');
+    ok(await page.locator('#pdfResultArea').isHidden(), 'image to PDF: changing page setup hides the stale PDF');
+
+    // Landing pages: the tool comes before the reference content
+    for (const file of ['ssc-photo-signature-size.html', 'resize-image-to-20kb.html', 'hi/ibps-photo-signature-size.html']) {
+      await page.goto(`${origin}/${file}`);
+      const before = await page.evaluate(() => { const ws = document.getElementById('resizerApp').getBoundingClientRect().top; const prose = document.querySelector('main .prose'); return !prose || ws < prose.getBoundingClientRect().top; });
+      ok(before, `${file}: the tool appears before the reference content`);
+    }
+
+    // Resume: fold an entry, Fix focuses the exact field even inside a folded entry
+    await page.goto(`${origin}/resume.html`);
+    await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    await page.reload();
+    await page.locator('#sec-experience .accordion-header').click();
+    await page.locator('#btnAddExperience').click();
+    const entry = page.locator('#experienceList .entry').first();
+    await entry.locator('.item-company').fill('Fold Test Ltd');
+    await entry.locator('.entry__toggle').click();
+    ok(await entry.locator('.entry__body').isHidden() && await entry.locator('.entry__toggle').getAttribute('aria-expanded') === 'false', 'resume: an entry folds to its title');
+    ok((await page.locator('#sec-experience .accordion-meta').textContent()).includes('1 role'), 'resume: the section header counts its entries');
+    await page.locator('#tabReview').click();
+    ok(await page.locator('#reviewTabCount').isVisible(), 'resume: the Review tab shows how many findings are open');
+    const fix = page.locator('#reviewChecklist .review-jump-btn[data-target^="exp-role-"]').first();
+    ok(await fix.count() === 1, 'resume: a missing job title points at that entry');
+    await fix.click();
+    await page.waitForTimeout(400);
+    ok(await page.evaluate(() => document.activeElement && /^exp-role-/.test(document.activeElement.id)), 'resume: Fix focuses the job title field of the entry');
+    ok(await entry.locator('.entry__body').isVisible(), 'resume: Fix unfolds the entry it points at');
+    await context.close();
+
+    // Phone: Download is one tap away from the editor
+    const phone = await open(390, 844, true);
+    await phone.page.goto(`${origin}/resume.html`);
+    await phone.page.locator('#tabPreview').click();
+    await phone.page.locator('#btnMobileDownload').click();
+    ok(await phone.page.locator('#viewDownload').isVisible() && await phone.page.locator('#btnDownloadPDF').isVisible(), 'resume on a phone: Download opens the download step');
+    await phone.context.close();
+  }
+  console.log('✓ Rebuild interactions: PDF page rotation, stale results, focus after reorder, tool order, entry folding, exact-field Fix, phone Download');
 
   await browser.close();
   server.close();

@@ -30,12 +30,12 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261102-1"></script>
+  <script src="js/theme.js?v=20261120-1"></script>
 
   <!-- Icons & Styles -->
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261102-1">
+  <link rel="stylesheet" href="css/app.css?v=20261120-1">
   <!-- shell:styles:end -->
 
   <!-- SoftwareApplication Schema -->
@@ -154,48 +154,49 @@
     <div class="site-header__inner">
       <a class="brand" href="/" aria-label="ApplyReady home">
         <img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28">
-        <span>ApplyReady</span>
+        <span class="brand__name">ApplyReady</span>
       </a>
       <nav class="site-nav" id="siteNav" aria-label="Main">
         <ul class="site-nav__list">
           <li class="site-nav__item">
             <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
             <div class="menu" id="toolsMenu" hidden>
-            <div class="menu__group">
+              <div class="menu__group menu__group--tools">
               <p class="menu__title">Image tools</p>
               <ul class="menu__list">
-                <li><a href="/">Image resizer</a></li>
-                <li><a href="signature-cleaner.html">Signature cleaner</a></li>
-                <li><a href="image-to-pdf.html">Image to PDF</a></li>
-                <li><a href="compress-pdf.html" aria-current="page">Compress PDF</a></li>
-                <li><a href="passport-photo-print.html">Passport photo print</a></li>
+                <li><a class="menu__item" href="/"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixels and KB limits</span></span></a></li>
+                <li><a class="menu__item" href="signature-cleaner.html"><i class="fa-solid fa-signature menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper, dark ink</span></span></a></li>
+                <li><a class="menu__item" href="passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print</span><span class="menu__desc">A printable sheet of copies</span></span></a></li>
               </ul>
-            </div>
-            <div class="menu__group">
-              <p class="menu__title">Exam sizes</p>
+              <p class="menu__title">PDF tools</p>
               <ul class="menu__list">
+                <li><a class="menu__item" href="image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans</span></span></a></li>
+                <li><a class="menu__item" href="compress-pdf.html" aria-current="page"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Fit a portal size limit</span></span></a></li>
+              </ul>
+              </div>
+              <div class="menu__group menu__group--refs">
+              <p class="menu__title">Exam requirements</p>
+              <ul class="menu__list menu__list--exams">
                 <li><a href="ssc-photo-signature-size.html">SSC</a></li>
                 <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
                 <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
                 <li><a href="neet-photo-signature-size.html">NEET</a></li>
                 <li><a href="rrb-photo-signature-size.html">RRB</a></li>
               </ul>
-            </div>
-            <div class="menu__group">
-              <p class="menu__title">Resize to KB</p>
-              <ul class="menu__list">
+              <p class="menu__title">Resize to a file size</p>
+              <ul class="menu__list menu__list--sizes">
                 <li><a href="resize-image-to-10kb.html">10 KB</a></li>
                 <li><a href="resize-image-to-20kb.html">20 KB</a></li>
                 <li><a href="resize-image-to-50kb.html">50 KB</a></li>
                 <li><a href="resize-image-to-100kb.html">100 KB</a></li>
                 <li><a href="resize-image-to-200kb.html">200 KB</a></li>
               </ul>
-            </div>
+              </div>
             </div>
           </li>
           <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
           <li><a class="site-nav__link" href="guides/">Guides</a></li>
-          <li><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+          <li class="site-nav__lang"><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
@@ -223,20 +224,13 @@
       <header class="page-head">
         <h1 class="page-title">Compress PDF to 100 KB, 200 KB, 300 KB, 500 KB Online</h1>
         <p class="page-lede">Compress scanned marksheets, degrees, caste certificates, and identity proofs to strict recruitment portal limits. Set your target size, compress in seconds, and download. 100% private in your browser.</p>
-        <p class="assurance"><i class="fa-solid fa-lock" aria-hidden="true"></i> <span><strong>Confidential certificates stay on your device.</strong> Processed 100% in local browser memory with zero server uploads.</span></p>
       </header>
 
       <!-- PDF Compressor Grid -->
     <!-- tool:start -->
-    <section class="ws" id="compressApp" data-state="empty" data-keep data-ws-file="#compressFileInfoBox" data-ws-result="#compressResultArea" data-ws-busy="#compressProgressBox" aria-label="PDF compressor">
+    <section class="ws" id="compressApp" data-state="empty" data-keep data-settings="open" data-ws-file="#compressFileInfoBox" data-ws-result="#compressResultArea" data-ws-busy="#compressProgressBox" aria-label="PDF compressor">
       <div class="ws-head">
-        <ol class="steps" aria-label="Progress">
-          <li data-step="add"><span class="steps__n" aria-hidden="true">1</span>Add file</li>
-          <li data-step="adjust"><span class="steps__n" aria-hidden="true">2</span>Adjust</li>
-          <li data-step="download"><span class="steps__n" aria-hidden="true">3</span>Download</li>
-        </ol>
-      </div>
-      <div class="ws-stage">
+        <p class="ws-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> Your document is compressed on this device. Nothing is uploaded.</p>
         <div id="compressFileInfoBox" class="filebar hidden" aria-live="polite">
           <i class="fa-regular fa-file-pdf filebar__icon" aria-hidden="true"></i>
           <span id="compressFileInfoText" class="filebar__name"></span>
@@ -245,56 +239,62 @@
             <button type="button" id="btnCompressRemove" class="btn btn-sm btn-danger-ghost" title="Remove this file">Remove</button>
           </div>
         </div>
+      </div>
+      <div class="ws-stage">
         <div id="compressDropzone" class="dropzone" role="group" aria-label="Upload a PDF to compress">
           <input type="file" id="compressFileInput" accept="application/pdf,image/jpeg,image/png" class="hidden" tabindex="-1" aria-hidden="true">
-          <i class="fa-solid fa-arrow-up-from-bracket dropzone__icon" aria-hidden="true"></i>
-          <h3 class="dropzone__title">Add a PDF or document image</h3>
-          <p class="dropzone__text">Drop your certificate PDF or photo scan here</p>
+          <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+          <h2 class="dropzone__title">Add the PDF to make smaller</h2>
+          <p class="dropzone__text">A certificate, mark sheet or scanned document. Photos of a document work too.</p>
           <button type="button" id="btnCompressBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose file</button>
-          <p class="dropzone__hint">PDF, JPG or PNG. Everything stays on your device.</p>
+          <p class="dropzone__hint">PDF, JPG or PNG.</p>
         </div>
-        <p class="ws-note">Choose a target size on the right, then press Compress.</p>
+        <div class="ws-note">
+          <div class="ws-note__body">
+            <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
+            <p class="ws-note__title">Ready to compress</p>
+            <p>Check the maximum file size on the right, then press Compress PDF.</p>
+          </div>
+        </div>
         <div id="compressProgressBox" class="ws-progress hidden" role="status">
           <div class="progress"><span id="compressProgressBar" class="progress-bar" style="width: 0%;"></span></div>
           <p id="compressProgressText" class="progress-text">Processing document…</p>
         </div>
         <div id="compressResultArea" class="ws-result hidden">
           <p id="compressStatus" class="result-status" role="status"></p>
-          <dl class="meta-stats">
-            <div class="meta-stat-item"><dt class="meta-stat-label">Original size</dt><dd class="meta-stat-val" id="statOrigSize">--</dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">Compressed size</dt><dd class="meta-stat-val status-ok" id="statCompSize">--</dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">Saved</dt><dd class="meta-stat-val" id="statReduction">--</dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">Pages</dt><dd class="meta-stat-val" id="statCompPages">--</dd></div>
-          </dl>
+          <div class="size-compare">
+            <dl class="size-compare__item"><dt class="size-compare__label">Before</dt><dd id="statOrigSize">--</dd></dl>
+            <span class="size-compare__arrow" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
+            <dl class="size-compare__item"><dt class="size-compare__label">After</dt><dd id="statCompSize">--</dd></dl>
+            <dl class="size-compare__foot"><div><dt>Reduction</dt><dd id="statReduction">--</dd></div><div><dt>Pages</dt><dd id="statCompPages">--</dd></div></dl>
+          </div>
           <div class="ws-result__actions">
             <a id="btnDownloadCompressedPdf" class="btn btn-primary btn-lg" href="#" download="Compressed_Document.pdf"><i class="fa-solid fa-download" aria-hidden="true"></i> Download compressed PDF</a>
-            <a href="image-to-pdf.html" class="btn btn-lg"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Combine images to PDF</a>
+            <a href="image-to-pdf.html" class="btn btn-lg"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Combine images into a PDF</a>
           </div>
         </div>
       </div>
       <div class="ws-side">
-        <h2 class="ws-side__title">Target size</h2>
-        <div class="field">
-          <span class="field-label" id="targetKbLabel">Keep the file under</span>
-          <div class="chips" role="group" aria-labelledby="targetKbLabel">
-            <button type="button" class="chip preset-kb-btn" data-kb="100" aria-pressed="false">100 KB</button>
-            <button type="button" class="chip preset-kb-btn active" data-kb="200" aria-pressed="true">200 KB <span class="chip-sub">popular</span></button>
-            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">UPSC</span></button>
-            <button type="button" class="chip preset-kb-btn" data-kb="500" aria-pressed="false">500 KB</button>
+        <div class="ws-section">
+          <h2 class="ws-section__title" id="targetKbLabel">Maximum file size</h2>
+          <div class="target-grid" role="group" aria-labelledby="targetKbLabel">
+            <button type="button" class="chip preset-kb-btn" data-kb="100" aria-pressed="false">100 KB <span class="chip-sub">strict portals</span></button>
+            <button type="button" class="chip preset-kb-btn active" data-kb="200" aria-pressed="true">200 KB <span class="chip-sub">most common</span></button>
+            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">UPSC documents</span></button>
+            <button type="button" class="chip preset-kb-btn" data-kb="500" aria-pressed="false">500 KB <span class="chip-sub">larger scans</span></button>
           </div>
-        </div>
-        <div class="field">
-          <label for="targetKbInput" class="field-label">Or a custom limit</label>
-          <div class="input-unit">
-            <input type="number" id="targetKbInput" class="input" value="200" min="20" max="10000" step="10" inputmode="numeric">
-            <span class="input-unit__text" aria-hidden="true">KB</span>
+          <div class="field">
+            <label for="targetKbInput" class="field-label">Or type the limit from your form</label>
+            <div class="input-unit">
+              <input type="number" id="targetKbInput" class="input" value="200" min="20" max="10000" step="10" inputmode="numeric">
+              <span class="input-unit__text" aria-hidden="true">KB</span>
+            </div>
+            <p class="field-hint">Image quality is lowered only as far as needed to fit. Text stays sharp where it can.</p>
           </div>
-          <p class="field-hint">Image quality is lowered just enough to stay under this limit.</p>
         </div>
       </div>
       <div class="ws-action">
-        <p class="ws-action__need">Add a file to continue.</p>
-        <button type="button" id="btnStartCompress" class="btn btn-primary btn-lg btn-block" disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> Compress</button>
+        <button type="button" id="btnStartCompress" class="btn btn-primary btn-lg btn-block" disabled><i class="fa-solid fa-compress" aria-hidden="true"></i> Compress PDF</button>
       </div>
     </section>
     <!-- tool:end -->
@@ -451,33 +451,38 @@
   <footer class="site-footer">
     <div class="site-footer__inner">
       <div class="site-footer__brand">
-        <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
-        <p>Small tools. A smoother next step.<br>Free to use. Your files stay on your device.</p>
+        <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
+        <p>Photos, signatures, PDFs and resumes, prepared to the exact requirement. Everything runs in your browser. Files are never uploaded.</p>
       </div>
-      <div>
-        <h2 class="site-footer__title">Tools</h2>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Image tools</h2>
         <ul class="site-footer__list">
           <li><a href="/">Image resizer</a></li>
           <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="resize-image-to-20kb.html">Resize to 20 KB</a></li>
+          <li><a href="resize-image-to-50kb.html">Resize to 50 KB</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">PDF and resume</h2>
+        <ul class="site-footer__list">
           <li><a href="image-to-pdf.html">Image to PDF</a></li>
           <li><a href="compress-pdf.html">Compress PDF</a></li>
-          <li><a href="passport-photo-print.html">Passport photo print</a></li>
           <li><a href="resume.html">Resume builder</a></li>
         </ul>
       </div>
-      <div>
-        <h2 class="site-footer__title">Exam sizes</h2>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Exam requirements</h2>
         <ul class="site-footer__list">
           <li><a href="ssc-photo-signature-size.html">SSC</a></li>
           <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
           <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
           <li><a href="neet-photo-signature-size.html">NEET</a></li>
           <li><a href="rrb-photo-signature-size.html">RRB</a></li>
-          <li><a href="resize-image-to-20kb.html">Resize to 20KB</a></li>
-          <li><a href="resize-image-to-50kb.html">Resize to 50KB</a></li>
         </ul>
       </div>
-      <div>
+      <div class="site-footer__col">
         <h2 class="site-footer__title">ApplyReady</h2>
         <ul class="site-footer__list">
           <li><a href="guides/">Guides</a></li>
@@ -489,12 +494,12 @@
         </ul>
       </div>
     </div>
-    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Files are processed on your device.</span></div>
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261102-1" defer></script>
-  <script src="js/site.js?v=20261102-1"></script>
-  <script src="js/compress-pdf.js?v=20261102-1"></script>
+  <script src="js/components.js?v=20261120-1" defer></script>
+  <script src="js/site.js?v=20261120-1"></script>
+  <script src="js/compress-pdf.js?v=20261120-1"></script>
 </body>
 </html>

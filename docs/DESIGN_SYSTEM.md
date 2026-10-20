@@ -1,76 +1,233 @@
 # ApplyReady design system
 
-The interface was rebuilt from scratch as one system. Every page uses the same tokens, the same controls and the same page patterns. The engines underneath (image processing, PDF and Word generation, resume data and templates, storage) were not touched.
+This document describes what `css/app.css`, the page generators and `js/components.js` implement
+today. The code is the source of truth: if this file and the CSS disagree, the CSS wins and this file
+is wrong. Why the interface looks this way is recorded in `docs/UI_UX_REBUILD_PLAN.md`.
+
+## Character
+
+Calm, precise, document-grade. Warm neutral "paper" greys, one ink accent, confident type, and
+structure made from spacing and rules rather than boxes. A tool should read as "give me the
+requirement and I will get the file right", not as a list of features.
 
 ## Files
 
 | File | Owns |
 |---|---|
-| `css/app.css` | The whole interface: tokens, base, layout, header and footer, buttons and fields, choice controls, menus and tabs, feedback, dialogs, data and prose, page patterns, the tool workspace, the resume builder shell, responsive rules, print resets and reduced motion. |
-| `css/document.css` | The resume sheet, its templates and the print layout. Loaded on `resume.html` only. It exists so the exported and printed resume stays byte-for-byte identical. Do not edit it for interface work. |
-| `css/vendor/icons.min.css`, `css/vendor/cropper.min.css` | Icon subset and the cropper (the cropper is restyled in `app.css`). |
+| `css/app.css` | The whole interface, in 17 numbered sections: tokens, base, layout, header, footer, buttons and fields, choice controls, tabs and disclosure, feedback, dialogs and toasts, reading content, page patterns, tool workspace, tool specifics, resume builder, responsive, print and motion. |
+| `css/document.css` | The resume paper, its templates and its print layout (resume.html only). It is the output format, not interface, and `tests/content_tests.js` pins its hash. Do not edit it for interface work. |
+| `css/vendor/icons.min.css`, `css/vendor/cropper.min.css` | Icon subset (only the classes listed in it exist) and the cropper, restyled in `app.css`. |
+| `js/site.js` | Theme, header menu and phone sheet, `ApplyReadyUI.notify` (toast), `ApplyReadyUI.reveal`, `ApplyReadyUI.confirm` (dialog). |
+| `js/components.js` | Custom select, range fill, segmented-control sync, and the workspace state machine. |
+| `scripts/lib/shell.js` | Header, Tools menu, footer and stylesheet links for every page (`node scripts/sync-shell.js`). |
+| `scripts/lib/image-workspace.js` | The image resizer workspace (home, KB pages, exam pages, Hindi pages; `node scripts/build-image-pages.js`). |
+| `scripts/build-tool-pages.js` | Signature cleaner, Image to PDF, Compress PDF and Passport photo print workspaces. |
 
-If you change a size, colour or spacing value, change its token in `css/app.css` section 0. Do not add override files and do not add inline styles to page markup. Bump `CACHE_NAME` in `sw.js` and the `?v=` query on the stylesheet links when CSS changes.
+Markup between `<!-- tool:start -->` and `<!-- tool:end -->`, and between the `shell:` markers, is
+generated. Edit the generator and re-run it; hand edits are overwritten. After CSS or JS changes bump
+`ASSET_VERSION` in `scripts/lib/shell.js` (then sync) and `CACHE_NAME` in `sw.js`.
 
-| Script | Owns |
+## Tokens (section 0)
+
+### Colour
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `--c-bg` | `#f6f6f4` | `#111111` | Page background |
+| `--c-surface` | `#ffffff` | `#1a1a19` | Panels, header, fields |
+| `--c-surface-2` | `#f1f1ee` | `#222221` | Workspace stage, hover, entry blocks |
+| `--c-surface-3` | `#e6e6e1` | `#2d2d2b` | Pressed, tracks, counters |
+| `--c-desk` | `#e9e9e4` | `#0c0c0c` | Behind paper (resume preview, print preview) |
+| `--c-line` / `--c-line-strong` | `#e4e4df` / `#cfcfc8` | `#2c2c2a` / `#3e3e3b` | Dividers / container edges |
+| `--c-field-line` | `#8a8a82` | `#77776f` | Field edges, at least 3:1 on bg, surface and surface-2 |
+| `--c-text`, `-2`, `-3` | `#191917`, `#3b3b36`, `#5f5f58` | `#ededea`, `#c8c8c2`, `#9d9d96` | Headings and values, body, secondary (all 4.5:1 or better) |
+| `--c-text-4` | `#9a9a92` | `#66665f` | Disabled only |
+| `--c-accent` (+ `-hover`, `-press`, `-soft`, `-line`) | `#3a3ab0` | `#a3a4ff` | ApplyReady ink: the primary action, selection, links, focus |
+| `--c-on-accent` | `#ffffff` | `#15153a` | Text on the accent (dark text on the light dark-theme accent) |
+| `--c-success`, `--c-warning`, `--c-danger` (+ `-soft`, `-line`) | `#1d6b3a`, `#835000`, `#b3261e` | `#73d39b`, `#eabb52`, `#ff938a` | Status only, never decoration |
+
+The dark theme is its own palette (neutral near-black, not a blue inversion). Every text, field and
+status pairing is contrast-checked from the stylesheet by `tests/run_tests.js` (suite 7).
+
+### Type
+
+Local Inter with a local Noto Devanagari companion; no network fonts.
+
+| Token | Size | Role |
+|---|---|---|
+| `--fs-xs` | 12 | Metadata, counters, captions |
+| `--fs-sm` | 13 | Helper text, footnotes |
+| `--fs-label` | 14 | Field labels, menus, compact controls, section titles inside a rail |
+| `--fs-md` | 15 | Interface text, buttons, inputs (16 on touch through `--field-fs`, which stops iOS zoom) |
+| `--fs-lg` | 16 | Lead interface text, large buttons, FAQ questions |
+| `--fs-read` | 17 | Long-form reading (16 on phones) |
+| `--fs-xl` | 19 | Panel, result and dropzone headings; page ledes |
+| `--fs-2xl` | 23 | Section headings |
+| `--fs-3xl` | 30 | Page and tool titles (26 on phones) |
+| `--fs-4xl` | 38 | Product title on the home page (28 on phones) |
+
+Weights 400, 500, 600. Line heights `--lh-tight` 1.2, `--lh-ui` 1.45, `--lh-read` 1.7. Titles of 23 px
+and up use `--ls-title` (-0.018em) and `text-wrap: balance`.
+
+### Space, controls, shape, depth, layout, motion, stacking
+
+| Group | Tokens |
 |---|---|
-| `js/site.js` | Header, navigation (desktop menu and phone sheet), theme toggle, toasts (`ApplyReadyUI.notify`), `ApplyReadyUI.reveal`, and the confirm dialog (`ApplyReadyUI.confirm`). |
-| `js/components.js` | Custom select, range, segmented control and the tool workspace state machine. |
+| Space | `--s-1`..`--s-8` = 4, 8, 12, 16, 24, 32, 48, 64 |
+| Controls | `--h-sm` 32, `--h-md` 40, `--h-lg` 48 (40 / 44 / 48 on `pointer: coarse`); `--h-header` 56 |
+| Radius | `--r-xs` 4 (tags, segments, checkboxes), `--r-sm` 6 (buttons, fields), `--r-md` 8 (panels, lists, menus), `--r-lg` 12 (dialogs), `--r-full` (switches, round markers) |
+| Elevation | `--sh-pop` (menus, select lists, toasts), `--sh-dialog`, `--sh-paper` (resume pages, printed sheets, result images). Nothing else has a shadow. |
+| Layout | `--w-read` 700, `--w-app` 1200, `--w-wide` 1440, `--w-rail` 360 (320 below 1100), `--gutter` 16 / 24 at 640 / 32 at 1100 |
+| Motion | `--ease`, `--t-fast` 120 ms, `--t-base` 180 ms; removed under `prefers-reduced-motion` |
+| Stacking | `--z-sticky` 30, `--z-header` 40, `--z-pop` 60, `--z-dialog` 80, `--z-toast` 90 |
+| Icons | `--icon` 16. Four sizes exist: 12, 16, 20, 28 (`tests/ui_tests.js` rejects others). |
 
-Shared markup (header, footer, skip link) is generated. Run `node scripts/sync-shell.js` after editing `scripts/lib/shell.js`, and `node scripts/sync-shell.js --check` in CI. The tool pages are generated from `scripts/lib/image-workspace.js` by `scripts/build-image-pages.js` and `scripts/build-tool-pages.js`. Hand edits between `<!-- tool:start -->` and `<!-- tool:end -->` are overwritten.
+Breakpoints: 1100 (narrower rail, footer wraps), 1000 (resume editor and preview side by side), 860
+(header becomes a sheet, workspace stacks), 640 (phone type scale), 560, 440, 360. Every page is
+checked for overflow at 320, 360, 375, 390, 430, 768, 1024, 1280 and 1440.
 
-## Tokens (`css/app.css`, section 0)
+## Patterns
 
-| Group | Values |
+### Shell
+- **Header** (`.site-header`): brand, Tools menu, Resume builder, Guides, हिन्दी, theme. The current
+  page gets a 2 px ink underline. Below 860 px the nav becomes a full-height sheet.
+- **Tools menu** (`.menu`): left column lists the five tools with an icon, name and one-line purpose
+  (`.menu__item`), grouped as Image tools and PDF tools; the right column holds quick routes: exam
+  requirements and file-size targets as compact link buttons. Arrow keys, Home, End and Escape work.
+- **Footer** (`.site-footer`): brand statement, four link columns (Image tools, PDF and resume, Exam
+  requirements, ApplyReady), and one base line with the privacy statement.
+
+### Page heads
+`.page-head` holds an optional `.breadcrumb-nav`, `.eyebrow`, `.page-title`, `.page-lede` and on the
+resume builder `.assurance`. The home head adds `.page-head--home` and a `.value-list`. On tool and
+landing pages the workspace comes straight after the head (`.tool-section`); reference content
+(tables, notices, FAQ, related guides) follows the tool.
+
+### Tool workspace (`.ws`)
+One frame for every tool:
+
+| Region | Class | Content |
+|---|---|---|
+| Document bar | `.ws-head` | `.ws-privacy` before a file exists, then `.filebar` (name, size, Replace, Remove); `.ws-status` on the resizer |
+| Stage | `.ws-stage` | `.dropzone`, the editor (`.ws-crop`) or preview, and the result (`.ws-result`) |
+| Rail | `.ws-side` | `.ws-section` blocks of settings |
+| Action | `.ws-action` | The one primary button and `#processSummary`; sticky at the bottom of the viewport |
+
+`components.js` sets `data-state` from what the tool script shows: `empty` (no file), `ready` (file,
+not processed), `done` (result visible), plus `data-busy` while a `data-ws-busy` element is visible.
+CSS decides the layout of each state:
+
+- **Empty**: the drop zone owns the stage; the primary action is hidden (`#btnProcess`,
+  `#btnStartCompress`), so choosing a file is the only strong action. Tools without settings before
+  a file (`data-simple-empty`) hide the rail.
+- **Ready**: editor or preview in the stage, settings in the rail, one primary action.
+- **Processing**: the action shows a spinner and `aria-busy`; the image editor is dimmed in place
+  so nothing jumps.
+- **Done**: `.verdict` (icon plus title and the requirement it meets), preview with Result /
+  Original, `.meta-stats` with the key fact first (`.meta-stat-item--key`), then Download as the
+  only primary action and "Adjust again" as secondary. Tools that keep their settings after a result
+  (`data-keep`) demote their run button to secondary.
+- **Error**: `.notice--error` at the top of the stage; field errors (`.field-error`) under the field.
+- **Warning**: `.result-status.is-warning` (Compress PDF when the limit cannot be met).
+
+Variants: `data-compact-drop` folds the drop zone into a one-line strip once files exist (Image to
+PDF). Phones: the stage comes first, the rail follows, the action is a sticky bar; in the done state
+the result actions become the sticky bar.
+
+### Requirement picker (image resizer)
+`.choice-list` of `button.choice[data-preset]` toggle buttons (`aria-pressed`), each with
+`.choice__name` and `.choice__spec` (pixels and KB). "Custom size" is always last; it is pressed as
+soon as any value is edited and its spec shows the custom values, so preset versus custom is never
+ambiguous. The native `<select id="presetSelect" data-native>` stays hidden as the value store
+(`data-native` stops it being enhanced). Detailed settings sit behind `.ws-customize`
+(`data-ws-toggle`, `data-settings="open|closed"`), which opens by itself when Custom size is chosen or a
+value needs fixing (`ws:reveal-settings` event).
+
+### Tool specifics
+- **Image to PDF**: `.pagelist` of `.page-row` tiles (3:4 thumbnail, page number, name, rotate, move
+  earlier, move later, remove). Rows on phones. Focus follows the moved page.
+- **Compress PDF**: `.target-grid` of limit choices plus a typed limit; the result is `.size-compare`
+  (Before, After, reduction, pages) under a `.result-status` verdict.
+- **Print sheet and signature**: preview on `.ws-preview--desk` or `.checkerboard`, facts in a
+  `.meta-stats--row`.
+
+### Controls
+- **Buttons**: `.btn` (secondary), `.btn-primary` (one per context), `.btn-ghost`, `.btn-link`,
+  `.btn-danger` (outline), `.btn-danger-ghost` (quiet delete, red only on hover or focus),
+  `.btn-danger-solid` (confirm dialogs only), `.btn-icon` (needs `aria-label`), sizes `.btn-sm`,
+  `.btn-lg`, `.btn-block`.
+- **Fields**: `.field` > `.field-label` (+ `.optional`), control (`.input`, `.textarea`, custom select),
+  `.field-hint`, `.field-error`. Invalid fields get a danger border and tint. `.input-unit`,
+  `.input-group`, `.field-row`, `.field-row--3`.
+- **Choice**: `.check`, `.radio`, `.switch` (native inputs drawn in CSS), the custom select (listbox with
+  arrows, Home, End, Enter, Space, Escape, type-ahead; native `<select>` keeps value and events),
+  ranges with `.range-head`, `.segmented` (`aria-pressed`) for 2 to 4 views, `.chip` for filters only.
+- **Disclosure**: `.disclosure` (`<details>`), `.ws-customize`, accordion sections in the resume.
+- **Tabs**: `.tabs` / `.tab` with an ink underline and optional `.tab-count`.
+
+### Feedback (one language)
+| State | Pattern |
 |---|---|
-| Colour | Neutrals `--c-bg`, `--c-surface`, `--c-surface-2`, `--c-surface-3`, `--c-line`, `--c-line-strong`, `--c-field-line`, `--c-text` to `--c-text-4`. One accent `--c-accent` (hover, press, soft, line, on-accent). Status `--c-success`, `--c-warning`, `--c-danger` with soft and line variants. Status colours are never decoration. |
-| Type | Inter with a Devanagari companion. `--fs-xs` 12 caption, `--fs-sm` 13 label and helper, `--fs-md` 14 interface, `--fs-lg` 16 reading and panel title, `--fs-xl` 18, `--fs-2xl` 22 section and tool title, `--fs-3xl` 28 reading title. Weights 400, 500, 600. Line heights `--lh-tight`, `--lh-ui`, `--lh-read`. |
-| Space | 4 point scale: `--s-1` to `--s-8` = 4, 8, 12, 16, 24, 32, 48, 64. |
-| Controls | `--h-sm` 32, `--h-md` 40, `--h-lg` 48 (the main action). On touch screens (`pointer: coarse`) small and medium grow to 40 and 44. `--h-header` 56. |
-| Icons | Four sizes only, set through `--icon` on the container: 12 beside small text, 16 default, 20 feature marks, 28 drop targets. |
-| Shape | `--r-sm` 6 controls, `--r-md` 8 panels, menus and dialogs, `--r-full` badges. One 1 px border width. |
-| Depth | Shadows only on menus, dropdowns, dialogs, toasts and the resume paper (`--sh-pop`, `--sh-dialog`, `--sh-paper`). Panels have a border, not a shadow. |
-| Layout | Page widths `--w-read` 720, `--w-app` 1120, `--w-wide` 1360. Gutter 16, 24 at 640, 32 at 1100. |
-| Motion | `--ease`, `--t-fast` 120 ms, `--t-base` 180 ms. Motion is functional only (state changes, menu open, progress) and is removed under `prefers-reduced-motion`. |
-| Stacking | `--z-sticky`, `--z-header`, `--z-pop`, `--z-dialog`, `--z-toast`. |
-| Breakpoints | 560 (phone), 640 (gutter), 860 (tool workspace stacks), 1000 (resume builder shows editor and preview side by side), 1360 (wide). Behaviour checked at 320, 360, 375, 390, 430, 768, 1024, 1280 and 1440. |
+| Success | `.verdict` or `.result-status` with a check icon and words |
+| Warning | `.result-status.is-warning`, `.notice--warning`, review "Worth checking" |
+| Error | `.notice--error` near what failed, `.field-error` under the field, error toast for file problems |
+| Info | `.notice--info`, review "Suggestions" |
+| Loading / processing | Button spinner plus `aria-busy`, `.progress` for long jobs, dimmed editor |
+| Disabled | `--c-text-4`, no pointer events |
+| Empty | Drop zone, `.entries:empty` message, `.empty` |
+| Selected | `aria-pressed` / `aria-selected` with an ink marker and weight, never colour alone |
+| Saving / saved | Resume `#draftStatusText` (`role="status"`) |
+| Offline | `offline.html` served by the service worker |
+| Temporary confirmation | Toast (`ApplyReadyUI.notify`) |
 
-The dark theme uses the same tokens under `[data-theme='dark']`. Text and field edges meet WCAG contrast in both themes (`tests/ui_tests.js` checks the field edge at 3:1).
+Notices are tinted blocks with a 3 px status rule, not cards. Severity is always named in text.
 
-### Interaction states
+### Reading content
+`.page--read` (700 px measure) with `.prose` at 17 px / 1.7. Tables are ruled, not boxed
+(`.table-wrap` scrolls on phones). `.callout` is a ruled aside (ink rule; `.is-warning` uses the
+warning rule). Related guides (`.guide-card-grid`, `.related-guides-grid`) are divided link rows in
+two columns, not cards. FAQ is a ruled `<details>` list. `.toolset` lists the product family after
+the home tool. Ad slots (`.ad-slot-container`) stay invisible until an ad unit exists, sit between
+content sections, never inside a workspace, and are labelled "Advertisement".
 
-Every control defines the same states from the same tokens: rest, hover (`--c-surface-2` or the accent hover), pressed, keyboard focus (a 2 px `--c-focus` outline with a soft ring, never removed), selected (`aria-pressed`, `aria-selected`, `aria-checked`, `.is-current`), disabled (`--c-text-4`, no pointer events), invalid (`aria-invalid` plus `.field-error` text under the field), success and warning (`.notice--*`, `.badge--*`, `.result-status`).
+### Resume builder (`.rb`)
+- App bar (`.rb-head`): title, one-line lede, privacy line, "Review and download".
+- Editor (`.rb-editor`): sticky stage tabs Write, Style, Review, Download (free navigation; Review
+  shows a count of open findings, red when something blocks). Write is an outline of
+  `.accordion-section`s with a status line per section (`.accordion-meta`: name, word count, number of
+  roles). Entries (`.entry`) are tinted blocks with a fold toggle (`.entry__toggle`), number, live
+  title, move, duplicate and a separated quiet delete.
+- Style: grouped template list (`.template-card` rows with thumbnail, name, badge, description,
+  "In use", full preview button), audience filters, type and page, section order.
+- Review: status line, then findings grouped as Fix before sending, Worth checking, Suggestions; each
+  says what, where and why, and Fix opens the section and entry and focuses the exact field.
+- Download: one row per format (PDF recommended, Word, plain text) with what it is for, then print,
+  then Keep your work (device draft, backup file).
+- Preview (`.rb-preview`): sticky paper on `--c-desk` with template name, page count, zoom and PDF.
+- Phones: `.rb-bar` with Edit / Preview tabs and a Download button; hidden while typing.
 
-## Components
+## Rules
 
-- **Buttons:** `.btn` is the secondary button. `.btn-primary` is the one obvious action of a context. Also `.btn-ghost`, `.btn-danger` (outline), `.btn-danger-solid` (confirmations only), `.btn-icon` (icon only, needs an `aria-label`), `.btn-link`, sizes `.btn-sm` and `.btn-lg`, `.btn-block`. A loading button keeps its width and shows `.spinner`. Delete never shares the visual weight of Add or Edit.
-- **Fields:** `.field` wraps `.field-label`, the control (`.input`, `.textarea`, `.select`), `.field-hint` and `.field-error`. Optional fields carry `<span class="optional">(optional)</span>`. Placeholders are examples ("e.g. ..."), never labels. `.input-unit` adds a unit beside a number, `.field-row` lays fields side by side and collapses on phones.
-- **Choice controls:** checkboxes (`.check`), radios (`.radio`) and switches (`.switch`) are native inputs drawn by CSS. The custom select is built by `js/components.js` from any `<select>`: the native element stays in the DOM, `value`, `selectedIndex` and `change` keep working, and the list is a keyboard-accessible listbox (arrows, Home, End, Enter, Space, Escape, type-ahead). Ranges get a live value (`.range-head`, `.range-value`). Segmented controls (`.segmented`) use `aria-pressed`.
-- **Navigation:** `.site-header` with `.site-nav`. The Tools entry is a menu (`.menu`) on desktop and a grouped sheet on phones. `.tabs` and `.tab` for in-page views, `.disclosure` for progressive disclosure (`<details>`).
-- **Page patterns:** `.page` (app width), `.page--read` (reading width), `.page--wide` (resume builder), `.page-head` with `.eyebrow`, `.page-title`, `.page-lede`. Reading content uses `.prose`, `.section`, `.table-wrap`, `.faq-*`, `.guide-card-grid`.
-- **Tool workspace (`.ws`):** every tool shares Input, Configure, Execute, Result. The script only shows and hides its own elements; `initWorkspace()` reads them (`data-ws-file`, `data-ws-result`, `data-ws-busy`) and sets `data-state="empty|ready|done"`. CSS decides what is shown in each state. On phones a sticky action bar carries the primary action, and settings fold away once a result exists. `data-settings="open|closed"` is toggled by `[data-ws-toggle]`.
-- **Results:** `.result-status` says whether the result meets the requirement, the Download button comes next, then `.meta-stats` (size, dimensions, format) as a plain list. `#processSummary` states what Process will produce, or why it is unavailable.
-- **Notices:** `.notice` with `--error`, `--warning`, `--info`, `--success` for messages tied to the task. Errors say what happened and what to do. `ApplyReadyUI.notify()` shows a toast for confirmations. `ApplyReadyUI.confirm()` is a dialog that replaces `window.confirm`.
-- **Dialogs:** `.dialog` inside `.dialog-backdrop`: focus trap, Escape closes, focus returns to the opener, always inside the visual viewport (including with the on-screen keyboard).
-- **Empty states:** `.empty` with `.empty__title`, one sentence and the next action.
-- **Resume builder (`.rb`):** four steps (Write, Style, Review, Download) as `.rb-steps`. Entries are coherent objects (`.entry`) with a numbered header, title, move up, move down and a quiet delete; optional sections are added from `.rb-add-section`. Desktop shows editor and live preview side by side, phones switch between them with a bar (`.rb-bar`). Review findings are grouped as blocking error, warning, recommendation and success (`.review-item--*`), each with where and how to fix, and a Fix button that jumps to the field.
-
-## Rules that prevent regressions
-
-- Never size an icon directly; set `--icon` on its container and use only 12, 16, 20 or 28.
-- Never use literal control heights; use `--h-sm`, `--h-md` or `--h-lg`.
-- Never put a card inside a card. Group with space and dividers; a card is for an independent object (a template, a page in a PDF, a guide link).
-- No gradients, glass effects or decorative shadows. No inline `style` in page markup.
-- No em dash in interface text. Use a comma, colon or full stop. Title separators use `|`.
-- Keep text at 12 px or more and touch targets at 40 px or more.
-- JS and markup share a contract through ids and state classes (`hidden`, `active`, `is-invalid`, `dragover`, `status-ok`, `is-warning`, `.dynamic-item`, `data-action`). Change the markup freely, but keep those hooks.
+- Change tokens, not literals. Colours, sizes, radii and shadows come from section 0 (cropper
+  internals and the workspace's dark editor background are the documented exceptions).
+- One container level per region. Group with space and rules; a bordered block is for an
+  independent object (a workspace, an entry, a page tile, a list of choices).
+- One primary button per state. Delete never has the weight of Add.
+- No gradients, glass, glows or decorative shadows. No inline `style` in page markup.
+- No em dash in interface code. Text at 12 px or more, touch targets 40 px or more.
+- Icons from the subset only, at 12, 16, 20 or 28 px.
+- Keep the hooks the scripts read: element ids, `data-preset`, `data-kb`, `data-template(-id)`,
+  `data-action`, `data-idx`, `data-goto-tab`, `data-ws-*`, and the state classes `hidden`, `active`,
+  `is-invalid`, `dragover`, `open`, `status-ok`, `is-warning`.
 
 ## Tests that guard this
 
-- `tests/ui_tests.js`: icon sizes, control heights, text floor, no native file inputs, no horizontal overflow at nine widths, axe in light and dark on every page and in result states, focus visibility, custom select keyboard behaviour, output summary, inline errors, compress target status, phone reveal, preset state, Tools menu focus.
-- `tests/browser_tests.js`: responsive layouts, image processing with real files, resume draft, import, all fifteen templates, PDF, Word and text downloads, dialogs, mobile navigation.
-- `tests/browser_smoke.js`: end to end on every tool.
-- `tests/content_tests.js`: markup, SEO, one stylesheet per page, generated shell in sync, no inline styling, no em dash in interface code, and a hash of `css/document.css` so the exported resume cannot change by accident.
-- `tests/regression_tests.js`, `tests/run_tests.js`: presets, engines and exports.
-
-Run `npm test` and `npm run test:browser`. To use an installed browser, set `BROWSER_EXECUTABLE_PATH`. `npm run test:firefox` runs the UI and smoke suites in Firefox.
+- `tests/run_tests.js` suite 7: token contrast in both themes, read from `app.css`.
+- `tests/ui_tests.js`: readable buttons, 12 px floor, icon scale, control heights, custom select,
+  requirement picker state, focus visibility, overflow at nine widths, axe in both themes (including
+  result states), inline errors, compress status, phone reveal, menu focus.
+- `tests/browser_tests.js`, `tests/image_workflow_tests.js`, `tests/resume_flow_tests.js`,
+  `tests/browser_smoke.js`: real files, exact sizes, downloads, all templates, exports, resume
+  editing, mobile navigation.
+- `tests/content_tests.js`: metadata, links, generated shell in sync, no inline styles, no em dash in
+  interface code, `document.css` hash.

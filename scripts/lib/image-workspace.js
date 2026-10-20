@@ -17,116 +17,132 @@ const PRESETS = loadPresets();
 
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-const CHIP_LABELS = {
-  passport: 'ID photo', signature: 'Signature', thumb: 'Thumb', declaration: 'Declaration', avatar: 'Profile', document: 'Document', 'web-banner': 'Web card',
-  'ssc-photo': 'Photo', 'ssc-signature': 'Signature', 'upsc-photo': 'Photo', 'upsc-signature': 'Signature', 'ibps-photo': 'Photo', 'ibps-signature': 'Signature',
-  'neet-photo': 'Photo', 'neet-signature': 'Signature', 'rrb-photo': 'Photo', 'rrb-signature': 'Signature'
+// What a person calls each requirement. Specs are added from js/presets.js.
+const CHOICE_LABELS = {
+  passport: 'ID / passport photo', signature: 'Signature', thumb: 'Thumb impression', declaration: 'Handwritten declaration', avatar: 'Profile photo', document: 'Document scan', 'web-banner': 'Social or web card',
+  'ssc-photo': 'SSC photo', 'ssc-signature': 'SSC signature', 'upsc-photo': 'UPSC photo', 'upsc-signature': 'UPSC signature (three times)', 'ibps-photo': 'IBPS photo', 'ibps-signature': 'IBPS signature',
+  'neet-photo': 'NEET photo', 'neet-signature': 'NEET signature', 'rrb-photo': 'RRB photo', 'rrb-signature': 'RRB signature'
 };
-const CHIP_LABELS_HI = {
-  passport: 'आईडी फोटो', signature: 'सिग्नेचर', thumb: 'अंगूठा', declaration: 'घोषणा पत्र', avatar: 'प्रोफ़ाइल', document: 'दस्तावेज़',
-  'ssc-photo': 'फोटो', 'ssc-signature': 'सिग्नेचर', 'upsc-photo': 'फोटो', 'upsc-signature': 'सिग्नेचर', 'ibps-photo': 'फोटो', 'ibps-signature': 'सिग्नेचर',
-  'neet-photo': 'फोटो', 'neet-signature': 'सिग्नेचर', 'rrb-photo': 'फोटो', 'rrb-signature': 'सिग्नेचर'
+const CHOICE_LABELS_HI = {
+  passport: 'आईडी / पासपोर्ट फोटो', signature: 'सिग्नेचर', thumb: 'अंगूठे का निशान', declaration: 'हस्तलिखित घोषणा', avatar: 'प्रोफ़ाइल फोटो', document: 'दस्तावेज़ स्कैन',
+  'ssc-photo': 'SSC फोटो', 'ssc-signature': 'SSC सिग्नेचर', 'upsc-photo': 'UPSC फोटो', 'upsc-signature': 'UPSC सिग्नेचर (तीन बार)', 'ibps-photo': 'IBPS फोटो', 'ibps-signature': 'IBPS सिग्नेचर',
+  'neet-photo': 'NEET फोटो', 'neet-signature': 'NEET सिग्नेचर', 'rrb-photo': 'RRB फोटो', 'rrb-signature': 'RRB सिग्नेचर'
 };
 
 const L = {
   en: {
     region: 'Image resizer and compressor',
-    steps: ['Add image', 'Adjust', 'Download'], stepsLabel: 'Progress',
+    privacy: 'Your image is processed on this device. Nothing is uploaded.',
     status: 'No image selected',
-    presetsLabel: 'Quick start', presetsGroup: 'Quick presets',
-    dropTitle: 'Drop an image here', dropText: 'or choose one from your device', choose: 'Choose image',
-    dropHint: 'JPG, PNG, WebP, GIF, BMP or AVIF, up to 50 MB. Animated images are exported as a still image.',
+    reqTitle: 'Requirement', reqSelect: 'Requirement',
+    custom: 'Custom size', customSpec: 'Set your own size and file limit',
+    dropTitle: 'Add your photo or signature', dropText: 'Drag it here, or choose a file from your device.', choose: 'Choose image',
+    dropHint: 'JPG, PNG, WebP, GIF, BMP or AVIF, up to 50 MB.',
     dropAria: 'Choose or drop an image', sample: 'No image handy? Try a sample document',
     fileReplace: 'Replace', fileRemove: 'Remove', fileReplaceTitle: 'Choose a different image', fileRemoveTitle: 'Remove this image',
     cropAlt: 'Image to crop', cropGroup: 'Image crop. Arrow keys move the crop selection; plus and minus zoom.',
-    toolbar: 'Crop tools', rotateL: 'Rotate left 90 degrees', rotateR: 'Rotate right 90 degrees', zoomOut: 'Zoom out', zoomIn: 'Zoom in', reset: 'Reset crop',
-    cropHint: 'Drag to position the crop. Arrow keys move it; + and − zoom.',
-    sideTitle: 'Output', preset: 'Preset', customize: 'Edit size and limits',
+    toolbar: 'Crop tools', rotateL: 'Rotate left 90 degrees', rotateR: 'Rotate right 90 degrees', zoomOut: 'Zoom out', zoomIn: 'Zoom in', reset: 'Reset crop', resetShort: 'Reset',
+    cropHint: 'Drag the image to position it inside the frame. Arrow keys move it; + and − zoom.',
+    customize: 'Size, file limit and format', customizeHint: 'Set by the requirement. Change only if your form asks for something else.',
     size: 'Size', width: 'Width (px)', height: 'Height (px)', lock: 'Keep aspect ratio', lockOn: 'Aspect ratio locked', unit: 'Unit', dpi: 'Print DPI',
     unitPx: 'Pixels (px)', unitCm: 'Centimetres (cm)', unitIn: 'Inches (in)',
-    limit: 'File size limit', minKB: 'Min (KB)', maxKB: 'Max (KB)', optional: 'optional', original: 'Use original size',
+    limit: 'File size', minKB: 'Minimum (KB)', maxKB: 'Maximum (KB)', optional: 'optional', original: 'Use original size',
     originalHint: 'Keeps the whole image at its own dimensions. Available once an image is added.',
-    format: 'File format', ratio: 'Crop ratio',
-    ratios: [['target', 'Match output size'], ['original', 'Original proportions'], ['1:1', 'Square (1:1)'], ['4:3', 'Standard (4:3)'], ['16:9', 'Widescreen (16:9)'], ['free', 'Free crop']],
+    formatGroup: 'Format and crop', format: 'File format', ratio: 'Crop shape',
+    ratios: [['target', 'Match the output size'], ['original', 'Original proportions'], ['1:1', 'Square (1:1)'], ['4:3', 'Standard (4:3)'], ['16:9', 'Widescreen (16:9)'], ['free', 'Free crop']],
     advanced: 'Background and name strip', background: 'Background fill',
     bgOptions: [['white', 'White (recommended)'], ['black', 'Black'], ['transparent', 'Transparent (PNG and WebP only)']],
     bgHint: 'JPEG cannot be transparent. Empty margins use this colour.',
-    strip: 'Add a name and date strip', stripDate: 'Printed date', today: 'Today', stripName: 'Printed name or label', stripNamePh: 'e.g. John Doe', stripHint: 'Text scales to fit the strip. Very long labels may be shortened.',
-    process: 'Resize & compress', busy: 'Processing…', needImage: 'Add an image to continue.',
-    resultTitle: 'Ready to download', compare: 'Compare', resultTab: 'Result', originalTab: 'Original', resultAlt: 'Processed result preview', originalAlt: 'Original image preview',
-    facts: { fileSize: 'File size', limit: 'Limit', dims: 'Output size', target: 'Target size', orig: 'Original size', format: 'Format' },
-    download: 'Download image', again: 'Adjust and redo'
+    strip: 'Add a name and date strip', stripDate: 'Printed date', today: 'Today', stripName: 'Printed name or label', stripNamePh: 'e.g. Priya Sharma', stripHint: 'Text scales to fit the strip. Very long labels may be shortened.',
+    process: 'Resize and compress', busy: 'Processing…',
+    resultTitle: 'Ready to upload', compare: 'Compare with the original', resultTab: 'Result', originalTab: 'Original', resultAlt: 'Processed result preview', originalAlt: 'Original image preview',
+    facts: { fileSize: 'File size', limit: 'Allowed', dims: 'Dimensions', target: 'Requested', orig: 'Original', format: 'Format' },
+    download: 'Download image', again: 'Adjust again'
   },
   hi: {
     region: 'इमेज रिसाइज़र और कंप्रेसर',
-    steps: ['फोटो जोड़ें', 'समायोजित करें', 'डाउनलोड'], stepsLabel: 'प्रगति',
+    privacy: 'आपकी फोटो इसी डिवाइस पर प्रोसेस होती है। कुछ भी अपलोड नहीं होता।',
     status: null,
-    presetsLabel: 'तुरंत चुनें', presetsGroup: 'त्वरित प्रीसेट',
-    dropTitle: 'यहाँ फोटो खींचकर छोड़ें', dropText: 'या अपने डिवाइस से चुनें', choose: 'फोटो या सिग्नेचर चुनें',
+    reqTitle: 'आवश्यकता', reqSelect: 'आवश्यकता',
+    custom: 'कस्टम साइज़', customSpec: 'अपना साइज़ और फाइल सीमा चुनें',
+    dropTitle: 'अपनी फोटो या सिग्नेचर जोड़ें', dropText: 'यहाँ खींचकर छोड़ें, या अपने डिवाइस से चुनें।', choose: 'फोटो या सिग्नेचर चुनें',
     dropHint: 'JPEG, PNG, WebP समर्थित। फाइल आपके फोन/कंप्यूटर पर ही रहती है।',
     dropAria: 'फोटो या सिग्नेचर चुनें', sample: null,
     fileReplace: 'बदलें', fileRemove: 'हटाएं', fileReplaceTitle: 'फाइल बदलें', fileRemoveTitle: 'फाइल हटाएं',
     cropAlt: 'क्रॉप करने के लिए फोटो', cropGroup: 'इमेज क्रॉप। तीर कुंजियाँ क्रॉप को हिलाती हैं; प्लस और माइनस ज़ूम करते हैं।',
-    toolbar: 'क्रॉप टूल', rotateL: 'बाएं घुमाएं', rotateR: 'दाएं घुमाएं', zoomOut: 'ज़ूम आउट', zoomIn: 'ज़ूम इन', reset: 'क्रॉप रीसेट करें',
+    toolbar: 'क्रॉप टूल', rotateL: 'बाएं घुमाएं', rotateR: 'दाएं घुमाएं', zoomOut: 'ज़ूम आउट', zoomIn: 'ज़ूम इन', reset: 'क्रॉप रीसेट करें', resetShort: 'रीसेट',
     cropHint: 'क्रॉप की जगह तय करने के लिए खींचें। तीर कुंजियों से हिलाएं; + और − से ज़ूम करें।',
-    sideTitle: 'आउटपुट', preset: 'टारगेट प्रीसेट', customize: 'साइज़ और सीमा बदलें',
+    customize: 'साइज़, फाइल सीमा और फॉर्मेट', customizeHint: 'आवश्यकता के अनुसार पहले से सेट। फॉर्म में कुछ अलग माँगा हो तभी बदलें।',
     size: 'साइज़', width: 'चौड़ाई', height: 'ऊंचाई', lock: 'अनुपात लॉक रखें', lockOn: 'अनुपात लॉक है', unit: 'यूनिट', dpi: 'प्रिंट DPI',
     unitPx: 'Pixel (px)', unitCm: 'cm', unitIn: 'inch',
-    limit: 'फाइल साइज़ सीमा', minKB: 'न्यूनतम साइज (KB)', maxKB: 'अधिकतम साइज (KB)', optional: 'वैकल्पिक', original: 'मूल साइज़ रखें',
+    limit: 'फाइल साइज़', minKB: 'न्यूनतम साइज (KB)', maxKB: 'अधिकतम साइज (KB)', optional: 'वैकल्पिक', original: 'मूल साइज़ रखें',
     originalHint: 'पूरी इमेज उसके अपने आयामों में रहती है। इमेज जोड़ने के बाद उपलब्ध।',
-    format: 'फॉर्मेट', ratio: 'क्रॉप अनुपात',
+    formatGroup: 'फॉर्मेट और क्रॉप', format: 'फॉर्मेट', ratio: 'क्रॉप अनुपात',
     ratios: [['target', 'आउटपुट साइज़ के अनुसार'], ['original', 'मूल अनुपात'], ['1:1', 'वर्ग (1:1)'], ['4:3', 'मानक (4:3)'], ['16:9', 'वाइडस्क्रीन (16:9)'], ['free', 'फ्री क्रॉप']],
     advanced: 'बैकग्राउंड और नाम की पट्टी', background: 'बैकग्राउंड',
     bgOptions: [['white', 'सफेद (अनुशंसित)'], ['black', 'काला'], ['transparent', 'पारदर्शी (केवल PNG और WebP)']],
     bgHint: 'JPEG पारदर्शी नहीं हो सकता। खाली किनारे इसी रंग के होंगे।',
     strip: 'नाम और तारीख की पट्टी जोड़ें', stripDate: 'तारीख', today: 'आज', stripName: 'नाम या लेबल', stripNamePh: 'जैसे: आपका पूरा नाम', stripHint: 'लंबा नाम पट्टी में फिट होने के लिए छोटा हो सकता है।',
-    process: 'रिसाइज और कंप्रेस करें', busy: 'प्रोसेस हो रहा है...', needImage: 'आगे बढ़ने के लिए इमेज जोड़ें।',
-    resultTitle: 'डाउनलोड के लिए तैयार', compare: 'तुलना', resultTab: 'परिणाम', originalTab: 'मूल', resultAlt: 'रिसाइज की गई फोटो', originalAlt: 'मूल फोटो',
+    process: 'रिसाइज और कंप्रेस करें', busy: 'प्रोसेस हो रहा है...',
+    resultTitle: 'अपलोड के लिए तैयार', compare: 'मूल फोटो से तुलना', resultTab: 'परिणाम', originalTab: 'मूल', resultAlt: 'रिसाइज की गई फोटो', originalAlt: 'मूल फोटो',
     facts: { fileSize: 'फाइल साइज', limit: 'सीमा', dims: 'आउटपुट साइज़', target: 'लक्ष्य साइज़', orig: 'मूल साइज़', format: 'फॉर्मेट' },
     download: 'डाउनलोड करें', again: 'बदलें और दोबारा करें'
   }
 };
 
-function chipFor(key, lang) {
+const specOf = (p, lang) => {
+  const kb = p.minKB ? `${p.minKB}–${p.maxKB} KB` : (lang === 'hi' ? `${p.maxKB} KB से कम` : `under ${p.maxKB} KB`);
+  return `${p.width} × ${p.height} px · ${kb}`;
+};
+
+function choiceFor(key, lang) {
   const p = PRESETS[key];
   if (!p) return null;
   let label;
-  if (/^kb-\d+$/.test(key)) label = lang === 'hi' ? `${p.maxKB} KB से कम` : `Under ${p.maxKB} KB`;
-  else label = (lang === 'hi' ? CHIP_LABELS_HI : CHIP_LABELS)[key] || p.name.replace(/\s*\(.*$/, '');
-  return { key, label, sub: `${p.width} × ${p.height}` };
+  if (/^kb-\d+$/.test(key)) label = lang === 'hi' ? `कोई भी फोटो, ${p.maxKB} KB से कम` : `Any image under ${p.maxKB} KB`;
+  else label = (lang === 'hi' ? CHOICE_LABELS_HI : CHOICE_LABELS)[key] || p.name.replace(/\s*\(.*$/, '');
+  return { key, label, spec: specOf(p, lang) };
 }
 
 /* opts:
    lang            'en' | 'hi'
    preset          initial preset key (data-preset on #resizerApp)
    maxKB           optional data-max-kb (kb pages)
-   options         [[value, label]] for the preset select, first is selected
-   chips           preset keys for the quick-start chips
+   options         [[value, label]] for the preset select (the value store), first is selected
+   choices         preset keys shown in the requirement list (Custom size is always added last)
    sample          show the sample document link
    processLabel    override of the primary button label
-   processSummary  data-* attribute string for Hindi summaries
 */
 function renderWorkspace(opts) {
   const lang = opts.lang || 'en';
   const t = L[lang];
+  // Heading level of the workspace's own titles: 2 on the home page, 3 under a tool section heading.
+  const h = opts.level || 3, h2 = h + 1;
   const hi = lang === 'hi';
   const first = PRESETS[opts.preset] || PRESETS.custom;
-  const options = (opts.options || [['custom', PRESETS.custom.name]]).map(([v, label], i) => `                <option value="${esc(v)}"${i === 0 ? ' selected' : ''}>${esc(label)}</option>`).join('\n');
-  const chips = (opts.chips || []).map(k => chipFor(k, lang)).filter(Boolean).map(c =>
-    `            <button type="button" class="chip" data-preset="${esc(c.key)}" aria-pressed="false">${esc(c.label)} <span class="chip-sub">${c.sub}</span></button>`).join('\n');
+  const options = (opts.options || [['custom', PRESETS.custom.name]]).map(([v, label], i) => `            <option value="${esc(v)}"${i === 0 ? ' selected' : ''}>${esc(label)}</option>`).join('\n');
+  const choices = (opts.choices || []).map(k => choiceFor(k, lang)).filter(Boolean)
+    .map(c => `          <button type="button" class="choice" data-preset="${esc(c.key)}" aria-pressed="${c.key === opts.preset}"><span class="choice__name">${esc(c.label)}</span><span class="choice__spec">${esc(c.spec)}</span></button>`)
+    .concat(`          <button type="button" class="choice" data-preset="custom" aria-pressed="${opts.preset === 'custom'}"><span class="choice__name">${esc(t.custom)}</span><span class="choice__spec" data-custom-spec>${esc(t.customSpec)}</span></button>`).join('\n');
   const dataAttrs = [`data-preset="${esc(opts.preset)}"`, opts.maxKB ? `data-max-kb="${opts.maxKB}"` : ''].filter(Boolean).join(' ');
   const processLabel = opts.processLabel || t.process;
   const busyAttr = t.busy ? ` data-busy-label="${esc(t.busy)}"` : '';
   const summaryAttrs = hi ? ' data-label-output="आउटपुट" data-size-under="{max} KB से कम" data-size-range="{min} से {max} KB" data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।" data-label-show="दिखाएं"' : '';
-  const steps = t.steps.map((s, i) => `        <li data-step="${['add', 'adjust', 'download'][i]}"><span class="steps__n" aria-hidden="true">${i + 1}</span>${esc(s)}</li>`).join('\n');
   const ratio = t.ratios.map(([v, label], i) => `                <option value="${v}"${i === 0 ? ' selected' : ''}>${esc(label)}</option>`).join('\n');
   const bg = t.bgOptions.map(([v, label], i) => `                <option value="${v}"${i === 0 ? ' selected' : ''}${v === 'transparent' ? ' disabled' : ''}>${esc(label)}</option>`).join('\n');
+  const fact = (label, id, key) => `              <div class="meta-stat-item${key ? ' meta-stat-item--key' : ''}"><dt class="meta-stat-label">${esc(label)}</dt><dd class="meta-stat-val${key ? ' status-ok' : ''}" id="${id}"></dd></div>`;
 
   return `<section class="ws" id="resizerApp" ${dataAttrs} data-state="empty" data-settings="closed" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="${esc(t.region)}">
       <div class="ws-head">
-        <ol class="steps" aria-label="${esc(t.stepsLabel)}">
-${steps}
-        </ol>${t.status ? `
+        <p class="ws-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> ${esc(t.privacy)}</p>
+        <div id="fileInfoBox" class="filebar hidden" aria-live="polite">
+          <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
+          <span id="fileInfoText" class="filebar__name"></span>
+          <div class="filebar__actions">
+            <button type="button" id="btnReplaceFile" class="btn btn-sm" title="${esc(t.fileReplaceTitle)}">${esc(t.fileReplace)}</button>
+            <button type="button" id="btnRemoveFile" class="btn btn-sm btn-danger-ghost" title="${esc(t.fileRemoveTitle)}">${esc(t.fileRemove)}</button>
+          </div>
+        </div>${t.status ? `
         <p class="ws-status" id="workspaceStatus" role="status">${esc(t.status)}</p>` : ''}
       </div>
 
@@ -136,29 +152,16 @@ ${steps}
           <span class="notice__body" id="processErrorMessage"></span>
         </div>
 
-        <div id="fileInfoBox" class="filebar hidden" aria-live="polite">
-          <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
-          <span id="fileInfoText" class="filebar__name"></span>
-          <div class="filebar__actions">
-            <button type="button" id="btnReplaceFile" class="btn btn-sm" title="${esc(t.fileReplaceTitle)}">${esc(t.fileReplace)}</button>
-            <button type="button" id="btnRemoveFile" class="btn btn-sm btn-danger-ghost" title="${esc(t.fileRemoveTitle)}">${esc(t.fileRemove)}</button>
-          </div>
-        </div>
-
         <div id="cropperPlaceholder" class="ws-empty">
-          <div class="chips ws-presets" role="group" aria-label="${esc(t.presetsGroup)}">
-            <span class="ws-presets__label">${esc(t.presetsLabel)}</span>
-${chips}
-          </div>
           <div id="dropzone" class="dropzone" role="group" aria-label="${esc(t.dropAria)}">
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
-            <i class="fa-solid fa-arrow-up-from-bracket dropzone__icon" aria-hidden="true"></i>
-            <h3 class="dropzone__title">${esc(t.dropTitle)}</h3>
+            <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+            <h${h} class="dropzone__title">${esc(t.dropTitle)}</h${h}>
             <p class="dropzone__text">${esc(t.dropText)}</p>
             <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> ${esc(t.choose)}</button>
             <p class="dropzone__hint">${esc(t.dropHint)}</p>
           </div>${opts.sample && t.sample ? `
-          <button type="button" id="btnTryExample" class="btn btn-link">${esc(t.sample)}</button>` : ''}
+          <button type="button" id="btnTryExample" class="btn btn-link btn-sm">${esc(t.sample)}</button>` : ''}
         </div>
 
         <div id="cropperActiveArea" class="ws-crop hidden">
@@ -169,60 +172,73 @@ ${chips}
             <div class="ws-toolbar__group">
               <button type="button" id="btnRotateLeft" class="btn btn-sm btn-icon" title="${esc(t.rotateL)}" aria-label="${esc(t.rotateL)}"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
               <button type="button" id="btnRotateRight" class="btn btn-sm btn-icon" title="${esc(t.rotateR)}" aria-label="${esc(t.rotateR)}"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+            </div>
+            <div class="ws-toolbar__group">
               <button type="button" id="btnZoomOut" class="btn btn-sm btn-icon" title="${esc(t.zoomOut)}" aria-label="${esc(t.zoomOut)}"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i></button>
               <button type="button" id="btnZoomIn" class="btn btn-sm btn-icon" title="${esc(t.zoomIn)}" aria-label="${esc(t.zoomIn)}"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i></button>
             </div>
-            <button type="button" id="btnResetCrop" class="btn btn-sm btn-ghost" title="${esc(t.reset)}"><i class="fa-solid fa-arrow-rotate-back" aria-hidden="true"></i> ${hi ? 'रीसेट' : 'Reset'}</button>
+            <button type="button" id="btnResetCrop" class="btn btn-sm btn-ghost" title="${esc(t.reset)}"><i class="fa-solid fa-arrow-rotate-back" aria-hidden="true"></i> ${esc(t.resetShort)}</button>
           </div>
           <p class="ws-hint">${esc(t.cropHint)}</p>
         </div>
 
         <div id="resultArea" class="ws-result hidden" aria-live="polite">
           <div class="ws-result__head">
-            <h3 class="ws-result__title"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> ${esc(t.resultTitle)}</h3>
-            <div class="segmented" role="group" aria-label="${esc(t.compare)}">
-              <button type="button" id="btnViewProcessed" class="active" aria-pressed="true">${esc(t.resultTab)} <span id="compProcessedKB">-</span></button>
-              <button type="button" id="btnViewOriginal" aria-pressed="false">${esc(t.originalTab)} <span id="compOriginalKB">-</span></button>
+            <div class="verdict">
+              <i class="fa-solid fa-check" aria-hidden="true"></i>
+              <div>
+                <h${h} class="ws-result__title">${esc(t.resultTitle)}</h${h}>
+                <p class="ws-result__ok"><span id="resultStatus" class="meta-stat-val status-ok"></span></p>
+              </div>
             </div>
           </div>
-          <p class="ws-result__ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> <span id="resultStatus" class="meta-stat-val status-ok"></span></p>
-          <div class="ws-preview checkerboard">
-            <img id="resultImage" src="" alt="${esc(t.resultAlt)}">
-            <img id="originalComparisonImage" src="" alt="${esc(t.originalAlt)}" class="hidden">
-          </div>
-          <dl class="meta-stats">
-            <div class="meta-stat-item"><dt class="meta-stat-label">${esc(t.facts.fileSize)}</dt><dd class="meta-stat-val status-ok" id="resultFileSize"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">${esc(t.facts.limit)}</dt><dd class="meta-stat-val" id="resultTargetSize"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">${esc(t.facts.dims)}</dt><dd class="meta-stat-val" id="resultDims"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">${esc(t.facts.target)}</dt><dd class="meta-stat-val" id="resultTargetDims"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">${esc(t.facts.orig)}</dt><dd class="meta-stat-val" id="resultOrigDims"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">${esc(t.facts.format)}</dt><dd class="meta-stat-val" id="resultFormat"></dd></div>
-          </dl>
-          <div class="ws-result__actions">
-            <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> ${esc(t.download)}</a>
-            <button type="button" id="btnCropAgain" class="btn btn-lg">${esc(t.again)}</button>
+          <div class="ws-result__body">
+            <div class="ws-result__view">
+              <div class="segmented" role="group" aria-label="${esc(t.compare)}">
+                <button type="button" id="btnViewProcessed" class="active" aria-pressed="true">${esc(t.resultTab)} <span id="compProcessedKB">-</span></button>
+                <button type="button" id="btnViewOriginal" aria-pressed="false">${esc(t.originalTab)} <span id="compOriginalKB">-</span></button>
+              </div>
+              <div class="ws-preview checkerboard">
+                <img id="resultImage" src="" alt="${esc(t.resultAlt)}">
+                <img id="originalComparisonImage" src="" alt="${esc(t.originalAlt)}" class="hidden">
+              </div>
+            </div>
+            <div class="ws-result__facts">
+              <dl class="meta-stats">
+${fact(t.facts.fileSize, 'resultFileSize', true)}
+${fact(t.facts.limit, 'resultTargetSize')}
+${fact(t.facts.dims, 'resultDims')}
+${fact(t.facts.format, 'resultFormat')}
+${fact(t.facts.target, 'resultTargetDims')}
+${fact(t.facts.orig, 'resultOrigDims')}
+              </dl>
+              <div class="ws-result__actions">
+                <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> ${esc(t.download)}</a>
+                <button type="button" id="btnCropAgain" class="btn btn-lg">${esc(t.again)}</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="ws-side">
-        <h2 class="ws-side__title">${esc(t.sideTitle)}</h2>
-        <div class="field">
-          <label for="presetSelect" class="field-label">${esc(t.preset)}</label>
-          <select id="presetSelect" class="custom-select-source">
+        <div class="ws-section">
+          <h${h} class="ws-section__title" id="reqHeading">${esc(t.reqTitle)}</h${h}>
+          <div class="choice-list" role="group" aria-labelledby="reqHeading">
+${choices}
+          </div>
+          <div hidden>
+            <label for="presetSelect">${esc(t.reqSelect)}</label>
+            <select id="presetSelect" data-native>
 ${options}
-          </select>
+            </select>
+          </div>
         </div>
-        <dl class="meta-stats" id="presetSummaryBox" hidden>
-          <div><dt>${esc(t.size)}</dt><dd id="specDims">${first.width} × ${first.height} px</dd></div>
-          <div><dt>${esc(t.limit)}</dt><dd id="specSize"></dd></div>
-          <div><dt>${esc(t.format)}</dt><dd id="specFormat">JPEG</dd></div>
-        </dl>
-        <button type="button" class="btn btn-link btn-sm ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom">${esc(t.customize)}</button>
 
+        <button type="button" class="ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom"><span>${esc(t.customize)}<span class="ws-customize__hint">${esc(t.customizeHint)}</span></span></button>
         <div class="ws-custom" id="wsCustom">
           <div id="customControls" class="ws-group">
-            <h3 class="ws-group__title">${esc(t.size)}</h3>
+            <h${h2} class="ws-group__title">${esc(t.size)}</h${h2}>
             <div class="ws-dims">
               <div class="field">
                 <label class="field-label" id="customWidthLabel" for="customWidth">${esc(t.width)}</label>
@@ -254,10 +270,12 @@ ${options}
                 </select>
               </div>
             </div>
+            <button type="button" id="btnOriginalSize" class="btn btn-sm" disabled><i class="fa-solid fa-expand" aria-hidden="true"></i> ${esc(t.original)}</button>
+            <p class="field-hint">${esc(t.originalHint)}</p>
           </div>
 
           <div class="ws-group">
-            <h3 class="ws-group__title">${esc(t.limit)}</h3>
+            <h${h2} class="ws-group__title">${esc(t.limit)}</h${h2}>
             <div class="field-row">
               <div class="field">
                 <label class="field-label" for="customMinKB">${hi ? esc(t.minKB) : `${esc(t.minKB)} <span class="optional">(${esc(t.optional)})</span>`}</label>
@@ -269,11 +287,10 @@ ${options}
               </div>
             </div>
             <p id="sizeError" class="field-error hidden" role="alert"></p>
-            <button type="button" id="btnOriginalSize" class="btn btn-sm" disabled><i class="fa-solid fa-expand" aria-hidden="true"></i> ${esc(t.original)}</button>
-            <p class="field-hint">${esc(t.originalHint)}</p>
           </div>
 
           <div class="ws-group">
+            <h${h2} class="ws-group__title">${esc(t.formatGroup)}</h${h2}>
             <div class="field-row">
               <div class="field">
                 <label for="formatSelect" class="field-label">${esc(t.format)}</label>
@@ -325,11 +342,10 @@ ${bg}
       </div>
 
       <div class="ws-action">
-        <p class="ws-action__need">${esc(t.needImage)}</p>
         <p id="processSummary" class="process-summary" aria-live="polite"${summaryAttrs}></p>
         <button type="button" id="btnProcess" class="btn btn-primary btn-lg btn-block" aria-describedby="processSummary"${busyAttr} disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> ${esc(processLabel)}</button>
       </div>
     </section>`;
 }
 
-module.exports = { renderWorkspace, PRESETS, L };
+module.exports = { renderWorkspace, PRESETS, L, CHOICE_LABELS };
