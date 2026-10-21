@@ -246,28 +246,6 @@
     // An invalid value is never hidden behind a closed panel.
     ws.addEventListener('ws:reveal-settings', () => setSettings(true));
     sync();
-    fitRail(ws);
-  }
-
-  // Desktop rail: fit the settings and action into the part of the rail that is on screen, so the
-  // main action is visible before the page scrolls and never covers a setting. Settings that do not
-  // fit scroll inside the rail. On phones the rail dissolves into the page flow (display: contents).
-  function fitRail(ws) {
-    const rail = ws.querySelector('.ws-rail');
-    if (!rail) return;
-    let frame = 0;
-    const fit = () => {
-      frame = 0;
-      if (getComputedStyle(rail).display !== 'flex') { rail.style.maxHeight = ''; return; }
-      const stickyTop = parseFloat(getComputedStyle(rail).top) || 0;
-      const top = Math.max(rail.getBoundingClientRect().top, stickyTop);
-      rail.style.maxHeight = Math.max(240, Math.floor(window.innerHeight - top - 12)) + 'px';
-    };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(fit); };
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-    new MutationObserver(schedule).observe(ws, { attributes: true, attributeFilter: ['data-state', 'data-settings'] });
-    fit();
   }
 
   function init() {

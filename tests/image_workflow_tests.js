@@ -389,9 +389,10 @@ const EXPECTED = {
   const vis = id => page.evaluate(id => { const e = document.getElementById(id); if (!e) return null; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; }, id);
   const load = async (name = 'src.png') => {
     await page.goto(`${origin}/index.html`);
+    // The home page asks what is being prepared; "Custom size" opens size, limit and format.
+    await page.locator('.choice[data-preset="custom"]').click();
     await page.locator('#fileInput').setInputFiles({ name, mimeType: 'image/png', buffer: png });
     await page.waitForFunction(() => document.getElementById('imageToCrop') && document.getElementById('imageToCrop').cropper && !document.getElementById('btnProcess').disabled, null, { timeout: 15000 });
-    // Size, limit and format sit behind one disclosure; open it the way a person would.
     const toggle = page.locator('.ws-customize');
     if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
   };

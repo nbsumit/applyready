@@ -34,10 +34,11 @@ const L = {
     region: 'Image resizer and compressor',
     privacy: 'Your image is processed on this device. Nothing is uploaded.',
     status: 'No image selected',
-    reqTitle: 'Requirement', reqSelect: 'Requirement',
-    custom: 'Custom size', customSpec: 'Set your own size and file limit',
-    dropTitle: 'Add your photo or signature', dropText: 'Drag it here, or choose a file from your device.', choose: 'Choose image',
-    dropHint: 'JPG, PNG, WebP, GIF, BMP or AVIF, up to 50 MB.',
+    reqTitle: 'What are you preparing?', reqDone: 'Preparing', reqSelect: 'Requirement', change: 'Change', close: 'Close',
+    pending: 'Choose what you are preparing above.', showMe: 'Show me',
+    custom: 'Custom size', customSpec: 'Your own size and file limit',
+    dropTitle: 'Add your photo or signature', adjustTitle: 'Position it in the frame', dropText: 'Drag it here, or', choose: 'Choose image',
+    dropHint: 'JPG, PNG, WebP, GIF, BMP or AVIF up to 50 MB. Processed on your device, never uploaded.',
     dropAria: 'Choose or drop an image', sample: 'No image handy? Try a sample document',
     fileReplace: 'Replace', fileRemove: 'Remove', fileReplaceTitle: 'Choose a different image', fileRemoveTitle: 'Remove this image',
     cropAlt: 'Image to crop', cropGroup: 'Image crop. Arrow keys move the crop selection; plus and minus zoom.',
@@ -56,17 +57,18 @@ const L = {
     strip: 'Add a name and date strip', stripDate: 'Printed date', today: 'Today', stripName: 'Printed name or label', stripNamePh: 'e.g. Priya Sharma', stripHint: 'Text scales to fit the strip. Very long labels may be shortened.',
     process: 'Resize and compress', busy: 'Processing…',
     resultTitle: 'Ready to upload', compare: 'Compare with the original', resultTab: 'Result', originalTab: 'Original', resultAlt: 'Processed result preview', originalAlt: 'Original image preview',
-    facts: { fileSize: 'File size', limit: 'Allowed', dims: 'Dimensions', target: 'Requested', orig: 'Original', format: 'Format' },
+    facts: { fileSize: 'File size', dims: 'Dimensions', format: 'Format', required: 'Required', yours: 'Your file', orig: 'Original', caption: 'Your file compared with the requirement' },
     download: 'Download image', again: 'Adjust again'
   },
   hi: {
     region: 'इमेज रिसाइज़र और कंप्रेसर',
     privacy: 'आपकी फोटो इसी डिवाइस पर प्रोसेस होती है। कुछ भी अपलोड नहीं होता।',
     status: null,
-    reqTitle: 'आवश्यकता', reqSelect: 'आवश्यकता',
-    custom: 'कस्टम साइज़', customSpec: 'अपना साइज़ और फाइल सीमा चुनें',
-    dropTitle: 'अपनी फोटो या सिग्नेचर जोड़ें', dropText: 'यहाँ खींचकर छोड़ें, या अपने डिवाइस से चुनें।', choose: 'फोटो या सिग्नेचर चुनें',
-    dropHint: 'JPEG, PNG, WebP समर्थित। फाइल आपके फोन/कंप्यूटर पर ही रहती है।',
+    reqTitle: 'आप क्या तैयार कर रहे हैं?', reqDone: 'तैयार कर रहे हैं', reqSelect: 'आवश्यकता', change: 'बदलें', close: 'बंद करें',
+    pending: 'ऊपर चुनें कि आप क्या तैयार कर रहे हैं।', showMe: 'दिखाएं',
+    custom: 'कस्टम साइज़', customSpec: 'अपना साइज़ और फाइल सीमा',
+    dropTitle: 'अपनी फोटो या सिग्नेचर जोड़ें', adjustTitle: 'फ्रेम में सही जगह रखें', dropText: 'यहाँ खींचकर छोड़ें, या', choose: 'फोटो या सिग्नेचर चुनें',
+    dropHint: 'JPEG, PNG, WebP समर्थित। फाइल आपके फोन/कंप्यूटर पर ही रहती है, अपलोड नहीं होती।',
     dropAria: 'फोटो या सिग्नेचर चुनें', sample: null,
     fileReplace: 'बदलें', fileRemove: 'हटाएं', fileReplaceTitle: 'फाइल बदलें', fileRemoveTitle: 'फाइल हटाएं',
     cropAlt: 'क्रॉप करने के लिए फोटो', cropGroup: 'इमेज क्रॉप। तीर कुंजियाँ क्रॉप को हिलाती हैं; प्लस और माइनस ज़ूम करते हैं।',
@@ -85,7 +87,7 @@ const L = {
     strip: 'नाम और तारीख की पट्टी जोड़ें', stripDate: 'तारीख', today: 'आज', stripName: 'नाम या लेबल', stripNamePh: 'जैसे: आपका पूरा नाम', stripHint: 'लंबा नाम पट्टी में फिट होने के लिए छोटा हो सकता है।',
     process: 'रिसाइज और कंप्रेस करें', busy: 'प्रोसेस हो रहा है...',
     resultTitle: 'अपलोड के लिए तैयार', compare: 'मूल फोटो से तुलना', resultTab: 'परिणाम', originalTab: 'मूल', resultAlt: 'रिसाइज की गई फोटो', originalAlt: 'मूल फोटो',
-    facts: { fileSize: 'फाइल साइज', limit: 'सीमा', dims: 'आउटपुट साइज़', target: 'लक्ष्य साइज़', orig: 'मूल साइज़', format: 'फॉर्मेट' },
+    facts: { fileSize: 'फाइल साइज', dims: 'आयाम', format: 'फॉर्मेट', required: 'ज़रूरी', yours: 'आपकी फाइल', orig: 'मूल', caption: 'आपकी फाइल और आवश्यकता की तुलना' },
     download: 'डाउनलोड करें', again: 'बदलें और दोबारा करें'
   }
 };
@@ -109,34 +111,60 @@ function choiceFor(key, lang) {
    preset          initial preset key (data-preset on #resizerApp)
    maxKB           optional data-max-kb (kb pages)
    options         [[value, label]] for the preset select (the value store), first is selected
-   choices         preset keys shown in the requirement list (Custom size is always added last)
+   choices         preset keys shown in the requirement grid (Custom size is always added last)
+   requireChoice   no requirement is assumed: the person picks one before processing (home page)
    sample          show the sample document link
-   processLabel    override of the primary button label
+   level           heading level of the workspace's own titles (2 on the home page, 3 under a section)
 */
+// Requirement grid columns per layout mode. A mode never depends on leftover pixels:
+// phones list one requirement per row, tablets use `tablet` columns, desktops `desktop` columns.
+function gridColumns(count) {
+  if (count <= 3) return { desktop: count, tablet: count };
+  return { desktop: 4, tablet: 2 };
+}
+
 function renderWorkspace(opts) {
   const lang = opts.lang || 'en';
   const t = L[lang];
-  // Heading level of the workspace's own titles: 2 on the home page, 3 under a tool section heading.
-  const h = opts.level || 3, h2 = h + 1;
   const hi = lang === 'hi';
+  const h = opts.level || 3, h2 = h + 1;
   const first = PRESETS[opts.preset] || PRESETS.custom;
+  const pending = !!opts.requireChoice;
   const options = (opts.options || [['custom', PRESETS.custom.name]]).map(([v, label], i) => `            <option value="${esc(v)}"${i === 0 ? ' selected' : ''}>${esc(label)}</option>`).join('\n');
-  const choices = (opts.choices || []).map(k => choiceFor(k, lang)).filter(Boolean)
-    .map(c => `          <button type="button" class="choice" data-preset="${esc(c.key)}" aria-pressed="${c.key === opts.preset}"><span class="choice__name">${esc(c.label)}</span><span class="choice__spec">${esc(c.spec)}</span></button>`)
-    .concat(`          <button type="button" class="choice" data-preset="custom" aria-pressed="${opts.preset === 'custom'}"><span class="choice__name">${esc(t.custom)}</span><span class="choice__spec" data-custom-spec>${esc(t.customSpec)}</span></button>`).join('\n');
-  const dataAttrs = [`data-preset="${esc(opts.preset)}"`, opts.maxKB ? `data-max-kb="${opts.maxKB}"` : ''].filter(Boolean).join(' ');
+  const list = (opts.choices || []).map(k => choiceFor(k, lang)).filter(Boolean);
+  const pressed = key => !pending && key === opts.preset;
+  const choices = list
+    .map(c => `          <button type="button" class="choice" data-preset="${esc(c.key)}" aria-pressed="${pressed(c.key)}"><span class="choice__name">${esc(c.label)}</span><span class="choice__spec">${esc(c.spec)}</span></button>`)
+    .concat(`          <button type="button" class="choice" data-preset="custom" aria-pressed="${pressed('custom')}"><span class="choice__name">${esc(t.custom)}</span><span class="choice__spec" data-custom-spec>${esc(t.customSpec)}</span></button>`).join('\n');
+  const cols = gridColumns(list.length + 1);
+  const dataAttrs = [`data-preset="${esc(opts.preset)}"`, opts.maxKB ? `data-max-kb="${opts.maxKB}"` : '', pending ? 'data-require-choice' : ''].filter(Boolean).join(' ');
   const processLabel = opts.processLabel || t.process;
   const busyAttr = t.busy ? ` data-busy-label="${esc(t.busy)}"` : '';
-  const summaryAttrs = hi ? ' data-label-output="आउटपुट" data-size-under="{max} KB से कम" data-size-range="{min} से {max} KB" data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।" data-label-show="दिखाएं"' : '';
+  const summaryAttrs = ` data-label-pending="${esc(t.pending)}" data-label-show="${esc(t.showMe)}"` + (hi ? ' data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।"' : '');
   const ratio = t.ratios.map(([v, label], i) => `                <option value="${v}"${i === 0 ? ' selected' : ''}>${esc(label)}</option>`).join('\n');
   const bg = t.bgOptions.map(([v, label], i) => `                <option value="${v}"${i === 0 ? ' selected' : ''}${v === 'transparent' ? ' disabled' : ''}>${esc(label)}</option>`).join('\n');
   // Result sentences are written by js/resizer.js; Hindi pages carry their own wording.
   const resultAttrs = hi ? ' data-status-under="{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-status-range="{min}–{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-verified="जाँचा गया" data-limit-under="{max} KB से कम ({maxBytes} bytes)" data-limit-range="{min} से {max} KB ({minBytes} – {maxBytes} bytes)"' : '';
-  const fact = (label, id, key) => `              <div class="meta-stat-item${key ? ' meta-stat-item--key' : ''}"><dt class="meta-stat-label">${esc(label)}</dt><dd class="meta-stat-val${key ? ' status-ok' : ''}" id="${id}"></dd></div>`;
 
-  return `<section class="ws" id="resizerApp" ${dataAttrs} data-state="empty" data-settings="closed" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="${esc(t.region)}">
+  return `<section class="ws ws--linear" id="resizerApp" ${dataAttrs} data-state="empty" data-settings="closed" data-req="${pending ? 'pending' : 'chosen'}" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="${esc(t.region)}">
+      <div class="ws-req" id="reqPanel" data-open="${pending}">
+        <div class="ws-req__bar">
+          <h${h} class="ws-step" id="reqHeading"><span class="ws-step__n" aria-hidden="true">1</span><span class="ws-step__ask">${esc(t.reqTitle)}</span><span class="ws-step__done">${esc(t.reqDone)}</span></h${h}>
+          <p class="req-summary" aria-live="polite"><strong class="req-summary__name" id="reqSummaryName">${pending ? '' : esc((list.find(c => c.key === opts.preset) || { label: t.custom }).label)}</strong> <span class="req-summary__spec" id="reqSummarySpec"></span></p>
+          <button type="button" class="btn btn-sm req-change" id="btnChangeReq" aria-expanded="${pending}" aria-controls="reqGrid" data-label-change="${esc(t.change)}" data-label-close="${esc(t.close)}">${esc(pending ? t.close : t.change)}</button>
+        </div>
+        <div class="req-grid req-grid--d${cols.desktop} req-grid--t${cols.tablet}" id="reqGrid" role="group" aria-labelledby="reqHeading">
+${choices}
+        </div>
+        <div hidden>
+          <label for="presetSelect">${esc(t.reqSelect)}</label>
+          <select id="presetSelect" data-native>
+${options}
+          </select>
+        </div>
+      </div>
+
       <div class="ws-head">
-        <p class="ws-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> ${esc(t.privacy)}</p>
         <div id="fileInfoBox" class="filebar hidden" aria-live="polite">
           <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
           <span id="fileInfoText" class="filebar__name"></span>
@@ -155,10 +183,10 @@ function renderWorkspace(opts) {
         </div>
 
         <div id="cropperPlaceholder" class="ws-empty">
+          <h${h} class="ws-step"><span class="ws-step__n" aria-hidden="true">2</span><span>${esc(t.dropTitle)}</span></h${h}>
           <div id="dropzone" class="dropzone" role="group" aria-label="${esc(t.dropAria)}">
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
             <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
-            <h${h} class="dropzone__title">${esc(t.dropTitle)}</h${h}>
             <p class="dropzone__text">${esc(t.dropText)}</p>
             <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> ${esc(t.choose)}</button>
             <p class="dropzone__hint">${esc(t.dropHint)}</p>
@@ -167,6 +195,7 @@ function renderWorkspace(opts) {
         </div>
 
         <div id="cropperActiveArea" class="ws-crop hidden">
+          <h${h} class="ws-step"><span class="ws-step__n" aria-hidden="true">3</span><span>${esc(t.adjustTitle)}</span></h${h}>
           <div class="cropper-container-wrapper" tabindex="0" role="group" aria-label="${esc(t.cropGroup)}">
             <img id="imageToCrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="${esc(t.cropAlt)}">
           </div>
@@ -179,9 +208,9 @@ function renderWorkspace(opts) {
               <button type="button" id="btnZoomOut" class="btn btn-sm btn-icon" title="${esc(t.zoomOut)}" aria-label="${esc(t.zoomOut)}"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i></button>
               <button type="button" id="btnZoomIn" class="btn btn-sm btn-icon" title="${esc(t.zoomIn)}" aria-label="${esc(t.zoomIn)}"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i></button>
             </div>
+            <p class="ws-hint">${esc(t.cropHint)}</p>
             <button type="button" id="btnResetCrop" class="btn btn-sm btn-ghost" title="${esc(t.reset)}"><i class="fa-solid fa-arrow-rotate-back" aria-hidden="true"></i> ${esc(t.resetShort)}</button>
           </div>
-          <p class="ws-hint">${esc(t.cropHint)}</p>
         </div>
 
         <div id="resultArea" class="ws-result hidden" aria-live="polite"${resultAttrs}>
@@ -192,6 +221,10 @@ function renderWorkspace(opts) {
                 <h${h} class="ws-result__title">${esc(t.resultTitle)}</h${h}>
                 <p class="ws-result__ok"><span id="resultStatus" class="meta-stat-val status-ok"></span></p>
               </div>
+            </div>
+            <div class="ws-result__actions">
+              <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> ${esc(t.download)}</a>
+              <button type="button" id="btnCropAgain" class="btn btn-lg">${esc(t.again)}</button>
             </div>
           </div>
           <div class="ws-result__body">
@@ -206,38 +239,22 @@ function renderWorkspace(opts) {
               </div>
             </div>
             <div class="ws-result__facts">
-              <dl class="meta-stats">
-${fact(t.facts.fileSize, 'resultFileSize', true)}
-${fact(t.facts.limit, 'resultTargetSize')}
-${fact(t.facts.dims, 'resultDims')}
-${fact(t.facts.format, 'resultFormat')}
-${fact(t.facts.target, 'resultTargetDims')}
-${fact(t.facts.orig, 'resultOrigDims')}
-              </dl>
-              <div class="ws-result__actions">
-                <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> ${esc(t.download)}</a>
-                <button type="button" id="btnCropAgain" class="btn btn-lg">${esc(t.again)}</button>
-              </div>
+              <table class="check-table">
+                <caption class="sr-only">${esc(t.facts.caption)}</caption>
+                <thead><tr><td></td><th scope="col">${esc(t.facts.required)}</th><th scope="col">${esc(t.facts.yours)}</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">${esc(t.facts.fileSize)}</th><td id="resultTargetSize" data-label="${esc(t.facts.required)}"></td><td class="is-met" id="resultFileSize" data-label="${esc(t.facts.yours)}"></td></tr>
+                  <tr><th scope="row">${esc(t.facts.dims)}</th><td id="resultTargetDims" data-label="${esc(t.facts.required)}"></td><td class="is-met" id="resultDims" data-label="${esc(t.facts.yours)}"></td></tr>
+                  <tr><th scope="row">${esc(t.facts.format)}</th><td id="resultFormatRequired" data-label="${esc(t.facts.required)}"></td><td class="is-met" id="resultFormat" data-label="${esc(t.facts.yours)}"></td></tr>
+                </tbody>
+              </table>
+              <p class="ws-result__orig">${esc(t.facts.orig)}: <span id="resultOrigDims"></span></p>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="ws-rail">
-      <div class="ws-side">
-        <div class="ws-section">
-          <h${h} class="ws-section__title" id="reqHeading">${esc(t.reqTitle)}</h${h}>
-          <div class="choice-list" role="group" aria-labelledby="reqHeading">
-${choices}
-          </div>
-          <div hidden>
-            <label for="presetSelect">${esc(t.reqSelect)}</label>
-            <select id="presetSelect" data-native>
-${options}
-            </select>
-          </div>
-        </div>
-
+      <div class="ws-settings">
         <button type="button" class="ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom"><span>${esc(t.customize)}<span class="ws-customize__hint">${esc(t.customizeHint)}</span></span></button>
         <div class="ws-custom" id="wsCustom">
           <div id="customControls" class="ws-group">
@@ -294,21 +311,19 @@ ${options}
 
           <div class="ws-group">
             <h${h2} class="ws-group__title">${esc(t.formatGroup)}</h${h2}>
-            <div class="field-row">
-              <div class="field">
-                <label for="formatSelect" class="field-label">${esc(t.format)}</label>
-                <select id="formatSelect" class="custom-select-source">
-                  <option value="image/jpeg" selected>JPEG (.jpg)</option>
-                  <option value="image/png">PNG (.png)</option>
-                  <option value="image/webp">WebP (.webp)</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="aspectRatioSelect" class="field-label">${esc(t.ratio)}</label>
-                <select id="aspectRatioSelect">
+            <div class="field">
+              <label for="formatSelect" class="field-label">${esc(t.format)}</label>
+              <select id="formatSelect" class="custom-select-source">
+                <option value="image/jpeg" selected>JPEG (.jpg)</option>
+                <option value="image/png">PNG (.png)</option>
+                <option value="image/webp">WebP (.webp)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="aspectRatioSelect" class="field-label">${esc(t.ratio)}</label>
+              <select id="aspectRatioSelect">
 ${ratio}
-                </select>
-              </div>
+              </select>
             </div>
           </div>
 
@@ -346,8 +361,7 @@ ${bg}
 
       <div class="ws-action">
         <p id="processSummary" class="process-summary" aria-live="polite"${summaryAttrs}></p>
-        <button type="button" id="btnProcess" class="btn btn-primary btn-lg btn-block" aria-describedby="processSummary"${busyAttr} disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> ${esc(processLabel)}</button>
-      </div>
+        <button type="button" id="btnProcess" class="btn btn-primary btn-lg" aria-describedby="processSummary"${busyAttr} disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> ${esc(processLabel)}</button>
       </div>
     </section>`;
 }

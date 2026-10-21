@@ -33,13 +33,13 @@
   <link rel="manifest" href="../favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="../js/theme.js?v=20261120-1"></script>
+  <script src="../js/theme.js?v=20261121-1"></script>
 
   <!-- Icons & Styles -->
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
   <link rel="stylesheet" href="../css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20261120-1">
+  <link rel="stylesheet" href="../css/app.css?v=20261121-1">
   <!-- shell:styles:end -->
 
   <!-- FAQPage Schema -->
@@ -128,21 +128,13 @@
               </ul>
               </div>
               <div class="menu__group menu__group--refs">
-              <p class="menu__title">Exam requirements</p>
-              <ul class="menu__list menu__list--exams">
-                <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
-                <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
-                <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
-                <li><a href="../neet-photo-signature-size.html">NEET</a></li>
-                <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
-              </ul>
-              <p class="menu__title">Resize to a file size</p>
-              <ul class="menu__list menu__list--sizes">
-                <li><a href="../resize-image-to-10kb.html">10 KB</a></li>
-                <li><a href="../resize-image-to-20kb.html">20 KB</a></li>
-                <li><a href="../resize-image-to-50kb.html">50 KB</a></li>
-                <li><a href="../resize-image-to-100kb.html">100 KB</a></li>
-                <li><a href="../resize-image-to-200kb.html">200 KB</a></li>
+              <p class="menu__title">Exam photo and signature</p>
+              <ul class="menu__list">
+                <li><a class="menu__item menu__item--plain" href="../ssc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">SSC</span><span class="menu__desc">CGL, CHSL, MTS, GD</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="../upsc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">UPSC</span><span class="menu__desc">Civil services, NDA, CDS</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="../ibps-photo-signature-size.html"><span class="menu__text"><span class="menu__name">IBPS</span><span class="menu__desc">Bank PO and clerk</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="../neet-photo-signature-size.html"><span class="menu__text"><span class="menu__name">NEET</span><span class="menu__desc">Medical entrance</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="../rrb-photo-signature-size.html"><span class="menu__text"><span class="menu__name">RRB</span><span class="menu__desc">Railway recruitment</span></span></a></li>
               </ul>
               </div>
             </div>
@@ -180,9 +172,31 @@
       <!-- tool:start -->
       <section class="section tool-section" id="resize-tool" aria-labelledby="toolHeading">
         <h2 class="section-title" id="toolHeading">IBPS फोटो, सिग्नेचर व डिक्लेरेशन रिसाइजर</h2>
-        <section class="ws" id="resizerApp" data-preset="ibps-photo" data-state="empty" data-settings="closed" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="इमेज रिसाइज़र और कंप्रेसर">
+        <section class="ws ws--linear" id="resizerApp" data-preset="ibps-photo" data-state="empty" data-settings="closed" data-req="chosen" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="इमेज रिसाइज़र और कंप्रेसर">
+      <div class="ws-req" id="reqPanel" data-open="false">
+        <div class="ws-req__bar">
+          <h3 class="ws-step" id="reqHeading"><span class="ws-step__n" aria-hidden="true">1</span><span class="ws-step__ask">आप क्या तैयार कर रहे हैं?</span><span class="ws-step__done">तैयार कर रहे हैं</span></h3>
+          <p class="req-summary" aria-live="polite"><strong class="req-summary__name" id="reqSummaryName">IBPS फोटो</strong> <span class="req-summary__spec" id="reqSummarySpec"></span></p>
+          <button type="button" class="btn btn-sm req-change" id="btnChangeReq" aria-expanded="false" aria-controls="reqGrid" data-label-change="बदलें" data-label-close="बंद करें">बदलें</button>
+        </div>
+        <div class="req-grid req-grid--d3 req-grid--t3" id="reqGrid" role="group" aria-labelledby="reqHeading">
+          <button type="button" class="choice" data-preset="ibps-photo" aria-pressed="true"><span class="choice__name">IBPS फोटो</span><span class="choice__spec">200 × 230 px · 20–50 KB</span></button>
+          <button type="button" class="choice" data-preset="ibps-signature" aria-pressed="false"><span class="choice__name">IBPS सिग्नेचर</span><span class="choice__spec">140 × 60 px · 10–20 KB</span></button>
+          <button type="button" class="choice" data-preset="custom" aria-pressed="false"><span class="choice__name">कस्टम साइज़</span><span class="choice__spec" data-custom-spec>अपना साइज़ और फाइल सीमा</span></button>
+        </div>
+        <div hidden>
+          <label for="presetSelect">आवश्यकता</label>
+          <select id="presetSelect" data-native>
+            <option value="ibps-photo" selected>IBPS फोटो (200 × 230 px, 20–50 KB)</option>
+            <option value="ibps-signature">IBPS सिग्नेचर (140 × 60 px, 10–20 KB)</option>
+            <option value="thumb">बायां अंगूठा (240 × 240 px, 20–50 KB)</option>
+            <option value="declaration">घोषणा पत्र (800 × 400 px, 50–100 KB)</option>
+            <option value="custom">कस्टम साइज़</option>
+          </select>
+        </div>
+      </div>
+
       <div class="ws-head">
-        <p class="ws-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> आपकी फोटो इसी डिवाइस पर प्रोसेस होती है। कुछ भी अपलोड नहीं होता।</p>
         <div id="fileInfoBox" class="filebar hidden" aria-live="polite">
           <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
           <span id="fileInfoText" class="filebar__name"></span>
@@ -200,17 +214,18 @@
         </div>
 
         <div id="cropperPlaceholder" class="ws-empty">
+          <h3 class="ws-step"><span class="ws-step__n" aria-hidden="true">2</span><span>अपनी फोटो या सिग्नेचर जोड़ें</span></h3>
           <div id="dropzone" class="dropzone" role="group" aria-label="फोटो या सिग्नेचर चुनें">
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
             <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
-            <h3 class="dropzone__title">अपनी फोटो या सिग्नेचर जोड़ें</h3>
-            <p class="dropzone__text">यहाँ खींचकर छोड़ें, या अपने डिवाइस से चुनें।</p>
+            <p class="dropzone__text">यहाँ खींचकर छोड़ें, या</p>
             <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> फोटो या सिग्नेचर चुनें</button>
-            <p class="dropzone__hint">JPEG, PNG, WebP समर्थित। फाइल आपके फोन/कंप्यूटर पर ही रहती है।</p>
+            <p class="dropzone__hint">JPEG, PNG, WebP समर्थित। फाइल आपके फोन/कंप्यूटर पर ही रहती है, अपलोड नहीं होती।</p>
           </div>
         </div>
 
         <div id="cropperActiveArea" class="ws-crop hidden">
+          <h3 class="ws-step"><span class="ws-step__n" aria-hidden="true">3</span><span>फ्रेम में सही जगह रखें</span></h3>
           <div class="cropper-container-wrapper" tabindex="0" role="group" aria-label="इमेज क्रॉप। तीर कुंजियाँ क्रॉप को हिलाती हैं; प्लस और माइनस ज़ूम करते हैं।">
             <img id="imageToCrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="क्रॉप करने के लिए फोटो">
           </div>
@@ -223,9 +238,9 @@
               <button type="button" id="btnZoomOut" class="btn btn-sm btn-icon" title="ज़ूम आउट" aria-label="ज़ूम आउट"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i></button>
               <button type="button" id="btnZoomIn" class="btn btn-sm btn-icon" title="ज़ूम इन" aria-label="ज़ूम इन"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i></button>
             </div>
+            <p class="ws-hint">क्रॉप की जगह तय करने के लिए खींचें। तीर कुंजियों से हिलाएं; + और − से ज़ूम करें।</p>
             <button type="button" id="btnResetCrop" class="btn btn-sm btn-ghost" title="क्रॉप रीसेट करें"><i class="fa-solid fa-arrow-rotate-back" aria-hidden="true"></i> रीसेट</button>
           </div>
-          <p class="ws-hint">क्रॉप की जगह तय करने के लिए खींचें। तीर कुंजियों से हिलाएं; + और − से ज़ूम करें।</p>
         </div>
 
         <div id="resultArea" class="ws-result hidden" aria-live="polite" data-status-under="{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-status-range="{min}–{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-verified="जाँचा गया" data-limit-under="{max} KB से कम ({maxBytes} bytes)" data-limit-range="{min} से {max} KB ({minBytes} – {maxBytes} bytes)">
@@ -236,6 +251,10 @@
                 <h3 class="ws-result__title">अपलोड के लिए तैयार</h3>
                 <p class="ws-result__ok"><span id="resultStatus" class="meta-stat-val status-ok"></span></p>
               </div>
+            </div>
+            <div class="ws-result__actions">
+              <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> डाउनलोड करें</a>
+              <button type="button" id="btnCropAgain" class="btn btn-lg">बदलें और दोबारा करें</button>
             </div>
           </div>
           <div class="ws-result__body">
@@ -250,44 +269,22 @@
               </div>
             </div>
             <div class="ws-result__facts">
-              <dl class="meta-stats">
-              <div class="meta-stat-item meta-stat-item--key"><dt class="meta-stat-label">फाइल साइज</dt><dd class="meta-stat-val status-ok" id="resultFileSize"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">सीमा</dt><dd class="meta-stat-val" id="resultTargetSize"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">आउटपुट साइज़</dt><dd class="meta-stat-val" id="resultDims"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">फॉर्मेट</dt><dd class="meta-stat-val" id="resultFormat"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">लक्ष्य साइज़</dt><dd class="meta-stat-val" id="resultTargetDims"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">मूल साइज़</dt><dd class="meta-stat-val" id="resultOrigDims"></dd></div>
-              </dl>
-              <div class="ws-result__actions">
-                <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> डाउनलोड करें</a>
-                <button type="button" id="btnCropAgain" class="btn btn-lg">बदलें और दोबारा करें</button>
-              </div>
+              <table class="check-table">
+                <caption class="sr-only">आपकी फाइल और आवश्यकता की तुलना</caption>
+                <thead><tr><td></td><th scope="col">ज़रूरी</th><th scope="col">आपकी फाइल</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">फाइल साइज</th><td id="resultTargetSize" data-label="ज़रूरी"></td><td class="is-met" id="resultFileSize" data-label="आपकी फाइल"></td></tr>
+                  <tr><th scope="row">आयाम</th><td id="resultTargetDims" data-label="ज़रूरी"></td><td class="is-met" id="resultDims" data-label="आपकी फाइल"></td></tr>
+                  <tr><th scope="row">फॉर्मेट</th><td id="resultFormatRequired" data-label="ज़रूरी"></td><td class="is-met" id="resultFormat" data-label="आपकी फाइल"></td></tr>
+                </tbody>
+              </table>
+              <p class="ws-result__orig">मूल: <span id="resultOrigDims"></span></p>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="ws-rail">
-      <div class="ws-side">
-        <div class="ws-section">
-          <h3 class="ws-section__title" id="reqHeading">आवश्यकता</h3>
-          <div class="choice-list" role="group" aria-labelledby="reqHeading">
-          <button type="button" class="choice" data-preset="ibps-photo" aria-pressed="true"><span class="choice__name">IBPS फोटो</span><span class="choice__spec">200 × 230 px · 20–50 KB</span></button>
-          <button type="button" class="choice" data-preset="ibps-signature" aria-pressed="false"><span class="choice__name">IBPS सिग्नेचर</span><span class="choice__spec">140 × 60 px · 10–20 KB</span></button>
-          <button type="button" class="choice" data-preset="custom" aria-pressed="false"><span class="choice__name">कस्टम साइज़</span><span class="choice__spec" data-custom-spec>अपना साइज़ और फाइल सीमा चुनें</span></button>
-          </div>
-          <div hidden>
-            <label for="presetSelect">आवश्यकता</label>
-            <select id="presetSelect" data-native>
-            <option value="ibps-photo" selected>IBPS फोटो (200 × 230 px, 20–50 KB)</option>
-            <option value="ibps-signature">IBPS सिग्नेचर (140 × 60 px, 10–20 KB)</option>
-            <option value="thumb">बायां अंगूठा (240 × 240 px, 20–50 KB)</option>
-            <option value="declaration">घोषणा पत्र (800 × 400 px, 50–100 KB)</option>
-            <option value="custom">कस्टम साइज़</option>
-            </select>
-          </div>
-        </div>
-
+      <div class="ws-settings">
         <button type="button" class="ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom"><span>साइज़, फाइल सीमा और फॉर्मेट<span class="ws-customize__hint">आवश्यकता के अनुसार पहले से सेट। फॉर्म में कुछ अलग माँगा हो तभी बदलें।</span></span></button>
         <div class="ws-custom" id="wsCustom">
           <div id="customControls" class="ws-group">
@@ -344,26 +341,24 @@
 
           <div class="ws-group">
             <h4 class="ws-group__title">फॉर्मेट और क्रॉप</h4>
-            <div class="field-row">
-              <div class="field">
-                <label for="formatSelect" class="field-label">फॉर्मेट</label>
-                <select id="formatSelect" class="custom-select-source">
-                  <option value="image/jpeg" selected>JPEG (.jpg)</option>
-                  <option value="image/png">PNG (.png)</option>
-                  <option value="image/webp">WebP (.webp)</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="aspectRatioSelect" class="field-label">क्रॉप अनुपात</label>
-                <select id="aspectRatioSelect">
+            <div class="field">
+              <label for="formatSelect" class="field-label">फॉर्मेट</label>
+              <select id="formatSelect" class="custom-select-source">
+                <option value="image/jpeg" selected>JPEG (.jpg)</option>
+                <option value="image/png">PNG (.png)</option>
+                <option value="image/webp">WebP (.webp)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="aspectRatioSelect" class="field-label">क्रॉप अनुपात</label>
+              <select id="aspectRatioSelect">
                 <option value="target" selected>आउटपुट साइज़ के अनुसार</option>
                 <option value="original">मूल अनुपात</option>
                 <option value="1:1">वर्ग (1:1)</option>
                 <option value="4:3">मानक (4:3)</option>
                 <option value="16:9">वाइडस्क्रीन (16:9)</option>
                 <option value="free">फ्री क्रॉप</option>
-                </select>
-              </div>
+              </select>
             </div>
           </div>
 
@@ -402,13 +397,15 @@
       </div>
 
       <div class="ws-action">
-        <p id="processSummary" class="process-summary" aria-live="polite" data-label-output="आउटपुट" data-size-under="{max} KB से कम" data-size-range="{min} से {max} KB" data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।" data-label-show="दिखाएं"></p>
-        <button type="button" id="btnProcess" class="btn btn-primary btn-lg btn-block" aria-describedby="processSummary" data-busy-label="प्रोसेस हो रहा है..." disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> रिसाइज और कंप्रेस करें</button>
-      </div>
+        <p id="processSummary" class="process-summary" aria-live="polite" data-label-pending="ऊपर चुनें कि आप क्या तैयार कर रहे हैं।" data-label-show="दिखाएं" data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।"></p>
+        <button type="button" id="btnProcess" class="btn btn-primary btn-lg" aria-describedby="processSummary" data-busy-label="प्रोसेस हो रहा है..." disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> रिसाइज और कंप्रेस करें</button>
       </div>
     </section>
       </section>
       <!-- tool:end -->
+      
+      
+      
       
       
       
@@ -540,21 +537,24 @@
         <p>फोटो, सिग्नेचर, PDF और रिज़्यूमे, सही आवश्यकता के अनुसार तैयार। सब कुछ आपके ब्राउज़र में चलता है। फाइलें कभी अपलोड नहीं होतीं।</p>
       </div>
       <div class="site-footer__col">
-        <h2 class="site-footer__title">Image tools</h2>
+        <h2 class="site-footer__title">Tools</h2>
         <ul class="site-footer__list">
           <li><a href="../">Image resizer</a></li>
           <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
           <li><a href="../passport-photo-print.html">Passport photo print</a></li>
-          <li><a href="../resize-image-to-20kb.html">Resize to 20 KB</a></li>
-          <li><a href="../resize-image-to-50kb.html">Resize to 50 KB</a></li>
-        </ul>
-      </div>
-      <div class="site-footer__col">
-        <h2 class="site-footer__title">PDF and resume</h2>
-        <ul class="site-footer__list">
           <li><a href="../image-to-pdf.html">Image to PDF</a></li>
           <li><a href="../compress-pdf.html">Compress PDF</a></li>
           <li><a href="../resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Resize to a file size</h2>
+        <ul class="site-footer__list">
+          <li><a href="../resize-image-to-10kb.html">10 KB</a></li>
+          <li><a href="../resize-image-to-20kb.html">20 KB</a></li>
+          <li><a href="../resize-image-to-50kb.html">50 KB</a></li>
+          <li><a href="../resize-image-to-100kb.html">100 KB</a></li>
+          <li><a href="../resize-image-to-200kb.html">200 KB</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
@@ -579,14 +579,14 @@
         </ul>
       </div>
     </div>
-    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Files are processed on your device.</span></div>
+    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span></div>
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="../js/components.js?v=20261120-1" defer></script>
-  <script src="../js/site.js?v=20261120-1"></script>
+  <script src="../js/components.js?v=20261121-1" defer></script>
+  <script src="../js/site.js?v=20261121-1"></script>
   <script src="../js/vendor/cropper.min.js"></script>
-  <script src="../js/presets.js?v=20261120-1"></script>
-  <script src="../js/resizer.js?v=20261120-1"></script>
+  <script src="../js/presets.js?v=20261121-1"></script>
+  <script src="../js/resizer.js?v=20261121-1"></script>
 </body>
 </html>

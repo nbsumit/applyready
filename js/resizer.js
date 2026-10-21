@@ -304,6 +304,15 @@
   const btnDownload = getEl('btnDownload');
   const btnCropAgain = getEl('btnCropAgain');
 
+  // Requirement panel: a grid of requirements that folds into a one-line summary once chosen.
+  // On the home page nothing is assumed (data-require-choice): processing waits for a choice.
+  const appRoot = getEl('resizerApp');
+  const reqPanel = getEl('reqPanel');
+  const btnChangeReq = getEl('btnChangeReq');
+  const reqSummaryName = getEl('reqSummaryName');
+  const reqSummarySpec = getEl('reqSummarySpec');
+  let requirementChosen = !(appRoot && appRoot.hasAttribute && appRoot.hasAttribute('data-require-choice'));
+
   let originalFileBlobUrl = null;
 
   /**
@@ -323,6 +332,7 @@
       const targetWidth = (params && params.get('width')) || (appEl && appEl.dataset.width);
       const targetHeight = (params && params.get('height')) || (appEl && appEl.dataset.height);
 
+      if (params && (params.get('preset') || params.get('targetKB') || params.get('maxKB'))) chooseRequirement();
       if (targetPreset && PRESETS[targetPreset]) {
         initializing = true;
         applyPreset(targetPreset);
@@ -334,6 +344,8 @@
         markCustom();
         updatePresetUI();
       }
+      setRequirementOpen(!requirementChosen, false);
+      updatePresetUI();
     } catch (_) {}
   }
 
@@ -397,6 +409,29 @@
 
   function markCustom() {
     if (presetSelect) presetSelect.value = 'custom';
+    chooseRequirement();
+  }
+
+  function chooseRequirement() {
+    requirementChosen = true;
+    if (appRoot) appRoot.dataset.req = 'chosen';
+  }
+
+  function setRequirementOpen(open, moveFocus) {
+    if (!reqPanel) return;
+    if (!open && !requirementChosen) return;
+    reqPanel.dataset.open = String(open);
+    if (btnChangeReq) {
+      btnChangeReq.setAttribute('aria-expanded', String(open));
+      btnChangeReq.textContent = open ? (btnChangeReq.dataset.labelClose || 'Close') : (btnChangeReq.dataset.labelChange || 'Change');
+    }
+    if (!moveFocus) return;
+    if (open) {
+      const target = reqPanel.querySelector('.choice[aria-pressed="true"]') || reqPanel.querySelector('.choice');
+      if (target) target.focus();
+    } else if (btnChangeReq) {
+      btnChangeReq.focus();
+    }
   }
 
   function useOriginalSize() {
@@ -443,7 +478,9 @@
       if (btnTryExample) btnTryExample.disabled = false;
       if (requestId !== currentOpId) return;
       if (!blob) { showProcessError('Could not create the sample. Please choose an image instead.'); return; }
+      chooseRequirement();
       applyPreset('document');
+      setRequirementOpen(false, false);
       handleFileSelect(new File([blob], 'ApplyReady_sample_document.png', { type: 'image/png' }));
     }, 'image/png');
   }
@@ -725,23 +762,24 @@
     if (presetSelect) currentPresetKey = presetSelect.value;
     if (customControls) customControls.classList.remove('hidden');
     if (doc) doc.querySelectorAll('button[data-preset], .preset-shortcut[data-preset]').forEach(button => {
-      button.setAttribute('aria-pressed', String(button.dataset.preset === currentPresetKey));
+      button.setAttribute('aria-pressed', String(requirementChosen && button.dataset.preset === currentPresetKey));
     });
 
     const specs = getActiveSpecs();
+    renderRequirementSummary(specs);
     const customSpec = doc ? doc.querySelector('[data-custom-spec]') : null;
     if (customSpec) {
       if (!customSpec.dataset.empty) customSpec.dataset.empty = customSpec.textContent;
       const hindi = doc.documentElement.lang === 'hi';
       const kb = specs.minKB > 0 ? `${specs.minKB}–${specs.maxKB} KB` : (hindi ? `${specs.maxKB} KB से कम` : `under ${specs.maxKB} KB`);
-      customSpec.textContent = currentPresetKey === 'custom' && specs.isValid ? `${specs.width} × ${specs.height} px · ${kb}` : customSpec.dataset.empty;
+      customSpec.textContent = currentPresetKey === 'custom' && requirementChosen && specs.isValid ? `${specs.width} × ${specs.height} px · ${kb}` : customSpec.dataset.empty;
     }
     if (specs.isValid) {
       if (specDims) specDims.textContent = `${specs.width} × ${specs.height} px`;
       if (specSize) {
         specSize.textContent = specs.minKB > 0 ? `${specs.minKB} KB – ${specs.maxKB} KB` : `Under ${specs.maxKB} KB`;
       }
-      if (btnProcess) btnProcess.disabled = !cropperReady || processing;
+      if (btnProcess) btnProcess.disabled = !cropperReady || processing || !requirementChosen;
     } else {
       if (specDims) specDims.textContent = 'Invalid dimensions';
       if (specSize) specSize.textContent = 'Invalid size limit';
@@ -760,10 +798,23 @@
     }
   }
 
+  // The folded requirement panel always says which requirement is in use and what it produces.
+  function renderRequirementSummary(specs) {
+    if (!reqSummaryName || !reqSummarySpec) return;
+    if (!requirementChosen) { reqSummaryName.textContent = ''; reqSummarySpec.textContent = ''; return; }
+    const button = reqPanel && reqPanel.querySelector(`.choice[data-preset="${currentPresetKey}"] .choice__name`);
+    reqSummaryName.textContent = button ? button.textContent : (PRESETS[currentPresetKey] || PRESETS.custom).name;
+    if (!specs.isValid) { reqSummarySpec.textContent = ''; return; }
+    const hindi = doc && doc.documentElement.lang === 'hi';
+    const formatNames = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
+    const kb = specs.minKB > 0 ? `${specs.minKB}–${specs.maxKB} KB` : (hindi ? `${specs.maxKB} KB से कम` : `under ${specs.maxKB} KB`);
+    reqSummarySpec.textContent = `${specs.width} × ${specs.height} px · ${kb} · ${formatNames[specs.mimeType] || 'JPEG'}`;
+  }
+
   /**
-   * One line under the main action that says what the result will be,
-   * or which setting needs fixing. Uses the same values as the settings panel.
-   * Strings can be overridden per page with data-* attributes (Hindi pages).
+   * One line beside the main action, shown only when the action cannot run yet:
+   * no requirement chosen, or a setting that needs fixing. Strings can be overridden
+   * per page with data-* attributes (Hindi pages).
    */
   function renderProcessSummary(specs) {
     if (!processSummary || !doc) return;
@@ -771,6 +822,7 @@
     const el = (tag, text) => { const node = doc.createElement(tag); node.textContent = text; return node; };
     processSummary.textContent = '';
     processSummary.classList.toggle('is-invalid', !specs.isValid);
+    processSummary.classList.toggle('is-pending', specs.isValid && !requirementChosen);
     if (!specs.isValid) {
       processSummary.append(doc.createTextNode((d.labelFix || 'Fix the setting marked in red to continue.') + ' '));
       const firstInvalid = [customWidthInput, customHeightInput, customMinKBInput, customMaxKBInput]
@@ -788,23 +840,17 @@
       }
       return;
     }
-    const formatNames = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
-    const size = specs.minKB > 0
-      ? (d.sizeRange || '{min} to {max} KB').replace('{min}', specs.minKB).replace('{max}', specs.maxKB)
-      : (d.sizeUnder || 'under {max} KB').replace('{max}', specs.maxKB);
-    const sep = () => el('span', '·');
-    processSummary.append(
-      el('span', (d.labelOutput || 'Output') + ':'),
-      el('strong', `${specs.width} × ${specs.height} px`), sep(),
-      el('span', formatNames[specs.mimeType] || 'JPEG'), sep(),
-      el('span', size)
-    );
-    processSummary.querySelectorAll('span').forEach(node => { if (node.textContent === '·') node.className = 'sep'; });
-    const target = d.changeTarget ? getEl(d.changeTarget) : null;
-    if (target) {
-      const change = el('a', d.labelChange || 'Change');
-      change.href = '#' + d.changeTarget;
-      processSummary.append(change);
+    if (!requirementChosen) {
+      processSummary.append(doc.createTextNode((d.labelPending || 'Choose what you are preparing above.') + ' '));
+      const show = el('button', d.labelShow || 'Show me');
+      show.type = 'button';
+      show.addEventListener('click', () => {
+        const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reqPanel) reqPanel.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+        const first = reqPanel && reqPanel.querySelector('.choice');
+        if (first) first.focus({ preventScroll: true });
+      });
+      processSummary.append(show);
     }
   }
 
@@ -886,13 +932,26 @@
    */
   function attachEventListeners() {
     on(presetSelect, 'change', () => {
-      if (presetSelect) applyPreset(presetSelect.value);
+      if (!presetSelect) return;
+      chooseRequirement();
+      applyPreset(presetSelect.value);
     });
     if (doc) {
       doc.querySelectorAll('button[data-preset], .preset-shortcut[data-preset]').forEach(button => {
-        on(button, 'click', () => applyPreset(button.dataset.preset));
+        on(button, 'click', () => {
+          chooseRequirement();
+          applyPreset(button.dataset.preset);
+          setRequirementOpen(false, true);
+        });
       });
     }
+    on(btnChangeReq, 'click', () => setRequirementOpen(reqPanel && reqPanel.dataset.open !== 'true', true));
+    on(reqPanel, 'keydown', e => {
+      if (e.key === 'Escape' && reqPanel.dataset.open === 'true' && requirementChosen) {
+        e.preventDefault();
+        setRequirementOpen(false, true);
+      }
+    });
     on(btnOriginalSize, 'click', useOriginalSize);
     on(btnTryExample, 'click', loadExample);
 
@@ -1282,9 +1341,9 @@
               if (btnOriginalSize) btnOriginalSize.disabled = false;
               setWorkspaceStatus('Ready to edit');
               updateCropperRatio();
-              if (window.innerWidth <= 760 && cropperActiveArea) cropperActiveArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              if (window.innerWidth < 640 && cropperActiveArea) cropperActiveArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
               const specs = getActiveSpecs();
-              if (btnProcess) btnProcess.disabled = !specs.isValid;
+              if (btnProcess) btnProcess.disabled = !specs.isValid || !requirementChosen;
             },
             crop: function () {
               if (!processing && (!resultArea || resultArea.classList.contains('hidden'))) {
@@ -1606,6 +1665,18 @@
     return best;
   }
 
+  // "50 KB (51,200 bytes)": the byte count is the exact proof, shown on its own quieter line.
+  function setWithBytes(el, text) {
+    if (!el) return;
+    const m = /^(.*?)\s*(\([^)]*bytes\))$/.exec(text);
+    el.textContent = '';
+    if (!m) { el.textContent = text; return; }
+    const bytes = document.createElement('span');
+    bytes.className = 'bytes';
+    bytes.textContent = m[2];
+    el.append(document.createTextNode(m[1] + ' '), bytes);
+  }
+
   /**
    * Process & Compress Image with Strict Post-Validation
    */
@@ -1696,7 +1767,7 @@
       const fill = (template, values) => template.replace(/\{(\w+)\}/g, (m, k) => (k in values ? values[k] : m));
       const nums = { min: specs.minKB, max: specs.maxKB, minBytes: (specs.minKB * 1024).toLocaleString(), maxBytes: (specs.maxKB * 1024).toLocaleString() };
       if (resultOrigDims) {
-        resultOrigDims.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px`;
+        resultOrigDims.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px${currentFile ? ` · ${(currentFile.size / 1024).toFixed(1)} KB` : ''}`;
       }
       if (resultTargetDims) {
         resultTargetDims.textContent = `${specs.width} × ${specs.height} px`;
@@ -1705,17 +1776,16 @@
         resultDims.textContent = `${validationImg.naturalWidth} × ${validationImg.naturalHeight} px, ${words.verified || 'verified'}`;
       }
       if (resultTargetSize) {
-        if (specs.minKB > 0) {
-          resultTargetSize.textContent = fill(words.limitRange || '{min}–{max} KB ({minBytes} – {maxBytes} bytes)', nums);
-        } else {
-          resultTargetSize.textContent = fill(words.limitUnder || 'Under {max} KB ({maxBytes} bytes)', nums);
-        }
+        const limit = specs.minKB > 0
+          ? fill(words.limitRange || '{min}–{max} KB ({minBytes} – {maxBytes} bytes)', nums)
+          : fill(words.limitUnder || 'Under {max} KB ({maxBytes} bytes)', nums);
+        setWithBytes(resultTargetSize, limit);
       }
 
       const actualBytes = compressedBlob.size;
       const actualKB = (actualBytes / 1024).toFixed(2);
       if (resultFileSize) {
-        resultFileSize.textContent = `${actualKB} KB (${actualBytes.toLocaleString()} bytes)`;
+        setWithBytes(resultFileSize, `${actualKB} KB (${actualBytes.toLocaleString()} bytes)`);
       }
 
       if (compProcessedKB) {
@@ -1727,6 +1797,8 @@
 
       const formatNames = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
       if (resultFormat) resultFormat.textContent = formatNames[specs.mimeType] || specs.mimeType;
+      const resultFormatRequired = document.getElementById('resultFormatRequired');
+      if (resultFormatRequired) resultFormatRequired.textContent = formatNames[specs.mimeType] || specs.mimeType;
 
       if (resultStatus) {
         if (specs.minKB > 0) {
@@ -1767,7 +1839,7 @@
       if (opId === currentOpId) {
         processing = false;
         if (btnProcess) {
-          btnProcess.disabled = !cropperReady || !getActiveSpecs().isValid;
+          btnProcess.disabled = !cropperReady || !getActiveSpecs().isValid || !requirementChosen;
           btnProcess.innerHTML = processLabel;
           btnProcess.removeAttribute('aria-busy');
         }

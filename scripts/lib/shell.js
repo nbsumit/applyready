@@ -3,7 +3,7 @@
    checks that no page has drifted, so all pages look and behave like one product. */
 'use strict';
 
-const ASSET_VERSION = '20261120-1';
+const ASSET_VERSION = '20261121-1';
 
 // The product map. The header menu, the mobile sheet and the footer all read from here,
 // so every page presents the same five areas: image tools, PDF tools, resume, exam requirements, guides.
@@ -16,15 +16,17 @@ const TOOLS = [
     ['Image to PDF', 'image-to-pdf.html', 'fa-file-pdf', 'Combine photos and scans'],
     ['Compress PDF', 'compress-pdf.html', 'fa-compress', 'Fit a portal size limit']] }
 ];
-const EXAMS = [['SSC', 'ssc-photo-signature-size.html'], ['UPSC', 'upsc-photo-signature-size.html'], ['IBPS', 'ibps-photo-signature-size.html'],
-  ['NEET', 'neet-photo-signature-size.html'], ['RRB', 'rrb-photo-signature-size.html']];
+const EXAMS = [['SSC', 'ssc-photo-signature-size.html', 'CGL, CHSL, MTS, GD'], ['UPSC', 'upsc-photo-signature-size.html', 'Civil services, NDA, CDS'],
+  ['IBPS', 'ibps-photo-signature-size.html', 'Bank PO and clerk'], ['NEET', 'neet-photo-signature-size.html', 'Medical entrance'],
+  ['RRB', 'rrb-photo-signature-size.html', 'Railway recruitment']];
 const SIZES = [['10 KB', 'resize-image-to-10kb.html'], ['20 KB', 'resize-image-to-20kb.html'], ['50 KB', 'resize-image-to-50kb.html'],
   ['100 KB', 'resize-image-to-100kb.html'], ['200 KB', 'resize-image-to-200kb.html']];
 
+// Four columns, so the footer divides evenly in every layout mode (4, then 4 under the brand, then 2 by 2).
 const FOOTER_COLUMNS = [
-  { title: 'Image tools', links: [['Image resizer', ''], ['Signature cleaner', 'signature-cleaner.html'], ['Passport photo print', 'passport-photo-print.html'], ['Resize to 20 KB', 'resize-image-to-20kb.html'], ['Resize to 50 KB', 'resize-image-to-50kb.html']] },
-  { title: 'PDF and resume', links: [['Image to PDF', 'image-to-pdf.html'], ['Compress PDF', 'compress-pdf.html'], ['Resume builder', 'resume.html']] },
-  { title: 'Exam requirements', links: [['SSC', 'ssc-photo-signature-size.html'], ['UPSC', 'upsc-photo-signature-size.html'], ['IBPS', 'ibps-photo-signature-size.html'], ['NEET', 'neet-photo-signature-size.html'], ['RRB', 'rrb-photo-signature-size.html']] },
+  { title: 'Tools', links: [['Image resizer', ''], ['Signature cleaner', 'signature-cleaner.html'], ['Passport photo print', 'passport-photo-print.html'], ['Image to PDF', 'image-to-pdf.html'], ['Compress PDF', 'compress-pdf.html'], ['Resume builder', 'resume.html']] },
+  { title: 'Resize to a file size', links: SIZES.map(([label, p]) => [label, p]) },
+  { title: 'Exam requirements', links: EXAMS.map(([label, p]) => [label, p]) },
   { title: 'ApplyReady', links: [['Guides', 'guides/'], ['How to use', 'how-to-use.html'], ['About', 'about.html'], ['Privacy', 'privacy.html'], ['Terms', 'terms.html'], ['Contact', 'contact.html']] }
 ];
 
@@ -59,9 +61,6 @@ function headerHTML(page) {
               <ul class="menu__list">
 ${g.links.map(([label, p, icon, desc]) => `                <li><a class="menu__item" href="${rel(p)}"${cur(p)}><i class="fa-solid ${icon} menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">${esc(label)}</span><span class="menu__desc">${esc(desc)}</span></span></a></li>`).join('\n')}
               </ul>`).join('\n');
-  const plain = (items, cls) => `              <ul class="menu__list ${cls}">
-${items.map(([label, p]) => `                <li><a href="${rel(p)}"${cur(p)}>${esc(label)}</a></li>`).join('\n')}
-              </ul>`;
   const resumeCur = cur('resume.html');
   const guidesCur = page.startsWith('guides/') ? ' aria-current="page"' : '';
   const hindi = page.startsWith('hi/') ? ' aria-current="page"' : '';
@@ -81,10 +80,10 @@ ${items.map(([label, p]) => `                <li><a href="${rel(p)}"${cur(p)}>${
 ${toolGroups}
               </div>
               <div class="menu__group menu__group--refs">
-              <p class="menu__title">Exam requirements</p>
-${plain(EXAMS, 'menu__list--exams')}
-              <p class="menu__title">Resize to a file size</p>
-${plain(SIZES, 'menu__list--sizes')}
+              <p class="menu__title">Exam photo and signature</p>
+              <ul class="menu__list">
+${EXAMS.map(([label, p, desc]) => `                <li><a class="menu__item menu__item--plain" href="${rel(p)}"${cur(p)}><span class="menu__text"><span class="menu__name">${esc(label)}</span><span class="menu__desc">${esc(desc)}</span></span></a></li>`).join('\n')}
+              </ul>
               </div>
             </div>
           </li>
@@ -118,7 +117,7 @@ ${c.links.map(([label, p]) => `          <li><a href="${rel(p)}">${esc(label)}</
       </div>
 ${cols}
     </div>
-    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Files are processed on your device.</span></div>
+    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span></div>
   </footer>`;
 }
 

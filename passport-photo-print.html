@@ -30,12 +30,12 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261120-1"></script>
+  <script src="js/theme.js?v=20261121-1"></script>
 
   <!-- Icons & Styles -->
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261120-1">
+  <link rel="stylesheet" href="css/app.css?v=20261121-1">
   <!-- shell:styles:end -->
 
   <!-- SoftwareApplication Schema -->
@@ -175,21 +175,13 @@
               </ul>
               </div>
               <div class="menu__group menu__group--refs">
-              <p class="menu__title">Exam requirements</p>
-              <ul class="menu__list menu__list--exams">
-                <li><a href="ssc-photo-signature-size.html">SSC</a></li>
-                <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
-                <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
-                <li><a href="neet-photo-signature-size.html">NEET</a></li>
-                <li><a href="rrb-photo-signature-size.html">RRB</a></li>
-              </ul>
-              <p class="menu__title">Resize to a file size</p>
-              <ul class="menu__list menu__list--sizes">
-                <li><a href="resize-image-to-10kb.html">10 KB</a></li>
-                <li><a href="resize-image-to-20kb.html">20 KB</a></li>
-                <li><a href="resize-image-to-50kb.html">50 KB</a></li>
-                <li><a href="resize-image-to-100kb.html">100 KB</a></li>
-                <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+              <p class="menu__title">Exam photo and signature</p>
+              <ul class="menu__list">
+                <li><a class="menu__item menu__item--plain" href="ssc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">SSC</span><span class="menu__desc">CGL, CHSL, MTS, GD</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="upsc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">UPSC</span><span class="menu__desc">Civil services, NDA, CDS</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="ibps-photo-signature-size.html"><span class="menu__text"><span class="menu__name">IBPS</span><span class="menu__desc">Bank PO and clerk</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="neet-photo-signature-size.html"><span class="menu__text"><span class="menu__name">NEET</span><span class="menu__desc">Medical entrance</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="rrb-photo-signature-size.html"><span class="menu__text"><span class="menu__name">RRB</span><span class="menu__desc">Railway recruitment</span></span></a></li>
               </ul>
               </div>
             </div>
@@ -230,7 +222,6 @@
     <!-- tool:start -->
     <section class="ws" id="printApp" data-state="empty" data-simple-empty data-settings="open" data-ws-file="#printFileInfoBox" aria-label="Passport photo print sheet">
       <div class="ws-head">
-        <p class="ws-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> Your photo stays on this device. Nothing is uploaded.</p>
         <div id="printFileInfoBox" class="filebar hidden" aria-live="polite">
           <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
           <span id="printFileInfoText" class="filebar__name"></span>
@@ -247,7 +238,7 @@
           <h2 class="dropzone__title">Add your passport photo</h2>
           <p class="dropzone__text">Use a cropped, front-facing photo on a plain background.</p>
           <button type="button" id="btnPrintBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose photo</button>
-          <p class="dropzone__hint">JPG, PNG or WebP. Need to crop first? Use the image resizer.</p>
+          <p class="dropzone__hint">JPG, PNG or WebP. Need to crop first? Use the image resizer. Your photo stays on this device.</p>
         </div>
         <div id="printPreviewArea" class="ws-result hidden">
           <div class="ws-preview-bar">
@@ -482,21 +473,24 @@
         <p>Photos, signatures, PDFs and resumes, prepared to the exact requirement. Everything runs in your browser. Files are never uploaded.</p>
       </div>
       <div class="site-footer__col">
-        <h2 class="site-footer__title">Image tools</h2>
+        <h2 class="site-footer__title">Tools</h2>
         <ul class="site-footer__list">
           <li><a href="/">Image resizer</a></li>
           <li><a href="signature-cleaner.html">Signature cleaner</a></li>
           <li><a href="passport-photo-print.html">Passport photo print</a></li>
-          <li><a href="resize-image-to-20kb.html">Resize to 20 KB</a></li>
-          <li><a href="resize-image-to-50kb.html">Resize to 50 KB</a></li>
-        </ul>
-      </div>
-      <div class="site-footer__col">
-        <h2 class="site-footer__title">PDF and resume</h2>
-        <ul class="site-footer__list">
           <li><a href="image-to-pdf.html">Image to PDF</a></li>
           <li><a href="compress-pdf.html">Compress PDF</a></li>
           <li><a href="resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Resize to a file size</h2>
+        <ul class="site-footer__list">
+          <li><a href="resize-image-to-10kb.html">10 KB</a></li>
+          <li><a href="resize-image-to-20kb.html">20 KB</a></li>
+          <li><a href="resize-image-to-50kb.html">50 KB</a></li>
+          <li><a href="resize-image-to-100kb.html">100 KB</a></li>
+          <li><a href="resize-image-to-200kb.html">200 KB</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
@@ -521,12 +515,12 @@
         </ul>
       </div>
     </div>
-    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Files are processed on your device.</span></div>
+    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span></div>
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261120-1" defer></script>
-  <script src="js/site.js?v=20261120-1"></script>
-  <script src="js/passport-photo-print.js?v=20261120-1"></script>
+  <script src="js/components.js?v=20261121-1" defer></script>
+  <script src="js/site.js?v=20261121-1"></script>
+  <script src="js/passport-photo-print.js?v=20261121-1"></script>
 </body>
 </html>

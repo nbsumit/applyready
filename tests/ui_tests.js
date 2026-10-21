@@ -36,6 +36,18 @@ const server = http.createServer((req, res) => {
     await context.route('**/*', route => { const u = route.request().url(); return /^(http:\/\/127\.|blob:|data:)/.test(u) ? route.continue() : route.abort(); });
     return { context, page: await context.newPage() };
   };
+  // The resizer asks for the requirement first; its list folds into a summary once one is chosen.
+  const choose = async (page, key) => {
+    const change = page.locator('#btnChangeReq');
+    if (await change.isVisible() && await change.getAttribute('aria-expanded') !== 'true') await change.click();
+    await page.locator(`.choice[data-preset="${key}"]`).click();
+  };
+  // Detailed settings: the disclosure once it is shown, otherwise choosing "Custom size" opens them.
+  const openSettings = async page => {
+    const toggle = page.locator('.ws-customize');
+    if (await toggle.isVisible()) { if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click(); return; }
+    await choose(page, 'custom');
+  };
 
   // 1. Every page: no button or link-button whose label has the same colour as its fill,
   //    no visible browser-default file input, no browser-default grey button, text floor.
@@ -121,7 +133,7 @@ const server = http.createServer((req, res) => {
   for (const [width, height] of [[390, 780], [1280, 900]]) {
     const { context, page } = await open(width, height);
     await page.goto(`${origin}/index.html`);
-    await page.locator('.ws-customize').click();
+    await openSettings(page);
     const trigger = page.locator('#aspectRatioSelect').locator('xpath=..').locator('.select-btn');
     await trigger.scrollIntoViewIfNeeded();
     await trigger.click();
@@ -156,7 +168,7 @@ const server = http.createServer((req, res) => {
     ok(await page.evaluate(() => document.activeElement !== document.body), `${width}: Tab keeps focus in the page`);
     // The requirement list is a set of toggle buttons; choosing one applies its values and is announced.
     const passport = page.locator('.choice[data-preset="passport"]');
-    await passport.click();
+    await choose(page, 'passport');
     ok(await page.locator('#presetSelect').inputValue() === 'passport' && await passport.getAttribute('aria-pressed') === 'true', `${width}: choosing a requirement selects it`);
     ok(await page.locator('#customWidth').inputValue() === '350' && await page.locator('#customHeight').inputValue() === '450', `${width}: requirement dimensions are applied`);
     ok(await page.locator('.choice[aria-pressed="true"]').count() === 1, `${width}: exactly one requirement is pressed`);
@@ -183,7 +195,7 @@ const server = http.createServer((req, res) => {
     for (const [file, selector] of cases) {
       await page.goto(`${origin}/${file}`);
       if (selector === '#summaryText') await page.locator('#sec-summary .accordion-header').click();
-      if (selector === '#customWidth') await page.locator('.ws-customize').click();
+      if (selector === '#customWidth') await openSettings(page);
       const field = page.locator(selector).first();
       await field.focus();
       const ring = await field.evaluate(el => { const cs = getComputedStyle(el); return { shadow: cs.boxShadow, outline: cs.outlineStyle, outlineWidth: parseFloat(cs.outlineWidth), border: cs.borderTopColor }; });
@@ -244,6 +256,7 @@ const server = http.createServer((req, res) => {
       }), 'base64');
       for (const [file, input, action, result] of [['index.html', '#fileInput', '#btnProcess', '#resultArea'], ['ssc-photo-signature-size.html', '#fileInput', '#btnProcess', '#resultArea'], ['hi/ssc-photo-signature-size.html', '#fileInput', '#btnProcess', '#resultArea']]) {
         await page.goto(`${origin}/${file}`); await setTheme();
+        if (file === 'index.html') await choose(page, 'passport');
         await page.locator(input).setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await image() });
         await page.locator(action).click();
         await page.locator(result).waitFor({ state: 'visible' });
@@ -269,7 +282,7 @@ const server = http.createServer((req, res) => {
     // Errors must be visible on every embedded tool, not only on the home page.
     for (const file of embedded) {
       await page.goto(`${origin}/${file}`);
-      await page.locator('.ws-customize').click();
+      await openSettings(page);
       await page.locator('#customWidth').fill('5');
       await page.locator('#customWidth').blur();
       await page.locator('#dimError').waitFor({ state: 'visible', timeout: 4000 });
@@ -329,17 +342,21 @@ const server = http.createServer((req, res) => {
       x.putImageData(d, 0, 0); return c.toDataURL('image/png').split(',')[1];
     }, [w, h]), 'base64');
 
-    // Output summary under the main action, and errors next to the field at fault
+    // The home page asks what is being prepared before it will process, and says so under the action
     const { context, page } = await open(390, 844);
     await page.goto(`${origin}/index.html`);
     await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await noisePng(page, 600, 800) });
     await page.locator('#cropperActiveArea:not(.hidden)').waitFor();
     const summary = async () => (await page.locator('#processSummary').innerText()).replace(/\s+/g, ' ').trim();
-    ok(/350 × 350 px/.test(await summary()) && /under 50 KB/.test(await summary()), `summary names the output before processing (${await summary()})`);
-    await page.locator('.choice[data-preset="passport"]').click();
-    ok(/350 × 450 px/.test(await summary()), `summary follows the preset (${await summary()})`);
+    ok(await page.locator('#btnProcess').isDisabled() && /Choose what you are preparing/.test(await summary()), `nothing is processed before a requirement is chosen (${await summary()})`);
+    ok(await page.locator('.choice[aria-pressed="true"]').count() === 0, 'no requirement is preselected on the home page');
+    await page.locator('#processSummary button').click();
+    ok(await page.evaluate(() => document.activeElement && document.activeElement.matches('.choice')), '"Show me" takes focus to the requirement list');
+    await choose(page, 'passport');
+    ok(await page.locator('#btnProcess').isEnabled(), 'choosing a requirement enables the action');
+    ok(/350 × 450 px/.test(await page.locator('#reqSummarySpec').innerText()) && await page.locator('#reqGrid').isHidden(), 'the chosen requirement folds into a summary with its numbers');
     ok(await page.locator('#resizerApp').getAttribute('data-settings') === 'closed', 'a chosen requirement keeps the detailed settings folded');
-    await page.locator('.ws-customize').click();
+    await openSettings(page);
     await page.locator('#customWidth').fill('5');
     await page.locator('#customWidth').dispatchEvent('input');
     ok(await page.locator('#btnProcess').isDisabled(), 'an invalid width disables the action');
@@ -377,7 +394,8 @@ const server = http.createServer((req, res) => {
     // Exam page: the preset switch shows which preset is in use
     await page.goto(`${origin}/ssc-photo-signature-size.html`);
     ok(await page.locator('.choice[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'true', 'SSC photo preset is marked as selected on load');
-    await page.locator('.choice[data-preset="ssc-signature"]').click();
+    ok(/SSC photo/.test(await page.locator('#reqSummaryName').innerText()) && await page.locator('#reqGrid').isHidden(), 'the exam requirement arrives chosen, shown as a summary');
+    await choose(page, 'ssc-signature');
     ok(await page.locator('.choice[data-preset="ssc-signature"]').getAttribute('aria-pressed') === 'true' && await page.locator('.choice[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
     ok(await page.locator('.choice').count() === 3, 'an exam page offers only that exam\'s photo, signature and a custom size');
 
@@ -475,7 +493,7 @@ const server = http.createServer((req, res) => {
     await page.locator('#resultArea:not(.hidden)').waitFor();
     ok(/[\u0900-\u097F]/.test(await page.locator('#resultStatus').textContent()) && /[\u0900-\u097F]/.test(await page.locator('#resultTargetSize').textContent()), 'Hindi page: result status and limit are written in Hindi');
     await page.goto(`${origin}/hi/ssc-photo-signature-size.html`);
-    await page.locator('.ws-customize').click();
+    await openSettings(page);
     await page.locator('#customWidth').fill('5');
     await page.locator('#customWidth').blur();
     await page.locator('#dimError').waitFor({ state: 'visible' });
@@ -485,19 +503,35 @@ const server = http.createServer((req, res) => {
     await page.locator('#processErrorBox').waitFor({ state: 'visible' });
     ok(/[\u0900-\u097F]/.test(await page.locator('#processErrorMessage').textContent()), 'Hindi page: a file error is written in Hindi');
 
-    // Desktop rail: with every setting open, the action stays fully visible and never covers a setting
+    // Resizer, every setting open: the page scrolls normally (no inner scroll region), the sticky action
+    // stays on screen, and the last setting can be scrolled clear of it.
     await page.goto(`${origin}/index.html`);
+    await choose(page, 'passport');
     await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await pngOf(700, 900) });
     await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
-    await page.locator('.ws-customize').click();
+    await openSettings(page);
     await page.evaluate(() => { document.querySelector('.ws-advanced').open = true; });
-    for (const y of [0, 400, 800]) {
+    const inner = await page.evaluate(() => [...document.querySelectorAll('#resizerApp, #resizerApp *')].filter(el => { const cs = getComputedStyle(el); return /(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 1 && !el.closest('.cropper-container-wrapper'); }).map(el => el.id || el.className));
+    ok(inner.length === 0, `the resizer has no inner scroll region (${inner})`);
+    for (const y of [0, 400]) {
       await page.evaluate(y => scrollTo(0, y), y);
       await page.waitForTimeout(100);
-      const geo = await page.evaluate(() => { const side = document.querySelector('.ws-side').getBoundingClientRect(), action = document.querySelector('.ws-action').getBoundingClientRect(), btn = document.getElementById('btnProcess').getBoundingClientRect(); return { overlap: side.bottom > action.top + 1, visible: btn.top >= 0 && btn.bottom <= innerHeight }; });
-      ok(!geo.overlap, `rail at scroll ${y}: the action does not cover the settings`);
-      ok(geo.visible || y === 800, `rail at scroll ${y}: the main action is on screen`);
+      const visible = await page.evaluate(() => { const b = document.getElementById('btnProcess').getBoundingClientRect(); return b.top >= 0 && b.bottom <= innerHeight; });
+      ok(visible, `resizer at scroll ${y}: the main action is on screen`);
     }
+    await page.evaluate(() => { const ws = document.getElementById('resizerApp').getBoundingClientRect(); scrollTo(0, scrollY + ws.bottom - innerHeight + 8); });
+    await page.waitForTimeout(100);
+    const clear = await page.evaluate(() => document.querySelector('.ws-advanced').getBoundingClientRect().bottom <= document.querySelector('#resizerApp .ws-action').getBoundingClientRect().top + 1);
+    ok(clear, 'resizer: the last setting scrolls clear of the sticky action');
+
+    // Secondary tool rail (desktop): settings and action beside the stage, no inner scroll region
+    await page.goto(`${origin}/signature-cleaner.html`);
+    await page.locator('#cleanerFileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await pngOf(700, 400) });
+    await page.locator('#cleanerPreviewArea:not(.hidden)').waitFor();
+    const rail = await page.evaluate(() => { const r = document.querySelector('.ws-rail'), cs = getComputedStyle(r), a = document.getElementById('btnCleanerDownload').getBoundingClientRect(); return { scroll: /(auto|scroll)/.test(cs.overflowY), maxH: cs.maxHeight, side: r.getBoundingClientRect().left > document.querySelector('.ws-stage').getBoundingClientRect().left, onScreen: a.top >= 0 && a.bottom <= innerHeight }; });
+    ok(!rail.scroll && rail.maxH === 'none', 'signature cleaner: the rail scrolls with the page');
+    ok(rail.side, 'signature cleaner: settings sit beside the stage on a desktop');
+    ok(rail.onScreen, 'signature cleaner: Download is on screen after upload');
 
     // Landing pages: the tool comes before the reference content
     for (const file of ['ssc-photo-signature-size.html', 'resize-image-to-20kb.html', 'hi/ibps-photo-signature-size.html']) {
