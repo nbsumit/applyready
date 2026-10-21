@@ -32,6 +32,21 @@
   if (media.addEventListener) media.addEventListener('change', onScheme);
   else if (media.addListener) media.addListener(onScheme);
 
+  /* ----------------------------------------------------- On-screen keyboard */
+  // Sticky bars (the resume Edit/Preview bar, a tool's action bar) step aside only while the on-screen
+  // keyboard is actually open, so they never cover the field being typed in.
+  if (window.visualViewport) {
+    const vv = window.visualViewport;
+    const sync = () => {
+      const field = doc.activeElement && /^(INPUT|TEXTAREA)$/.test(doc.activeElement.tagName);
+      doc.body.classList.toggle('is-typing', !!field && window.innerHeight - vv.height > 150);
+    };
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
+    doc.addEventListener('focusin', () => setTimeout(sync, 150));
+    doc.addEventListener('focusout', () => setTimeout(sync, 150));
+  }
+
   /* ----------------------------------------------------- Reference tables */
   // On phones a wide table becomes one block per row, each value under its column name, instead of a
   // strip that scrolls sideways. The CSS only stacks tables marked here, so without script they scroll.

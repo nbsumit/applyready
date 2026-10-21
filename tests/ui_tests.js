@@ -220,20 +220,137 @@ const server = http.createServer((req, res) => {
   }
   console.log('✓ Focus indicators on text fields and across a keyboard walk');
 
-  // 4. Layout: no horizontal overflow on any page at the required widths.
+  // 4. Layout: no horizontal overflow on any page at the required widths, both sides of every breakpoint.
+  const overflowWidths = [320, 360, 375, 390, 430, 480, 560, 600, 639, 640, 641, 700, 768, 820, 840, 859, 860, 861, 880, 900, 999, 1000, 1001, 1024, 1099, 1100, 1101, 1200, 1280, 1366, 1440, 1600];
   {
-    const widths = [320, 360, 375, 390, 430, 768, 1024, 1280, 1440];
-    for (const width of widths) {
-      const { context, page } = await open(width, 800);
-      for (const file of pages) {
-        await page.goto(`${origin}/${file}`);
+    const { context, page } = await open(1280, 800);
+    for (const file of pages) {
+      await page.goto(`${origin}/${file}`);
+      for (const width of overflowWidths) {
+        await page.setViewportSize({ width, height: 800 });
         const over = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
         ok(over <= 1, `${file} overflows by ${over}px at ${width}`);
       }
+    }
+    await context.close();
+  }
+  console.log(`✓ No horizontal overflow on ${pages.length} pages at ${overflowWidths.length} widths`);
+
+  // 4b. Layout modes. Each breakpoint is a deliberate change of layout, checked on both sides of it:
+  //     desktop (1000px and wider), tablet (640 to 999px), phone (under 640px).
+  {
+    const mode = w => (w >= 1000 ? 'desktop' : w >= 640 ? 'tablet' : 'phone');
+    const tiny = await (async () => { const { context, page } = await open(400, 400); const b = Buffer.from(await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 600; c.height = 800; const x = c.getContext('2d'); x.fillStyle = '#9ab'; x.fillRect(0, 0, 600, 800); return c.toDataURL('image/png').split(',')[1]; }), 'base64'); await context.close(); return b; })();
+    // The requirement grid: fixed column count per mode, every label whole, task order kept.
+    const grid = page => page.evaluate(() => {
+      const g = document.getElementById('reqGrid');
+      const cards = [...g.querySelectorAll('.choice')];
+      const rects = cards.map(c => c.getBoundingClientRect());
+      const cls = g.className;
+      const clipped = [...g.querySelectorAll('.choice__name, .choice__spec')].filter(el => { const r = el.getBoundingClientRect(), card = el.closest('.choice').getBoundingClientRect(); return el.scrollWidth > el.clientWidth + 1 || r.width === 0 || r.height === 0 || r.right > card.right + 0.5 || r.bottom > card.bottom + 0.5; }).map(el => el.textContent);
+      const visualOrder = cards.map((c, i) => ({ i, top: Math.round(rects[i].top), left: Math.round(rects[i].left) })).sort((a, b) => a.top - b.top || a.left - b.left).map(x => x.i);
+      const scrollers = [...document.querySelectorAll('#resizerApp, #resizerApp *')].filter(el => { const cs = getComputedStyle(el); return /(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1; }).length;
+      return {
+        cols: getComputedStyle(g).gridTemplateColumns.split(' ').length,
+        d: Number((/req-grid--d(\d)/.exec(cls) || [])[1]), t: Number((/req-grid--t(\d)/.exec(cls) || [])[1]),
+        count: cards.length, widths: [...new Set(rects.map(r => Math.round(r.width)))], heights: [...new Set(rects.map(r => Math.round(r.height)))],
+        clipped, inOrder: visualOrder.every((v, i) => v === i), overflow: g.scrollWidth > g.clientWidth + 1, scrollers,
+        pageOverflow: document.documentElement.scrollWidth > innerWidth + 1
+      };
+    });
+    const widths = [320, 360, 390, 430, 639, 640, 641, 768, 999, 1000, 1001, 1280, 1440];
+    for (const width of widths) {
+      const { context, page } = await open(width, 720);
+      await page.goto(`${origin}/index.html`);
+      const g = await grid(page);
+      const want = mode(width) === 'desktop' ? g.d : mode(width) === 'tablet' ? g.t : 1;
+      ok(g.cols === want, `home @${width}: requirement grid has ${want} columns in ${mode(width)} mode (${g.cols})`);
+      ok(g.widths.length === 1 && g.heights.length === 1, `home @${width}: requirement cards share one size (${g.widths} x ${g.heights})`);
+      ok(g.clipped.length === 0, `home @${width}: no requirement label is clipped or hidden (${g.clipped})`);
+      ok(g.inOrder, `home @${width}: requirements read in the same order on screen as in the page`);
+      ok(!g.overflow && g.scrollers === 0 && !g.pageOverflow, `home @${width}: no sideways scrolling, in the grid or the page`);
+      // Choose, fold to a summary, then reopen: the choice is kept and shown
+      await page.locator('.choice[data-preset="passport"]').click();
+      ok(await page.locator('#reqGrid').isHidden() && /350 × 450 px/.test(await page.locator('#reqSummarySpec').innerText()), `home @${width}: a choice folds into its summary`);
+      const change = await page.locator('#btnChangeReq').boundingBox();
+      ok(change && change.x >= 0 && change.x + change.width <= width, `home @${width}: Change is on screen`);
+      await page.locator('#btnChangeReq').click();
+      ok(await page.locator('.choice[data-preset="passport"]').getAttribute('aria-pressed') === 'true', `home @${width}: reopening shows the chosen requirement selected`);
+      await page.keyboard.press('Escape');
+      ok(await page.locator('#reqGrid').isHidden(), `home @${width}: Escape folds the list again`);
+      // A file: task order top to bottom, the primary action on screen, nothing sideways
+      await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: tiny });
+      await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
+      const order = await page.evaluate(() => ['reqPanel', 'fileInfoBox', 'cropperActiveArea', 'wsCustom'].map(id => { const el = document.getElementById(id); return el ? (el.id === 'wsCustom' ? el.previousElementSibling : el).getBoundingClientRect().top : -1; }));
+      ok(order.every((v, i) => i === 0 || v > order[i - 1]), `home @${width}: requirement, file, editor, settings run top to bottom (${order.map(Math.round)})`);
+      const action = await page.evaluate(() => { const r = document.getElementById('btnProcess').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; });
+      ok(action, `home @${width}: the primary action is on screen with a photo loaded`);
+      ok(!await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), `home @${width}: no page overflow with a photo loaded`);
+      // Crossing a breakpoint keeps the choice
+      const across = width === 641 ? 639 : width === 1001 ? 999 : width === 639 ? 641 : width === 999 ? 1001 : null;
+      if (across) {
+        await page.setViewportSize({ width: across, height: 720 });
+        ok(await page.locator('#presetSelect').inputValue() === 'passport' && /350 × 450 px/.test(await page.locator('#reqSummarySpec').innerText()), `home ${width}→${across}: the chosen requirement survives the layout change`);
+      }
+      // Header: a menu button on phones, the Tools menu inside the screen elsewhere
+      await page.setViewportSize({ width, height: 720 });
+      if (mode(width) === 'phone') {
+        ok(await page.locator('#navMenuToggle').isVisible() && await page.locator('#toolsMenuButton').isHidden(), `@${width}: phones get the menu button`);
+        await page.locator('#navMenuToggle').click();
+        ok(await page.locator('#siteNav .menu__item').first().isVisible(), `@${width}: the menu sheet lists the tools`);
+        ok(!await page.evaluate(() => { const n = document.getElementById('siteNav'); return n.scrollWidth > n.clientWidth + 1; }), `@${width}: the menu sheet does not scroll sideways`);
+        await page.locator('#navMenuToggle').click();
+      } else {
+        ok(await page.locator('#navMenuToggle').isHidden(), `@${width}: no menu button above phone width`);
+        await page.locator('#toolsMenuButton').click();
+        const box = await page.locator('#toolsMenu').boundingBox();
+        ok(box && box.x >= 0 && box.x + box.width <= width + 0.5, `@${width}: the Tools menu fits the screen`);
+        await page.keyboard.press('Escape');
+      }
+      await context.close();
+    }
+    // Result state at phone, tablet and desktop: one verdict, Download first and on screen, facts whole
+    for (const width of [360, 390, 768, 1280]) {
+      const { context, page } = await open(width, 800);
+      await page.goto(`${origin}/index.html`);
+      await page.locator('.choice[data-preset="signature"]').click();
+      await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: tiny });
+      await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
+      await page.locator('#btnProcess').click();
+      await page.locator('#resultArea:not(.hidden)').waitFor();
+      await page.waitForTimeout(500);
+      const r = await page.evaluate(() => {
+        const dl = document.getElementById('btnDownload').getBoundingClientRect();
+        const cells = [...document.querySelectorAll('.check-table th, .check-table td')].filter(c => c.offsetParent);
+        return {
+          onScreen: dl.top >= 0 && dl.bottom <= innerHeight && dl.left >= 0 && dl.right <= innerWidth,
+          first: document.querySelector('.ws-result__actions > .btn, .ws-result__actions > a').id,
+          primary: document.querySelectorAll('#resultArea .btn-primary').length,
+          clipped: cells.filter(c => c.scrollWidth > c.clientWidth + 1).length,
+          rows: document.querySelectorAll('.check-table tbody tr').length,
+          overflow: document.documentElement.scrollWidth > innerWidth + 1
+        };
+      });
+      ok(r.onScreen && r.first === 'btnDownload' && r.primary === 1, `result @${width}: Download is the one primary action, first and on screen`);
+      ok(r.rows === 3 && r.clipped === 0 && !r.overflow, `result @${width}: size, dimensions and format are shown whole`);
+      await context.close();
+    }
+    // Secondary tools and the resume builder change arrangement at 1000px, never squeeze
+    for (const width of [999, 1000]) {
+      const { context, page } = await open(width, 900);
+      await page.goto(`${origin}/signature-cleaner.html`);
+      await page.locator('#cleanerFileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: tiny });
+      await page.locator('#cleanerPreviewArea:not(.hidden)').waitFor();
+      const beside = await page.evaluate(() => document.querySelector('.ws-side').getBoundingClientRect().left > document.querySelector('.ws-stage').getBoundingClientRect().left + 100);
+      ok(beside === (width >= 1000), `signature cleaner @${width}: settings ${width >= 1000 ? 'beside' : 'below'} the stage`);
+      await page.goto(`${origin}/resume.html`);
+      const rb = await page.evaluate(() => { const e = document.querySelector('.rb-editor').getBoundingClientRect(), p = document.querySelector('.rb-preview').getBoundingClientRect(); return { both: e.width > 0 && p.width > 0, editor: e.width, bar: getComputedStyle(document.querySelector('.rb-bar')).display !== 'none' }; });
+      if (width >= 1000) ok(rb.both && rb.editor >= 460 && !rb.bar, `resume @${width}: editor (${Math.round(rb.editor)}px) and preview side by side`);
+      else ok(rb.bar && await page.locator('.rb-preview').isHidden(), `resume @${width}: Edit and Preview are switched, not squeezed`);
       await context.close();
     }
   }
-  console.log(`✓ No horizontal overflow on ${pages.length} pages at 9 widths`);
+  console.log('✓ Layout modes: requirement grid, task order, primary action, header, result and resume on both sides of 640 and 1000px');
 
   // 5. Accessibility rules on every page in both themes, and on result states.
   {

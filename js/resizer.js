@@ -1341,7 +1341,13 @@
               if (btnOriginalSize) btnOriginalSize.disabled = false;
               setWorkspaceStatus('Ready to edit');
               updateCropperRatio();
-              if (window.innerWidth < 640 && cropperActiveArea) cropperActiveArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              // Bring the editor into view when most of it is below the screen (phones, short laptops).
+              const frame = cropperActiveArea && cropperActiveArea.querySelector ? cropperActiveArea.querySelector('.cropper-container-wrapper') : null;
+              if (frame && frame.getBoundingClientRect && typeof window.innerHeight === 'number') {
+                const r = frame.getBoundingClientRect();
+                const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (Math.min(r.bottom, window.innerHeight - 80) - r.top < r.height * 0.6) cropperActiveArea.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+              }
               const specs = getActiveSpecs();
               if (btnProcess) btnProcess.disabled = !specs.isValid || !requirementChosen;
             },
