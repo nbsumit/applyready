@@ -1862,20 +1862,6 @@
       isDirty = true;
     }, true);
 
-    // Phones: the Edit/Preview bar steps aside only while the on-screen keyboard is actually open,
-    // so it never covers the field being typed in and never stays hidden once the keyboard is gone.
-    if (window.visualViewport) {
-      const vv = window.visualViewport;
-      const sync = () => {
-        const field = document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
-        document.body.classList.toggle('is-typing', !!field && window.innerHeight - vv.height > 150);
-      };
-      vv.addEventListener('resize', sync);
-      vv.addEventListener('scroll', sync);
-      document.addEventListener('focusin', () => setTimeout(sync, 150));
-      document.addEventListener('focusout', () => setTimeout(sync, 150));
-    }
-
     // Keyboard shortcuts for Undo (Ctrl+Z) and Redo (Ctrl+Y / Ctrl+Shift+Z)
     document.addEventListener('keydown', (e) => {
       const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';

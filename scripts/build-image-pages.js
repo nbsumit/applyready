@@ -100,19 +100,13 @@ const FAMILY = [
   const markup = `${START}
     <header class="page-head page-head--home">
       <h1 class="page-title">Resize Photo &amp; Signature to 20KB / 50KB for Online Forms</h1>
-      <p class="page-lede">Give it the requirement from your form. ApplyReady makes the exact pixel size and keeps the file inside the KB limit, ready to upload.</p>
-      <ul class="value-list" aria-label="What you get">
-        <li>Exact pixel dimensions</li>
-        <li>Strict KB limits, verified</li>
-        <li>Stays on your device</li>
-        <li>Free, no sign-up</li>
-      </ul>
+      <p class="page-lede">Choose what your form asks for, add your photo or signature, and download a file with the exact pixel size and KB limit. Free, with no sign-up.</p>
     </header>
 
     ${renderWorkspace({
-      lang: 'en', preset: 'custom', sample: true, level: 2,
+      lang: 'en', preset: 'custom', sample: true, level: 2, requireChoice: true,
       options: ['custom', 'passport', 'signature', 'thumb', 'declaration', 'avatar', 'web-banner', 'document'].map(v => [v, v === 'custom' ? 'Custom size' : PRESETS[v].name]),
-      choices: ['passport', 'signature', 'thumb', 'declaration', 'avatar', 'document']
+      choices: ['passport', 'signature', 'thumb', 'declaration', 'avatar', 'document', 'web-banner']
     })}
 
     <section class="toolset" aria-labelledby="toolsetHeading">

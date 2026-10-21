@@ -23,7 +23,7 @@ break. `docs/DESIGN_SYSTEM.md` documents the system that the code now implements
 ApplyReady is presented as one product with five areas. The header and footer use the same grouping.
 
 - **Image tools**: Image resizer (home), Signature cleaner, Passport photo print. File-size targets
-  (10 to 200 KB) are entry points into the resizer, listed as one compact row, not as five features.
+  (10 to 200 KB) are entry points into the resizer, listed in the footer, not as five features.
 - **PDF tools**: Image to PDF, Compress PDF.
 - **Resume**: Resume builder (direct header link).
 - **Exam requirements**: SSC, UPSC, IBPS, NEET, RRB (English and Hindi). Each is the resizer with that
@@ -56,22 +56,33 @@ order changes: page head, then the tool, then the reference content (tables, not
 ## 5. Interaction model
 
 **Tool workspace** (`.ws`, generated): a document bar (file name, size, Replace / Remove, status), a stage
-(drop zone, editor, result) and a settings rail with a sticky action footer. `data-state` is
-`empty | ready | done`; `data-busy` marks processing. The stage keeps its size while processing; the
-action shows a spinner and is disabled.
+(drop zone, editor, result), settings and one sticky action. `data-state` is `empty | ready | done`;
+`data-busy` marks processing. The stage keeps its size while processing; the action shows a spinner and
+is disabled. Secondary tools put the settings in a rail beside the stage on desktops; nothing scrolls
+inside the workspace.
 
-- Empty: the drop zone owns the stage. The rail shows the requirement picker. On phones the drop zone
-  comes first and the disabled action is hidden.
-- Ready: image editor in the stage, requirement picker and folded "Size, file limit and format" in the
-  rail, one primary action with a one-line output summary.
-- Done: a conclusive result: verdict line, preview with Result / Original, the facts that matter
-  (file size against the limit, dimensions, format), **Download** as the strongest action and
-  "Adjust again" as secondary.
-- Error: an inline error at the top of the stage, and field errors under their field.
+The image resizer (`.ws--linear`) is one column in task order at every width:
 
-**Requirement picker**: a vertical list of toggle buttons (`button[data-preset]`, `aria-pressed`) with the
-requirement name and its spec. A "Custom size" row is pressed as soon as a value is edited, so the state
-is never ambiguous. The native `<select id="presetSelect">` stays in the DOM as the value store.
+1. **What are you preparing?** A grid of requirement cards (name plus pixels and KB) with a fixed column
+   count per layout mode. Once chosen it folds into a one-line summary with Change. The home page has
+   no default and will not process until a requirement is chosen; landing pages arrive with theirs.
+2. **Add your photo or signature.** The drop zone, with the privacy statement said once.
+3. **Position it in the frame.** The crop editor; "Size, file limit and format" stays folded unless
+   needed.
+4. **Download.** A conclusive result: verdict, Download as the one primary action, Adjust again, the
+   preview and Required against Your file for size, dimensions and format.
+
+Errors appear at the top of the stage, field errors under their field.
+
+### Final pass (structural fixes)
+
+The first rebuild kept the requirement picker inside the settings rail. Its width depended on three
+breakpoints (360 px, 320 px below 1100, stacked under the drop zone below 860) and its height on a
+viewport-fitted sticky rail that scrolled internally, so the options moved and reflowed at every
+width and "Custom size" could hide behind the sticky action. The home page also preselected Custom
+size silently. The final pass moved the requirement into its own step, required an explicit choice on
+the home page, removed the rail's inner scrolling (`fitRail`), and reduced the breakpoints to two
+layout modes (640 and 1000 px). Tests now check the layout on both sides of each.
 
 **Resume builder**: an app bar (title, document status, Download), a stage switcher
 (Write, Style, Review, Download) that never blocks movement, an outline-style editor and a sticky paper
@@ -103,10 +114,11 @@ Phones get Edit / Preview / Download in a bottom bar.
 ## 8. Test strategy
 
 - Behaviour suites stay as they are: `npm test` (unit, regression, content) and `npm run test:browser`
-  (exports, sizes, focus, overflow at 9 widths, axe in both themes).
+  (exports, sizes, focus, overflow at 32 widths, layout modes on both sides of 640 and 1000 px, axe in
+  both themes).
 - Presentation-only assertions (old class names, wizard steps, chip markup) are rewritten to assert
   the new behaviour: requirement picker state, settings disclosure, result verdict, tool order.
 - New regression checks: tool appears before reference content on landing pages; editing a value
   moves the picker to Custom; Image to PDF rotation and stale-result reset; resume entry collapse;
   review Fix focuses the exact field; mobile Download shortcut.
-- Manual review of Playwright screenshots at 320 to 1440 px in light and dark.
+- Manual review of Playwright screenshots at 320 to 1600 px and 600 to 1080 px high, in light and dark.

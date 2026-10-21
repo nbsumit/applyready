@@ -18,9 +18,10 @@ function balanced(html, from, tag) {
   throw new Error(`unbalanced <${tag}>`);
 }
 
-// The document bar: a privacy line before a file exists, the file and its actions after.
-const head = (privacy, bar = '', always = false) => `      <div class="ws-head">
-        <p class="ws-privacy${always ? ' ws-privacy--always' : ''}"><i class="fa-solid fa-lock" aria-hidden="true"></i> ${privacy}</p>${bar ? '\n' + bar : ''}
+// The document bar: the file and its actions, once there is a file. Privacy is said once, in the
+// drop zone, where the file is handled.
+const head = bar => `      <div class="ws-head">
+${bar}
       </div>`;
 
 const dropzone = ({ id, inputId, browseId, accept, multiple, aria, title, text, button, hint }) => `        <div id="${id}" class="dropzone" role="group" aria-label="${aria}">
@@ -57,9 +58,9 @@ ${body}
 
 const TOOLS = {
   'signature-cleaner.html': () => `<section class="ws" id="cleanerApp" data-state="empty" data-simple-empty data-settings="open" data-ws-file="#cleanerFileInfoBox" aria-label="Signature background cleaner">
-${head('Your signature is processed on this device. Nothing is uploaded.', filebar('cleanerFileInfoBox', 'cleanerFileInfoText', 'btnCleanerReplace', 'btnCleanerRemove', 'Choose a different photo', 'Remove this photo'))}
+${head(filebar('cleanerFileInfoBox', 'cleanerFileInfoText', 'btnCleanerReplace', 'btnCleanerRemove', 'Choose a different photo', 'Remove this photo'))}
       <div class="ws-stage">
-${dropzone({ id: 'cleanerDropzone', inputId: 'cleanerFileInput', browseId: 'btnCleanerBrowse', accept: 'image/jpeg,image/png,image/webp', aria: 'Upload a signature photo', title: 'Add a photo of your signature', text: 'Sign on plain white paper, take a photo in daylight, then choose it here.', button: 'Choose signature photo', hint: 'JPG, PNG or WebP. A phone photo is fine.' })}
+${dropzone({ id: 'cleanerDropzone', inputId: 'cleanerFileInput', browseId: 'btnCleanerBrowse', accept: 'image/jpeg,image/png,image/webp', aria: 'Upload a signature photo', title: 'Add a photo of your signature', text: 'Sign on plain white paper, take a photo in daylight, then choose it here.', button: 'Choose signature photo', hint: 'JPG, PNG or WebP. A phone photo is fine. Processed on this device, never uploaded.' })}
         <div id="cleanerPreviewArea" class="ws-result hidden">
           <h2 class="ws-result__title">Before and after</h2>
           <div class="compare-pair">
@@ -104,7 +105,6 @@ ${select('cleanerFormatSelect', 'File type', [['image/jpeg', 'White JPEG (.jpg),
     </section>`,
 
   'image-to-pdf.html': () => `<section class="ws" id="pdfApp" data-state="empty" data-simple-empty data-compact-drop data-keep data-settings="open" data-ws-file="#workspaceControls" data-ws-result="#pdfResultArea" aria-label="Image to PDF converter">
-${head('Your images are combined on this device. Nothing is uploaded.', '', true)}
       <div class="ws-stage">
         <div id="pdfResultArea" class="ws-result hidden" aria-live="polite">
           <div class="ws-result__head">
@@ -122,7 +122,7 @@ ${stat('File size', 'statPdfSize')}
             <a href="compress-pdf.html" class="btn btn-lg"><i class="fa-solid fa-compress" aria-hidden="true"></i> Compress to a size limit</a>
           </div>
         </div>
-${dropzone({ id: 'imgPdfDropzone', inputId: 'imgPdfFileInput', browseId: 'btnImgPdfBrowse', accept: 'image/jpeg,image/png,image/webp', multiple: true, aria: 'Upload images for PDF conversion', title: 'Add photos or scans', text: 'Each image becomes one page. Drop them here, or choose several at once.', button: 'Choose images', hint: 'JPG, PNG or WebP. You can reorder, rotate and remove pages next.' })}
+${dropzone({ id: 'imgPdfDropzone', inputId: 'imgPdfFileInput', browseId: 'btnImgPdfBrowse', accept: 'image/jpeg,image/png,image/webp', multiple: true, aria: 'Upload images for PDF conversion', title: 'Add photos or scans', text: 'Each image becomes one page. Drop them here, or choose several at once.', button: 'Choose images', hint: 'JPG, PNG or WebP. You can reorder, rotate and remove pages next. Combined on this device, never uploaded.' })}
         <div class="pagelist-head">
           <h2 class="pagelist-head__title">Pages</h2>
           <p class="pagelist-head__hint" id="pageOrderHint">Pages print in this order. Drag a page by its handle to move it, and rotate any page that is sideways.</p>
@@ -149,9 +149,9 @@ ${section('Quality', select('pdfQualitySelect', 'Image quality', [['0.92', 'High
     </section>`,
 
   'compress-pdf.html': () => `<section class="ws" id="compressApp" data-state="empty" data-keep data-settings="open" data-ws-file="#compressFileInfoBox" data-ws-result="#compressResultArea" data-ws-busy="#compressProgressBox" aria-label="PDF compressor">
-${head('Your document is compressed on this device. Nothing is uploaded.', filebar('compressFileInfoBox', 'compressFileInfoText', 'btnCompressReplace', 'btnCompressRemove', 'Choose a different file', 'Remove this file', 'fa-file-pdf'))}
+${head(filebar('compressFileInfoBox', 'compressFileInfoText', 'btnCompressReplace', 'btnCompressRemove', 'Choose a different file', 'Remove this file', 'fa-file-pdf'))}
       <div class="ws-stage">
-${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'btnCompressBrowse', accept: 'application/pdf,image/jpeg,image/png', aria: 'Upload a PDF to compress', title: 'Add the PDF to make smaller', text: 'A certificate, mark sheet or scanned document. Photos of a document work too.', button: 'Choose file', hint: 'PDF, JPG or PNG.' })}
+${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'btnCompressBrowse', accept: 'application/pdf,image/jpeg,image/png', aria: 'Upload a PDF to compress', title: 'Add the PDF to make smaller', text: 'A certificate, mark sheet or scanned document. Photos of a document work too.', button: 'Choose file', hint: 'PDF, JPG or PNG. Compressed on this device, never uploaded.' })}
         <div class="ws-note">
           <div class="ws-note__body">
             <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
@@ -204,9 +204,9 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
     </section>`,
 
   'passport-photo-print.html': () => `<section class="ws" id="printApp" data-state="empty" data-simple-empty data-settings="open" data-ws-file="#printFileInfoBox" aria-label="Passport photo print sheet">
-${head('Your photo stays on this device. Nothing is uploaded.', filebar('printFileInfoBox', 'printFileInfoText', 'btnPrintReplace', 'btnPrintRemove', 'Choose a different photo', 'Remove this photo'))}
+${head(filebar('printFileInfoBox', 'printFileInfoText', 'btnPrintReplace', 'btnPrintRemove', 'Choose a different photo', 'Remove this photo'))}
       <div class="ws-stage">
-${dropzone({ id: 'printDropzone', inputId: 'printFileInput', browseId: 'btnPrintBrowse', accept: 'image/jpeg,image/png,image/webp', aria: 'Upload a photo to create a print sheet', title: 'Add your passport photo', text: 'Use a cropped, front-facing photo on a plain background.', button: 'Choose photo', hint: 'JPG, PNG or WebP. Need to crop first? Use the image resizer.' })}
+${dropzone({ id: 'printDropzone', inputId: 'printFileInput', browseId: 'btnPrintBrowse', accept: 'image/jpeg,image/png,image/webp', aria: 'Upload a photo to create a print sheet', title: 'Add your passport photo', text: 'Use a cropped, front-facing photo on a plain background.', button: 'Choose photo', hint: 'JPG, PNG or WebP. Need to crop first? Use the image resizer. Your photo stays on this device.' })}
         <div id="printPreviewArea" class="ws-result hidden">
           <div class="ws-preview-bar">
             <h2 class="ws-result__title">Print preview</h2>
@@ -233,7 +233,7 @@ ${section('Cutting aids', `          <div class="check-group">
           </div>`)}
       </div>
       <div class="ws-action">
-        <a id="btnDownloadPrintJpg" class="btn btn-primary btn-lg btn-block" href="#" download="Passport_Photos_300DPI.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download print sheet (JPEG)</a>
+        <a id="btnDownloadPrintJpg" class="btn btn-primary btn-lg btn-block" href="#" download="Passport_Photos_300DPI.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download sheet (JPEG)</a>
         <button type="button" id="btnDownloadPrintPdf" class="btn btn-block"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Download as PDF</button>
       </div>
       </div>

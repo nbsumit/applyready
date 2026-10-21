@@ -40,6 +40,8 @@
 
   const btnDownloadJpg = doc.getElementById('btnDownloadPrintJpg');
   const btnDownloadPdf = doc.getElementById('btnDownloadPrintPdf');
+  let jpgPending = false, jpgWanted = false;
+  if (btnDownloadJpg) btnDownloadJpg.addEventListener('click', e => { if (jpgPending) { e.preventDefault(); jpgWanted = true; } });
 
   // Photo size dimensions in mm: { w, h }
   const PHOTO_SIZES = {
@@ -273,7 +275,9 @@
   function updateDownloadLinks(count, paperSpec, canvasW, canvasH) {
     if (!sheetCanvas) return;
 
-    // 1. High-Res JPEG blob
+    // 1. High-Res JPEG blob. Encoding takes a moment; a click that lands before it is ready
+    //    downloads the new sheet as soon as it exists, never the previous one.
+    jpgPending = true;
     sheetCanvas.toBlob(blob => {
       if (!blob) return;
       if (jpgBlobUrl) URL.revokeObjectURL(jpgBlobUrl);
@@ -283,6 +287,8 @@
         btnDownloadJpg.href = jpgBlobUrl;
         btnDownloadJpg.download = `Passport_Photos_${count}_Copies_300DPI.jpg`;
       }
+      jpgPending = false;
+      if (jpgWanted && btnDownloadJpg) { jpgWanted = false; btnDownloadJpg.click(); }
     }, 'image/jpeg', 0.95);
 
     // 2. High-Res Printable PDF (Points: 72 pt per inch)
@@ -381,6 +387,7 @@
   function resetAll() {
     loadedImage = null;
     loadedFile = null;
+    jpgWanted = false;
     if (jpgBlobUrl) {
       URL.revokeObjectURL(jpgBlobUrl);
       jpgBlobUrl = null;

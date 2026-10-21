@@ -38,8 +38,10 @@ const server = http.createServer((req,res) => {
   page.on('dialog',d=>{dialogs.push(d.message()); return d[dialogAction]();});
   const visit=async file=>{const path=file.endsWith('/')?file+'index.html':file; await page.goto(`${origin}/${path}`);await page.evaluate(()=>document.fonts.ready);};
   const overflow=async()=>page.evaluate(()=>document.documentElement.scrollWidth > innerWidth+1);
-  // Before an image exists the output settings sit behind "Edit size and limits".
-  const openSettings=async()=>{const toggle=page.locator('.ws-customize:visible');if(await toggle.count() && await toggle.getAttribute('aria-expanded')!=='true')await toggle.click();};
+  // The resizer asks for the requirement first; its list folds into a summary once one is chosen.
+  const choose=async key=>{const change=page.locator('#btnChangeReq');if(await change.isVisible()&&await change.getAttribute('aria-expanded')!=='true')await change.click();await page.locator(`.choice[data-preset="${key}"]`).click();};
+  // Detailed settings: the disclosure once it is shown, otherwise choosing "Custom size" opens them.
+  const openSettings=async()=>{const toggle=page.locator('.ws-customize');if(await toggle.isVisible()){if(await toggle.getAttribute('aria-expanded')!=='true')await toggle.click();return;}await choose('custom');};
   // On a phone the settings fold away once a result exists; "Adjust and redo" brings them back.
   const adjust=async()=>{if(await page.locator('#resultArea').isVisible())await page.locator('#btnCropAgain').click();};
   const dialog=page.locator('.dialog--confirm');
@@ -75,14 +77,14 @@ const server = http.createServer((req,res) => {
   console.log('✓ Responsive layouts, both themes, and initial accessibility');
   await visit('index.html');
   ok(await page.locator('#btnOriginalSize').isDisabled(), 'Original size requires a decoded source');
-  await page.locator('[data-preset="passport"]').click();
+  await choose('passport');
   ok(await page.locator('#presetSelect').inputValue()==='passport', 'Quick photo preset updates the selected preset');
   await openSettings();
   ok(await page.locator('#customWidth').isVisible(), 'Preset dimensions remain editable');
-  await page.locator('.choice[data-preset="custom"]').click();
+  await choose('custom');
   await page.locator('#customWidth').fill('700');
   ok(await page.locator('#customHeight').inputValue()==='900', 'Switching from a portrait preset to custom retains its ratio');
-  await page.locator('[data-preset="signature"]').click();
+  await choose('signature');
   await page.locator('#customWidth').fill('600');
   ok(await page.locator('#presetSelect').inputValue()==='custom', 'Editing preset dimensions switches to custom');
   ok(await page.locator('#customHeight').inputValue()==='200', 'Editing a preset retains its ratio');
@@ -267,8 +269,8 @@ const server = http.createServer((req,res) => {
   await visit('index.html');await page.setViewportSize({width:390,height:844});
   const image=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d'),pixels=x.createImageData(512,512);let seed=17;for(let i=0;i<pixels.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;pixels.data[i]=seed&255;pixels.data[i+1]=(seed>>8)&255;pixels.data[i+2]=(seed>>16)&255;pixels.data[i+3]=255;}x.putImageData(pixels,0,0);x.clearRect(220,220,72,72);return c.toDataURL('image/png').split(',')[1];});
   await page.locator('#fileInput').setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
-  await page.locator('#btnProcess').waitFor({state:'visible'});await page.waitForFunction(()=>!document.getElementById('btnProcess').disabled);
-  await page.locator('.choice[data-preset="avatar"]').click();await page.locator('#btnProcess').click();await page.locator('#resultArea').waitFor({state:'visible'});
+  await choose('avatar');await page.locator('#btnProcess').waitFor({state:'visible'});await page.waitForFunction(()=>!document.getElementById('btnProcess').disabled);
+  await page.locator('#btnProcess').click();await page.locator('#resultArea').waitFor({state:'visible'});
   const result=await page.evaluate(async()=>{const blob=await fetch(document.getElementById('btnDownload').href).then(r=>r.blob());const img=await createImageBitmap(blob);return {bytes:blob.size,type:blob.type,w:img.width,h:img.height};});
   ok(result.w===400 && result.h===400 && result.bytes<=102400 && result.type==='image/jpeg','JPEG matches measured pixel dimensions, bytes, and MIME');
   await audit('image-result-dark');
@@ -283,7 +285,7 @@ const server = http.createServer((req,res) => {
   await adjust();await page.locator('#addDateCheckbox').uncheck();
   const surface=page.locator('.cropper-container-wrapper');const leftBefore=await page.evaluate(()=>document.getElementById('imageToCrop').cropper.getCropBoxData().left);
   await surface.press('ArrowRight');ok(await page.evaluate(()=>document.getElementById('imageToCrop').cropper.getCropBoxData().left)>=leftBefore,'The crop can be adjusted with a keyboard');
-  await page.locator('.choice[data-preset="custom"]').click();
+  await choose('custom');
   ok(await page.locator('#cropperActiveArea').isVisible(),'Editing settings returns from result to the crop workspace');
   await page.locator('#formatSelect').selectOption('image/png');await page.locator('#customMaxKB').fill('5');await page.locator('#btnProcess').click();await page.locator('#processErrorBox').waitFor({state:'visible'});
   ok(!await page.locator('#resultArea').isVisible(),'An oversized PNG cannot be reported as a successful download');
@@ -363,7 +365,7 @@ const server = http.createServer((req,res) => {
       ok(persisted === after, `${file || 'index'}: theme persists after reload`);
       // restore
       await page.locator('#themeToggle').click();
-      // Mobile menu (a sheet under 860px)
+      // Mobile menu (a sheet under 640px)
       if (width === 390) {
         const toggle = page.locator('#navMenuToggle');
         await toggle.click();

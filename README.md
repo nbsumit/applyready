@@ -22,7 +22,7 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
   - `Social / Web Card`: 1200 x 630 px, max 300 KB.
   - `Document Scan`: 800 x 1000 px, max 200 KB.
 - **Aspect-Ratio Lock and File Replacement**: Lock aspect ratio while entering custom dimensions to prevent distortion; swap source files in one click with the Replace action.
-- **Editable Quick Presets**: Start with a photo, signature, profile or document preset, then edit any dimension or size limit. Switching to custom keeps the current proportions.
+- **Requirement First**: Step 1 asks what you are preparing (passport photo, signature, thumb impression, declaration, profile photo, document scan, web card or a custom size) and shows each option's pixels and file limit. Exam and file-size pages arrive with their requirement chosen. Preset values stay editable; switching to custom keeps the current proportions.
 - **Original-Size Compression**: Select the full image at its original dimensions, reset rotation and remove the text strip with one button. Output limits are still validated before processing.
 - **Local Sample Document**: Try the complete workflow without providing a personal file. The demonstration image is generated in the browser.
 - **Before and After Visual Comparison**: Toggle between original source and processed output with real-time file size indicators.
@@ -55,7 +55,7 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
 ### 3. Responsive Design and Accessible Themes
 - **Light and Dark Themes**: System-driven with manual toggle, persisted in local storage with zero theme flash.
 - **Accessibility**: High-contrast themes, visible focus, keyboard controls, and automated WCAG accessibility checks. Physical-device and assistive-technology testing remain useful.
-- **Mobile First**: Editor and sticky preview side by side on desktop; on phones an Edit / Preview / Download bar, sticky tool actions and full-width layouts designed from 320 px up.
+- **Three Layout Modes**: Desktop (1000 px and up), tablet (640 to 999 px) and phone (under 640 px), each designed rather than squeezed: the resume editor sits beside its preview on desktops and switches with an Edit / Preview / Download bar below that; tools keep one sticky action and no inner scrolling; phones get stacked fields, full-width actions and tables laid out as blocks, from 320 px up.
 
 ---
 
@@ -116,7 +116,7 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
     |-- browser_tests.js     # Playwright end-to-end, accessibility and download checks (2,900+)
     |-- image_workflow_tests.js # Image tool end to end: presets, units, DPI, crop, rotate, zoom, formats, limits, drop (279)
     |-- resume_flow_tests.js # Resume builder editing flow, exports, backup and phone flow (66)
-    |-- ui_tests.js          # Visible-control checks: dropdowns, button labels, focus, errors, axe on every page (1,550)
+    |-- ui_tests.js          # Visible-control checks: dropdowns, labels, focus, errors, layout modes at both sides of each breakpoint, overflow at 32 widths, axe on every page (3,000+)
     `-- browser_smoke.js     # Real image, PDF and resume exports; run with BROWSER=firefox for Firefox
 ```
 

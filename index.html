@@ -33,12 +33,12 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261120-1"></script>
+  <script src="js/theme.js?v=20261121-1"></script>
 
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261120-1">
+  <link rel="stylesheet" href="css/app.css?v=20261121-1">
   <!-- shell:styles:end -->
 
 
@@ -168,21 +168,13 @@
               </ul>
               </div>
               <div class="menu__group menu__group--refs">
-              <p class="menu__title">Exam requirements</p>
-              <ul class="menu__list menu__list--exams">
-                <li><a href="ssc-photo-signature-size.html">SSC</a></li>
-                <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
-                <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
-                <li><a href="neet-photo-signature-size.html">NEET</a></li>
-                <li><a href="rrb-photo-signature-size.html">RRB</a></li>
-              </ul>
-              <p class="menu__title">Resize to a file size</p>
-              <ul class="menu__list menu__list--sizes">
-                <li><a href="resize-image-to-10kb.html">10 KB</a></li>
-                <li><a href="resize-image-to-20kb.html">20 KB</a></li>
-                <li><a href="resize-image-to-50kb.html">50 KB</a></li>
-                <li><a href="resize-image-to-100kb.html">100 KB</a></li>
-                <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+              <p class="menu__title">Exam photo and signature</p>
+              <ul class="menu__list">
+                <li><a class="menu__item menu__item--plain" href="ssc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">SSC</span><span class="menu__desc">CGL, CHSL, MTS, GD</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="upsc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">UPSC</span><span class="menu__desc">Civil services, NDA, CDS</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="ibps-photo-signature-size.html"><span class="menu__text"><span class="menu__name">IBPS</span><span class="menu__desc">Bank PO and clerk</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="neet-photo-signature-size.html"><span class="menu__text"><span class="menu__name">NEET</span><span class="menu__desc">Medical entrance</span></span></a></li>
+                <li><a class="menu__item menu__item--plain" href="rrb-photo-signature-size.html"><span class="menu__text"><span class="menu__name">RRB</span><span class="menu__desc">Railway recruitment</span></span></a></li>
               </ul>
               </div>
             </div>
@@ -207,18 +199,42 @@
     <!-- tool:start -->
     <header class="page-head page-head--home">
       <h1 class="page-title">Resize Photo &amp; Signature to 20KB / 50KB for Online Forms</h1>
-      <p class="page-lede">Give it the requirement from your form. ApplyReady makes the exact pixel size and keeps the file inside the KB limit, ready to upload.</p>
-      <ul class="value-list" aria-label="What you get">
-        <li>Exact pixel dimensions</li>
-        <li>Strict KB limits, verified</li>
-        <li>Stays on your device</li>
-        <li>Free, no sign-up</li>
-      </ul>
+      <p class="page-lede">Choose what your form asks for, add your photo or signature, and download a file with the exact pixel size and KB limit. Free, with no sign-up.</p>
     </header>
 
-    <section class="ws" id="resizerApp" data-preset="custom" data-state="empty" data-settings="closed" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="Image resizer and compressor">
+    <section class="ws ws--linear" id="resizerApp" data-preset="custom" data-require-choice data-state="empty" data-settings="closed" data-req="pending" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="Image resizer and compressor">
+      <div class="ws-req" id="reqPanel" data-open="true">
+        <div class="ws-req__bar">
+          <h2 class="ws-step" id="reqHeading"><span class="ws-step__n" aria-hidden="true">1</span><span class="ws-step__ask">What are you preparing?</span><span class="ws-step__done">Preparing</span></h2>
+          <p class="req-summary" aria-live="polite"><strong class="req-summary__name" id="reqSummaryName"></strong> <span class="req-summary__spec" id="reqSummarySpec"></span></p>
+          <button type="button" class="btn btn-sm req-change" id="btnChangeReq" aria-expanded="true" aria-controls="reqGrid" data-label-change="Change" data-label-close="Close">Close</button>
+        </div>
+        <div class="req-grid req-grid--d4 req-grid--t2" id="reqGrid" role="group" aria-labelledby="reqHeading">
+          <button type="button" class="choice" data-preset="passport" aria-pressed="false"><span class="choice__name">ID / passport photo</span><span class="choice__spec">350 × 450 px · under 50 KB</span></button>
+          <button type="button" class="choice" data-preset="signature" aria-pressed="false"><span class="choice__name">Signature</span><span class="choice__spec">300 × 100 px · under 30 KB</span></button>
+          <button type="button" class="choice" data-preset="thumb" aria-pressed="false"><span class="choice__name">Thumb impression</span><span class="choice__spec">240 × 240 px · 20–50 KB</span></button>
+          <button type="button" class="choice" data-preset="declaration" aria-pressed="false"><span class="choice__name">Handwritten declaration</span><span class="choice__spec">800 × 400 px · 50–100 KB</span></button>
+          <button type="button" class="choice" data-preset="avatar" aria-pressed="false"><span class="choice__name">Profile photo</span><span class="choice__spec">400 × 400 px · under 100 KB</span></button>
+          <button type="button" class="choice" data-preset="document" aria-pressed="false"><span class="choice__name">Document scan</span><span class="choice__spec">1240 × 1754 px · under 500 KB</span></button>
+          <button type="button" class="choice" data-preset="web-banner" aria-pressed="false"><span class="choice__name">Social or web card</span><span class="choice__spec">1200 × 630 px · under 300 KB</span></button>
+          <button type="button" class="choice" data-preset="custom" aria-pressed="false"><span class="choice__name">Custom size</span><span class="choice__spec" data-custom-spec>Your own size and file limit</span></button>
+        </div>
+        <div hidden>
+          <label for="presetSelect">Requirement</label>
+          <select id="presetSelect" data-native>
+            <option value="custom" selected>Custom size</option>
+            <option value="passport">Passport Photo (350 × 450 px, max 50 KB)</option>
+            <option value="signature">Signature (300 × 100 px, max 30 KB)</option>
+            <option value="thumb">Thumb Impression (240 × 240 px, 20–50 KB)</option>
+            <option value="declaration">Handwritten Declaration (800 × 400 px, 50–100 KB)</option>
+            <option value="avatar">Square Avatar (400 × 400 px, max 100 KB)</option>
+            <option value="web-banner">Wide Banner (1200 × 630 px, max 300 KB)</option>
+            <option value="document">A4 Document Scan (1240 × 1754 px, max 500 KB)</option>
+          </select>
+        </div>
+      </div>
+
       <div class="ws-head">
-        <p class="ws-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> Your image is processed on this device. Nothing is uploaded.</p>
         <div id="fileInfoBox" class="filebar hidden" aria-live="polite">
           <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
           <span id="fileInfoText" class="filebar__name"></span>
@@ -237,18 +253,19 @@
         </div>
 
         <div id="cropperPlaceholder" class="ws-empty">
+          <h2 class="ws-step"><span class="ws-step__n" aria-hidden="true">2</span><span>Add your photo or signature</span></h2>
           <div id="dropzone" class="dropzone" role="group" aria-label="Choose or drop an image">
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
             <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
-            <h2 class="dropzone__title">Add your photo or signature</h2>
-            <p class="dropzone__text">Drag it here, or choose a file from your device.</p>
+            <p class="dropzone__text">Drag it here, or</p>
             <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose image</button>
-            <p class="dropzone__hint">JPG, PNG, WebP, GIF, BMP or AVIF, up to 50 MB.</p>
+            <p class="dropzone__hint">JPG, PNG, WebP, GIF, BMP or AVIF up to 50 MB. Processed on your device, never uploaded.</p>
           </div>
           <button type="button" id="btnTryExample" class="btn btn-link btn-sm">No image handy? Try a sample document</button>
         </div>
 
         <div id="cropperActiveArea" class="ws-crop hidden">
+          <h2 class="ws-step"><span class="ws-step__n" aria-hidden="true">3</span><span>Position it in the frame</span></h2>
           <div class="cropper-container-wrapper" tabindex="0" role="group" aria-label="Image crop. Arrow keys move the crop selection; plus and minus zoom.">
             <img id="imageToCrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Image to crop">
           </div>
@@ -261,9 +278,9 @@
               <button type="button" id="btnZoomOut" class="btn btn-sm btn-icon" title="Zoom out" aria-label="Zoom out"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i></button>
               <button type="button" id="btnZoomIn" class="btn btn-sm btn-icon" title="Zoom in" aria-label="Zoom in"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i></button>
             </div>
+            <p class="ws-hint">Drag the image to position it inside the frame. Arrow keys move it; + and − zoom.</p>
             <button type="button" id="btnResetCrop" class="btn btn-sm btn-ghost" title="Reset crop"><i class="fa-solid fa-arrow-rotate-back" aria-hidden="true"></i> Reset</button>
           </div>
-          <p class="ws-hint">Drag the image to position it inside the frame. Arrow keys move it; + and − zoom.</p>
         </div>
 
         <div id="resultArea" class="ws-result hidden" aria-live="polite">
@@ -274,6 +291,10 @@
                 <h2 class="ws-result__title">Ready to upload</h2>
                 <p class="ws-result__ok"><span id="resultStatus" class="meta-stat-val status-ok"></span></p>
               </div>
+            </div>
+            <div class="ws-result__actions">
+              <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download image</a>
+              <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust again</button>
             </div>
           </div>
           <div class="ws-result__body">
@@ -288,51 +309,22 @@
               </div>
             </div>
             <div class="ws-result__facts">
-              <dl class="meta-stats">
-              <div class="meta-stat-item meta-stat-item--key"><dt class="meta-stat-label">File size</dt><dd class="meta-stat-val status-ok" id="resultFileSize"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">Allowed</dt><dd class="meta-stat-val" id="resultTargetSize"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">Dimensions</dt><dd class="meta-stat-val" id="resultDims"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">Format</dt><dd class="meta-stat-val" id="resultFormat"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">Requested</dt><dd class="meta-stat-val" id="resultTargetDims"></dd></div>
-              <div class="meta-stat-item"><dt class="meta-stat-label">Original</dt><dd class="meta-stat-val" id="resultOrigDims"></dd></div>
-              </dl>
-              <div class="ws-result__actions">
-                <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download image</a>
-                <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust again</button>
-              </div>
+              <table class="check-table">
+                <caption class="sr-only">Your file compared with the requirement</caption>
+                <thead><tr><td></td><th scope="col">Required</th><th scope="col">Your file</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">File size</th><td id="resultTargetSize" data-label="Required"></td><td class="is-met" id="resultFileSize" data-label="Your file"></td></tr>
+                  <tr><th scope="row">Dimensions</th><td id="resultTargetDims" data-label="Required"></td><td class="is-met" id="resultDims" data-label="Your file"></td></tr>
+                  <tr><th scope="row">Format</th><td id="resultFormatRequired" data-label="Required"></td><td class="is-met" id="resultFormat" data-label="Your file"></td></tr>
+                </tbody>
+              </table>
+              <p class="ws-result__orig">Original: <span id="resultOrigDims"></span></p>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="ws-rail">
-      <div class="ws-side">
-        <div class="ws-section">
-          <h2 class="ws-section__title" id="reqHeading">Requirement</h2>
-          <div class="choice-list" role="group" aria-labelledby="reqHeading">
-          <button type="button" class="choice" data-preset="passport" aria-pressed="false"><span class="choice__name">ID / passport photo</span><span class="choice__spec">350 × 450 px · under 50 KB</span></button>
-          <button type="button" class="choice" data-preset="signature" aria-pressed="false"><span class="choice__name">Signature</span><span class="choice__spec">300 × 100 px · under 30 KB</span></button>
-          <button type="button" class="choice" data-preset="thumb" aria-pressed="false"><span class="choice__name">Thumb impression</span><span class="choice__spec">240 × 240 px · 20–50 KB</span></button>
-          <button type="button" class="choice" data-preset="declaration" aria-pressed="false"><span class="choice__name">Handwritten declaration</span><span class="choice__spec">800 × 400 px · 50–100 KB</span></button>
-          <button type="button" class="choice" data-preset="avatar" aria-pressed="false"><span class="choice__name">Profile photo</span><span class="choice__spec">400 × 400 px · under 100 KB</span></button>
-          <button type="button" class="choice" data-preset="document" aria-pressed="false"><span class="choice__name">Document scan</span><span class="choice__spec">1240 × 1754 px · under 500 KB</span></button>
-          <button type="button" class="choice" data-preset="custom" aria-pressed="true"><span class="choice__name">Custom size</span><span class="choice__spec" data-custom-spec>Set your own size and file limit</span></button>
-          </div>
-          <div hidden>
-            <label for="presetSelect">Requirement</label>
-            <select id="presetSelect" data-native>
-            <option value="custom" selected>Custom size</option>
-            <option value="passport">Passport Photo (350 × 450 px, max 50 KB)</option>
-            <option value="signature">Signature (300 × 100 px, max 30 KB)</option>
-            <option value="thumb">Thumb Impression (240 × 240 px, 20–50 KB)</option>
-            <option value="declaration">Handwritten Declaration (800 × 400 px, 50–100 KB)</option>
-            <option value="avatar">Square Avatar (400 × 400 px, max 100 KB)</option>
-            <option value="web-banner">Wide Banner (1200 × 630 px, max 300 KB)</option>
-            <option value="document">A4 Document Scan (1240 × 1754 px, max 500 KB)</option>
-            </select>
-          </div>
-        </div>
-
+      <div class="ws-settings">
         <button type="button" class="ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom"><span>Size, file limit and format<span class="ws-customize__hint">Set by the requirement. Change only if your form asks for something else.</span></span></button>
         <div class="ws-custom" id="wsCustom">
           <div id="customControls" class="ws-group">
@@ -389,26 +381,24 @@
 
           <div class="ws-group">
             <h3 class="ws-group__title">Format and crop</h3>
-            <div class="field-row">
-              <div class="field">
-                <label for="formatSelect" class="field-label">File format</label>
-                <select id="formatSelect" class="custom-select-source">
-                  <option value="image/jpeg" selected>JPEG (.jpg)</option>
-                  <option value="image/png">PNG (.png)</option>
-                  <option value="image/webp">WebP (.webp)</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="aspectRatioSelect" class="field-label">Crop shape</label>
-                <select id="aspectRatioSelect">
+            <div class="field">
+              <label for="formatSelect" class="field-label">File format</label>
+              <select id="formatSelect" class="custom-select-source">
+                <option value="image/jpeg" selected>JPEG (.jpg)</option>
+                <option value="image/png">PNG (.png)</option>
+                <option value="image/webp">WebP (.webp)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="aspectRatioSelect" class="field-label">Crop shape</label>
+              <select id="aspectRatioSelect">
                 <option value="target" selected>Match the output size</option>
                 <option value="original">Original proportions</option>
                 <option value="1:1">Square (1:1)</option>
                 <option value="4:3">Standard (4:3)</option>
                 <option value="16:9">Widescreen (16:9)</option>
                 <option value="free">Free crop</option>
-                </select>
-              </div>
+              </select>
             </div>
           </div>
 
@@ -447,9 +437,8 @@
       </div>
 
       <div class="ws-action">
-        <p id="processSummary" class="process-summary" aria-live="polite"></p>
-        <button type="button" id="btnProcess" class="btn btn-primary btn-lg btn-block" aria-describedby="processSummary" data-busy-label="Processing…" disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize and compress</button>
-      </div>
+        <p id="processSummary" class="process-summary" aria-live="polite" data-label-pending="Choose what you are preparing above." data-label-show="Show me"></p>
+        <button type="button" id="btnProcess" class="btn btn-primary btn-lg" aria-describedby="processSummary" data-busy-label="Processing…" disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize and compress</button>
       </div>
     </section>
 
@@ -604,21 +593,24 @@
         <p>Photos, signatures, PDFs and resumes, prepared to the exact requirement. Everything runs in your browser. Files are never uploaded.</p>
       </div>
       <div class="site-footer__col">
-        <h2 class="site-footer__title">Image tools</h2>
+        <h2 class="site-footer__title">Tools</h2>
         <ul class="site-footer__list">
           <li><a href="/">Image resizer</a></li>
           <li><a href="signature-cleaner.html">Signature cleaner</a></li>
           <li><a href="passport-photo-print.html">Passport photo print</a></li>
-          <li><a href="resize-image-to-20kb.html">Resize to 20 KB</a></li>
-          <li><a href="resize-image-to-50kb.html">Resize to 50 KB</a></li>
-        </ul>
-      </div>
-      <div class="site-footer__col">
-        <h2 class="site-footer__title">PDF and resume</h2>
-        <ul class="site-footer__list">
           <li><a href="image-to-pdf.html">Image to PDF</a></li>
           <li><a href="compress-pdf.html">Compress PDF</a></li>
           <li><a href="resume.html">Resume builder</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Resize to a file size</h2>
+        <ul class="site-footer__list">
+          <li><a href="resize-image-to-10kb.html">10 KB</a></li>
+          <li><a href="resize-image-to-20kb.html">20 KB</a></li>
+          <li><a href="resize-image-to-50kb.html">50 KB</a></li>
+          <li><a href="resize-image-to-100kb.html">100 KB</a></li>
+          <li><a href="resize-image-to-200kb.html">200 KB</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
@@ -643,14 +635,14 @@
         </ul>
       </div>
     </div>
-    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Files are processed on your device.</span></div>
+    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span></div>
   </footer>
   <!-- shell:footer:end -->
 
-    <script src="js/components.js?v=20261120-1" defer></script>
-  <script defer src="js/site.js?v=20261120-1"></script>
-  <script defer src="js/presets.js?v=20261120-1"></script>
+    <script src="js/components.js?v=20261121-1" defer></script>
+  <script defer src="js/site.js?v=20261121-1"></script>
+  <script defer src="js/presets.js?v=20261121-1"></script>
   <script defer src="js/vendor/cropper.min.js"></script>
-  <script defer src="js/resizer.js?v=20261120-1"></script>
+  <script defer src="js/resizer.js?v=20261121-1"></script>
 </body>
 </html>

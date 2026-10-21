@@ -17,7 +17,7 @@ requirement and I will get the file right", not as a list of features.
 | `css/app.css` | The whole interface, in 17 numbered sections: tokens, base, layout, header, footer, buttons and fields, choice controls, tabs and disclosure, feedback, dialogs and toasts, reading content, page patterns, tool workspace, tool specifics, resume builder, responsive, print and motion. |
 | `css/document.css` | The resume paper, its templates and its print layout (resume.html only). It is the output format, not interface, and `tests/content_tests.js` pins its hash. Do not edit it for interface work. |
 | `css/vendor/icons.min.css`, `css/vendor/cropper.min.css` | Icon subset (only the classes listed in it exist) and the cropper, restyled in `app.css`. |
-| `js/site.js` | Theme, header menu and phone sheet, `ApplyReadyUI.notify` (toast), `ApplyReadyUI.reveal`, `ApplyReadyUI.confirm` (dialog). |
+| `js/site.js` | Theme, header menu and phone sheet, on-screen keyboard state, phone layout of reference tables, `ApplyReadyUI.notify` (toast), `ApplyReadyUI.reveal`, `ApplyReadyUI.confirm` (dialog). |
 | `js/components.js` | Custom select, range fill, segmented-control sync, and the workspace state machine. |
 | `scripts/lib/shell.js` | Header, Tools menu, footer and stylesheet links for every page (`node scripts/sync-shell.js`). |
 | `scripts/lib/image-workspace.js` | The image resizer workspace (home, KB pages, exam pages, Hindi pages; `node scripts/build-image-pages.js`). |
@@ -77,29 +77,41 @@ and up use `--ls-title` (-0.018em) and `text-wrap: balance`.
 | Controls | `--h-sm` 32, `--h-md` 40, `--h-lg` 48 (40 / 44 / 48 on `pointer: coarse`); `--h-header` 56 |
 | Radius | `--r-xs` 4 (tags, segments, checkboxes), `--r-sm` 6 (buttons, fields), `--r-md` 8 (panels, lists, menus), `--r-lg` 12 (dialogs), `--r-full` (switches, round markers) |
 | Elevation | `--sh-pop` (menus, select lists, toasts), `--sh-dialog`, `--sh-paper` (resume pages, printed sheets, result images). Nothing else has a shadow. |
-| Layout | `--w-read` 700, `--w-app` 1200, `--w-wide` 1440, `--w-rail` 360 (320 below 1100), `--gutter` 16 / 24 at 640 / 32 at 1100 |
+| Layout | `--w-read` 700, `--w-app` 1200, `--w-wide` 1440, `--w-rail` 340, `--gutter` 16 / 24 at 640 / 32 at 1000 |
 | Motion | `--ease`, `--t-fast` 120 ms, `--t-base` 180 ms; removed under `prefers-reduced-motion` |
 | Stacking | `--z-sticky` 30, `--z-header` 40, `--z-pop` 60, `--z-dialog` 80, `--z-toast` 90 |
 | Icons | `--icon` 16. Four sizes exist: 12, 16, 20, 28 (`tests/ui_tests.js` rejects others). |
 
-Breakpoints: 1100 (narrower rail, footer wraps), 1000 (resume editor and preview side by side), 860
-(header becomes a sheet, workspace stacks), 640 (phone type scale), 560, 440, 360. Every page is
-checked for overflow at 320, 360, 375, 390, 430, 768, 1024, 1280 and 1440.
+Layout modes. There are two breakpoints, and each one changes the layout, not just a size:
+
+| Mode | Width | What changes |
+|---|---|---|
+| Desktop | 1000 px and wider | Tool settings rail beside the stage; resume editor (460 to 560 px) beside the preview; result preview beside its facts; gutter 32 |
+| Tablet | 640 to 999 px | One column: stage, settings, sticky action. Resume Edit and Preview are switched with a bottom bar, never squeezed; gutter 24 |
+| Phone | under 640 px | Header becomes a menu sheet; fields stack; actions are full width; reference tables become one block per row; gutter 16 |
+
+Nothing else uses a media query (apart from `pointer: coarse` for touch control heights, print and
+reduced motion), and no grid uses `auto-fit`, except the Image to PDF page tiles, which are a gallery of
+fixed-size tiles. Every page is checked for overflow at 32 widths from 320 to 1600, including both
+sides of every former and current breakpoint.
 
 ## Patterns
 
 ### Shell
 - **Header** (`.site-header`): brand, Tools menu, Resume builder, Guides, हिन्दी, theme. The current
-  page gets a 2 px ink underline. Below 860 px the nav becomes a full-height sheet.
-- **Tools menu** (`.menu`): left column lists the five tools with an icon, name and one-line purpose
-  (`.menu__item`), grouped as Image tools and PDF tools; the right column holds quick routes: exam
-  requirements and file-size targets as compact link buttons. Arrow keys, Home, End and Escape work.
-- **Footer** (`.site-footer`): brand statement, four link columns (Image tools, PDF and resume, Exam
-  requirements, ApplyReady), and one base line with the privacy statement.
+  page gets a 2 px ink underline. Below 640 px the nav becomes a full-height sheet; on tablets the
+  Tools menu spans the header.
+- **Tools menu** (`.menu`): what you can do, not a site map. The left column lists the five tools with
+  an icon, name and one-line purpose (`.menu__item`), grouped as Image tools and PDF tools; the right
+  column lists the five exams with what each covers. File-size pages are reached from the footer and
+  the resizer itself. Arrow keys, Home, End and Escape work.
+- **Footer** (`.site-footer`): brand statement and four link columns (Tools, Resize to a file size, Exam
+  requirements, ApplyReady), so it divides evenly in every mode (4, 4 under the brand, 2 by 2).
 
 ### Page heads
 `.page-head` holds an optional `.breadcrumb-nav`, `.eyebrow`, `.page-title`, `.page-lede` and on the
-resume builder `.assurance`. The home head adds `.page-head--home` and a `.value-list`. On tool and
+resume builder `.assurance`. The home head adds `.page-head--home` (title and one lede; privacy is said
+once, in the drop zone). On tool and
 landing pages the workspace comes straight after the head (`.tool-section`); reference content
 (tables, notices, FAQ, related guides) follows the tool.
 
@@ -108,15 +120,22 @@ One frame for every tool:
 
 | Region | Class | Content |
 |---|---|---|
-| Document bar | `.ws-head` | `.ws-privacy` before a file exists, then `.filebar` (name, size, Replace, Remove); `.ws-status` on the resizer |
+| Requirement (resizer) | `.ws-req` | Step 1: the requirement grid, folding to a one-line summary with Change |
+| Document bar | `.ws-head` | `.filebar` (name, size, Replace, Remove) once a file exists; `.ws-status` on the resizer |
 | Stage | `.ws-stage` | `.dropzone`, the editor (`.ws-crop`) or preview, and the result (`.ws-result`) |
 | Rail | `.ws-rail` > `.ws-side` | `.ws-section` blocks of settings |
 | Action | `.ws-rail` > `.ws-action` | The one primary button and `#processSummary` |
 
-On a desktop `.ws-rail` is a sticky column; `components.js` (`fitRail`) sizes it to the part of the
-screen it occupies, so the action is visible before scrolling and never covers a setting (long settings
-scroll inside the rail). On phones the rail uses `display: contents`, settings follow the stage and
-the action is a sticky bar at the bottom of the screen.
+Two arrangements, neither with an inner scroll region; the page scrolls normally and only the small
+action bar (`.ws-action`) is sticky, at the bottom of the screen:
+
+- `.ws` (secondary tools): on desktops the rail sits beside the stage and its action sticks to the
+  bottom of the screen while the rail is longer than the screen. On tablets and phones the rail uses
+  `display: contents`: settings follow the stage and the action is a sticky bar.
+- `.ws--linear` (image resizer): one column in task order at every width: 1 requirement, file bar,
+  2 drop zone or 3 editor, settings disclosure, action. Only the requirement grid's column count and
+  field arrangement change between modes. While the on-screen keyboard is open (`body.is-typing`,
+  set by `site.js`) the action bar stops being sticky so it never covers the field.
 
 `components.js` sets `data-state` from what the tool script shows: `empty` (no file), `ready` (file,
 not processed), `done` (result visible), plus `data-busy` while a `data-ws-busy` element is visible.
@@ -128,30 +147,42 @@ CSS decides the layout of each state:
 - **Ready**: editor or preview in the stage, settings in the rail, one primary action.
 - **Processing**: the action shows a spinner and `aria-busy`; the image editor is dimmed in place
   so nothing jumps.
-- **Done**: `.verdict` (icon plus title and the requirement it meets), preview with Result /
-  Original, `.meta-stats` with the key fact first (`.meta-stat-item--key`), then Download as the
-  only primary action and "Adjust again" as secondary. Tools that keep their settings after a result
-  (`data-keep`) demote their run button to secondary.
+- **Done**: `.verdict` (icon, title and the requirement it meets) with Download as the only primary
+  action and "Adjust again" beside it, then the preview (Result / Original) and a `.check-table`:
+  Required against Your file for file size (with exact bytes), dimensions and format, each met value
+  ticked, and the original's size underneath. On phones each table row becomes a block with the two
+  values side by side. Tools that keep their settings after a result (`data-keep`) demote their run
+  button to secondary.
 - **Error**: `.notice--error` at the top of the stage; field errors (`.field-error`) under the field.
 - **Warning**: `.result-status.is-warning` (Compress PDF when the limit cannot be met).
 
 Variants: `data-compact-drop` folds the drop zone into a one-line strip once files exist (Image to
-PDF). Phones: the stage comes first, the rail follows, the action is a sticky bar; in the done state
-the result actions become the sticky bar.
+PDF). After a file loads, the resizer scrolls the editor into view when most of it is below the screen
+(phones and short laptops).
 
 Language: Hindi pages carry their own wording. Generated labels come from `L.hi` in
 `scripts/lib/image-workspace.js`; sentences written by `js/resizer.js` come from `data-*` attributes
 (process summary, result status and limit) and from its `HINDI_MESSAGES` table (validation and file
 errors), applied when `<html lang="hi">`.
 
-### Requirement picker (image resizer)
-`.choice-list` of `button.choice[data-preset]` toggle buttons (`aria-pressed`), each with
-`.choice__name` and `.choice__spec` (pixels and KB). "Custom size" is always last; it is pressed as
-soon as any value is edited and its spec shows the custom values, so preset versus custom is never
-ambiguous. The native `<select id="presetSelect" data-native>` stays hidden as the value store
-(`data-native` stops it being enhanced). Detailed settings sit behind `.ws-customize`
-(`data-ws-toggle`, `data-settings="open|closed"`), which opens by itself when Custom size is chosen or a
-value needs fixing (`ws:reveal-settings` event).
+### Requirement (image resizer)
+Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, never inside a rail.
+
+- Grid: `.req-grid#reqGrid` of `button.choice[data-preset]` cards (`aria-pressed`), each with
+  `.choice__name` and `.choice__spec` (pixels and KB), always both visible. The column count is fixed
+  per mode by classes the generator chooses from the number of options: `req-grid--d{2,3,4}` on
+  desktops, `req-grid--t{2,3}` on tablets, one column on phones. Cards in a grid share one size, so
+  there are no orphans or partial rows (8 options: 4 x 2, 2 x 4, 1 x 8; 3 options: 3, 3, 1).
+- Choice: the home page has no default (`data-require-choice`, `data-req="pending"`); processing waits
+  for a choice and the action line says so, with "Show me". Exam and file-size pages, and links with
+  `?preset=` or `?targetKB=`, arrive with their requirement chosen.
+- Summary: once chosen the grid folds to `.req-summary` (name, pixels, KB, format) with a Change
+  button (`aria-expanded`, Escape folds it again). It stays visible in every state.
+- "Custom size" is always last; it is pressed as soon as any value is edited and then shows the custom
+  values. The native `<select id="presetSelect" data-native>` stays hidden as the value store.
+- Detailed settings sit behind `.ws-customize` (`data-ws-toggle`, `data-settings="open|closed"`), which
+  opens by itself when Custom size is chosen or a value needs fixing (`ws:reveal-settings` event). Open,
+  the groups sit in three columns on desktops, size across the top on tablets, stacked on phones.
 
 ### Tool specifics
 - **Image to PDF**: `.pagelist` of `.page-row` tiles (3:4 thumbnail, page number, name, reorder handle,
@@ -160,8 +191,8 @@ value needs fixing (`ws:reveal-settings` event).
   is announced in `#pageOrderStatus` and focus follows the moved page. Any change hides a stale PDF.
 - **Compress PDF**: `.target-grid` of limit choices plus a typed limit; the result is `.size-compare`
   (Before, After, reduction, pages) under a `.result-status` verdict.
-- **Signature cleaner**: `.compare-pair` shows the original and the cleaned result side by side when
-  the stage is at least 560 px wide (stacked below that); the cleaned pane is outlined in ink.
+- **Signature cleaner**: `.compare-pair` shows the original and the cleaned result side by side from
+  640 px (stacked on phones); the cleaned pane is outlined in ink.
 - **Print sheet**: preview on `.ws-preview--desk`, facts in a `.meta-stats--row`, and a reminder to
   print at 100%.
 
@@ -197,8 +228,9 @@ value needs fixing (`ws:reveal-settings` event).
 Notices are tinted blocks with a 3 px status rule, not cards. Severity is always named in text.
 
 ### Reading content
-`.page--read` (700 px measure) with `.prose` at 17 px / 1.7. Tables are ruled, not boxed
-(`.table-wrap` scrolls on phones). `.callout` is a ruled aside (ink rule; `.is-warning` uses the
+`.page--read` (700 px measure) with `.prose` at 17 px / 1.7. Tables are ruled, not boxed. On phones
+`site.js` labels each cell with its column name and a `.table-wrap[data-stack]` table becomes one block
+per row (without script it scrolls sideways instead). `.callout` is a ruled aside (ink rule; `.is-warning` uses the
 warning rule). Related guides (`.guide-card-grid`, `.related-guides-grid`) are divided link rows in
 two columns, not cards. FAQ is a ruled `<details>` list. `.toolset` lists the product family after
 the home tool. Ad slots (`.ad-slot-container`) stay invisible until an ad unit exists, sit between
@@ -212,12 +244,15 @@ content sections, never inside a workspace, and are labelled "Advertisement".
   roles). Entries (`.entry`) are tinted blocks with a fold toggle (`.entry__toggle`), number, live
   title, move, duplicate and a separated quiet delete.
 - Style: grouped template list (`.template-card` rows with thumbnail, name, badge, description,
-  "In use", full preview button), audience filters, type and page, section order.
+  "In use", full preview button), audience filters (two columns of buttons on phones, never a sideways
+  strip), type and page, section order.
 - Review: status line, then findings grouped as Fix before sending, Worth checking, Suggestions; each
   says what, where and why, and Fix opens the section and entry and focuses the exact field.
 - Download: one row per format (PDF recommended, Word, plain text) with what it is for, then print,
   then Keep your work (device draft, backup file).
-- Preview (`.rb-preview`): sticky paper on `--c-desk` with template name, page count, zoom and PDF.
+- Preview (`.rb-preview`): sticky paper on `--c-desk` with template name, page count, zoom and PDF. On
+  desktops it is the one contained scroll region in the product: it stays beside a long editor, so
+  multi-page resumes scroll inside it.
 - Phones: `.rb-bar` with Edit / Preview tabs and a Download button; hidden while typing.
 
 ## Rules
@@ -238,8 +273,10 @@ content sections, never inside a workspace, and are labelled "Advertisement".
 
 - `tests/run_tests.js` suite 7: token contrast in both themes, read from `app.css`.
 - `tests/ui_tests.js`: readable buttons, 12 px floor, icon scale, control heights, custom select,
-  requirement picker state, focus visibility, overflow at nine widths, axe in both themes (including
-  result states), inline errors, compress status, phone reveal, menu focus.
+  requirement state, focus visibility, overflow at 32 widths, layout modes on both sides of 640 and
+  1000 (requirement grid columns, equal cards, whole labels, order, no sideways scrolling, task order,
+  primary action on screen, header and Tools menu, result facts, resume arrangement), axe in both
+  themes (including result states), inline errors, compress status, phone reveal, menu focus.
 - `tests/browser_tests.js`, `tests/image_workflow_tests.js`, `tests/resume_flow_tests.js`,
   `tests/browser_smoke.js`: real files, exact sizes, downloads, all templates, exports, resume
   editing, mobile navigation.
