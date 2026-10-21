@@ -579,7 +579,9 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .toolset { margin-top: var(--s-8); }
 .toolset__title { font-size: var(--fs-2xl); letter-spacing: var(--ls-title); margin-bottom: var(--s-4); }
 .toolset__list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0 var(--s-5); list-style: none; border-top: var(--bw) solid var(--c-line); }
-.toolset__list a { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 2px var(--s-3); padding: var(--s-4) 0; border-bottom: var(--bw) solid var(--c-line); color: var(--c-text); }
+/* Each link fills its row, so the rules under a row line up even when one description wraps */
+.toolset__list > li { display: flex; }
+.toolset__list a { flex: 1; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-content: start; gap: 2px var(--s-3); padding: var(--s-4) 0; border-bottom: var(--bw) solid var(--c-line); color: var(--c-text); }
 .toolset__list a:hover { text-decoration: none; }
 .toolset__list a:hover .toolset__name { color: var(--c-accent); }
 .toolset__list .fa-solid { grid-row: 1 / span 2; margin-top: 3px; color: var(--c-text-3); }

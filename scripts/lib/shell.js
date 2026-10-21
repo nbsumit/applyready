@@ -3,7 +3,7 @@
    checks that no page has drifted, so all pages look and behave like one product. */
 'use strict';
 
-const ASSET_VERSION = '20261121-1';
+const ASSET_VERSION = '20261121-2';
 
 // The product map. The header menu, the mobile sheet and the footer all read from here,
 // so every page presents the same five areas: image tools, PDF tools, resume, exam requirements, guides.
