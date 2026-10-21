@@ -233,7 +233,7 @@ ${section('Cutting aids', `          <div class="check-group">
           </div>`)}
       </div>
       <div class="ws-action">
-        <a id="btnDownloadPrintJpg" class="btn btn-primary btn-lg btn-block" href="#" download="Passport_Photos_300DPI.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download print sheet (JPEG)</a>
+        <a id="btnDownloadPrintJpg" class="btn btn-primary btn-lg btn-block" href="#" download="Passport_Photos_300DPI.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download sheet (JPEG)</a>
         <button type="button" id="btnDownloadPrintPdf" class="btn btn-block"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Download as PDF</button>
       </div>
       </div>

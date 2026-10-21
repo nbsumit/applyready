@@ -1077,9 +1077,6 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
   .ws[data-state='empty']:not([data-keep]) .ws-action { display: none; }
   .ws[data-state='done']:not([data-keep]) .ws-side { display: none; }
   .ws[data-state='done'] .ws-stage { border-radius: 0 0 var(--r-md) var(--r-md); }
-  /* After processing, Download stays in reach while the result is read */
-  .ws[data-state='done'] .ws-result__actions { position: sticky; bottom: 0; z-index: var(--z-sticky); margin: 0 calc(-1 * var(--s-4)) calc(-1 * var(--s-4)); padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom, 0px)); background: var(--c-surface); border-top: var(--bw) solid var(--c-line); border-radius: 0 0 var(--r-md) var(--r-md); }
-  .ws[data-keep][data-state='done'] .ws-result__actions { position: static; margin: 0; padding: 0; border-top: 0; background: none; }
   .dropzone { min-height: 260px; padding: var(--s-6) var(--s-4); }
   .cropper-container-wrapper { height: clamp(260px, 52vh, 420px); }
   body:has(.ws[data-state='ready']) { --toast-lift: 96px; }

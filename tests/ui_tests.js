@@ -578,7 +578,8 @@ const server = http.createServer((req, res) => {
     // Drag a page by its handle (pointer events cover mouse, pen and touch), and move it with arrow keys
     const names = () => page.locator('.page-row__name').allTextContents();
     const firstBefore = (await names())[0];
-    await page.locator('#imageListContainer').scrollIntoViewIfNeeded();
+    // Start the drag clear of the screen edges, where dragging scrolls the page on purpose.
+    await page.locator('.page-row').first().evaluate(el => el.scrollIntoView({ block: 'center' }));
     const handle = page.locator('.page-row').first().locator('.page-row__handle');
     const hb = await handle.boundingBox(), target = await page.locator('.page-row').nth(1).boundingBox();
     await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
@@ -686,7 +687,7 @@ const server = http.createServer((req, res) => {
     ok(await phone.page.locator('#viewDownload').isVisible() && await phone.page.locator('#btnDownloadPDF').isVisible(), 'resume on a phone: Download opens the download step');
     await phone.context.close();
   }
-  console.log('✓ Rebuild interactions: PDF rotation, drag and keyboard reorder, stale results, focus, signature compare, Hindi results, sticky rail, tool order, entry folding, exact-field Fix, phone Download');
+  console.log('✓ Rebuild interactions: PDF rotation, drag and keyboard reorder, stale results, focus, signature compare, Hindi results, no inner scrolling, tool order, entry folding, exact-field Fix, phone Download');
 
   await browser.close();
   server.close();
