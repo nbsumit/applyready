@@ -707,7 +707,8 @@
     [/^Min file size cannot be negative\.$/, 'न्यूनतम साइज ऋणात्मक नहीं हो सकता।'],
     [/^The selected file is empty/, 'चुनी गई फाइल खाली है (0 bytes)। कृपया कोई सही फोटो चुनें।'],
     [/^The selected file is too large \(([\d.]+) MB\)/, 'फाइल बहुत बड़ी है ($1 MB)। 50 MB से छोटी फोटो चुनें।'],
-    [/^Unsupported format\./, 'यह फॉर्मेट समर्थित नहीं है। JPG, PNG या WebP फोटो चुनें।'],
+    [/^Unsupported format\./, 'यह फॉर्मेट समर्थित नहीं है। JPG, PNG, WebP, GIF, BMP या AVIF फोटो चुनें।'],
+    [/^iPhone photos \(HEIC\)/, 'iPhone की HEIC फोटो समर्थित नहीं हैं। Camera → Formats → Most Compatible चुनें, या फोटो को JPG के रूप में शेयर करें।'],
     [/^Failed to read the selected file/, 'फाइल पढ़ी नहीं जा सकी। उसे दोबारा चुनें।'],
     [/^(Could not decode image|Image has invalid zero dimensions)/, 'फोटो खुल नहीं सकी। फाइल खराब हो सकती है या उसका फॉर्मेट समर्थित नहीं है। दूसरी फोटो चुनें।'],
     [/^Image resolution is extremely high \(([^)]*)\)/, 'फोटो का रेज़ोल्यूशन बहुत अधिक है ($1)। 64 मेगापिक्सेल से छोटी फोटो चुनें।'],
@@ -803,7 +804,10 @@
     if (!reqSummaryName || !reqSummarySpec) return;
     if (!requirementChosen) { reqSummaryName.textContent = ''; reqSummarySpec.textContent = ''; return; }
     const button = reqPanel && reqPanel.querySelector(`.choice[data-preset="${currentPresetKey}"] .choice__name`);
-    reqSummaryName.textContent = button ? button.textContent : (PRESETS[currentPresetKey] || PRESETS.custom).name;
+    // Preset names carry their spec in brackets ("IBPS Signature (140 × 60 px, 10–20 KB)"); the size
+    // details follow in reqSummarySpec, so only the short name is shown here.
+    const presetName = (PRESETS[currentPresetKey] || PRESETS.custom).name.replace(/\s*\([^()]*\d[^()]*\)\s*$/, '');
+    reqSummaryName.textContent = button ? button.textContent : presetName;
     if (!specs.isValid) { reqSummarySpec.textContent = ''; return; }
     const hindi = doc && doc.documentElement.lang === 'hi';
     const formatNames = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
@@ -1243,8 +1247,12 @@
       return;
     }
 
+    if (/^image\/hei[cf](-sequence)?$/i.test(file.type) || /\.hei[cf]$/i.test(file.name || '')) {
+      showProcessError("iPhone photos (HEIC) aren't supported. Set Camera → Formats → Most Compatible, or share the photo as JPG.");
+      return;
+    }
     if (!/^(image\/(jpeg|jpg|png|webp|bmp|gif|avif))$/i.test(file.type) && !(!file.type && /\.(jpg|jpeg|png|webp|bmp|gif|avif)$/i.test(file.name))) {
-      showProcessError('Unsupported format. Please select a valid JPG, PNG, or WebP image.');
+      showProcessError('Unsupported format. Please select a JPG, PNG, WebP, GIF, BMP or AVIF image.');
       return;
     }
 

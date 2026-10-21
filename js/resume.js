@@ -2851,6 +2851,16 @@
       return;
     }
 
+    const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
+    if (!fullName) {
+      notify('Add your name in Contact details before downloading.', true);
+      getEl('tabEdit').click(); getEl('tabContent').click();
+      getEl('sec-personal').classList.add('open');
+      getEl('sec-personal').querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
+      getEl('fullName').focus();
+      return;
+    }
+
     const textContent = window.ApplyReadyPDF.generateResumeText(resumeData);
     const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);

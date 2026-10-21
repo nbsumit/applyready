@@ -365,7 +365,7 @@ const EXPECTED = {
  },
  "remove:processDisabled": true,
  "invalidType": {
-  "err": "Unsupported format. Please select a valid JPG, PNG, or WebP image.",
+  "err": "Unsupported format. Please select a JPG, PNG, WebP, GIF, BMP or AVIF image.",
   "hasCropper": false
  }
 };
