@@ -39,7 +39,7 @@ const server = http.createServer((req,res) => {
   const visit=async file=>{const path=file.endsWith('/')?file+'index.html':file; await page.goto(`${origin}/${path}`);await page.evaluate(()=>document.fonts.ready);};
   const overflow=async()=>page.evaluate(()=>document.documentElement.scrollWidth > innerWidth+1);
   // Before an image exists the output settings sit behind "Edit size and limits".
-  const openSettings=async()=>{const toggle=page.locator('.ws-customize:visible');if(await toggle.count())await toggle.click();};
+  const openSettings=async()=>{const toggle=page.locator('.ws-customize:visible');if(await toggle.count() && await toggle.getAttribute('aria-expanded')!=='true')await toggle.click();};
   // On a phone the settings fold away once a result exists; "Adjust and redo" brings them back.
   const adjust=async()=>{if(await page.locator('#resultArea').isVisible())await page.locator('#btnCropAgain').click();};
   const dialog=page.locator('.dialog--confirm');
@@ -79,7 +79,7 @@ const server = http.createServer((req,res) => {
   ok(await page.locator('#presetSelect').inputValue()==='passport', 'Quick photo preset updates the selected preset');
   await openSettings();
   ok(await page.locator('#customWidth').isVisible(), 'Preset dimensions remain editable');
-  await page.locator('#presetSelect').selectOption('custom');
+  await page.locator('.choice[data-preset="custom"]').click();
   await page.locator('#customWidth').fill('700');
   ok(await page.locator('#customHeight').inputValue()==='900', 'Switching from a portrait preset to custom retains its ratio');
   await page.locator('[data-preset="signature"]').click();
@@ -268,13 +268,13 @@ const server = http.createServer((req,res) => {
   const image=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d'),pixels=x.createImageData(512,512);let seed=17;for(let i=0;i<pixels.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;pixels.data[i]=seed&255;pixels.data[i+1]=(seed>>8)&255;pixels.data[i+2]=(seed>>16)&255;pixels.data[i+3]=255;}x.putImageData(pixels,0,0);x.clearRect(220,220,72,72);return c.toDataURL('image/png').split(',')[1];});
   await page.locator('#fileInput').setInputFiles({name:'test.png',mimeType:'image/png',buffer:Buffer.from(image,'base64')});
   await page.locator('#btnProcess').waitFor({state:'visible'});await page.waitForFunction(()=>!document.getElementById('btnProcess').disabled);
-  await page.locator('#presetSelect').selectOption('avatar');await page.locator('#btnProcess').click();await page.locator('#resultArea').waitFor({state:'visible'});
+  await page.locator('.choice[data-preset="avatar"]').click();await page.locator('#btnProcess').click();await page.locator('#resultArea').waitFor({state:'visible'});
   const result=await page.evaluate(async()=>{const blob=await fetch(document.getElementById('btnDownload').href).then(r=>r.blob());const img=await createImageBitmap(blob);return {bytes:blob.size,type:blob.type,w:img.width,h:img.height};});
   ok(result.w===400 && result.h===400 && result.bytes<=102400 && result.type==='image/jpeg','JPEG matches measured pixel dimensions, bytes, and MIME');
   await audit('image-result-dark');
   await page.locator('#themeToggle').click();await audit('image-result-light');
   const priorDialogs=dialogs.length;for(let i=0;i<2;i++){const d=page.waitForEvent('download');await page.locator('#btnDownload').click();await (await d).saveAs(path.join(output,`image-${i}.jpg`));}ok(dialogs.length===priorDialogs,'Repeated image exports do not trigger popups');
-  await adjust();await page.locator('.ws-advanced > summary').click();
+  await adjust();await openSettings();await page.locator('.ws-advanced > summary').click();
   await page.locator('#addDateCheckbox').check();await page.locator('#candidateNameInput').fill('सुमित');
   const ratio=await page.evaluate(()=>{const data=document.getElementById('imageToCrop').cropper.getData();return data.width/data.height;});
   ok(Math.abs(ratio-400/336)<.02,'Annotation crop matches the photo area instead of stretching the source');
@@ -283,7 +283,7 @@ const server = http.createServer((req,res) => {
   await adjust();await page.locator('#addDateCheckbox').uncheck();
   const surface=page.locator('.cropper-container-wrapper');const leftBefore=await page.evaluate(()=>document.getElementById('imageToCrop').cropper.getCropBoxData().left);
   await surface.press('ArrowRight');ok(await page.evaluate(()=>document.getElementById('imageToCrop').cropper.getCropBoxData().left)>=leftBefore,'The crop can be adjusted with a keyboard');
-  await page.locator('#presetSelect').selectOption('custom');
+  await page.locator('.choice[data-preset="custom"]').click();
   ok(await page.locator('#cropperActiveArea').isVisible(),'Editing settings returns from result to the crop workspace');
   await page.locator('#formatSelect').selectOption('image/png');await page.locator('#customMaxKB').fill('5');await page.locator('#btnProcess').click();await page.locator('#processErrorBox').waitFor({state:'visible'});
   ok(!await page.locator('#resultArea').isVisible(),'An oversized PNG cannot be reported as a successful download');
@@ -379,7 +379,8 @@ const server = http.createServer((req,res) => {
         await page.keyboard.press('Escape');
         ok(await toolsBtn.getAttribute('aria-expanded') === 'false', `${file || 'index'}: Tools closes on Esc`);
         await toolsBtn.click();
-        await page.locator('main').first().click({ position: { x: 10, y: 10 } });
+        // A point well away from the menu panel (bottom right of the viewport).
+        await page.mouse.click(width - 8, 792);
         ok(await toolsBtn.getAttribute('aria-expanded') === 'false', `${file || 'index'}: Tools closes on outside click`);
       }
     }

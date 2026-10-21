@@ -441,7 +441,7 @@
 
     if (statOriginal) statOriginal.textContent = `${origKb} KB`;
     if (statCompressed) statCompressed.textContent = `${compKb} KB`;
-    if (statReduction) statReduction.textContent = `${reductionPercent}% Saved`;
+    if (statReduction) statReduction.textContent = `${reductionPercent}% smaller`;
     if (statPages) statPages.textContent = `${pagesCount} ${pagesCount === 1 ? 'Page' : 'Pages'}`;
     showTargetStatus(compBytes, compKb);
 

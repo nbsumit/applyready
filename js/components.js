@@ -12,7 +12,7 @@
   function enhanceSelect(native) {
     if (!native || native.dataset.enhanced) return;
     if (native.multiple || native.size > 1) return;
-    if (native.closest('.sr-only')) return;
+    if (native.closest('.sr-only') || native.hasAttribute('data-native')) return;
     native.dataset.enhanced = 'true';
     const uid = (native.id || 'select' + (++selectSeq)) + '-list';
 
@@ -222,34 +222,52 @@
   /* ------------------------------------------------------- Tool workspace */
   // A workspace moves through three states: empty (add a file), ready (adjust), done (download).
   // The tool script only shows and hides its own elements; this reads them and sets data-state.
+  // Settings stay folded (data-settings="closed") until asked for, "Custom size" is chosen,
+  // or a value needs fixing.
   function initWorkspace(ws) {
     const find = sel => (sel ? ws.querySelector(sel) : null);
     const fileEl = find(ws.dataset.wsFile);
     const resultEl = find(ws.dataset.wsResult);
     const busyEl = find(ws.dataset.wsBusy);
-    const steps = Array.from(ws.querySelectorAll('.steps [data-step]'));
+    const toggles = Array.from(ws.querySelectorAll('[data-ws-toggle]'));
     const shown = el => !!el && !el.hidden && !el.classList.contains('hidden');
     function sync() {
-      const state = shown(resultEl) ? 'done' : shown(fileEl) ? 'ready' : 'empty';
-      ws.dataset.state = state;
+      ws.dataset.state = shown(resultEl) ? 'done' : shown(fileEl) ? 'ready' : 'empty';
       ws.dataset.busy = shown(busyEl) ? 'true' : 'false';
-      const current = { empty: 0, ready: 1, done: 2 }[state];
-      steps.forEach((step, i) => {
-        step.classList.toggle('is-done', i < current);
-        step.classList.toggle('is-current', i === current);
-        if (i === current) step.setAttribute('aria-current', 'step'); else step.removeAttribute('aria-current');
-      });
+    }
+    function setSettings(open) {
+      ws.dataset.settings = open ? 'open' : 'closed';
+      toggles.forEach(button => button.setAttribute('aria-expanded', String(open)));
     }
     const observer = new MutationObserver(sync);
     [fileEl, resultEl, busyEl].forEach(el => { if (el) observer.observe(el, { attributes: true, attributeFilter: ['class', 'hidden'] }); });
-    ws.querySelectorAll('[data-ws-toggle]').forEach(button => {
-      button.addEventListener('click', () => {
-        const open = ws.dataset.settings !== 'open';
-        ws.dataset.settings = open ? 'open' : 'closed';
-        button.setAttribute('aria-expanded', String(open));
-      });
-    });
+    toggles.forEach(button => button.addEventListener('click', () => setSettings(ws.dataset.settings !== 'open')));
+    ws.addEventListener('click', e => { if (e.target.closest('button[data-preset="custom"]')) setSettings(true); });
+    // An invalid value is never hidden behind a closed panel.
+    ws.addEventListener('ws:reveal-settings', () => setSettings(true));
     sync();
+    fitRail(ws);
+  }
+
+  // Desktop rail: fit the settings and action into the part of the rail that is on screen, so the
+  // main action is visible before the page scrolls and never covers a setting. Settings that do not
+  // fit scroll inside the rail. On phones the rail dissolves into the page flow (display: contents).
+  function fitRail(ws) {
+    const rail = ws.querySelector('.ws-rail');
+    if (!rail) return;
+    let frame = 0;
+    const fit = () => {
+      frame = 0;
+      if (getComputedStyle(rail).display !== 'flex') { rail.style.maxHeight = ''; return; }
+      const stickyTop = parseFloat(getComputedStyle(rail).top) || 0;
+      const top = Math.max(rail.getBoundingClientRect().top, stickyTop);
+      rail.style.maxHeight = Math.max(240, Math.floor(window.innerHeight - top - 12)) + 'px';
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(fit); };
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    new MutationObserver(schedule).observe(ws, { attributes: true, attributeFilter: ['data-state', 'data-settings'] });
+    fit();
   }
 
   function init() {

@@ -33,13 +33,13 @@
   <link rel="manifest" href="../favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="../js/theme.js?v=20261102-1"></script>
+  <script src="../js/theme.js?v=20261120-1"></script>
 
   <!-- Icons & Styles -->
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
   <link rel="stylesheet" href="../css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20261102-1">
+  <link rel="stylesheet" href="../css/app.css?v=20261120-1">
   <!-- shell:styles:end -->
 
   <!-- FAQPage Schema -->
@@ -107,48 +107,49 @@
     <div class="site-header__inner">
       <a class="brand" href="../" aria-label="ApplyReady home">
         <img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28">
-        <span>ApplyReady</span>
+        <span class="brand__name">ApplyReady</span>
       </a>
       <nav class="site-nav" id="siteNav" aria-label="Main">
         <ul class="site-nav__list">
           <li class="site-nav__item">
             <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
             <div class="menu" id="toolsMenu" hidden>
-            <div class="menu__group">
+              <div class="menu__group menu__group--tools">
               <p class="menu__title">Image tools</p>
               <ul class="menu__list">
-                <li><a href="../">Image resizer</a></li>
-                <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
-                <li><a href="../image-to-pdf.html">Image to PDF</a></li>
-                <li><a href="../compress-pdf.html">Compress PDF</a></li>
-                <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+                <li><a class="menu__item" href="../"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixels and KB limits</span></span></a></li>
+                <li><a class="menu__item" href="../signature-cleaner.html"><i class="fa-solid fa-signature menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper, dark ink</span></span></a></li>
+                <li><a class="menu__item" href="../passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print</span><span class="menu__desc">A printable sheet of copies</span></span></a></li>
               </ul>
-            </div>
-            <div class="menu__group">
-              <p class="menu__title">Exam sizes</p>
+              <p class="menu__title">PDF tools</p>
               <ul class="menu__list">
+                <li><a class="menu__item" href="../image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans</span></span></a></li>
+                <li><a class="menu__item" href="../compress-pdf.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Fit a portal size limit</span></span></a></li>
+              </ul>
+              </div>
+              <div class="menu__group menu__group--refs">
+              <p class="menu__title">Exam requirements</p>
+              <ul class="menu__list menu__list--exams">
                 <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
                 <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
                 <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
                 <li><a href="../neet-photo-signature-size.html">NEET</a></li>
                 <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
               </ul>
-            </div>
-            <div class="menu__group">
-              <p class="menu__title">Resize to KB</p>
-              <ul class="menu__list">
+              <p class="menu__title">Resize to a file size</p>
+              <ul class="menu__list menu__list--sizes">
                 <li><a href="../resize-image-to-10kb.html">10 KB</a></li>
                 <li><a href="../resize-image-to-20kb.html">20 KB</a></li>
                 <li><a href="../resize-image-to-50kb.html">50 KB</a></li>
                 <li><a href="../resize-image-to-100kb.html">100 KB</a></li>
                 <li><a href="../resize-image-to-200kb.html">200 KB</a></li>
               </ul>
-            </div>
+              </div>
             </div>
           </li>
           <li><a class="site-nav__link" href="../resume.html">Resume builder</a></li>
           <li><a class="site-nav__link" href="../guides/">Guides</a></li>
-          <li><a class="site-nav__link" href="../hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi" aria-current="page">हिन्दी</a></li>
+          <li class="site-nav__lang"><a class="site-nav__link" href="../hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi" aria-current="page">हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
@@ -175,71 +176,13 @@
       <header class="page-head">
         <h1 class="page-title">NEET फोटो और सिग्नेचर साइज 2026: पासपोर्ट व पोस्टकार्ड फोटो नियम</h1>
         <p class="page-lede">NTA NEET-UG मेडिकल परीक्षा के आधिकारिक नियम। पासपोर्ट फोटो (10–200 KB, 80% चेहरा), 4×6 पोस्टकार्ड फोटो और हस्ताक्षर (4–30 KB) ऑनलाइन सुरक्षित रिसाइज करें।</p>
-        <p class="tool-jump"><a href="#resize-tool">अभी रिसाइज करें</a></p>
       </header>
-
-      <!-- Specifications Table -->
-      <section class="section prose">
-        <h2>नेशनल टेस्टिंग एजेंसी (NTA NEET-UG) आधिकारिक दिशानिर्देश</h2>
-        <div class="table-wrap"><table>
-            <thead>
-              <tr>
-                <th>दस्तावेज़</th>
-                <th>साइज सीमा (KB)</th>
-                <th>डायमेंशन</th>
-                <th>फॉर्मेट</th>
-                <th>मुख्य निर्देश</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>पासपोर्ट फोटो</td>
-                <td><strong>10 KB – 200 KB</strong></td>
-                <td>400 × 500 px</td>
-                <td>JPEG / JPG</td>
-                <td>सफेद बैकग्राउंड, 80% चेहरा दोनों कान दिखने चाहिए; नाम व तारीख फोटो के नीचे लिखना अनुशंसित है (आधिकारिक बुलेटिन <a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a> से पुष्टि करें)</td>
-              </tr>
-              <tr>
-                <td>पोस्टकार्ड फोटो (Postcard)</td>
-                <td><strong>10 KB – 200 KB</strong></td>
-                <td>4 × 6 inch (~1200 × 1800 px)</td>
-                <td>JPEG / JPG</td>
-                <td>सफेद बैकग्राउंड, 4 × 6 inch; ऑनलाइन आवेदन में अपलोड तथा फिजिकल प्रिंट एडमिट कार्ड प्रोफॉर्मा पर परीक्षा के दिन चिपकाई जाती है (आधिकारिक बुलेटिन <a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a> देखें)</td>
-              </tr>
-              <tr>
-                <td>हस्ताक्षर</td>
-                <td><strong>आधिकारिक बुलेटिन देखें</strong><br><small class="text-muted">(आमतौर पर 10–50 KB, पूर्व में 4–30 KB; <a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a> पर जांचें)</small></td>
-                <td>300 × 100 px (~4.0 × 1.5 cm)</td>
-                <td>JPEG / JPG</td>
-                <td>काली स्याही से सफेद कागज पर रनिंग हैंडराइटिंग (कैपिटल वर्जित); आधिकारिक बुलेटिन <a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a> से पुष्टि करें</td>
-              </tr>
-            </tbody>
-          </table></div>
-        <div class="callout">
-          <strong>आधिकारिक पोर्टल:</strong> हमेशा NTA की आधिकारिक वेबसाइट (<a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a>) से सूचना बुलेटिन का मिलान करें।
-          <p class="text-muted">अंतिम सत्यापन: अक्टूबर 2026 — हमेशा आधिकारिक स्रोत (<a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a>) के नवीनतम नोटिफिकेशन से पुष्टि अवश्य करें।</p>
-        </div>
-      </section>
-
-      <!-- Preloaded Resizer -->
-<!-- tool:start -->
-      <section class="section" id="resize-tool" aria-labelledby="toolHeading">
+      <!-- tool:start -->
+      <section class="section tool-section" id="resize-tool" aria-labelledby="toolHeading">
         <h2 class="section-title" id="toolHeading">NEET फोटो व सिग्नेचर रिसाइजर टूल</h2>
         <section class="ws" id="resizerApp" data-preset="neet-photo" data-state="empty" data-settings="closed" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="इमेज रिसाइज़र और कंप्रेसर">
       <div class="ws-head">
-        <ol class="steps" aria-label="प्रगति">
-        <li data-step="add"><span class="steps__n" aria-hidden="true">1</span>फोटो जोड़ें</li>
-        <li data-step="adjust"><span class="steps__n" aria-hidden="true">2</span>समायोजित करें</li>
-        <li data-step="download"><span class="steps__n" aria-hidden="true">3</span>डाउनलोड</li>
-        </ol>
-      </div>
-
-      <div class="ws-stage image-stage">
-        <div id="processErrorBox" class="notice notice--error hidden" role="alert">
-          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-          <span class="notice__body" id="processErrorMessage"></span>
-        </div>
-
+        <p class="ws-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> आपकी फोटो इसी डिवाइस पर प्रोसेस होती है। कुछ भी अपलोड नहीं होता।</p>
         <div id="fileInfoBox" class="filebar hidden" aria-live="polite">
           <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
           <span id="fileInfoText" class="filebar__name"></span>
@@ -248,18 +191,20 @@
             <button type="button" id="btnRemoveFile" class="btn btn-sm btn-danger-ghost" title="फाइल हटाएं">हटाएं</button>
           </div>
         </div>
+      </div>
+
+      <div class="ws-stage image-stage">
+        <div id="processErrorBox" class="notice notice--error hidden" role="alert">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span class="notice__body" id="processErrorMessage"></span>
+        </div>
 
         <div id="cropperPlaceholder" class="ws-empty">
-          <div class="chips ws-presets" role="group" aria-label="त्वरित प्रीसेट">
-            <span class="ws-presets__label">तुरंत चुनें</span>
-            <button type="button" class="chip" data-preset="neet-photo" aria-pressed="false">फोटो <span class="chip-sub">400 × 500</span></button>
-            <button type="button" class="chip" data-preset="neet-signature" aria-pressed="false">सिग्नेचर <span class="chip-sub">300 × 100</span></button>
-          </div>
           <div id="dropzone" class="dropzone" role="group" aria-label="फोटो या सिग्नेचर चुनें">
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
-            <i class="fa-solid fa-arrow-up-from-bracket dropzone__icon" aria-hidden="true"></i>
-            <h3 class="dropzone__title">यहाँ फोटो खींचकर छोड़ें</h3>
-            <p class="dropzone__text">या अपने डिवाइस से चुनें</p>
+            <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+            <h3 class="dropzone__title">अपनी फोटो या सिग्नेचर जोड़ें</h3>
+            <p class="dropzone__text">यहाँ खींचकर छोड़ें, या अपने डिवाइस से चुनें।</p>
             <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> फोटो या सिग्नेचर चुनें</button>
             <p class="dropzone__hint">JPEG, PNG, WebP समर्थित। फाइल आपके फोन/कंप्यूटर पर ही रहती है।</p>
           </div>
@@ -273,6 +218,8 @@
             <div class="ws-toolbar__group">
               <button type="button" id="btnRotateLeft" class="btn btn-sm btn-icon" title="बाएं घुमाएं" aria-label="बाएं घुमाएं"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
               <button type="button" id="btnRotateRight" class="btn btn-sm btn-icon" title="दाएं घुमाएं" aria-label="दाएं घुमाएं"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+            </div>
+            <div class="ws-toolbar__group">
               <button type="button" id="btnZoomOut" class="btn btn-sm btn-icon" title="ज़ूम आउट" aria-label="ज़ूम आउट"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i></button>
               <button type="button" id="btnZoomIn" class="btn btn-sm btn-icon" title="ज़ूम इन" aria-label="ज़ूम इन"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i></button>
             </div>
@@ -281,54 +228,68 @@
           <p class="ws-hint">क्रॉप की जगह तय करने के लिए खींचें। तीर कुंजियों से हिलाएं; + और − से ज़ूम करें।</p>
         </div>
 
-        <div id="resultArea" class="ws-result hidden" aria-live="polite">
+        <div id="resultArea" class="ws-result hidden" aria-live="polite" data-status-under="{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-status-range="{min}–{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-verified="जाँचा गया" data-limit-under="{max} KB से कम ({maxBytes} bytes)" data-limit-range="{min} से {max} KB ({minBytes} – {maxBytes} bytes)">
           <div class="ws-result__head">
-            <h3 class="ws-result__title"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> डाउनलोड के लिए तैयार</h3>
-            <div class="segmented" role="group" aria-label="तुलना">
-              <button type="button" id="btnViewProcessed" class="active" aria-pressed="true">परिणाम <span id="compProcessedKB">-</span></button>
-              <button type="button" id="btnViewOriginal" aria-pressed="false">मूल <span id="compOriginalKB">-</span></button>
+            <div class="verdict">
+              <i class="fa-solid fa-check" aria-hidden="true"></i>
+              <div>
+                <h3 class="ws-result__title">अपलोड के लिए तैयार</h3>
+                <p class="ws-result__ok"><span id="resultStatus" class="meta-stat-val status-ok"></span></p>
+              </div>
             </div>
           </div>
-          <p class="ws-result__ok"><i class="fa-solid fa-circle-check" aria-hidden="true"></i> <span id="resultStatus" class="meta-stat-val status-ok"></span></p>
-          <div class="ws-preview checkerboard">
-            <img id="resultImage" src="" alt="रिसाइज की गई फोटो">
-            <img id="originalComparisonImage" src="" alt="मूल फोटो" class="hidden">
-          </div>
-          <dl class="meta-stats">
-            <div class="meta-stat-item"><dt class="meta-stat-label">फाइल साइज</dt><dd class="meta-stat-val status-ok" id="resultFileSize"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">सीमा</dt><dd class="meta-stat-val" id="resultTargetSize"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">आउटपुट साइज़</dt><dd class="meta-stat-val" id="resultDims"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">लक्ष्य साइज़</dt><dd class="meta-stat-val" id="resultTargetDims"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">मूल साइज़</dt><dd class="meta-stat-val" id="resultOrigDims"></dd></div>
-            <div class="meta-stat-item"><dt class="meta-stat-label">फॉर्मेट</dt><dd class="meta-stat-val" id="resultFormat"></dd></div>
-          </dl>
-          <div class="ws-result__actions">
-            <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> डाउनलोड करें</a>
-            <button type="button" id="btnCropAgain" class="btn btn-lg">बदलें और दोबारा करें</button>
+          <div class="ws-result__body">
+            <div class="ws-result__view">
+              <div class="segmented" role="group" aria-label="मूल फोटो से तुलना">
+                <button type="button" id="btnViewProcessed" class="active" aria-pressed="true">परिणाम <span id="compProcessedKB">-</span></button>
+                <button type="button" id="btnViewOriginal" aria-pressed="false">मूल <span id="compOriginalKB">-</span></button>
+              </div>
+              <div class="ws-preview checkerboard">
+                <img id="resultImage" src="" alt="रिसाइज की गई फोटो">
+                <img id="originalComparisonImage" src="" alt="मूल फोटो" class="hidden">
+              </div>
+            </div>
+            <div class="ws-result__facts">
+              <dl class="meta-stats">
+              <div class="meta-stat-item meta-stat-item--key"><dt class="meta-stat-label">फाइल साइज</dt><dd class="meta-stat-val status-ok" id="resultFileSize"></dd></div>
+              <div class="meta-stat-item"><dt class="meta-stat-label">सीमा</dt><dd class="meta-stat-val" id="resultTargetSize"></dd></div>
+              <div class="meta-stat-item"><dt class="meta-stat-label">आउटपुट साइज़</dt><dd class="meta-stat-val" id="resultDims"></dd></div>
+              <div class="meta-stat-item"><dt class="meta-stat-label">फॉर्मेट</dt><dd class="meta-stat-val" id="resultFormat"></dd></div>
+              <div class="meta-stat-item"><dt class="meta-stat-label">लक्ष्य साइज़</dt><dd class="meta-stat-val" id="resultTargetDims"></dd></div>
+              <div class="meta-stat-item"><dt class="meta-stat-label">मूल साइज़</dt><dd class="meta-stat-val" id="resultOrigDims"></dd></div>
+              </dl>
+              <div class="ws-result__actions">
+                <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> डाउनलोड करें</a>
+                <button type="button" id="btnCropAgain" class="btn btn-lg">बदलें और दोबारा करें</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      <div class="ws-rail">
       <div class="ws-side">
-        <h2 class="ws-side__title">आउटपुट</h2>
-        <div class="field">
-          <label for="presetSelect" class="field-label">टारगेट प्रीसेट</label>
-          <select id="presetSelect" class="custom-select-source">
-                <option value="neet-photo" selected>NEET पासपोर्ट फोटो (400 × 500 px, 10–200 KB)</option>
-                <option value="neet-signature">NEET सिग्नेचर (300 × 100 px, बुलेटिन देखें)</option>
-                <option value="custom">कस्टम साइज़</option>
-          </select>
+        <div class="ws-section">
+          <h3 class="ws-section__title" id="reqHeading">आवश्यकता</h3>
+          <div class="choice-list" role="group" aria-labelledby="reqHeading">
+          <button type="button" class="choice" data-preset="neet-photo" aria-pressed="true"><span class="choice__name">NEET फोटो</span><span class="choice__spec">400 × 500 px · 10–200 KB</span></button>
+          <button type="button" class="choice" data-preset="neet-signature" aria-pressed="false"><span class="choice__name">NEET सिग्नेचर</span><span class="choice__spec">300 × 100 px · 10–50 KB</span></button>
+          <button type="button" class="choice" data-preset="custom" aria-pressed="false"><span class="choice__name">कस्टम साइज़</span><span class="choice__spec" data-custom-spec>अपना साइज़ और फाइल सीमा चुनें</span></button>
+          </div>
+          <div hidden>
+            <label for="presetSelect">आवश्यकता</label>
+            <select id="presetSelect" data-native>
+            <option value="neet-photo" selected>NEET पासपोर्ट फोटो (400 × 500 px, 10–200 KB)</option>
+            <option value="neet-signature">NEET सिग्नेचर (300 × 100 px, बुलेटिन देखें)</option>
+            <option value="custom">कस्टम साइज़</option>
+            </select>
+          </div>
         </div>
-        <dl class="meta-stats" id="presetSummaryBox" hidden>
-          <div><dt>साइज़</dt><dd id="specDims">400 × 500 px</dd></div>
-          <div><dt>फाइल साइज़ सीमा</dt><dd id="specSize"></dd></div>
-          <div><dt>फॉर्मेट</dt><dd id="specFormat">JPEG</dd></div>
-        </dl>
-        <button type="button" class="btn btn-link btn-sm ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom">साइज़ और सीमा बदलें</button>
 
+        <button type="button" class="ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom"><span>साइज़, फाइल सीमा और फॉर्मेट<span class="ws-customize__hint">आवश्यकता के अनुसार पहले से सेट। फॉर्म में कुछ अलग माँगा हो तभी बदलें।</span></span></button>
         <div class="ws-custom" id="wsCustom">
           <div id="customControls" class="ws-group">
-            <h3 class="ws-group__title">साइज़</h3>
+            <h4 class="ws-group__title">साइज़</h4>
             <div class="ws-dims">
               <div class="field">
                 <label class="field-label" id="customWidthLabel" for="customWidth">चौड़ाई</label>
@@ -360,10 +321,12 @@
                 </select>
               </div>
             </div>
+            <button type="button" id="btnOriginalSize" class="btn btn-sm" disabled><i class="fa-solid fa-expand" aria-hidden="true"></i> मूल साइज़ रखें</button>
+            <p class="field-hint">पूरी इमेज उसके अपने आयामों में रहती है। इमेज जोड़ने के बाद उपलब्ध।</p>
           </div>
 
           <div class="ws-group">
-            <h3 class="ws-group__title">फाइल साइज़ सीमा</h3>
+            <h4 class="ws-group__title">फाइल साइज़</h4>
             <div class="field-row">
               <div class="field">
                 <label class="field-label" for="customMinKB">न्यूनतम साइज (KB)</label>
@@ -375,11 +338,10 @@
               </div>
             </div>
             <p id="sizeError" class="field-error hidden" role="alert"></p>
-            <button type="button" id="btnOriginalSize" class="btn btn-sm" disabled><i class="fa-solid fa-expand" aria-hidden="true"></i> मूल साइज़ रखें</button>
-            <p class="field-hint">पूरी इमेज उसके अपने आयामों में रहती है। इमेज जोड़ने के बाद उपलब्ध।</p>
           </div>
 
           <div class="ws-group">
+            <h4 class="ws-group__title">फॉर्मेट और क्रॉप</h4>
             <div class="field-row">
               <div class="field">
                 <label for="formatSelect" class="field-label">फॉर्मेट</label>
@@ -438,13 +400,65 @@
       </div>
 
       <div class="ws-action">
-        <p class="ws-action__need">आगे बढ़ने के लिए इमेज जोड़ें।</p>
         <p id="processSummary" class="process-summary" aria-live="polite" data-label-output="आउटपुट" data-size-under="{max} KB से कम" data-size-range="{min} से {max} KB" data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।" data-label-show="दिखाएं"></p>
         <button type="button" id="btnProcess" class="btn btn-primary btn-lg btn-block" aria-describedby="processSummary" data-busy-label="प्रोसेस हो रहा है..." disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> रिसाइज और कंप्रेस करें</button>
+      </div>
       </div>
     </section>
       </section>
       <!-- tool:end -->
+      
+      
+      
+      
+      
+      
+
+      <!-- Specifications Table -->
+      <section class="section prose">
+        <h2>नेशनल टेस्टिंग एजेंसी (NTA NEET-UG) आधिकारिक दिशानिर्देश</h2>
+        <div class="table-wrap"><table>
+            <thead>
+              <tr>
+                <th>दस्तावेज़</th>
+                <th>साइज सीमा (KB)</th>
+                <th>डायमेंशन</th>
+                <th>फॉर्मेट</th>
+                <th>मुख्य निर्देश</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>पासपोर्ट फोटो</td>
+                <td><strong>10 KB – 200 KB</strong></td>
+                <td>400 × 500 px</td>
+                <td>JPEG / JPG</td>
+                <td>सफेद बैकग्राउंड, 80% चेहरा दोनों कान दिखने चाहिए; नाम व तारीख फोटो के नीचे लिखना अनुशंसित है (आधिकारिक बुलेटिन <a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a> से पुष्टि करें)</td>
+              </tr>
+              <tr>
+                <td>पोस्टकार्ड फोटो (Postcard)</td>
+                <td><strong>10 KB – 200 KB</strong></td>
+                <td>4 × 6 inch (~1200 × 1800 px)</td>
+                <td>JPEG / JPG</td>
+                <td>सफेद बैकग्राउंड, 4 × 6 inch; ऑनलाइन आवेदन में अपलोड तथा फिजिकल प्रिंट एडमिट कार्ड प्रोफॉर्मा पर परीक्षा के दिन चिपकाई जाती है (आधिकारिक बुलेटिन <a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a> देखें)</td>
+              </tr>
+              <tr>
+                <td>हस्ताक्षर</td>
+                <td><strong>आधिकारिक बुलेटिन देखें</strong><br><small class="text-muted">(आमतौर पर 10–50 KB, पूर्व में 4–30 KB; <a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a> पर जांचें)</small></td>
+                <td>300 × 100 px (~4.0 × 1.5 cm)</td>
+                <td>JPEG / JPG</td>
+                <td>काली स्याही से सफेद कागज पर रनिंग हैंडराइटिंग (कैपिटल वर्जित); आधिकारिक बुलेटिन <a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a> से पुष्टि करें</td>
+              </tr>
+            </tbody>
+          </table></div>
+        <div class="callout">
+          <strong>आधिकारिक पोर्टल:</strong> हमेशा NTA की आधिकारिक वेबसाइट (<a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a>) से सूचना बुलेटिन का मिलान करें।
+          <p class="text-muted">अंतिम सत्यापन: अक्टूबर 2026 — हमेशा आधिकारिक स्रोत (<a href="https://exams.nta.ac.in/NEET" target="_blank" rel="noopener noreferrer">exams.nta.ac.in/NEET</a>) के नवीनतम नोटिफिकेशन से पुष्टि अवश्य करें।</p>
+        </div>
+      </section>
+
+      <!-- Preloaded Resizer -->
+
       <!-- Comprehensive Hindi Guide Content -->
       <section class="section prose">
         <h2>NTA NEET-UG आवेदन के लिए फोटो, पोस्टकार्ड फोटो व हस्ताक्षर नियम</h2>
@@ -518,33 +532,38 @@
   <footer class="site-footer">
     <div class="site-footer__inner">
       <div class="site-footer__brand">
-        <a class="brand" href="../"><img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span>ApplyReady</span></a>
-        <p>छोटे टूल्स। अगली सीढ़ी आसान।<br>निःशुल्क उपयोग। आपकी फाइलें आपके डिवाइस पर ही रहती हैं।</p>
+        <a class="brand" href="../"><img class="brand__mark" src="../favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
+        <p>फोटो, सिग्नेचर, PDF और रिज़्यूमे, सही आवश्यकता के अनुसार तैयार। सब कुछ आपके ब्राउज़र में चलता है। फाइलें कभी अपलोड नहीं होतीं।</p>
       </div>
-      <div>
-        <h2 class="site-footer__title">Tools</h2>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Image tools</h2>
         <ul class="site-footer__list">
           <li><a href="../">Image resizer</a></li>
           <li><a href="../signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="../passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="../resize-image-to-20kb.html">Resize to 20 KB</a></li>
+          <li><a href="../resize-image-to-50kb.html">Resize to 50 KB</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">PDF and resume</h2>
+        <ul class="site-footer__list">
           <li><a href="../image-to-pdf.html">Image to PDF</a></li>
           <li><a href="../compress-pdf.html">Compress PDF</a></li>
-          <li><a href="../passport-photo-print.html">Passport photo print</a></li>
           <li><a href="../resume.html">Resume builder</a></li>
         </ul>
       </div>
-      <div>
-        <h2 class="site-footer__title">Exam sizes</h2>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Exam requirements</h2>
         <ul class="site-footer__list">
           <li><a href="../ssc-photo-signature-size.html">SSC</a></li>
           <li><a href="../upsc-photo-signature-size.html">UPSC</a></li>
           <li><a href="../ibps-photo-signature-size.html">IBPS</a></li>
           <li><a href="../neet-photo-signature-size.html">NEET</a></li>
           <li><a href="../rrb-photo-signature-size.html">RRB</a></li>
-          <li><a href="../resize-image-to-20kb.html">Resize to 20KB</a></li>
-          <li><a href="../resize-image-to-50kb.html">Resize to 50KB</a></li>
         </ul>
       </div>
-      <div>
+      <div class="site-footer__col">
         <h2 class="site-footer__title">ApplyReady</h2>
         <ul class="site-footer__list">
           <li><a href="../guides/">Guides</a></li>
@@ -556,14 +575,14 @@
         </ul>
       </div>
     </div>
-    <div class="site-footer__base"><span>Built for your everyday paperwork.</span><span>No sign-up. No watermarks.</span></div>
+    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span><span><i class="fa-solid fa-lock" aria-hidden="true"></i> Files are processed on your device.</span></div>
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="../js/components.js?v=20261102-1" defer></script>
-  <script src="../js/site.js?v=20261102-1"></script>
+  <script src="../js/components.js?v=20261120-1" defer></script>
+  <script src="../js/site.js?v=20261120-1"></script>
   <script src="../js/vendor/cropper.min.js"></script>
-  <script src="../js/presets.js?v=20261102-1"></script>
-  <script src="../js/resizer.js?v=20261102-1"></script>
+  <script src="../js/presets.js?v=20261120-1"></script>
+  <script src="../js/resizer.js?v=20261120-1"></script>
 </body>
 </html>

@@ -42,7 +42,7 @@
   const statSize = doc.getElementById('statPdfSize');
   const btnDownload = doc.getElementById('btnDownloadPdf');
 
-  // List of uploaded image items: { id, file, name, dataUrl, width, height }
+  // List of uploaded image items: { id, file, name, dataUrl, width, height, rotation }
   let items = [];
   let pdfBlobUrl = null;
   let isConverting = false;
@@ -106,7 +106,24 @@
     if (btnConvert) {
       btnConvert.addEventListener('click', generatePdf);
     }
+
+    // A finished PDF describes the pages and settings it was made from; any change makes it stale.
+    [pageSizeSelect, orientationSelect, marginSelect, qualitySelect].forEach(select => {
+      if (select) select.addEventListener('change', invalidateResult);
+    });
   }
+
+  function invalidateResult() {
+    if (resultArea) resultArea.classList.add('hidden');
+    if (btnDownload) btnDownload.removeAttribute('href');
+    if (pdfBlobUrl) {
+      URL.revokeObjectURL(pdfBlobUrl);
+      pdfBlobUrl = null;
+    }
+  }
+
+  // Width and height as the page will show them, after any quarter turns.
+  const turned = item => (item.rotation % 180 === 0 ? { w: item.width, h: item.height } : { w: item.height, h: item.width });
 
   function handleFiles(fileList) {
     const validFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
@@ -128,7 +145,8 @@
             name: file.name,
             dataUrl: e.target.result,
             width: img.naturalWidth,
-            height: img.naturalHeight
+            height: img.naturalHeight,
+            rotation: 0
           });
           loaded++;
           if (loaded === validFiles.length) {
@@ -146,8 +164,9 @@
     });
   }
 
-  function renderList() {
+  function renderList(focus) {
     if (!imageListContainer) return;
+    invalidateResult();
     imageListContainer.innerHTML = '';
 
     if (items.length === 0) {
@@ -163,22 +182,31 @@
     items.forEach((item, index) => {
       const card = doc.createElement('div');
       card.className = 'page-row';
+      card.setAttribute('role', 'group');
+      card.setAttribute('aria-label', `Page ${index + 1} of ${items.length}: ${item.name}`);
+      const dims = turned(item);
 
       card.innerHTML = `
-        <span class="page-row__num">#${index + 1}</span>
-        <img class="page-row__thumb" src="${item.dataUrl}" alt="${escapeHTML(item.name)}">
+        <span class="page-row__num" aria-hidden="true">${index + 1}</span>
+        <img class="page-row__thumb" src="${item.dataUrl}" alt="" style="transform: rotate(${item.rotation}deg)${item.rotation % 180 ? ' scale(.75)' : ''};">
         <div class="page-row__text">
           <strong class="page-row__name">${escapeHTML(item.name)}</strong>
-          <span class="page-row__meta">${item.width} × ${item.height} px · ${(item.file.size / 1024).toFixed(1)} KB</span>
+          <span class="page-row__meta">${dims.w} × ${dims.h} px · ${(item.file.size / 1024).toFixed(1)} KB</span>
         </div>
         <div class="page-row__actions">
-          <button type="button" class="btn btn-sm btn-icon btn-move-up" data-idx="${index}" title="Move up" aria-label="Move ${escapeHTML(item.name)} up" ${index === 0 ? 'disabled' : ''}>
+          <button type="button" class="btn btn-sm btn-icon page-row__handle" data-idx="${index}" title="Drag to reorder" aria-label="Reorder page ${index + 1}. Drag it, or use the arrow keys." aria-describedby="pageOrderHint">
+            <i class="fa-solid fa-arrows-up-down" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-icon btn-rotate" data-idx="${index}" title="Rotate a quarter turn" aria-label="Rotate page ${index + 1} a quarter turn clockwise">
+            <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-icon btn-move-up" data-idx="${index}" title="Move earlier" aria-label="Move page ${index + 1} earlier" ${index === 0 ? 'disabled' : ''}>
             <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
           </button>
-          <button type="button" class="btn btn-sm btn-icon btn-move-down" data-idx="${index}" title="Move down" aria-label="Move ${escapeHTML(item.name)} down" ${index === items.length - 1 ? 'disabled' : ''}>
+          <button type="button" class="btn btn-sm btn-icon btn-move-down" data-idx="${index}" title="Move later" aria-label="Move page ${index + 1} later" ${index === items.length - 1 ? 'disabled' : ''}>
             <i class="fa-solid fa-arrow-down" aria-hidden="true"></i>
           </button>
-          <button type="button" class="btn btn-sm btn-icon btn-danger-ghost btn-del" data-idx="${index}" title="Remove" aria-label="Remove ${escapeHTML(item.name)}">
+          <button type="button" class="btn btn-sm btn-icon btn-danger-ghost btn-del" data-idx="${index}" title="Remove page" aria-label="Remove page ${index + 1}, ${escapeHTML(item.name)}">
             <i class="fa-regular fa-trash-can" aria-hidden="true"></i>
           </button>
         </div>
@@ -187,7 +215,8 @@
       imageListContainer.appendChild(card);
     });
 
-    // Attach row events
+    // Attach row events. After a re-render, focus follows the page that moved,
+    // so keyboard and screen reader users keep their place.
     imageListContainer.querySelectorAll('.btn-move-up').forEach(btn => {
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.idx, 10);
@@ -195,7 +224,7 @@
           const temp = items[idx];
           items[idx] = items[idx - 1];
           items[idx - 1] = temp;
-          renderList();
+          renderList({ idx: idx - 1, sel: idx - 1 === 0 ? '.btn-move-down' : '.btn-move-up' });
         }
       });
     });
@@ -207,8 +236,16 @@
           const temp = items[idx];
           items[idx] = items[idx + 1];
           items[idx + 1] = temp;
-          renderList();
+          renderList({ idx: idx + 1, sel: idx + 1 === items.length - 1 ? '.btn-move-up' : '.btn-move-down' });
         }
+      });
+    });
+
+    imageListContainer.querySelectorAll('.btn-rotate').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx, 10);
+        items[idx].rotation = (items[idx].rotation + 90) % 360;
+        renderList({ idx, sel: '.btn-rotate' });
       });
     });
 
@@ -216,9 +253,106 @@
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.idx, 10);
         items.splice(idx, 1);
-        renderList();
+        renderList(items.length ? { idx: Math.min(idx, items.length - 1), sel: '.btn-del' } : null);
+        if (!items.length && btnBrowse) btnBrowse.focus();
       });
     });
+
+    imageListContainer.querySelectorAll('.page-row__handle').forEach(handle => {
+      handle.addEventListener('pointerdown', startDrag);
+      handle.addEventListener('keydown', e => {
+        const idx = parseInt(handle.dataset.idx, 10);
+        const step = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        moveItem(idx, idx + step);
+      });
+    });
+
+    if (focus) {
+      const row = imageListContainer.children[focus.idx];
+      const target = row && row.querySelector(focus.sel);
+      if (target) target.focus();
+    }
+  }
+
+  // Move one page to a new position, then keep focus on its reorder handle.
+  function moveItem(from, to) {
+    if (to < 0 || to >= items.length || from === to) return;
+    const [item] = items.splice(from, 1);
+    items.splice(to, 0, item);
+    renderList({ idx: to, sel: '.page-row__handle' });
+    announce(`Page moved to position ${to + 1} of ${items.length}.`);
+  }
+
+  function announce(message) {
+    const live = doc.getElementById('pageOrderStatus');
+    if (live) live.textContent = message;
+  }
+
+  // Pointer drag (mouse, pen and touch) from the handle. The handle has touch-action: none,
+  // so dragging it never scrolls the page; the rest of the tile still scrolls normally.
+  let drag = null;
+  function startDrag(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    const handle = e.currentTarget;
+    const row = handle.closest('.page-row');
+    if (!row) return;
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    const rect = row.getBoundingClientRect();
+    drag = { handle, row, from: parseInt(handle.dataset.idx, 10), to: null, startX: e.clientX, startY: e.clientY, moved: false, rect };
+    handle.addEventListener('pointermove', onDragMove);
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', cancelDrag);
+    doc.addEventListener('keydown', onDragKey, true);
+  }
+  function rowAt(x, y) {
+    const rows = Array.from(imageListContainer.children);
+    for (let i = 0; i < rows.length; i++) {
+      if (drag && rows[i] === drag.row) continue; // the dragged tile follows the pointer; look beneath it
+      const r = rows[i].getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
+    }
+    return null;
+  }
+  function onDragMove(e) {
+    if (!drag) return;
+    const dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    drag.moved = true;
+    drag.row.classList.add('is-dragging');
+    drag.row.style.transform = `translate(${dx}px, ${dy}px)`;
+    const over = rowAt(e.clientX, e.clientY);
+    imageListContainer.querySelectorAll('.is-drop-target').forEach(el => el.classList.remove('is-drop-target'));
+    if (over !== null && over !== drag.from) imageListContainer.children[over].classList.add('is-drop-target');
+    drag.to = over;
+    // Keep the drop area reachable on a long list.
+    const edge = 72;
+    if (e.clientY < edge) window.scrollBy(0, -12);
+    else if (e.clientY > window.innerHeight - edge) window.scrollBy(0, 12);
+  }
+  function finishDrag() {
+    if (!drag) return null;
+    const { handle, row } = drag;
+    handle.removeEventListener('pointermove', onDragMove);
+    handle.removeEventListener('pointerup', endDrag);
+    handle.removeEventListener('pointercancel', cancelDrag);
+    doc.removeEventListener('keydown', onDragKey, true);
+    row.classList.remove('is-dragging');
+    row.style.transform = '';
+    imageListContainer.querySelectorAll('.is-drop-target').forEach(el => el.classList.remove('is-drop-target'));
+    const done = drag;
+    drag = null;
+    return done;
+  }
+  function endDrag() {
+    const done = finishDrag();
+    if (done && done.moved && done.to !== null) moveItem(done.from, done.to);
+  }
+  function cancelDrag() { finishDrag(); }
+  function onDragKey(e) {
+    if (e.key === 'Escape' && drag) { e.preventDefault(); cancelDrag(); }
   }
 
   function clearAll() {
@@ -249,9 +383,10 @@
 
       for (const item of items) {
         // Draw to offscreen canvas to standardize to JPEG bytes
+        const { w: itemW, h: itemH } = turned(item);
         const canvas = doc.createElement('canvas');
-        canvas.width = item.width;
-        canvas.height = item.height;
+        canvas.width = itemW;
+        canvas.height = itemH;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -262,7 +397,9 @@
           if (img.complete) return res();
           img.onload = () => res();
         });
-        ctx.drawImage(img, 0, 0);
+        ctx.translate(itemW / 2, itemH / 2);
+        ctx.rotate(item.rotation * Math.PI / 180);
+        ctx.drawImage(img, -item.width / 2, -item.height / 2);
 
         const jpegBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
         const jpegBuffer = await jpegBlob.arrayBuffer();
@@ -276,7 +413,7 @@
           isLandscape = false;
         } else {
           // Auto: match image aspect ratio
-          isLandscape = item.width > item.height;
+          isLandscape = itemW > itemH;
         }
 
         let pw, ph;
@@ -285,8 +422,8 @@
           ph = isLandscape ? LETTER_W : LETTER_H;
         } else if (pageSize === 'fit') {
           // Convert pixels to 72dpi points: pt = px * 72 / 150
-          pw = Math.max(72, Math.round(item.width * 0.5));
-          ph = Math.max(72, Math.round(item.height * 0.5));
+          pw = Math.max(72, Math.round(itemW * 0.5));
+          ph = Math.max(72, Math.round(itemH * 0.5));
         } else {
           // Default A4
           pw = isLandscape ? A4_H : A4_W;
@@ -298,9 +435,9 @@
         const availH = Math.max(10, ph - (marginVal * 2));
 
         // Proportional scale to fit within margin box
-        const scale = Math.min(availW / item.width, availH / item.height);
-        const drawW = item.width * scale;
-        const drawH = item.height * scale;
+        const scale = Math.min(availW / itemW, availH / itemH);
+        const drawW = itemW * scale;
+        const drawH = itemH * scale;
 
         // Centered coordinates in PDF coordinate space (origin at bottom-left)
         const posX = marginVal + (availW - drawW) / 2;
@@ -313,8 +450,8 @@
           drawH,
           posX,
           posY,
-          imgWidthPx: item.width,
-          imgHeightPx: item.height,
+          imgWidthPx: itemW,
+          imgHeightPx: itemH,
           jpegBytes
         });
       }
@@ -342,7 +479,7 @@
     } finally {
       isConverting = false;
       btnConvert.disabled = false;
-      btnConvert.innerHTML = '<i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Convert to PDF';
+      btnConvert.innerHTML = '<i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Create PDF';
     }
   }
 

@@ -33,18 +33,15 @@
   const previewArea = doc.getElementById('cleanerPreviewArea');
   const emptyState = doc.getElementById('cleanerEmptyState');
   const canvas = doc.getElementById('cleanerCanvas');
+  const originalCanvas = doc.getElementById('cleanerOriginalCanvas');
   const btnDownload = doc.getElementById('btnCleanerDownload');
   const statDimensions = doc.getElementById('statDimensions');
   const statFileSize = doc.getElementById('statFileSize');
   const statFormat = doc.getElementById('statFormat');
 
-  const btnViewCleaned = doc.getElementById('btnViewCleaned');
-  const btnViewOriginal = doc.getElementById('btnViewOriginal');
-
   let originalImage = null;
   let originalFile = null;
   let originalImageData = null;
-  let showingOriginal = false;
   let processedBlobUrl = null;
   let debounceTimer = null;
 
@@ -130,27 +127,6 @@
         scheduleProcess();
       });
     }
-
-    if (btnViewCleaned && btnViewOriginal) {
-      btnViewCleaned.addEventListener('click', () => {
-        showingOriginal = false;
-        btnViewCleaned.classList.add('active');
-        btnViewCleaned.setAttribute('aria-pressed', 'true');
-        btnViewOriginal.classList.remove('active');
-        btnViewOriginal.setAttribute('aria-pressed', 'false');
-        processSignature();
-      });
-
-      btnViewOriginal.addEventListener('click', () => {
-        if (!originalImage) return;
-        showingOriginal = true;
-        btnViewOriginal.classList.add('active');
-        btnViewOriginal.setAttribute('aria-pressed', 'true');
-        btnViewCleaned.classList.remove('active');
-        btnViewCleaned.setAttribute('aria-pressed', 'false');
-        drawOriginal();
-      });
-    }
   }
 
   function handleFile(file) {
@@ -178,6 +154,12 @@
         const ctx = offscreen.getContext('2d');
         ctx.drawImage(img, 0, 0);
         originalImageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height);
+        // The original stays on screen beside the cleaned version.
+        if (originalCanvas) {
+          originalCanvas.width = img.naturalWidth;
+          originalCanvas.height = img.naturalHeight;
+          originalCanvas.getContext('2d').drawImage(img, 0, 0);
+        }
 
         processSignature();
         if (window.ApplyReadyUI && window.ApplyReadyUI.reveal && previewArea) window.ApplyReadyUI.reveal(previewArea.closest('section') || previewArea);
@@ -189,7 +171,7 @@
   }
 
   function scheduleProcess() {
-    if (!originalImageData || showingOriginal) return;
+    if (!originalImageData) return;
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(processSignature, 60);
   }
@@ -313,14 +295,6 @@
     }
   }
 
-  function drawOriginal() {
-    if (!originalImage || !canvas) return;
-    canvas.width = originalImage.naturalWidth;
-    canvas.height = originalImage.naturalHeight;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(originalImage, 0, 0);
-  }
-
   function updateDownloadAndStats() {
     if (!canvas || !btnDownload) return;
 
@@ -351,7 +325,6 @@
     originalImage = null;
     originalFile = null;
     originalImageData = null;
-    showingOriginal = false;
     if (processedBlobUrl) {
       URL.revokeObjectURL(processedBlobUrl);
       processedBlobUrl = null;
