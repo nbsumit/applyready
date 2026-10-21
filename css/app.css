@@ -628,7 +628,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 /* ================================================================== 12. TOOL WORKSPACE */
 /* One frame for every tool: a document bar, a stage where the file is, a settings rail
    with a sticky action. data-state is empty | ready | done (set by components.js). */
-.ws { display: grid; grid-template-columns: minmax(0, 1fr) var(--w-rail); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: 'head head' 'stage side' 'stage action'; background: var(--c-surface); border: var(--bw) solid var(--c-line-strong); border-radius: var(--r-md); }
+.ws { display: grid; grid-template-columns: minmax(0, 1fr) var(--w-rail); grid-template-rows: auto 1fr; grid-template-areas: 'head head' 'stage rail'; background: var(--c-surface); border: var(--bw) solid var(--c-line-strong); border-radius: var(--r-md); }
 .ws-head { grid-area: head; display: flex; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-4); flex-wrap: wrap; min-height: 52px; padding: var(--s-2) var(--s-4) var(--s-2) var(--s-5); border-bottom: var(--bw) solid var(--c-line); border-radius: var(--r-md) var(--r-md) 0 0; background: var(--c-surface); }
 .ws-privacy { display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--fs-label); color: var(--c-text-3); }
 .ws-privacy .fa-solid { font-size: 12px; }
@@ -644,7 +644,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .filebar__meta { color: var(--c-text-3); font-size: var(--fs-label); }
 .filebar__actions { display: flex; gap: var(--s-1); flex: none; }
 
-.ws-stage { grid-area: stage; position: relative; min-width: 0; display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-5); background: var(--c-surface-2); border-radius: 0 0 0 var(--r-md); }
+.ws-stage { grid-area: stage; position: relative; min-width: 0; display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-5); background: var(--c-surface-2); border-right: var(--bw) solid var(--c-line); border-radius: 0 0 0 var(--r-md); }
 .ws-empty { display: flex; flex-direction: column; gap: var(--s-3); flex: 1; }
 .dropzone { flex: 1; display: grid; align-content: center; justify-items: center; gap: var(--s-2); min-height: 380px; padding: var(--s-6) var(--s-5); text-align: center; background: var(--c-surface); border: 1.5px dashed var(--c-line-strong); border-radius: var(--r-md); cursor: pointer; transition: border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
 .dropzone:hover { border-color: var(--c-field-line); }
@@ -711,8 +711,10 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .ws-result__facts .ws-result__actions { display: grid; }
 .ws-result__facts .ws-result__actions .btn { width: 100%; }
 
-/* Settings rail */
-.ws-side { grid-area: side; display: grid; gap: var(--s-5); align-content: start; padding: var(--s-5); border-left: var(--bw) solid var(--c-line); min-width: 0; }
+/* Rail: settings above, the action below. On a desktop the rail stays in view while the stage
+   scrolls; settings taller than the screen scroll inside it, so the action never covers them. */
+.ws-rail { grid-area: rail; position: sticky; top: calc(var(--h-header) + var(--s-3)); align-self: start; display: flex; flex-direction: column; max-height: calc(100vh - var(--h-header) - var(--s-5)); min-width: 0; }
+.ws-side { grid-area: side; flex: 0 1 auto; min-height: 0; overflow-y: auto; display: grid; gap: var(--s-5); align-content: start; padding: var(--s-5); min-width: 0; }
 .ws-side__title { font-size: var(--fs-label); font-weight: var(--fw-strong); color: var(--c-text); margin-bottom: calc(-1 * var(--s-3)); }
 .ws-section { display: grid; gap: var(--s-3); min-width: 0; }
 .ws-section__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
@@ -736,7 +738,8 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .ws-reset { justify-self: start; margin-left: calc(-1 * var(--s-3)); }
 
 /* Action footer: the one dominant action and what it will produce */
-.ws-action { grid-area: action; position: sticky; bottom: 0; z-index: 2; display: grid; gap: var(--s-2); align-content: start; padding: var(--s-4) var(--s-5) var(--s-5); border-left: var(--bw) solid var(--c-line); border-top: var(--bw) solid var(--c-line); background: var(--c-surface); border-radius: 0 0 var(--r-md) 0; }
+.ws-action { grid-area: action; flex: none; z-index: 2; display: grid; gap: var(--s-2); align-content: start; padding: var(--s-4) var(--s-5) var(--s-5); border-top: var(--bw) solid var(--c-line); background: var(--c-surface); border-radius: 0 0 var(--r-md) 0; }
+.ws-side:empty + .ws-action, .ws-rail > .ws-action:first-child { border-top: 0; }
 .ws-action__need { display: none; font-size: var(--fs-sm); color: var(--c-text-3); }
 .ws[data-state='empty'] #btnProcess, .ws[data-state='empty'] #btnStartCompress { display: none; }
 .ws[data-state='done'] .ws-action { display: none; }
@@ -750,8 +753,8 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 
 /* Workspace variants: tools without settings before a file, tools that keep settings after a result */
 .ws[data-simple-empty][data-state='empty'] { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'stage'; }
-.ws[data-simple-empty][data-state='empty'] .ws-side, .ws[data-simple-empty][data-state='empty'] .ws-action { display: none; }
-.ws[data-simple-empty][data-state='empty'] .ws-stage { border-radius: 0 0 var(--r-md) var(--r-md); }
+.ws[data-simple-empty][data-state='empty'] .ws-rail { display: none; }
+.ws[data-simple-empty][data-state='empty'] .ws-stage { border-right: 0; border-radius: 0 0 var(--r-md) var(--r-md); }
 .ws[data-simple-empty][data-state='empty'] .dropzone { min-height: 340px; }
 .ws[data-compact-drop]:not([data-state='empty']) .dropzone { flex: 0 0 auto; min-height: 0; grid-template-columns: auto 1fr; grid-auto-flow: column; justify-items: start; align-items: center; text-align: left; gap: 0 var(--s-3); padding: var(--s-3) var(--s-4); border-width: 1px; }
 .ws[data-compact-drop]:not([data-state='empty']) .dropzone__icon { grid-row: 1 / span 2; width: 36px; height: 36px; margin: 0; font-size: 16px; }
@@ -774,7 +777,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 
 /* ================================================================== 13. TOOL SPECIFICS */
 /* Image to PDF: the document, page by page */
-.pagelist { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); counter-reset: page; }
+.pagelist { display: grid; gap: var(--s-3); grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); }
 .pagelist:empty { display: none; }
 .page-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-2); padding: var(--s-3); background: var(--c-surface); border: var(--bw) solid var(--c-line); border-radius: var(--r-md); }
 .page-row__num { position: absolute; top: var(--s-3); left: var(--s-3); z-index: 1; min-width: 26px; height: 22px; padding: 0 6px; border-radius: var(--r-xs); background: var(--c-text); color: var(--c-surface); font-size: var(--fs-xs); font-weight: var(--fw-strong); line-height: 22px; text-align: center; font-variant-numeric: tabular-nums; }
@@ -786,6 +789,9 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .page-row__actions .btn { border-color: transparent; background: transparent; }
 .page-row__actions .btn:hover { background: var(--c-surface-2); }
 .page-row__actions .btn-del:hover { background: var(--c-danger-soft); color: var(--c-danger); }
+.page-row__handle { touch-action: none; cursor: grab; }
+.page-row.is-dragging { z-index: 5; box-shadow: var(--sh-pop); cursor: grabbing; }
+.page-row.is-drop-target { box-shadow: inset 0 0 0 2px var(--c-accent); }
 .pagelist-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
 .pagelist-head__title { font-size: var(--fs-lg); }
 .pagelist-head__hint { font-size: var(--fs-sm); color: var(--c-text-3); }
@@ -808,6 +814,15 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .ws-note__body { display: grid; justify-items: center; gap: var(--s-2); padding: var(--s-6) var(--s-4); text-align: center; color: var(--c-text-3); }
 .ws-note__body .fa-solid { font-size: 28px; color: var(--c-text-3); margin-bottom: var(--s-2); }
 .ws-note__title { font-size: var(--fs-lg); font-weight: var(--fw-strong); color: var(--c-text); }
+
+/* Before and after, side by side when there is room (signature cleaner) */
+.compare-pair { display: grid; gap: var(--s-4); }
+@container (min-width: 560px) { .compare-pair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.compare-pane { display: grid; gap: var(--s-2); align-content: start; min-width: 0; }
+.compare-pane__label { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--c-text-3); }
+.compare-pane--result .compare-pane__label { color: var(--c-text); }
+.compare-pane .ws-preview { min-height: 180px; padding: var(--s-4); }
+.compare-pane--result .ws-preview { border-color: var(--c-accent-line); }
 
 /* Previews of a printed sheet or a cleaned signature */
 .ws-preview--desk { background: var(--c-desk); padding: var(--s-6) var(--s-5); }
@@ -1017,7 +1032,11 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
   .rb-next .btn { flex: 1; }
   .export-row { grid-template-columns: minmax(0, 1fr); }
   .export-row .btn { width: 100%; }
-  .template-select { grid-template-columns: 44px minmax(0, 1fr); }
+  .template-select { grid-template-columns: 40px minmax(0, 1fr); gap: 2px var(--s-3); padding-block: 10px; }
+  .template-card-desc { -webkit-line-clamp: 2; font-size: var(--fs-sm); }
+  .template-filter-bar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--s-4)); padding-inline: var(--s-4); }
+  .template-filter-bar::-webkit-scrollbar { display: none; }
+  .template-filter-bar .chip { flex: none; }
   .accordion-meta { display: none; }
 }
 
@@ -1056,10 +1075,12 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 
   /* Workspace: document bar, stage, settings, then a sticky action */
   .ws { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; grid-template-areas: 'head' 'stage' 'side' 'action'; }
+  .ws-rail { display: contents; }
+  .ws[data-simple-empty][data-state='empty'] .ws-side, .ws[data-simple-empty][data-state='empty'] .ws-action { display: none; }
   .ws-head { padding: var(--s-2) var(--s-3) var(--s-2) var(--s-4); }
-  .ws-stage { padding: var(--s-4); border-radius: 0; }
-  .ws-side { border-left: 0; border-top: var(--bw) solid var(--c-line); padding: var(--s-4); }
-  .ws-action { gap: var(--s-1); border-left: 0; padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom, 0px)); border-radius: 0 0 var(--r-md) var(--r-md); box-shadow: 0 -6px 16px rgba(20, 20, 18, .06); }
+  .ws-stage { padding: var(--s-4); border-right: 0; border-radius: 0; }
+  .ws-side { overflow: visible; border-top: var(--bw) solid var(--c-line); padding: var(--s-4); }
+  .ws-action { position: sticky; bottom: 0; gap: var(--s-1); padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom, 0px)); border-radius: 0 0 var(--r-md) var(--r-md); box-shadow: 0 -6px 16px rgba(20, 20, 18, .06); }
   .ws[data-state='empty'] .ws-action { position: static; box-shadow: none; }
   .ws[data-state='empty']:not([data-keep]) .ws-action { display: none; }
   .ws[data-state='done']:not([data-keep]) .ws-side { display: none; }
@@ -1095,7 +1116,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
   .page-row__num { top: var(--s-2); left: var(--s-2); }
   .page-row__thumb { grid-row: 1 / span 2; width: 64px; padding: var(--s-1); }
   .page-row__text { align-self: end; }
-  .page-row__actions { grid-column: 2; justify-content: flex-start; border-top: 0; padding-top: 0; }
+  .page-row__actions { grid-column: 1 / -1; justify-content: space-between; }
   .ws-head { min-height: 48px; }
   .ws-status { display: none; }
 }

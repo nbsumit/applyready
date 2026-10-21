@@ -194,6 +194,9 @@
           <span class="page-row__meta">${dims.w} × ${dims.h} px · ${(item.file.size / 1024).toFixed(1)} KB</span>
         </div>
         <div class="page-row__actions">
+          <button type="button" class="btn btn-sm btn-icon page-row__handle" data-idx="${index}" title="Drag to reorder" aria-label="Reorder page ${index + 1}. Drag it, or use the arrow keys." aria-describedby="pageOrderHint">
+            <i class="fa-solid fa-arrows-up-down" aria-hidden="true"></i>
+          </button>
           <button type="button" class="btn btn-sm btn-icon btn-rotate" data-idx="${index}" title="Rotate a quarter turn" aria-label="Rotate page ${index + 1} a quarter turn clockwise">
             <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
           </button>
@@ -255,11 +258,101 @@
       });
     });
 
+    imageListContainer.querySelectorAll('.page-row__handle').forEach(handle => {
+      handle.addEventListener('pointerdown', startDrag);
+      handle.addEventListener('keydown', e => {
+        const idx = parseInt(handle.dataset.idx, 10);
+        const step = { ArrowUp: -1, ArrowLeft: -1, ArrowDown: 1, ArrowRight: 1 }[e.key];
+        if (!step) return;
+        e.preventDefault();
+        moveItem(idx, idx + step);
+      });
+    });
+
     if (focus) {
       const row = imageListContainer.children[focus.idx];
       const target = row && row.querySelector(focus.sel);
       if (target) target.focus();
     }
+  }
+
+  // Move one page to a new position, then keep focus on its reorder handle.
+  function moveItem(from, to) {
+    if (to < 0 || to >= items.length || from === to) return;
+    const [item] = items.splice(from, 1);
+    items.splice(to, 0, item);
+    renderList({ idx: to, sel: '.page-row__handle' });
+    announce(`Page moved to position ${to + 1} of ${items.length}.`);
+  }
+
+  function announce(message) {
+    const live = doc.getElementById('pageOrderStatus');
+    if (live) live.textContent = message;
+  }
+
+  // Pointer drag (mouse, pen and touch) from the handle. The handle has touch-action: none,
+  // so dragging it never scrolls the page; the rest of the tile still scrolls normally.
+  let drag = null;
+  function startDrag(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    const handle = e.currentTarget;
+    const row = handle.closest('.page-row');
+    if (!row) return;
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    const rect = row.getBoundingClientRect();
+    drag = { handle, row, from: parseInt(handle.dataset.idx, 10), to: null, startX: e.clientX, startY: e.clientY, moved: false, rect };
+    handle.addEventListener('pointermove', onDragMove);
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', cancelDrag);
+    doc.addEventListener('keydown', onDragKey, true);
+  }
+  function rowAt(x, y) {
+    const rows = Array.from(imageListContainer.children);
+    for (let i = 0; i < rows.length; i++) {
+      if (drag && rows[i] === drag.row) continue; // the dragged tile follows the pointer; look beneath it
+      const r = rows[i].getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
+    }
+    return null;
+  }
+  function onDragMove(e) {
+    if (!drag) return;
+    const dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    drag.moved = true;
+    drag.row.classList.add('is-dragging');
+    drag.row.style.transform = `translate(${dx}px, ${dy}px)`;
+    const over = rowAt(e.clientX, e.clientY);
+    imageListContainer.querySelectorAll('.is-drop-target').forEach(el => el.classList.remove('is-drop-target'));
+    if (over !== null && over !== drag.from) imageListContainer.children[over].classList.add('is-drop-target');
+    drag.to = over;
+    // Keep the drop area reachable on a long list.
+    const edge = 72;
+    if (e.clientY < edge) window.scrollBy(0, -12);
+    else if (e.clientY > window.innerHeight - edge) window.scrollBy(0, 12);
+  }
+  function finishDrag() {
+    if (!drag) return null;
+    const { handle, row } = drag;
+    handle.removeEventListener('pointermove', onDragMove);
+    handle.removeEventListener('pointerup', endDrag);
+    handle.removeEventListener('pointercancel', cancelDrag);
+    doc.removeEventListener('keydown', onDragKey, true);
+    row.classList.remove('is-dragging');
+    row.style.transform = '';
+    imageListContainer.querySelectorAll('.is-drop-target').forEach(el => el.classList.remove('is-drop-target'));
+    const done = drag;
+    drag = null;
+    return done;
+  }
+  function endDrag() {
+    const done = finishDrag();
+    if (done && done.moved && done.to !== null) moveItem(done.from, done.to);
+  }
+  function cancelDrag() { finishDrag(); }
+  function onDragKey(e) {
+    if (e.key === 'Escape' && drag) { e.preventDefault(); cancelDrag(); }
   }
 
   function clearAll() {

@@ -238,7 +238,7 @@
           <p class="ws-hint">क्रॉप की जगह तय करने के लिए खींचें। तीर कुंजियों से हिलाएं; + और − से ज़ूम करें।</p>
         </div>
 
-        <div id="resultArea" class="ws-result hidden" aria-live="polite">
+        <div id="resultArea" class="ws-result hidden" aria-live="polite" data-status-under="{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-status-range="{min}–{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-verified="जाँचा गया" data-limit-under="{max} KB से कम ({maxBytes} bytes)" data-limit-range="{min} से {max} KB ({minBytes} – {maxBytes} bytes)">
           <div class="ws-result__head">
             <div class="verdict">
               <i class="fa-solid fa-check" aria-hidden="true"></i>
@@ -277,6 +277,7 @@
         </div>
       </div>
 
+      <div class="ws-rail">
       <div class="ws-side">
         <div class="ws-section">
           <h3 class="ws-section__title" id="reqHeading">आवश्यकता</h3>
@@ -412,9 +413,13 @@
         <p id="processSummary" class="process-summary" aria-live="polite" data-label-output="आउटपुट" data-size-under="{max} KB से कम" data-size-range="{min} से {max} KB" data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।" data-label-show="दिखाएं"></p>
         <button type="button" id="btnProcess" class="btn btn-primary btn-lg btn-block" aria-describedby="processSummary" data-busy-label="प्रोसेस हो रहा है..." disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> रिसाइज और कंप्रेस करें</button>
       </div>
+      </div>
     </section>
       </section>
       <!-- tool:end -->
+      
+      
+      
       
       
       

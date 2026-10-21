@@ -61,14 +61,17 @@ ${head('Your signature is processed on this device. Nothing is uploaded.', fileb
       <div class="ws-stage">
 ${dropzone({ id: 'cleanerDropzone', inputId: 'cleanerFileInput', browseId: 'btnCleanerBrowse', accept: 'image/jpeg,image/png,image/webp', aria: 'Upload a signature photo', title: 'Add a photo of your signature', text: 'Sign on plain white paper, take a photo in daylight, then choose it here.', button: 'Choose signature photo', hint: 'JPG, PNG or WebP. A phone photo is fine.' })}
         <div id="cleanerPreviewArea" class="ws-result hidden">
-          <div class="ws-preview-bar">
-            <h2 class="ws-result__title">Preview</h2>
-            <div class="segmented" role="group" aria-label="Before and after">
-              <button type="button" id="btnViewCleaned" class="active" aria-pressed="true">Cleaned</button>
-              <button type="button" id="btnViewOriginal" aria-pressed="false">Original</button>
-            </div>
+          <h2 class="ws-result__title">Before and after</h2>
+          <div class="compare-pair">
+            <figure class="compare-pane">
+              <figcaption class="compare-pane__label">Your photo</figcaption>
+              <div class="ws-preview checkerboard"><canvas id="cleanerOriginalCanvas" class="sheet-canvas" role="img" aria-label="Original signature photo"></canvas></div>
+            </figure>
+            <figure class="compare-pane compare-pane--result">
+              <figcaption class="compare-pane__label">Cleaned, ready to download</figcaption>
+              <div class="ws-preview checkerboard"><canvas id="cleanerCanvas" class="sheet-canvas" role="img" aria-label="Cleaned signature"></canvas></div>
+            </figure>
           </div>
-          <div class="ws-preview checkerboard"><canvas id="cleanerCanvas" class="sheet-canvas"></canvas></div>
           <dl class="meta-stats meta-stats--row">
 ${stat('Dimensions', 'statDimensions')}
 ${stat('File size', 'statFileSize')}
@@ -76,6 +79,7 @@ ${stat('Format', 'statFormat', 'JPEG (White)')}
           </dl>
         </div>
       </div>
+      <div class="ws-rail">
       <div class="ws-side">
 ${section('Clean up', `          <div class="field">
             <div class="range-head"><label for="whitenessInput" class="field-label">Paper whiteness</label><span id="whitenessVal" class="range-value">70</span></div>
@@ -95,6 +99,7 @@ ${select('cleanerFormatSelect', 'File type', [['image/jpeg', 'White JPEG (.jpg),
       <div class="ws-action">
         <a id="btnCleanerDownload" class="btn btn-primary btn-lg btn-block" href="#" download="Cleaned_Signature.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download signature</a>
         <a href="/?preset=signature" class="btn btn-block"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Resize it for an exam form</a>
+      </div>
       </div>
     </section>`,
 
@@ -120,10 +125,12 @@ ${stat('File size', 'statPdfSize')}
 ${dropzone({ id: 'imgPdfDropzone', inputId: 'imgPdfFileInput', browseId: 'btnImgPdfBrowse', accept: 'image/jpeg,image/png,image/webp', multiple: true, aria: 'Upload images for PDF conversion', title: 'Add photos or scans', text: 'Each image becomes one page. Drop them here, or choose several at once.', button: 'Choose images', hint: 'JPG, PNG or WebP. You can reorder, rotate and remove pages next.' })}
         <div class="pagelist-head">
           <h2 class="pagelist-head__title">Pages</h2>
-          <p class="pagelist-head__hint">Top to bottom is the page order. Rotate any page that is sideways.</p>
+          <p class="pagelist-head__hint" id="pageOrderHint">Pages print in this order. Drag a page by its handle to move it, and rotate any page that is sideways.</p>
         </div>
-        <div id="imageListContainer" class="pagelist" aria-live="polite"></div>
+        <div id="imageListContainer" class="pagelist"></div>
+        <p id="pageOrderStatus" class="sr-only" role="status" aria-live="polite"></p>
       </div>
+      <div class="ws-rail">
       <div class="ws-side">
 ${section('Page setup', `${select('pageSizeSelect', 'Page size', [['a4', 'A4 (210 × 297 mm), standard in India'], ['letter', 'US Letter (8.5 × 11 in)'], ['fit', 'Same as each image, no margins']])}
 ${select('orientationSelect', 'Orientation', [['auto', 'Automatic, follows each image'], ['portrait', 'Portrait'], ['landscape', 'Landscape']])}
@@ -137,6 +144,7 @@ ${section('Quality', select('pdfQualitySelect', 'Image quality', [['0.92', 'High
           <button type="button" id="btnClearAllImages" class="btn btn-sm btn-danger-ghost">Remove all</button>
           <input type="file" id="addMoreFileInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" tabindex="-1" aria-hidden="true">
         </div>
+      </div>
       </div>
     </section>`,
 
@@ -169,6 +177,7 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
           </div>
         </div>
       </div>
+      <div class="ws-rail">
       <div class="ws-side">
         <div class="ws-section">
           <h2 class="ws-section__title" id="targetKbLabel">Maximum file size</h2>
@@ -191,6 +200,7 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
       <div class="ws-action">
         <button type="button" id="btnStartCompress" class="btn btn-primary btn-lg btn-block" disabled><i class="fa-solid fa-compress" aria-hidden="true"></i> Compress PDF</button>
       </div>
+      </div>
     </section>`,
 
   'passport-photo-print.html': () => `<section class="ws" id="printApp" data-state="empty" data-simple-empty data-settings="open" data-ws-file="#printFileInfoBox" aria-label="Passport photo print sheet">
@@ -211,6 +221,7 @@ ${stat('Resolution', 'statPrintDpi', '300 DPI')}
           <p class="field-hint">Print at 100% (turn off “Fit to page”) so every photo comes out at its real size.</p>
         </div>
       </div>
+      <div class="ws-rail">
       <div class="ws-side">
 ${section('Photo', select('photoSizeSelect', 'Photo size', [['in-passport', 'Indian passport or exam (3.5 × 4.5 cm)'], ['us-visa', 'US, OCI or international visa (2 × 2 in)'], ['stamp', 'Stamp size (2.5 × 3.5 cm)'], ['schengen', 'Schengen visa (3.5 × 4.5 cm)']]))}
 ${section('Sheet', `${select('paperSizeSelect', 'Paper', [['4x6', '4 × 6 inch photo paper, lab standard'], ['a4', 'A4 sheet, home or office printer'], ['5x7', '5 × 7 inch photo paper']])}
@@ -224,6 +235,7 @@ ${section('Cutting aids', `          <div class="check-group">
       <div class="ws-action">
         <a id="btnDownloadPrintJpg" class="btn btn-primary btn-lg btn-block" href="#" download="Passport_Photos_300DPI.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download print sheet (JPEG)</a>
         <button type="button" id="btnDownloadPrintPdf" class="btn btn-block"><i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Download as PDF</button>
+      </div>
       </div>
     </section>`
 };

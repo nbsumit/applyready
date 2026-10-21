@@ -250,14 +250,17 @@
           <p class="dropzone__hint">JPG, PNG or WebP. A phone photo is fine.</p>
         </div>
         <div id="cleanerPreviewArea" class="ws-result hidden">
-          <div class="ws-preview-bar">
-            <h2 class="ws-result__title">Preview</h2>
-            <div class="segmented" role="group" aria-label="Before and after">
-              <button type="button" id="btnViewCleaned" class="active" aria-pressed="true">Cleaned</button>
-              <button type="button" id="btnViewOriginal" aria-pressed="false">Original</button>
-            </div>
+          <h2 class="ws-result__title">Before and after</h2>
+          <div class="compare-pair">
+            <figure class="compare-pane">
+              <figcaption class="compare-pane__label">Your photo</figcaption>
+              <div class="ws-preview checkerboard"><canvas id="cleanerOriginalCanvas" class="sheet-canvas" role="img" aria-label="Original signature photo"></canvas></div>
+            </figure>
+            <figure class="compare-pane compare-pane--result">
+              <figcaption class="compare-pane__label">Cleaned, ready to download</figcaption>
+              <div class="ws-preview checkerboard"><canvas id="cleanerCanvas" class="sheet-canvas" role="img" aria-label="Cleaned signature"></canvas></div>
+            </figure>
           </div>
-          <div class="ws-preview checkerboard"><canvas id="cleanerCanvas" class="sheet-canvas"></canvas></div>
           <dl class="meta-stats meta-stats--row">
             <div class="meta-stat-item"><dt class="meta-stat-label">Dimensions</dt><dd class="meta-stat-val" id="statDimensions">--</dd></div>
             <div class="meta-stat-item"><dt class="meta-stat-label">File size</dt><dd class="meta-stat-val" id="statFileSize">--</dd></div>
@@ -265,6 +268,7 @@
           </dl>
         </div>
       </div>
+      <div class="ws-rail">
       <div class="ws-side">
         <div class="ws-section">
           <h2 class="ws-section__title">Clean up</h2>
@@ -304,6 +308,7 @@
       <div class="ws-action">
         <a id="btnCleanerDownload" class="btn btn-primary btn-lg btn-block" href="#" download="Cleaned_Signature.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download signature</a>
         <a href="/?preset=signature" class="btn btn-block"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Resize it for an exam form</a>
+      </div>
       </div>
     </section>
     <!-- tool:end -->

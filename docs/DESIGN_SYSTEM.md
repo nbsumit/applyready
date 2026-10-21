@@ -110,8 +110,13 @@ One frame for every tool:
 |---|---|---|
 | Document bar | `.ws-head` | `.ws-privacy` before a file exists, then `.filebar` (name, size, Replace, Remove); `.ws-status` on the resizer |
 | Stage | `.ws-stage` | `.dropzone`, the editor (`.ws-crop`) or preview, and the result (`.ws-result`) |
-| Rail | `.ws-side` | `.ws-section` blocks of settings |
-| Action | `.ws-action` | The one primary button and `#processSummary`; sticky at the bottom of the viewport |
+| Rail | `.ws-rail` > `.ws-side` | `.ws-section` blocks of settings |
+| Action | `.ws-rail` > `.ws-action` | The one primary button and `#processSummary` |
+
+On a desktop `.ws-rail` is a sticky column; `components.js` (`fitRail`) sizes it to the part of the
+screen it occupies, so the action is visible before scrolling and never covers a setting (long settings
+scroll inside the rail). On phones the rail uses `display: contents`, settings follow the stage and
+the action is a sticky bar at the bottom of the screen.
 
 `components.js` sets `data-state` from what the tool script shows: `empty` (no file), `ready` (file,
 not processed), `done` (result visible), plus `data-busy` while a `data-ws-busy` element is visible.
@@ -134,6 +139,11 @@ Variants: `data-compact-drop` folds the drop zone into a one-line strip once fil
 PDF). Phones: the stage comes first, the rail follows, the action is a sticky bar; in the done state
 the result actions become the sticky bar.
 
+Language: Hindi pages carry their own wording. Generated labels come from `L.hi` in
+`scripts/lib/image-workspace.js`; sentences written by `js/resizer.js` come from `data-*` attributes
+(process summary, result status and limit) and from its `HINDI_MESSAGES` table (validation and file
+errors), applied when `<html lang="hi">`.
+
 ### Requirement picker (image resizer)
 `.choice-list` of `button.choice[data-preset]` toggle buttons (`aria-pressed`), each with
 `.choice__name` and `.choice__spec` (pixels and KB). "Custom size" is always last; it is pressed as
@@ -144,12 +154,16 @@ ambiguous. The native `<select id="presetSelect" data-native>` stays hidden as t
 value needs fixing (`ws:reveal-settings` event).
 
 ### Tool specifics
-- **Image to PDF**: `.pagelist` of `.page-row` tiles (3:4 thumbnail, page number, name, rotate, move
-  earlier, move later, remove). Rows on phones. Focus follows the moved page.
+- **Image to PDF**: `.pagelist` of `.page-row` tiles (3:4 thumbnail, page number, name, reorder handle,
+  rotate, move earlier, move later, remove). Rows on phones. The handle (`.page-row__handle`,
+  `touch-action: none`) drags with mouse, pen or touch and moves with arrow keys; the new position
+  is announced in `#pageOrderStatus` and focus follows the moved page. Any change hides a stale PDF.
 - **Compress PDF**: `.target-grid` of limit choices plus a typed limit; the result is `.size-compare`
   (Before, After, reduction, pages) under a `.result-status` verdict.
-- **Print sheet and signature**: preview on `.ws-preview--desk` or `.checkerboard`, facts in a
-  `.meta-stats--row`.
+- **Signature cleaner**: `.compare-pair` shows the original and the cleaned result side by side when
+  the stage is at least 560 px wide (stacked below that); the cleaned pane is outlined in ink.
+- **Print sheet**: preview on `.ws-preview--desk`, facts in a `.meta-stats--row`, and a reminder to
+  print at 100%.
 
 ### Controls
 - **Buttons**: `.btn` (secondary), `.btn-primary` (one per context), `.btn-ghost`, `.btn-link`,

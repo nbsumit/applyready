@@ -653,7 +653,43 @@
     };
   }
 
+  // Hindi pages show Hindi messages. Each entry rewrites one English message; anything not listed
+  // (internal failures that should never happen) stays in English.
+  const HINDI_MESSAGES = [
+    [/^Width must be a positive integer\.$/, 'चौड़ाई एक पूर्ण संख्या होनी चाहिए।'],
+    [/^Width must be an integer between 20 and 8,000 px\.$/, 'चौड़ाई 20 से 8,000 px के बीच की पूर्ण संख्या होनी चाहिए।'],
+    [/^Height must be a positive integer\.$/, 'ऊंचाई एक पूर्ण संख्या होनी चाहिए।'],
+    [/^Height must be an integer between 20 and 8,000 px\.$/, 'ऊंचाई 20 से 8,000 px के बीच की पूर्ण संख्या होनी चाहिए।'],
+    [/^Total image pixels exceed safe limit/, 'कुल पिक्सेल सुरक्षित सीमा (32 मेगापिक्सेल) से अधिक हैं। साइज़ घटाएं।'],
+    [/^Width must be at least 160 px/, 'नाम की पट्टी पढ़ने योग्य रहे, इसके लिए चौड़ाई कम से कम 160 px होनी चाहिए।'],
+    [/[Hh]eight must be at least 80 px/, 'नाम और तारीख की पट्टी के साथ ऊंचाई कम से कम 80 px होनी चाहिए।'],
+    [/^Max file size must be a positive integer\.$/, 'अधिकतम साइज एक पूर्ण संख्या होना चाहिए।'],
+    [/^Max file size must be between 5 and 20,000 KB\.$/, 'अधिकतम साइज 5 से 20,000 KB के बीच होना चाहिए।'],
+    [/^Min file size must be a positive integer\.$/, 'न्यूनतम साइज एक पूर्ण संख्या होना चाहिए।'],
+    [/^Min file size must be less than max file size\.$/, 'न्यूनतम साइज, अधिकतम साइज से कम होना चाहिए।'],
+    [/^Min file size cannot be negative\.$/, 'न्यूनतम साइज ऋणात्मक नहीं हो सकता।'],
+    [/^The selected file is empty/, 'चुनी गई फाइल खाली है (0 bytes)। कृपया कोई सही फोटो चुनें।'],
+    [/^The selected file is too large \(([\d.]+) MB\)/, 'फाइल बहुत बड़ी है ($1 MB)। 50 MB से छोटी फोटो चुनें।'],
+    [/^Unsupported format\./, 'यह फॉर्मेट समर्थित नहीं है। JPG, PNG या WebP फोटो चुनें।'],
+    [/^Failed to read the selected file/, 'फाइल पढ़ी नहीं जा सकी। उसे दोबारा चुनें।'],
+    [/^(Could not decode image|Image has invalid zero dimensions)/, 'फोटो खुल नहीं सकी। फाइल खराब हो सकती है या उसका फॉर्मेट समर्थित नहीं है। दूसरी फोटो चुनें।'],
+    [/^Image resolution is extremely high \(([^)]*)\)/, 'फोटो का रेज़ोल्यूशन बहुत अधिक है ($1)। 64 मेगापिक्सेल से छोटी फोटो चुनें।'],
+    [/^The original dimensions exceed the supported range/, 'मूल साइज़ समर्थित सीमा (हर तरफ 20 से 8,000 px) से बाहर है। छोटा आउटपुट साइज़ चुनें।'],
+    [/^PNG needs ([\d.]+) KB at this size/, 'इस साइज़ पर PNG को $1 KB चाहिए। फाइल सीमा बढ़ाएं, साइज़ घटाएं, या JPEG चुनें।'],
+    [/^The smallest result is ([\d.]+) KB/, 'सबसे छोटा परिणाम $1 KB है। फाइल सीमा बढ़ाएं या साइज़ घटाएं।'],
+    [/^The image cropper library is unavailable/, 'क्रॉप टूल लोड नहीं हुआ। पेज दोबारा लोड करें।']
+  ];
+  function localize(message) {
+    if (!doc || doc.documentElement.lang !== 'hi' || !message) return message;
+    for (const [pattern, hindi] of HINDI_MESSAGES) {
+      const match = message.match(pattern);
+      if (match) return hindi.replace(/\$(\d)/g, (all, n) => match[n] || '');
+    }
+    return message;
+  }
+
   function showDimError(msg, wErr, hErr) {
+    msg = localize(msg);
     revealSettings();
     if (dimError) {
       dimError.textContent = msg;
@@ -664,6 +700,7 @@
   }
 
   function showSizeError(msg) {
+    msg = localize(msg);
     revealSettings();
     if (sizeError) {
       sizeError.textContent = msg;
@@ -1298,6 +1335,7 @@
   }
 
   function showProcessError(msg) {
+    msg = localize(msg);
     setWorkspaceStatus('Check the error below');
     if (processErrorBox && processErrorMessage) {
       processErrorMessage.textContent = msg;
@@ -1653,6 +1691,10 @@
       const resultTargetDims = document.getElementById('resultTargetDims');
       const resultTargetSize = document.getElementById('resultTargetSize');
 
+      // Pages in other languages supply their own result wording through data-* attributes.
+      const words = (resultArea && resultArea.dataset) || {};
+      const fill = (template, values) => template.replace(/\{(\w+)\}/g, (m, k) => (k in values ? values[k] : m));
+      const nums = { min: specs.minKB, max: specs.maxKB, minBytes: (specs.minKB * 1024).toLocaleString(), maxBytes: (specs.maxKB * 1024).toLocaleString() };
       if (resultOrigDims) {
         resultOrigDims.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px`;
       }
@@ -1660,13 +1702,13 @@
         resultTargetDims.textContent = `${specs.width} × ${specs.height} px`;
       }
       if (resultDims) {
-        resultDims.textContent = `${validationImg.naturalWidth} × ${validationImg.naturalHeight} px, verified`;
+        resultDims.textContent = `${validationImg.naturalWidth} × ${validationImg.naturalHeight} px, ${words.verified || 'verified'}`;
       }
       if (resultTargetSize) {
         if (specs.minKB > 0) {
-          resultTargetSize.textContent = `${specs.minKB}–${specs.maxKB} KB (${(specs.minKB * 1024).toLocaleString()} – ${(specs.maxKB * 1024).toLocaleString()} bytes)`;
+          resultTargetSize.textContent = fill(words.limitRange || '{min}–{max} KB ({minBytes} – {maxBytes} bytes)', nums);
         } else {
-          resultTargetSize.textContent = `Under ${specs.maxKB} KB (${(specs.maxKB * 1024).toLocaleString()} bytes)`;
+          resultTargetSize.textContent = fill(words.limitUnder || 'Under {max} KB ({maxBytes} bytes)', nums);
         }
       }
 
@@ -1688,9 +1730,9 @@
 
       if (resultStatus) {
         if (specs.minKB > 0) {
-          resultStatus.textContent = `Within the ${specs.minKB}–${specs.maxKB} KB range, at the exact size requested.`;
+          resultStatus.textContent = fill(words.statusRange || 'Within the {min}–{max} KB range, at the exact size requested.', nums);
         } else {
-          resultStatus.textContent = `Under the ${specs.maxKB} KB limit, at the exact size requested.`;
+          resultStatus.textContent = fill(words.statusUnder || 'Under the {max} KB limit, at the exact size requested.', nums);
         }
         resultStatus.className = 'meta-stat-val status-ok';
       }

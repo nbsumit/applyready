@@ -130,6 +130,8 @@ function renderWorkspace(opts) {
   const summaryAttrs = hi ? ' data-label-output="आउटपुट" data-size-under="{max} KB से कम" data-size-range="{min} से {max} KB" data-label-fix="आगे बढ़ने के लिए लाल रंग वाली सेटिंग ठीक करें।" data-label-show="दिखाएं"' : '';
   const ratio = t.ratios.map(([v, label], i) => `                <option value="${v}"${i === 0 ? ' selected' : ''}>${esc(label)}</option>`).join('\n');
   const bg = t.bgOptions.map(([v, label], i) => `                <option value="${v}"${i === 0 ? ' selected' : ''}${v === 'transparent' ? ' disabled' : ''}>${esc(label)}</option>`).join('\n');
+  // Result sentences are written by js/resizer.js; Hindi pages carry their own wording.
+  const resultAttrs = hi ? ' data-status-under="{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-status-range="{min}–{max} KB की सीमा के अंदर, ठीक माँगे गए साइज़ में।" data-verified="जाँचा गया" data-limit-under="{max} KB से कम ({maxBytes} bytes)" data-limit-range="{min} से {max} KB ({minBytes} – {maxBytes} bytes)"' : '';
   const fact = (label, id, key) => `              <div class="meta-stat-item${key ? ' meta-stat-item--key' : ''}"><dt class="meta-stat-label">${esc(label)}</dt><dd class="meta-stat-val${key ? ' status-ok' : ''}" id="${id}"></dd></div>`;
 
   return `<section class="ws" id="resizerApp" ${dataAttrs} data-state="empty" data-settings="closed" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="${esc(t.region)}">
@@ -182,7 +184,7 @@ function renderWorkspace(opts) {
           <p class="ws-hint">${esc(t.cropHint)}</p>
         </div>
 
-        <div id="resultArea" class="ws-result hidden" aria-live="polite">
+        <div id="resultArea" class="ws-result hidden" aria-live="polite"${resultAttrs}>
           <div class="ws-result__head">
             <div class="verdict">
               <i class="fa-solid fa-check" aria-hidden="true"></i>
@@ -221,6 +223,7 @@ ${fact(t.facts.orig, 'resultOrigDims')}
         </div>
       </div>
 
+      <div class="ws-rail">
       <div class="ws-side">
         <div class="ws-section">
           <h${h} class="ws-section__title" id="reqHeading">${esc(t.reqTitle)}</h${h}>
@@ -344,6 +347,7 @@ ${bg}
       <div class="ws-action">
         <p id="processSummary" class="process-summary" aria-live="polite"${summaryAttrs}></p>
         <button type="button" id="btnProcess" class="btn btn-primary btn-lg btn-block" aria-describedby="processSummary"${busyAttr} disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> ${esc(processLabel)}</button>
+      </div>
       </div>
     </section>`;
 }

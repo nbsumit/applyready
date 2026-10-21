@@ -93,8 +93,7 @@ let checks = 0; const ok = (c, m) => { assert(c, m); checks++; };
   await page.goto(`${origin}/signature-cleaner.html`);
   await page.locator('input[type=file]').first().setInputFiles({ name: 's.png', mimeType: 'image/png', buffer: png(900, 300) });
   await page.locator('#btnCleanerDownload').waitFor({ state: 'visible' });
-  await page.locator('#btnViewOriginal').click();
-  ok(await page.locator('#btnViewOriginal').getAttribute('aria-pressed') === 'true', 'Cleaned/Original toggle switches view');
+  ok(await page.locator('#cleanerOriginalCanvas').isVisible() && await page.locator('#cleanerOriginalCanvas').evaluate(c => c.width > 0) && await page.locator('#cleanerCanvas').isVisible(), 'Original and cleaned signatures are shown side by side');
   const sig = await saveDownload(page.locator('#btnCleanerDownload'), 'signature.jpg');
   ok(sig[0] === 0xff && sig[1] === 0xd8, 'signature cleaner downloads a JPEG');
 

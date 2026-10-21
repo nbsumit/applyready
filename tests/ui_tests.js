@@ -440,6 +440,65 @@ const server = http.createServer((req, res) => {
     await page.locator('#pageSizeSelect').selectOption('letter');
     ok(await page.locator('#pdfResultArea').isHidden(), 'image to PDF: changing page setup hides the stale PDF');
 
+    // Drag a page by its handle (pointer events cover mouse, pen and touch), and move it with arrow keys
+    const names = () => page.locator('.page-row__name').allTextContents();
+    const firstBefore = (await names())[0];
+    await page.locator('#imageListContainer').scrollIntoViewIfNeeded();
+    const handle = page.locator('.page-row').first().locator('.page-row__handle');
+    const hb = await handle.boundingBox(), target = await page.locator('.page-row').nth(1).boundingBox();
+    await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 8 });
+    await page.mouse.up();
+    ok((await names())[1] === firstBefore, 'image to PDF: dragging a page by its handle reorders it');
+    ok(await page.evaluate(() => document.activeElement && document.activeElement.classList.contains('page-row__handle') && document.activeElement.closest('.page-row') === document.querySelectorAll('.page-row')[1]), 'image to PDF: focus stays on the dragged page');
+    await page.keyboard.press('ArrowLeft');
+    ok((await names())[0] === firstBefore, 'image to PDF: arrow keys on the handle move the page');
+    ok(/position 1 of 2/.test(await page.locator('#pageOrderStatus').textContent()), 'image to PDF: the new position is announced');
+
+    // Signature cleaner: before and after side by side, and the download follows every setting
+    await page.goto(`${origin}/signature-cleaner.html`);
+    await page.locator('#cleanerFileInput').setInputFiles({ name: 's.png', mimeType: 'image/png', buffer: await pngOf(600, 240) });
+    await page.waitForFunction(() => (document.getElementById('btnCleanerDownload').getAttribute('href') || '').startsWith('blob:'));
+    const [orig, clean] = await Promise.all([page.locator('#cleanerOriginalCanvas').boundingBox(), page.locator('#cleanerCanvas').boundingBox()]);
+    ok(orig && clean && Math.abs(orig.y - clean.y) < 2 && orig.x < clean.x, 'signature: original and cleaned are shown side by side on a desktop');
+    const hrefBefore = await page.locator('#btnCleanerDownload').getAttribute('href');
+    await page.locator('#inkColorSelect').selectOption('blue');
+    await page.waitForFunction(h => document.getElementById('btnCleanerDownload').getAttribute('href') !== h, hrefBefore);
+    ok(true, 'signature: changing a setting refreshes the download');
+
+    // Hindi pages: the result sentences are in Hindi
+    await page.goto(`${origin}/hi/ssc-photo-signature-size.html`);
+    await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await pngOf(700, 900) });
+    await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
+    await page.locator('#btnProcess').click();
+    await page.locator('#resultArea:not(.hidden)').waitFor();
+    ok(/[\u0900-\u097F]/.test(await page.locator('#resultStatus').textContent()) && /[\u0900-\u097F]/.test(await page.locator('#resultTargetSize').textContent()), 'Hindi page: result status and limit are written in Hindi');
+    await page.goto(`${origin}/hi/ssc-photo-signature-size.html`);
+    await page.locator('.ws-customize').click();
+    await page.locator('#customWidth').fill('5');
+    await page.locator('#customWidth').blur();
+    await page.locator('#dimError').waitFor({ state: 'visible' });
+    ok(/[\u0900-\u097F]/.test(await page.locator('#dimError').textContent()), 'Hindi page: a validation error is written in Hindi');
+    await page.goto(`${origin}/hi/ssc-photo-signature-size.html`);
+    await page.locator('#fileInput').setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not an image') });
+    await page.locator('#processErrorBox').waitFor({ state: 'visible' });
+    ok(/[\u0900-\u097F]/.test(await page.locator('#processErrorMessage').textContent()), 'Hindi page: a file error is written in Hindi');
+
+    // Desktop rail: with every setting open, the action stays fully visible and never covers a setting
+    await page.goto(`${origin}/index.html`);
+    await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await pngOf(700, 900) });
+    await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
+    await page.locator('.ws-customize').click();
+    await page.evaluate(() => { document.querySelector('.ws-advanced').open = true; });
+    for (const y of [0, 400, 800]) {
+      await page.evaluate(y => scrollTo(0, y), y);
+      await page.waitForTimeout(100);
+      const geo = await page.evaluate(() => { const side = document.querySelector('.ws-side').getBoundingClientRect(), action = document.querySelector('.ws-action').getBoundingClientRect(), btn = document.getElementById('btnProcess').getBoundingClientRect(); return { overlap: side.bottom > action.top + 1, visible: btn.top >= 0 && btn.bottom <= innerHeight }; });
+      ok(!geo.overlap, `rail at scroll ${y}: the action does not cover the settings`);
+      ok(geo.visible || y === 800, `rail at scroll ${y}: the main action is on screen`);
+    }
+
     // Landing pages: the tool comes before the reference content
     for (const file of ['ssc-photo-signature-size.html', 'resize-image-to-20kb.html', 'hi/ibps-photo-signature-size.html']) {
       await page.goto(`${origin}/${file}`);
@@ -476,7 +535,7 @@ const server = http.createServer((req, res) => {
     ok(await phone.page.locator('#viewDownload').isVisible() && await phone.page.locator('#btnDownloadPDF').isVisible(), 'resume on a phone: Download opens the download step');
     await phone.context.close();
   }
-  console.log('✓ Rebuild interactions: PDF page rotation, stale results, focus after reorder, tool order, entry folding, exact-field Fix, phone Download');
+  console.log('✓ Rebuild interactions: PDF rotation, drag and keyboard reorder, stale results, focus, signature compare, Hindi results, sticky rail, tool order, entry folding, exact-field Fix, phone Download');
 
   await browser.close();
   server.close();
