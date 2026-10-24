@@ -326,7 +326,7 @@ const server = http.createServer((req,res) => {
     }
   }
   console.log('✓ Embedded resizer on exam page, KB page, and Hindi page resizes within preset range without errors');
-  for(const file of ['about.html','privacy.html','how-to-use.html','404.html','guides/ats-friendly-resume-guide.html','guides/image-dimensions-vs-file-size.html','guides/image-formats-guide.html','guides/compression-targets-guide.html']) {await visit(file);ok(!await overflow(),`${file} fits at 320px`);}
+  for(const file of ['about.html','privacy.html','how-to-use.html','404.html','guides/ats-friendly-resume-guide.html','guides/pixels-cm-inches-dpi-explained.html','guides/image-formats-guide.html','guides/how-to-reduce-photo-to-50kb-without-blur.html']) {await visit(file);ok(!await overflow(),`${file} fits at 320px`);}
   await visit('nested/missing-page');
   ok((await page.title()).includes('404'), 'Deep missing routes display the recovery page');
   ok(await page.locator('.site-header .brand').getAttribute('href')==='/','404 navigation resolves from nested missing routes');

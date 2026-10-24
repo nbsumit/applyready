@@ -557,6 +557,45 @@ table { border-collapse: collapse; width: 100%; font-size: var(--fs-md); line-he
 .sources-list { font-size: var(--fs-md); }
 .rb-howto { max-width: var(--w-read); }
 .sources-list li + li { margin-top: var(--s-2); }
+.prose .hub-list { list-style: none; padding: 0; margin: var(--s-4) 0 0; display: grid; gap: var(--s-4); }
+.prose .hub-list > li { margin: 0; }
+.hub-list__item { padding: 0 0 var(--s-4); border-bottom: var(--bw) solid var(--c-line); }
+.hub-list__item p { margin: var(--s-1) 0 0; }
+.hub-list__date { font-size: var(--fs-label); color: var(--c-text-3); }
+/* Diagrams in guides: inline SVG drawn with the site tokens, so they follow the theme. */
+.shot svg text { font-family: inherit; }
+/* guide-diagrams:start: utility classes for the SVG figures in guides (fills, strokes and text sizes) */
+.dg-color-text { color: var(--c-text); }
+.dg-dash-3-4 { stroke-dasharray: 3 4; }
+.dg-dash-5-4 { stroke-dasharray: 5 4; }
+.dg-dash-6-5 { stroke-dasharray: 6 5; }
+.dg-fill-accent { fill: var(--c-accent); }
+.dg-fill-danger-soft { fill: var(--c-danger-soft); }
+.dg-fill-on-accent { fill: var(--c-on-accent); }
+.dg-fill-success { fill: var(--c-success); }
+.dg-fill-success-soft { fill: var(--c-success-soft); }
+.dg-fill-surface { fill: var(--c-surface); }
+.dg-fill-surface-2 { fill: var(--c-surface-2); }
+.dg-fill-text { fill: var(--c-text); }
+.dg-fill-text-2 { fill: var(--c-text-2); }
+.dg-fill-text-3 { fill: var(--c-text-3); }
+.dg-fill-text-4 { fill: var(--c-text-4); }
+.dg-fill-warning { fill: var(--c-warning); }
+.dg-fo { margin: 0; line-height: 1.4; }
+.dg-fs-12 { font-size: 12px; }
+.dg-fs-13 { font-size: 13px; }
+.dg-fs-14 { font-size: 14px; }
+.dg-fw-600 { font-weight: 600; }
+.dg-stroke-accent { stroke: var(--c-accent); }
+.dg-stroke-danger { stroke: var(--c-danger); }
+.dg-stroke-danger-line { stroke: var(--c-danger-line); }
+.dg-stroke-line-strong { stroke: var(--c-line-strong); }
+.dg-stroke-success-line { stroke: var(--c-success-line); }
+.dg-stroke-text-3 { stroke: var(--c-text-3); }
+.dg-stroke-warning { stroke: var(--c-warning); }
+.dg-sw-1-5 { stroke-width: 1.5; }
+.dg-sw-2 { stroke-width: 2; }
+/* guide-diagrams:end */
 .tool-jump { margin-top: var(--s-5); }
 .tool-jump a { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--h-md); padding: 0 var(--s-4); border-radius: var(--r-sm); background: var(--c-accent); color: var(--c-on-accent); font-weight: var(--fw-medium); }
 .tool-jump a:hover { background: var(--c-accent-hover); text-decoration: none; }

@@ -117,14 +117,37 @@ for (const f of pages) {
   if (/^(resize-image-to-(\d+kb|kb-limit)|[a-z]+-photo-signature-size)\.html$/.test(f)) ok(n >= 600, `${f}: only ${n} words`);
   if (f.startsWith('hi/')) ok(n >= 600, `${f}: only ${n} words`);
 }
-const guideCount = pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html').length;
-ok(guideCount >= 25, `at least 25 guides (found ${guideCount})`);
+const guides = pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html' && indexable.has(f));
+ok(guides.length >= 20, `at least 20 indexable guides (found ${guides.length})`);
 
-// 6. Guides carry author, review date and structured data
-for (const f of pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html')) {
+// 6. Guides: a visible byline linking the author page, dates that match the structured data,
+//    an original visual, a Sources section with an outside link, and links to a tool and other guides.
+const ldDate = (s, key) => ((s.match(new RegExp(`"${key}": "(\\d{4}-\\d{2}-\\d{2})`)) || [])[1]);
+const bodyOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [''])[0].replace(/<section class="related-guides-section"[\s\S]*?<\/section>/, '');
+for (const f of guides) {
   const s = read(f);
-  ok(s.includes('"@type": "Article"') && s.includes('"author"'), `${f}: Article structured data with author`);
-  ok(s.includes('"BreadcrumbList"'), `${f}: breadcrumb structured data`);
+  ok(s.includes('"@type": "Article"') && /"author": \{[^}]*"@id": "https:\/\/applyready\.in\/author\/sumit-sengar\.html#person"/.test(s), `${f}: Article structured data with the author's Person id`);
+  ok(s.includes('"BreadcrumbList"') && s.includes('class="breadcrumb-nav"'), `${f}: breadcrumbs, visible and structured`);
+  const meta = (s.match(/<p class="guide-meta">([\s\S]*?)<\/p>/) || [])[1] || '';
+  ok(/By <a href="\.\.\/author\/sumit-sengar\.html" rel="author">Sumit Sengar<\/a>/.test(meta), `${f}: visible byline links the author page`);
+  const times = [...meta.matchAll(/<time datetime="(\d{4}-\d{2}-\d{2})">/g)].map(m => m[1]);
+  ok(times.length === 2 && times[0] === ldDate(s, 'datePublished') && times[1] === ldDate(s, 'dateModified'), `${f}: Published and Last updated dates match datePublished and dateModified (${times} vs ${ldDate(s, 'datePublished')}, ${ldDate(s, 'dateModified')})`);
+  ok(times[0] <= times[1], `${f}: last updated is not before published`);
+  const body = bodyOf(s);
+  ok(/<figure class="shot">[\s\S]*?(<img [^>]*width="\d+" height="\d+" alt="[^"]{20,}" loading="lazy"|<svg [^>]*role="img")/.test(body), `${f}: at least one original visual with size and alt text`);
+  const sources = (body.match(/<h2 id="sourcesHeading">Sources<\/h2>[\s\S]*?<\/section>/) || [''])[0];
+  ok(/href="https:\/\/(?!applyready\.in)[^"]+"/.test(sources), `${f}: a Sources section with at least one outside source`);
+  ok(/href="\.\.\/(index|signature-cleaner|passport-photo-print|image-to-pdf|compress-pdf|resume|resize-image-to-[a-z0-9-]+)\.html"/.test(body), `${f}: links its matching tool in the body`);
+  const guideLinks = new Set([...body.matchAll(/href="([a-z0-9-]+\.html)"/g)].map(m => m[1]).filter(h => h !== path.posix.basename(f)));
+  ok(guideLinks.size >= 2, `${f}: links at least two other guides in the body (${guideLinks.size})`);
+  ok(/Report an error<\/a>/.test(body), `${f}: a Report an error link`);
+}
+
+// 6b. Exam pages say which notice they were last checked against, link a way to report an error, and cite sources.
+for (const f of pages.filter(f => /^[a-z]+-photo-signature-size\.html$/.test(f))) {
+  const s = read(f);
+  ok(/<p class="checked-line"><strong>Last checked against:<\/strong>[^<]*\d{4}/.test(s) && /Report an error<\/a>/.test(s), `${f}: Last checked line with a report link`);
+  ok(/<ul class="sources-list">[\s\S]*?href="https:\/\/(?!applyready)/.test(s), `${f}: sources list with official links`);
 }
 
 // 7. No leftover placeholder text on public pages
