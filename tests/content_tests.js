@@ -143,6 +143,27 @@ for (const f of guides) {
   ok(/Report an error<\/a>/.test(body), `${f}: a Report an error link`);
 }
 
+// 6a. Every indexable page is linked from the body text of at least three other pages
+//     (navigation, footer, breadcrumbs, related-link cards and the tool itself do not count).
+{
+  const inbound = new Map([...indexable].map(f => [f, new Set()]));
+  for (const f of pages) {
+    let body = (read(f).match(/<main[\s\S]*?<\/main>/) || [''])[0];
+    body = body.replace(/<nav class="breadcrumb-nav"[\s\S]*?<\/nav>|<section class="related-guides-section"[\s\S]*?<\/section>|<!-- tool:start -->[\s\S]*?<!-- tool:end -->/g, '');
+    const dir = path.posix.dirname(f);
+    for (const m of body.matchAll(/href="([^"#?]+)/g)) {
+      let h = m[1];
+      if (/^(https?:|mailto:)/.test(h)) continue;
+      let t = h === '/' ? 'index.html' : path.posix.normalize(path.posix.join(dir === '.' ? '' : dir, h));
+      if (t === '.' || t === './' || t === '..') t = 'index.html';
+      if (t.endsWith('/')) t += 'index.html';
+      if (!t.endsWith('.html')) t = t + '/index.html';
+      if (inbound.has(t) && t !== f) inbound.get(t).add(f);
+    }
+  }
+  for (const [f, from] of inbound) ok(f === 'index.html' || from.size >= 3, `${f}: linked from the body of only ${from.size} other pages`);
+}
+
 // 6b. Exam pages say which notice they were last checked against, link a way to report an error, and cite sources.
 for (const f of pages.filter(f => /^[a-z]+-photo-signature-size\.html$/.test(f))) {
   const s = read(f);

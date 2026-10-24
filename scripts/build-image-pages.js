@@ -97,7 +97,8 @@ function buildToolSection(page, html) {
   const headAt = rest.indexOf('<header class="page-head">');
   if (headAt < 0) throw new Error(`${page}: no page head`);
   const headEnd = rest.indexOf('</header>', headAt) + '</header>'.length;
-  return rest.slice(0, headEnd) + '\n      ' + markup + rest.slice(headEnd);
+  // Collapse the blank lines left where the old section was, so re-running does not add more.
+  return rest.slice(0, headEnd) + '\n      ' + markup + '\n\n' + rest.slice(headEnd).replace(/^(?:[ \t]*\n)+/, '');
 }
 
 // Redirect stubs (pages merged into another one) have no tool and are skipped.
