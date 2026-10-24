@@ -161,12 +161,9 @@ These are HTML comments in the pages, so they are invisible to readers.
   - add a sentence on how you review AI-drafted text.
 - `privacy.html`: confirm in AdSense, under Privacy & messaging, that the GDPR consent message is published.
 
-## Issues found (not fixed here)
+## Issues found
 
-- **Compress PDF can make a file larger.**
-  - Example: a 136.3 KB PDF compressed with a 200 KB target came out at 161.5 KB, labelled "0% smaller". The cause is that `js/compress-pdf.js` re-encodes every page, even when the input already fits.
-  - The compress guide now advises compressing only files that are over the limit.
-  - Suggested fix: return the original file when it is already at or under the target, and never offer an output larger than the input.
+- **Compress PDF could make a file larger (fixed in this branch).** A 136.3 KB PDF compressed with a 200 KB target came out at 161.5 KB, labelled "0% smaller", because every page was re-encoded even when the input already fitted. `js/compress-pdf.js` now keeps the original PDF when it is already under the target, or when compressing would not make it smaller, and says so. A UI test covers both cases.
 - **NEET signature figure.** The 2026 bulletin states 10–100 KB, which differs from the earlier instruction to show "typically 10–50 KB". The page follows the bulletin, as the hard rule on official sources requires.
 - **UPSC and SSC removals.**
   - UPSC: the pixel range, the 10-day rule and the name-and-date rule from the 3b96f62 baseline were removed, because the current UPSC instructions do not contain them.

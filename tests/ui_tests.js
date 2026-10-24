@@ -509,6 +509,23 @@ const server = http.createServer((req, res) => {
       const warned = await page.locator('#compressStatus').evaluate(e => e.classList.contains('is-warning'));
       ok(warned === expectWarning && (expectWarning ? /could not get under 5 KB/.test(status) : /Under 5000 KB/.test(status)), `compress ${target} KB: status says ${status}`);
     }
+    // Compress PDF never hands back a larger file: a PDF already under the target is kept as it is,
+    // and a compressed result is never bigger than the PDF it came from.
+    {
+      const jpeg = fs.readFileSync(path.join(root, 'img/samples/test-signature-cleaned.jpg'));
+      const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n1 0 obj << /Type /XObject /Subtype /Image /Filter /DCTDecode >> stream\n'), jpeg, Buffer.from('\nendstream endobj\n%%EOF\n')]);
+      for (const [target, expectKept] of [['200', true], ['30', false]]) {
+        await page.goto(`${origin}/compress-pdf.html`);
+        await page.locator('#compressFileInput').setInputFiles({ name: 'scan.pdf', mimeType: 'application/pdf', buffer: pdf });
+        await page.locator('#targetKbInput').fill(target);
+        await page.locator('#btnStartCompress').click();
+        await page.locator('#compressResultArea:not(.hidden)').waitFor({ timeout: 30000 });
+        const out = await page.evaluate(async () => (await fetch(document.getElementById('btnDownloadCompressedPdf').href).then(r => r.blob())).size);
+        const status = await page.locator('#compressStatus').innerText();
+        ok(out <= pdf.length, `compress ${target} KB: the result (${out} bytes) is not larger than the input (${pdf.length} bytes)`);
+        if (expectKept) ok(out === pdf.length && /kept unchanged/.test(status), `compress ${target} KB: a PDF already under the limit is kept (${status})`);
+      }
+    }
 
     // Exam page: the preset switch shows which preset is in use
     await page.goto(`${origin}/upsc-photo-signature-size.html`);

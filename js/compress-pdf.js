@@ -149,6 +149,14 @@
 
       let pages = [];
 
+      // A PDF that already fits is returned as it is: re-encoding its pages can only lose detail,
+      // and can even make the file larger.
+      if (isPdf && currentFile.size <= targetKB * 1024) {
+        updateProgress(100, 'Complete!');
+        displayResult(currentFile, null, 'fits');
+        return;
+      }
+
       if (isPdf) {
         updateProgress(30, 'Extracting document pages…');
         const buffer = await currentFile.arrayBuffer();
@@ -156,11 +164,6 @@
 
         if (!pages.length) {
           // If no embedded DCTDecode images could be parsed, wrap original or notify
-          if (currentFile.size <= targetKB * 1024) {
-            updateProgress(100, 'Complete!');
-            displayResult(currentFile, 1);
-            return;
-          }
           throw new Error('This tool works best for scanned documents and image-based PDFs. Your PDF appears to contain selectable text or vector forms with no embedded page images to compress. If your file is already under the portal size limit, you can upload it directly.');
         }
       } else {
@@ -201,7 +204,9 @@
       const outputBlob = new Blob([pdfBytes], { type: 'application/pdf' });
 
       updateProgress(100, 'Done!');
-      displayResult(outputBlob, pages.length);
+      // Never hand back a PDF that is larger than the one the person started with.
+      if (isPdf && outputBlob.size >= currentFile.size) displayResult(currentFile, pages.length, 'larger');
+      else displayResult(outputBlob, pages.length);
 
     } catch (err) {
       notifyError('Compression did not finish. ' + String(err.message).replace(/\.$/, '') + '. Check that the file opens on your device, then try again.');
@@ -411,7 +416,7 @@
   let lastTargetKB = 0;
 
   // Say plainly whether the file meets the limit the user asked for.
-  function showTargetStatus(compBytes, compKb) {
+  function showTargetStatus(compBytes, compKb, kept) {
     const statusEl = doc.getElementById('compressStatus');
     const met = !lastTargetKB || compBytes <= lastTargetKB * 1024;
     if (statCompressed) statCompressed.className = 'meta-stat-val ' + (met ? 'status-ok' : 'status-warning');
@@ -422,13 +427,18 @@
     icon.className = met ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation';
     icon.setAttribute('aria-hidden', 'true');
     const text = doc.createElement('span');
-    text.textContent = met
+    if (kept === 'fits') text.textContent = `Already under ${lastTargetKB} KB, so your original file is kept unchanged. Upload it as it is.`;
+    else if (kept === 'larger') text.textContent = met
+      ? `Compressing would not make this file smaller, so your original is kept. It is under ${lastTargetKB} KB and ready to upload.`
+      : `This file could not get under ${lastTargetKB} KB, and compressing would not make it smaller, so your original (${compKb} KB) is kept. Try a higher limit, or upload fewer pages.`;
+    else text.textContent = met
       ? `Under ${lastTargetKB} KB. Ready to upload.`
       : `This file could not get under ${lastTargetKB} KB. The smallest readable version is ${compKb} KB. Try a higher limit, or upload fewer pages.`;
     statusEl.append(icon, text);
   }
 
-  function displayResult(blob, pagesCount) {
+  // kept: 'fits' (the original was already under the limit) or 'larger' (compressing did not help).
+  function displayResult(blob, pagesCount, kept) {
     if (compressedBlobUrl) URL.revokeObjectURL(compressedBlobUrl);
     compressedBlobUrl = URL.createObjectURL(blob);
 
@@ -441,14 +451,14 @@
 
     if (statOriginal) statOriginal.textContent = `${origKb} KB`;
     if (statCompressed) statCompressed.textContent = `${compKb} KB`;
-    if (statReduction) statReduction.textContent = `${reductionPercent}% smaller`;
-    if (statPages) statPages.textContent = `${pagesCount} ${pagesCount === 1 ? 'Page' : 'Pages'}`;
-    showTargetStatus(compBytes, compKb);
+    if (statReduction) statReduction.textContent = kept ? 'Unchanged' : `${reductionPercent}% smaller`;
+    if (statPages) statPages.textContent = pagesCount ? `${pagesCount} ${pagesCount === 1 ? 'Page' : 'Pages'}` : 'Not changed';
+    showTargetStatus(compBytes, compKb, kept);
 
     if (btnDownload) {
       btnDownload.href = compressedBlobUrl;
       const baseName = currentFile.name.replace(/\.[^/.]+$/, '');
-      btnDownload.download = `${baseName}_Compressed_${compKb}KB.pdf`;
+      btnDownload.download = kept ? currentFile.name : `${baseName}_Compressed_${compKb}KB.pdf`;
     }
 
     if (resultArea) {
