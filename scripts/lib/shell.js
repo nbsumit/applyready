@@ -88,7 +88,7 @@ ${EXAMS.map(([label, p, desc]) => `                <li><a class="menu__item menu
           </li>
           <li><a class="site-nav__link" href="${rel('resume.html')}"${resumeCur}>Resume builder</a></li>
           <li><a class="site-nav__link" href="${rel('guides/')}"${guidesCur}>Guides</a></li>
-          <li class="site-nav__lang"><a class="site-nav__link" href="${rel('hi/ssc-photo-signature-size.html')}" lang="hi" hreflang="hi"${hindi}>हिन्दी</a></li>
+          <li class="site-nav__lang"><a class="site-nav__link" href="${rel('hi/ssc-photo-signature-size.html')}" lang="hi"${hindi}>हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">

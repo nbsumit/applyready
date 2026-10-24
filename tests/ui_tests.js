@@ -511,12 +511,19 @@ const server = http.createServer((req, res) => {
     }
 
     // Exam page: the preset switch shows which preset is in use
-    await page.goto(`${origin}/ssc-photo-signature-size.html`);
-    ok(await page.locator('.choice[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'true', 'SSC photo preset is marked as selected on load');
-    ok(/SSC photo/.test(await page.locator('#reqSummaryName').innerText()) && await page.locator('#reqGrid').isHidden(), 'the exam requirement arrives chosen, shown as a summary');
-    await choose(page, 'ssc-signature');
-    ok(await page.locator('.choice[data-preset="ssc-signature"]').getAttribute('aria-pressed') === 'true' && await page.locator('.choice[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
+    await page.goto(`${origin}/upsc-photo-signature-size.html`);
+    ok(await page.locator('.choice[data-preset="upsc-photo"]').getAttribute('aria-pressed') === 'true', 'UPSC photo preset is marked as selected on load');
+    ok(/UPSC photo/.test(await page.locator('#reqSummaryName').innerText()) && await page.locator('#reqGrid').isHidden(), 'the exam requirement arrives chosen, shown as a summary');
+    await choose(page, 'upsc-signature');
+    ok(await page.locator('.choice[data-preset="upsc-signature"]').getAttribute('aria-pressed') === 'true' && await page.locator('.choice[data-preset="upsc-photo"]').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
     ok(await page.locator('.choice').count() === 3, 'an exam page offers only that exam\'s photo, signature and a custom size');
+    // A pixel size the exam does not set is labelled as a suggestion.
+    ok(/suggested/.test(await page.locator('.choice[data-preset="upsc-photo"] .choice__spec').innerText()), 'the UPSC photo preset says its pixel size is a suggestion');
+    // SSC captures the photo live, so its page offers only the signature; RRB offers only a custom size.
+    await page.goto(`${origin}/ssc-photo-signature-size.html`);
+    ok(await page.locator('.choice').count() === 2 && await page.locator('.choice[data-preset="ssc-signature"]').getAttribute('aria-pressed') === 'true', 'the SSC page offers its signature and a custom size');
+    await page.goto(`${origin}/rrb-photo-signature-size.html`);
+    ok(await page.locator('.choice').count() === 1, 'the RRB page offers only a custom size');
 
     // Resume: example text never looks like a value
     await page.goto(`${origin}/resume.html`);

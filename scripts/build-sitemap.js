@@ -34,7 +34,7 @@ const visible = html => {
   const main = (html.match(/<main[\s\S]*?<\/main>/) || [''])[0];
   return main.replace(/<script[\s\S]*?<\/script>|<!--[\s\S]*?-->/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 };
-const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
 const show = (rev, f) => { try { return git('show', `${rev}:${f}`); } catch (e) { return null; } };
 
 function lastContentChange(f) {

@@ -73,33 +73,27 @@
       defaultPrefix: 'Declaration'
     },
 
-    // Exam Presets - verified against official guidelines
-    'ssc-photo': {
-      name: 'SSC Photo (350 × 450 px, 20–50 KB)',
-      width: 350,
-      height: 450,
-      minKB: 20,
-      maxKB: 50,
-      defaultPrefix: 'SSC_Photo'
-    },
+    // Exam presets. Sizes and limits are from the official notices cited on each exam page.
+    // `suggested: true` marks a pixel size the exam body does not set; the tool needs one to work.
     'ssc-signature': {
-      name: 'SSC Signature (400 × 200 px, 10–20 KB)',
-      width: 400,
-      height: 200,
+      name: 'SSC Signature (6.0 × 2.0 cm at 300 DPI = 709 × 236 px, 10–20 KB)',
+      width: 709,
+      height: 236,
       minKB: 10,
       maxKB: 20,
       defaultPrefix: 'SSC_Signature'
     },
     'upsc-photo': {
-      name: 'UPSC Photo (350 × 350 px, 20–200 KB)',
+      name: 'UPSC Photo (20–200 KB JPG; UPSC sets no pixel size, 350 × 450 px suggested)',
       width: 350,
-      height: 350,
+      height: 450,
       minKB: 20,
       maxKB: 200,
+      suggested: true,
       defaultPrefix: 'UPSC_Photo'
     },
     'upsc-signature': {
-      name: 'UPSC Triple Signature (400 × 400 px, 20–100 KB)',
+      name: 'UPSC Triple Signature (400 × 400 px, within 350–500 px, 20–100 KB)',
       width: 400,
       height: 400,
       minKB: 20,
@@ -123,36 +117,22 @@
       defaultPrefix: 'IBPS_Signature'
     },
     'neet-photo': {
-      name: 'NEET Photo (400 × 500 px, 10–200 KB)',
+      name: 'NEET Photo (10–200 KB JPG; NTA sets no pixel size, 400 × 500 px suggested)',
       width: 400,
       height: 500,
       minKB: 10,
       maxKB: 200,
+      suggested: true,
       defaultPrefix: 'NEET_Photo'
     },
     'neet-signature': {
-      name: 'NEET Signature (300 × 100 px, typically 10–50 KB; check official bulletin)',
+      name: 'NEET Signature (10–100 KB JPG; NTA sets no pixel size, 300 × 100 px suggested)',
       width: 300,
       height: 100,
       minKB: 10,
-      maxKB: 50,
+      maxKB: 100,
+      suggested: true,
       defaultPrefix: 'NEET_Signature'
-    },
-    'rrb-photo': {
-      name: 'RRB Photo (240 × 320 px, 30–70 KB)',
-      width: 240,
-      height: 320,
-      minKB: 30,
-      maxKB: 70,
-      defaultPrefix: 'RRB_Photo'
-    },
-    'rrb-signature': {
-      name: 'RRB Signature (300 × 120 px, 30–49 KB)',
-      width: 300,
-      height: 120,
-      minKB: 30,
-      maxKB: 49,
-      defaultPrefix: 'RRB_Signature'
     },
 
     // Target KB Presets

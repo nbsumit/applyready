@@ -308,7 +308,7 @@ const server = http.createServer((req,res) => {
   for (const pageTest of [
     { file: 'upsc-photo-signature-size.html', minKB: 20, maxKB: 200, name: 'UPSC exam page' },
     { file: 'resize-image-to-50kb.html', minKB: 0, maxKB: 50, name: '50 KB landing page' },
-    { file: 'hi/ssc-photo-signature-size.html', minKB: 20, maxKB: 50, name: 'Hindi SSC exam page' }
+    { file: 'hi/ssc-photo-signature-size.html', minKB: 10, maxKB: 20, name: 'Hindi SSC exam page' }
   ]) {
     await visit(pageTest.file);
     await page.locator('#fileInput').setInputFiles({ name: 'test.png', mimeType: 'image/png', buffer: Buffer.from(image, 'base64') });
