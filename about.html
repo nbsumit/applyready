@@ -4,14 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>About ApplyReady | Free & Private Client-Side Tools</title>
-  <meta name="description" content="Learn about ApplyReady.in - built by Sumit Sengar to provide free, 100% private in-browser image resizing and ATS resume creation for students and applicants across India.">
+  <title>About ApplyReady: Who Builds It and How Pages Are Checked</title>
+  <meta name="description" content="Who builds ApplyReady, what its free in-browser photo, PDF and resume tools do and do not do, how its exam pages are checked, and how the site is funded.">
   <link rel="canonical" href="https://applyready.in/about.html">
 
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://applyready.in/about.html">
-  <meta property="og:title" content="About ApplyReady | Free & Private Client-Side Tools">
-  <meta property="og:description" content="Learn how ApplyReady provides 100% private in-browser image resizing and single-column ATS resume creation without server uploads.">
+  <meta property="og:title" content="About ApplyReady: Who Builds It and How Pages Are Checked">
+  <meta property="og:description" content="Who builds ApplyReady, what its free in-browser photo, PDF and resume tools do and do not do, how its exam pages are checked, and how the site is funded.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -20,8 +20,8 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://applyready.in/about.html">
-  <meta name="twitter:title" content="About ApplyReady | Free &amp; Private Client-Side Tools">
-  <meta name="twitter:description" content="Learn how ApplyReady provides 100% private in-browser image resizing and single-column ATS resume creation without server uploads.">
+  <meta name="twitter:title" content="About ApplyReady: Who Builds It and How Pages Are Checked">
+  <meta name="twitter:description" content="Who builds ApplyReady, what its free in-browser photo, PDF and resume tools do and do not do, how its exam pages are checked, and how the site is funded.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -32,11 +32,11 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261121-3"></script>
+  <script src="js/theme.js?v=20261024-2"></script>
 
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261121-3">
+  <link rel="stylesheet" href="css/app.css?v=20261024-2">
   <!-- shell:styles:end -->
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
@@ -85,7 +85,7 @@
           </li>
           <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
           <li><a class="site-nav__link" href="guides/">Guides</a></li>
-          <li class="site-nav__lang"><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+          <li class="site-nav__lang"><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi">हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
@@ -102,72 +102,50 @@
     <article class="article">
       <header class="page-head">
         <h1 class="page-title">About ApplyReady</h1>
-        <p class="page-lede">Free, lightning-fast document and image preparation tools built on a foundation of absolute client-side privacy.</p>
+        <p class="page-lede">Free tools and guides for preparing the photo, signature, PDF and resume that Indian exam and job portals ask for. The files are processed in your browser and are not uploaded to us.</p>
       </header>
 
       <section class="section prose">
-        <h2>Our Mission</h2>
-        <p>
-          Preparing job applications, official submissions, and exam portal uploads in India often requires tedious technical adjustments: strict pixel dimensions, stringent file-size limits that differ by exam (often 20–50 KB photos and 10–20 KB signatures for <a href="ssc-photo-signature-size.html">SSC</a> and <a href="ibps-photo-signature-size.html">IBPS</a>; <a href="upsc-photo-signature-size.html">UPSC</a>, <a href="neet-photo-signature-size.html">NEET</a> and <a href="rrb-photo-signature-size.html">RRB</a> set their own), and ATS-friendly resume formatting.
-        </p>
-        <p>
-          Most conventional web converters upload your sensitive personal documents, passport photos, signatures, and career resumes to remote cloud servers. ApplyReady was built on a fundamentally different foundation: <strong>100% client-side execution</strong>. All image processing, cropping, compression, and PDF generation occur directly inside your browser on your device using standard HTML5 Canvas and modern JavaScript.
-        </p>
+        <h2>What ApplyReady is for</h2>
+        <p>Online application forms in India rarely accept a photo straight from a phone. Each exam body publishes its own rules: a pixel size, a minimum and maximum file size in KB, a file type, sometimes a signature written three times or a handwritten declaration. The rules differ between exams (compare the <a href="ssc-photo-signature-size.html">SSC</a>, <a href="upsc-photo-signature-size.html">UPSC</a>, <a href="ibps-photo-signature-size.html">IBPS</a>, <a href="rrb-photo-signature-size.html">RRB</a> and <a href="neet-photo-signature-size.html">NEET</a> pages) and change between notices. ApplyReady turns those rules into settings and produces a file that meets them, then shows the exact pixel size and byte count so you can check it before uploading.</p>
 
-        <h2>Why Client-Side Processing Matters</h2>
-        <p>When you use ApplyReady:</p>
+        <h2>What the tools do, and what they do not</h2>
         <ul>
-          <li><strong>Zero Data Uploads:</strong> No photos, signatures, or resumes are transmitted over the network to our servers.</li>
-          <li><strong>Instant Execution:</strong> Without network upload/download latency, processing happens in milliseconds.</li>
-          <li><strong>Offline Friendly:</strong> Once loaded, the utilities function without active internet connectivity.</li>
-          <li><strong>Transparent Privacy:</strong> Your data remains strictly on your device. We do not store, catalog, or analyze user documents.</li>
+          <li><strong><a href="./">Image resizer</a>:</strong> crops a photo or signature to an exact pixel size and keeps the file between a minimum and maximum KB limit, in JPEG, PNG or WebP. It can add a name and date strip under a photo.</li>
+          <li><strong><a href="signature-cleaner.html">Signature cleaner</a>:</strong> turns a phone photo of a signature into dark ink on white paper.</li>
+          <li><strong><a href="passport-photo-print.html">Passport photo print</a>:</strong> lays out copies of one photo on a 4 × 6 inch or A4 sheet for printing.</li>
+          <li><strong><a href="image-to-pdf.html">Image to PDF</a> and <a href="compress-pdf.html">Compress PDF</a>:</strong> combine scans into one PDF and bring a PDF under a portal's size limit.</li>
+          <li><strong><a href="resume.html">Resume builder</a>:</strong> single-column resumes exported as PDF, Word and plain text.</li>
         </ul>
+        <p>The tools do not submit anything to an exam portal, and they cannot make a photo acceptable if the photo itself breaks a rule, such as a cap, dark glasses or a busy background. They do not read iPhone HEIC files, do not edit the text inside a PDF, and the resume builder does not write your resume for you or score it. A file that meets the published limits can still be rejected by a portal for reasons the notice does not state, so keep the original and check the notice for your exam.</p>
+        <p>Step-by-step instructions for each tool are on the <a href="how-to-use.html">how to use</a> page, and the <a href="guides/">guides</a> explain the decisions behind the settings, such as which pixel size to choose or how long a resume should be. Using the site is subject to the <a href="terms.html">terms of use</a>.</p>
 
-        <h2>About the Author & Why I Built ApplyReady</h2>
-        <p>
-          ApplyReady was created and is actively maintained by <strong>Sumit Sengar</strong>, an independent software engineer and technology builder based in India.
-        </p>
-        <p>
-          The motivation behind ApplyReady came from witnessing firsthand the daily struggles of students, freshers, and government exam candidates in India. Every year, millions of applicants face arbitrary image upload requirements:
-        </p>
+        <h2>Who makes it</h2>
+        <p>ApplyReady is built and maintained by <a href="author/sumit-sengar.html">Sumit Sengar</a>, an independent software engineer based in India. He started it after seeing candidates without photo-editing software pay a cyber caf&eacute; to resize a photo, or use free websites that upload their identity photos, add watermarks or hide the real download button among advertisements.</p>
+
+        <h2>Project history</h2>
         <ul>
-          <li>A portal demands a photo between 20 KB and 50 KB, while another requires a signature between 10 KB and 20 KB.</li>
-          <li>Many applicants without access to desktop photo editing software end up visiting cyber cafes, paying ₹50 to ₹100 just to resize a single photo or signature.</li>
-          <li>Common free online tools often upload sensitive ID photographs to untrusted third-party servers, embed watermarks, or trick users with deceptive "Download" buttons.</li>
+          <li><strong>30 September 2026:</strong> first public version: the image resizer, the resume builder with PDF and Word export, and light and dark themes.</li>
+          <li><strong>1 October 2026:</strong> more resume templates, a comparison with a pasted job description, and export fixes.</li>
+          <li><strong>10 October 2026:</strong> exam pages for SSC, UPSC, IBPS, RRB and NEET in English and Hindi, the signature cleaner, the PDF tools, the passport photo sheet, offline support and the first guides.</li>
+          <li><strong>11 and 12 October 2026:</strong> exam specifications corrected against the official notices, and more guides.</li>
+          <li><strong>20 and 21 October 2026:</strong> a redesigned interface in which the resizer asks what you are preparing before anything else, and further specification corrections.</li>
+          <li><strong>24 October 2026:</strong> every exam figure linked to its official notice, an <a href="editorial-policy.html">editorial policy</a> and corrections log, and fewer, longer guides.</li>
         </ul>
-        <p>
-          ApplyReady was built to solve this once and for all: a clean, fast, respectful web utility where anyone can resize their photos, prepare signatures, and build ATS-friendly resumes in seconds — completely free, without sign-ups, and without any file leaving their phone or laptop.
-        </p>
+        <p>Every change is public in the project's <a href="https://github.com/nbsumit/applyready">GitHub repository</a>.</p>
 
-        <h2>The Technologies Behind ApplyReady</h2>
-        <p>ApplyReady is built with lightweight, modern web standards — zero heavy frameworks, zero backend servers, and zero bundlers:</p>
-        <ul>
-          <li><strong>HTML5 Canvas API:</strong> High-performance pixel manipulation, aspect-ratio scaling, and distortion-free rendering.</li>
-          <li><strong>Cropper.js:</strong> Touch-friendly, accessible image cropping with 90-degree rotation and fine-grained framing.</li>
-          <li><strong>Native Vector PDF Generation:</strong> Direct browser-side generation of searchable, selectable text PDFs conforming to ISO 32000 / PDF 1.4 standards with zero rasterization.</li>
-          <li><strong>Pure Client-Side OOXML Engine:</strong> Generates valid Microsoft Word (.docx) documents directly in memory.</li>
-          <li><strong>CSS Custom Properties:</strong> Smooth light and dark themes adhering to system preferences and WCAG AA accessibility contrast ratios.</li>
-        </ul>
+        <h2>How the pages are checked</h2>
+        <p>Exam figures are taken only from the exam body's own notice or bulletin, and each table row links to it. File-size examples come from running ApplyReady's own tools on the test images in <a href="img/samples/test-portrait.jpg">/img/samples/</a>. The <a href="editorial-policy.html">editorial policy</a> explains the process, how often pages are re-checked, how AI tools are used, and lists every correction. If a figure is wrong, please <a href="mailto:hello@nbsumit.com?subject=Report%20a%20wrong%20spec&amp;body=Page%3A%20%0AWhat%20is%20wrong%3A%20%0ALink%20to%20the%20official%20notice%3A%20">report it</a> with a link to the official notice.</p>
 
-        <h2>How We Write and Check Our Guides</h2>
-        <p>
-          The guides describe how the ApplyReady tools actually behave, and each one is checked against the live tools with real photographs, signatures, scanned documents and resumes before it is published. We explain the reasoning behind each recommendation (for example, why a signature compresses far more easily than a photograph) instead of repeating generic advice.
-        </p>
-        <ul>
-          <li><strong>Exam specifications:</strong> The photo, signature and file-size figures on each exam page are taken from that exam body's own notification and application instructions. Every exam page shows the month it was last checked.</li>
-          <li><strong>Rules change every cycle:</strong> Portals update their requirements between notifications. Treat our figures as a starting point and always confirm them against the notification for the exam you are applying to.</li>
-          <li><strong>Corrections:</strong> If a figure is out of date, use the <a href="contact.html">contact page</a> and choose "Suggest Exam Specification Update". We review every report and update the page when the official notice has changed.</li>
-        </ul>
+        <h2>Privacy</h2>
+        <p>Images, signatures, PDFs and resume text are processed by JavaScript in your browser. They are not sent to a server run by ApplyReady, and the tools keep working offline once a page has loaded. The resume builder saves a draft on your device only if you turn that option on. The <a href="privacy.html">privacy policy</a> covers the advertising cookies and the offline cache.</p>
 
-        <h2>Independence</h2>
-        <p>
-          ApplyReady is an independent project. It is not affiliated with, endorsed by, or connected to the Staff Selection Commission, UPSC, IBPS, NTA, the Railway Recruitment Boards, or any other examination body, employer or government department. Their names appear only to describe the requirements candidates must meet.
-        </p>
+        <h2>Independence and funding</h2>
+        <p>ApplyReady is not affiliated with, endorsed by or connected to the Staff Selection Commission, UPSC, IBPS, the National Testing Agency, the Railway Recruitment Boards or any other examination body, employer or government department. Their names appear only to describe the requirements candidates must meet.</p>
+        <p>The site is free and has no paid version. Hosting and the domain are paid for by advertising served by Google AdSense; advertisers do not influence what the pages say, and ads are not placed next to the tools' buttons.</p>
 
-        <h2>How ApplyReady Is Supported</h2>
-        <p>
-          ApplyReady is an independent, free utility. To keep hosting and domain services running without charging users or requiring accounts, the site is supported by online advertising. All document and image processing remains 100% private and client-side on your device.
-        </p>
+        <h2>How it is built</h2>
+        <p>The site is plain HTML, CSS and JavaScript hosted on GitHub Pages, with no server-side code. Images are processed with the browser's Canvas API, cropping uses the Cropper.js library, PDFs and Word files are written directly in the browser, and a service worker keeps the tools available offline.</p>
       </section>
     </article>
   </main>
@@ -194,11 +172,9 @@
       <div class="site-footer__col">
         <h2 class="site-footer__title">Resize to a file size</h2>
         <ul class="site-footer__list">
-          <li><a href="resize-image-to-10kb.html">10 KB</a></li>
           <li><a href="resize-image-to-20kb.html">20 KB</a></li>
           <li><a href="resize-image-to-50kb.html">50 KB</a></li>
-          <li><a href="resize-image-to-100kb.html">100 KB</a></li>
-          <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+          <li><a href="resize-image-to-kb-limit.html">10, 100 or 200 KB</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
@@ -217,9 +193,11 @@
           <li><a href="guides/">Guides</a></li>
           <li><a href="how-to-use.html">How to use</a></li>
           <li><a href="about.html">About</a></li>
+          <li><a href="author/sumit-sengar.html">Author</a></li>
+          <li><a href="editorial-policy.html">Editorial policy</a></li>
+          <li><a href="contact.html">Contact</a></li>
           <li><a href="privacy.html">Privacy</a></li>
           <li><a href="terms.html">Terms</a></li>
-          <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
     </div>
@@ -227,7 +205,7 @@
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261121-3" defer></script>
-  <script src="js/site.js?v=20261121-3"></script>
+  <script src="js/components.js?v=20261024-2" defer></script>
+  <script src="js/site.js?v=20261024-2"></script>
 </body>
 </html>

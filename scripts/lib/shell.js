@@ -3,7 +3,7 @@
    checks that no page has drifted, so all pages look and behave like one product. */
 'use strict';
 
-const ASSET_VERSION = '20261121-3';
+const ASSET_VERSION = '20261024-2';
 
 // The product map. The header menu, the mobile sheet and the footer all read from here,
 // so every page presents the same five areas: image tools, PDF tools, resume, exam requirements, guides.
@@ -19,15 +19,14 @@ const TOOLS = [
 const EXAMS = [['SSC', 'ssc-photo-signature-size.html', 'CGL, CHSL, MTS, GD'], ['UPSC', 'upsc-photo-signature-size.html', 'Civil services, NDA, CDS'],
   ['IBPS', 'ibps-photo-signature-size.html', 'Bank PO and clerk'], ['NEET', 'neet-photo-signature-size.html', 'Medical entrance'],
   ['RRB', 'rrb-photo-signature-size.html', 'Railway recruitment']];
-const SIZES = [['10 KB', 'resize-image-to-10kb.html'], ['20 KB', 'resize-image-to-20kb.html'], ['50 KB', 'resize-image-to-50kb.html'],
-  ['100 KB', 'resize-image-to-100kb.html'], ['200 KB', 'resize-image-to-200kb.html']];
+const SIZES = [['20 KB', 'resize-image-to-20kb.html'], ['50 KB', 'resize-image-to-50kb.html'], ['10, 100 or 200 KB', 'resize-image-to-kb-limit.html']];
 
 // Four columns, so the footer divides evenly in every layout mode (4, then 4 under the brand, then 2 by 2).
 const FOOTER_COLUMNS = [
   { title: 'Tools', links: [['Image resizer', ''], ['Signature cleaner', 'signature-cleaner.html'], ['Passport photo print', 'passport-photo-print.html'], ['Image to PDF', 'image-to-pdf.html'], ['Compress PDF', 'compress-pdf.html'], ['Resume builder', 'resume.html']] },
   { title: 'Resize to a file size', links: SIZES.map(([label, p]) => [label, p]) },
   { title: 'Exam requirements', links: EXAMS.map(([label, p]) => [label, p]) },
-  { title: 'ApplyReady', links: [['Guides', 'guides/'], ['How to use', 'how-to-use.html'], ['About', 'about.html'], ['Privacy', 'privacy.html'], ['Terms', 'terms.html'], ['Contact', 'contact.html']] }
+  { title: 'ApplyReady', links: [['Guides', 'guides/'], ['How to use', 'how-to-use.html'], ['About', 'about.html'], ['Author', 'author/sumit-sengar.html'], ['Editorial policy', 'editorial-policy.html'], ['Contact', 'contact.html'], ['Privacy', 'privacy.html'], ['Terms', 'terms.html']] }
 ];
 
 const TAGLINE = {
@@ -89,7 +88,7 @@ ${EXAMS.map(([label, p, desc]) => `                <li><a class="menu__item menu
           </li>
           <li><a class="site-nav__link" href="${rel('resume.html')}"${resumeCur}>Resume builder</a></li>
           <li><a class="site-nav__link" href="${rel('guides/')}"${guidesCur}>Guides</a></li>
-          <li class="site-nav__lang"><a class="site-nav__link" href="${rel('hi/ssc-photo-signature-size.html')}" lang="hi" hreflang="hi"${hindi}>हिन्दी</a></li>
+          <li class="site-nav__lang"><a class="site-nav__link" href="${rel('hi/ssc-photo-signature-size.html')}" lang="hi"${hindi}>हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">

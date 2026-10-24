@@ -14,7 +14,7 @@ let checks = 0;
 const ok = (condition, message) => { assert(condition, message); checks++; };
 
 const walk = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const pages = [...walk('.'), ...walk('guides', 'guides'), ...walk('hi', 'hi')].filter(f => f !== 'offline.html');
+const pages = [...walk('.'), ...walk('guides', 'guides'), ...walk('hi', 'hi'), ...walk('author', 'author')].filter(f => f !== 'offline.html' && !/<meta http-equiv="refresh"/i.test(fs.readFileSync(path.join(root, f), 'utf8')));
 
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
@@ -394,8 +394,8 @@ const server = http.createServer((req, res) => {
       x.fillStyle = '#789'; x.fillRect(0, 0, 900, 1100); x.fillStyle = '#fed'; x.beginPath(); x.arc(450, 450, 250, 0, 7); x.fill();
       return c.toDataURL('image/png').split(',')[1];
     }), 'base64');
-    const embedded = pages.filter(f => /photo-signature-size\.html$|resize-image-to-\d+kb\.html$/.test(f));
-    ok(embedded.length === 15, `found the 15 embedded tool pages (${embedded.length})`);
+    const embedded = pages.filter(f => /photo-signature-size\.html$|resize-image-to-(\d+kb|kb-limit)\.html$/.test(f));
+    ok(embedded.length === 13, `found the 13 embedded tool pages (${embedded.length})`);
     // Errors must be visible on every embedded tool, not only on the home page.
     for (const file of embedded) {
       await page.goto(`${origin}/${file}`);
@@ -419,6 +419,8 @@ const server = http.createServer((req, res) => {
       const before = await page.evaluate(() => { const i = document.getElementById('cropperActiveArea').getBoundingClientRect().top, b = document.getElementById('btnProcess').getBoundingClientRect().top; return i <= b; });
       ok(before, `${file}: the image appears above the Resize button`);
       ok((await page.locator('#btnProcess').textContent()).trim() === label || !hindi, `${file}: button label is not replaced by another language`);
+      // The multi-target KB page asks which limit first, like the home page.
+      if (await page.locator('#btnProcess').isDisabled()) await choose(page, 'kb-100');
       await page.locator('#btnProcess').click();
       await page.locator('#resultArea').waitFor({ state: 'visible' });
       await page.waitForFunction(() => document.getElementById('resultFileSize') && document.getElementById('resultFileSize').textContent.trim().length > 2);
@@ -507,14 +509,38 @@ const server = http.createServer((req, res) => {
       const warned = await page.locator('#compressStatus').evaluate(e => e.classList.contains('is-warning'));
       ok(warned === expectWarning && (expectWarning ? /could not get under 5 KB/.test(status) : /Under 5000 KB/.test(status)), `compress ${target} KB: status says ${status}`);
     }
+    // Compress PDF never hands back a larger file: a PDF already under the target is kept as it is,
+    // and a compressed result is never bigger than the PDF it came from.
+    {
+      const jpeg = fs.readFileSync(path.join(root, 'img/samples/test-signature-cleaned.jpg'));
+      const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n1 0 obj << /Type /XObject /Subtype /Image /Filter /DCTDecode >> stream\n'), jpeg, Buffer.from('\nendstream endobj\n%%EOF\n')]);
+      for (const [target, expectKept] of [['200', true], ['30', false]]) {
+        await page.goto(`${origin}/compress-pdf.html`);
+        await page.locator('#compressFileInput').setInputFiles({ name: 'scan.pdf', mimeType: 'application/pdf', buffer: pdf });
+        await page.locator('#targetKbInput').fill(target);
+        await page.locator('#btnStartCompress').click();
+        await page.locator('#compressResultArea:not(.hidden)').waitFor({ timeout: 30000 });
+        const out = await page.evaluate(async () => (await fetch(document.getElementById('btnDownloadCompressedPdf').href).then(r => r.blob())).size);
+        const status = await page.locator('#compressStatus').innerText();
+        ok(out <= pdf.length, `compress ${target} KB: the result (${out} bytes) is not larger than the input (${pdf.length} bytes)`);
+        if (expectKept) ok(out === pdf.length && /kept unchanged/.test(status), `compress ${target} KB: a PDF already under the limit is kept (${status})`);
+      }
+    }
 
     // Exam page: the preset switch shows which preset is in use
-    await page.goto(`${origin}/ssc-photo-signature-size.html`);
-    ok(await page.locator('.choice[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'true', 'SSC photo preset is marked as selected on load');
-    ok(/SSC photo/.test(await page.locator('#reqSummaryName').innerText()) && await page.locator('#reqGrid').isHidden(), 'the exam requirement arrives chosen, shown as a summary');
-    await choose(page, 'ssc-signature');
-    ok(await page.locator('.choice[data-preset="ssc-signature"]').getAttribute('aria-pressed') === 'true' && await page.locator('.choice[data-preset="ssc-photo"]').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
+    await page.goto(`${origin}/upsc-photo-signature-size.html`);
+    ok(await page.locator('.choice[data-preset="upsc-photo"]').getAttribute('aria-pressed') === 'true', 'UPSC photo preset is marked as selected on load');
+    ok(/UPSC photo/.test(await page.locator('#reqSummaryName').innerText()) && await page.locator('#reqGrid').isHidden(), 'the exam requirement arrives chosen, shown as a summary');
+    await choose(page, 'upsc-signature');
+    ok(await page.locator('.choice[data-preset="upsc-signature"]').getAttribute('aria-pressed') === 'true' && await page.locator('.choice[data-preset="upsc-photo"]').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
     ok(await page.locator('.choice').count() === 3, 'an exam page offers only that exam\'s photo, signature and a custom size');
+    // A pixel size the exam does not set is labelled as a suggestion.
+    ok(/suggested/.test(await page.locator('.choice[data-preset="upsc-photo"] .choice__spec').innerText()), 'the UPSC photo preset says its pixel size is a suggestion');
+    // SSC captures the photo live, so its page offers only the signature; RRB offers only a custom size.
+    await page.goto(`${origin}/ssc-photo-signature-size.html`);
+    ok(await page.locator('.choice').count() === 2 && await page.locator('.choice[data-preset="ssc-signature"]').getAttribute('aria-pressed') === 'true', 'the SSC page offers its signature and a custom size');
+    await page.goto(`${origin}/rrb-photo-signature-size.html`);
+    ok(await page.locator('.choice').count() === 1, 'the RRB page offers only a custom size');
 
     // Resume: example text never looks like a value
     await page.goto(`${origin}/resume.html`);

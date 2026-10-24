@@ -8,12 +8,17 @@ let checks = 0;
 const ok = (c, m) => { assert(c, m); checks++; };
 
 const list = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi')];
+const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...list('author', 'author')];
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const textOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [s])[0].replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<nav[\s\S]*?<\/nav>/g, ' ').replace(/<[^>]+>/g, ' ');
 const words = s => (textOf(s).match(/[A-Za-z0-9ऀ-ॿ][\w'ऀ-ॿ-]*/g) || []).length;
 const SITE = 'https://applyready.in';
 const utility = new Set(['404.html', 'offline.html']);
+// Redirect stubs (merged pages) carry a meta refresh and a canonical to the page that replaced them.
+const isStub = s => /<meta http-equiv="refresh"/i.test(s);
+const isNoindex = s => /<meta name="robots" content="[^"]*noindex/i.test(s);
+const stubs = new Set(pages.filter(f => isStub(read(f))));
+const indexable = new Set(pages.filter(f => !utility.has(f) && !isStub(read(f)) && !isNoindex(read(f))));
 
 // 1. Every page: language, title, description, canonical, one h1
 const titles = new Map(), descriptions = new Map();
@@ -29,7 +34,12 @@ for (const f of pages) {
     ok(!descriptions.has(desc), `${f}: duplicate description with ${descriptions.get(desc)}`); descriptions.set(desc, f);
     const canonical = (s.match(/<link rel="canonical" href="([^"]*)"/) || [])[1];
     const expected = f === 'index.html' ? SITE + '/' : f === 'guides/index.html' ? SITE + '/guides/' : `${SITE}/${f}`;
-    ok(canonical === expected, `${f}: canonical ${canonical} should be ${expected}`);
+    if (stubs.has(f)) {
+      const target = (canonical || '').replace(SITE + '/', '');
+      ok(isNoindex(s) && indexable.has(target), `${f}: a redirect stub must be noindex with a canonical to an indexable page (${canonical})`);
+      const refresh = (s.match(/<meta http-equiv="refresh" content="0;\s*url=([^"#]*)/i) || [])[1];
+      ok(refresh && path.posix.normalize(path.posix.join(path.posix.dirname(f), refresh)) === target, `${f}: meta refresh should go to its canonical page`);
+    } else ok(canonical === expected, `${f}: canonical ${canonical} should be ${expected}`);
   }
   const h1s = (s.match(/<h1[\s>]/g) || []).length;
   ok(h1s === 1, `${f}: exactly one h1 (found ${h1s})`);
@@ -62,10 +72,16 @@ const sw = read('sw.js');
 for (const f of pages) {
   if (utility.has(f)) continue;
   const url = f === 'index.html' ? SITE + '/' : f === 'guides/index.html' ? SITE + '/guides/' : `${SITE}/${f}`;
-  ok(locs.includes(url), `${f}: missing from sitemap.xml`);
-  if (f.startsWith('guides/')) ok(sw.includes(`'/${f}'`), `${f}: missing from the service worker precache`);
+  if (indexable.has(f)) ok(locs.includes(url), `${f}: missing from sitemap.xml`);
+  else ok(!locs.includes(url), `${f}: noindex or redirect pages must not be in sitemap.xml`);
+  if (f.startsWith('guides/') && !stubs.has(f)) ok(sw.includes(`'/${f}'`), `${f}: missing from the service worker precache`);
+  if (stubs.has(f)) ok(!sw.includes(`'/${f}'`), `${f}: redirect stubs should not be precached`);
 }
-for (const l of locs) ok(exists(l.replace(SITE + '/', '')) || l === SITE + '/', `sitemap lists a page that does not exist: ${l}`);
+for (const l of locs) {
+  const f = l === SITE + '/' ? 'index.html' : l.endsWith('/') ? l.replace(SITE + '/', '') + 'index.html' : l.replace(SITE + '/', '');
+  ok(exists(f), `sitemap lists a page that does not exist: ${l}`);
+  ok(indexable.has(f), `sitemap lists a page that is noindex or a redirect: ${l}`);
+}
 ok(new Set(locs).size === locs.length, 'sitemap has duplicate URLs');
 
 // 4. Ad network requirements
@@ -95,19 +111,64 @@ for (const f of pages) {
 
 // 5. Depth of content: guides and landing pages are not thin
 for (const f of pages) {
+  if (stubs.has(f)) continue;
   const n = words(read(f));
   if (f.startsWith('guides/') && f !== 'guides/index.html') ok(n >= 600, `${f}: only ${n} words`);
-  if (/^(resize-image-to-\d+kb|[a-z]+-photo-signature-size)\.html$/.test(f)) ok(n >= 600, `${f}: only ${n} words`);
+  if (/^(resize-image-to-(\d+kb|kb-limit)|[a-z]+-photo-signature-size)\.html$/.test(f)) ok(n >= 600, `${f}: only ${n} words`);
   if (f.startsWith('hi/')) ok(n >= 600, `${f}: only ${n} words`);
 }
-const guideCount = pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html').length;
-ok(guideCount >= 25, `at least 25 guides (found ${guideCount})`);
+const guides = pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html' && indexable.has(f));
+ok(guides.length >= 20, `at least 20 indexable guides (found ${guides.length})`);
 
-// 6. Guides carry author, review date and structured data
-for (const f of pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html')) {
+// 6. Guides: a visible byline linking the author page, dates that match the structured data,
+//    an original visual, a Sources section with an outside link, and links to a tool and other guides.
+const ldDate = (s, key) => ((s.match(new RegExp(`"${key}": "(\\d{4}-\\d{2}-\\d{2})`)) || [])[1]);
+const bodyOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [''])[0].replace(/<section class="related-guides-section"[\s\S]*?<\/section>/, '');
+for (const f of guides) {
   const s = read(f);
-  ok(s.includes('"@type": "Article"') && s.includes('"author"'), `${f}: Article structured data with author`);
-  ok(s.includes('"BreadcrumbList"'), `${f}: breadcrumb structured data`);
+  ok(s.includes('"@type": "Article"') && /"author": \{[^}]*"@id": "https:\/\/applyready\.in\/author\/sumit-sengar\.html#person"/.test(s), `${f}: Article structured data with the author's Person id`);
+  ok(s.includes('"BreadcrumbList"') && s.includes('class="breadcrumb-nav"'), `${f}: breadcrumbs, visible and structured`);
+  const meta = (s.match(/<p class="guide-meta">([\s\S]*?)<\/p>/) || [])[1] || '';
+  ok(/By <a href="\.\.\/author\/sumit-sengar\.html" rel="author">Sumit Sengar<\/a>/.test(meta), `${f}: visible byline links the author page`);
+  const times = [...meta.matchAll(/<time datetime="(\d{4}-\d{2}-\d{2})">/g)].map(m => m[1]);
+  ok(times.length === 2 && times[0] === ldDate(s, 'datePublished') && times[1] === ldDate(s, 'dateModified'), `${f}: Published and Last updated dates match datePublished and dateModified (${times} vs ${ldDate(s, 'datePublished')}, ${ldDate(s, 'dateModified')})`);
+  ok(times[0] <= times[1], `${f}: last updated is not before published`);
+  const body = bodyOf(s);
+  ok(/<figure class="shot">[\s\S]*?(<img [^>]*width="\d+" height="\d+" alt="[^"]{20,}" loading="lazy"|<svg [^>]*role="img")/.test(body), `${f}: at least one original visual with size and alt text`);
+  const sources = (body.match(/<h2 id="sourcesHeading">Sources<\/h2>[\s\S]*?<\/section>/) || [''])[0];
+  ok(/href="https:\/\/(?!applyready\.in)[^"]+"/.test(sources), `${f}: a Sources section with at least one outside source`);
+  ok(/href="\.\.\/(index|signature-cleaner|passport-photo-print|image-to-pdf|compress-pdf|resume|resize-image-to-[a-z0-9-]+)\.html"/.test(body), `${f}: links its matching tool in the body`);
+  const guideLinks = new Set([...body.matchAll(/href="([a-z0-9-]+\.html)"/g)].map(m => m[1]).filter(h => h !== path.posix.basename(f)));
+  ok(guideLinks.size >= 2, `${f}: links at least two other guides in the body (${guideLinks.size})`);
+  ok(/Report an error<\/a>/.test(body), `${f}: a Report an error link`);
+}
+
+// 6a. Every indexable page is linked from the body text of at least three other pages
+//     (navigation, footer, breadcrumbs, related-link cards and the tool itself do not count).
+{
+  const inbound = new Map([...indexable].map(f => [f, new Set()]));
+  for (const f of pages) {
+    let body = (read(f).match(/<main[\s\S]*?<\/main>/) || [''])[0];
+    body = body.replace(/<nav class="breadcrumb-nav"[\s\S]*?<\/nav>|<section class="related-guides-section"[\s\S]*?<\/section>|<!-- tool:start -->[\s\S]*?<!-- tool:end -->/g, '');
+    const dir = path.posix.dirname(f);
+    for (const m of body.matchAll(/href="([^"#?]+)/g)) {
+      let h = m[1];
+      if (/^(https?:|mailto:)/.test(h)) continue;
+      let t = h === '/' ? 'index.html' : path.posix.normalize(path.posix.join(dir === '.' ? '' : dir, h));
+      if (t === '.' || t === './' || t === '..') t = 'index.html';
+      if (t.endsWith('/')) t += 'index.html';
+      if (!t.endsWith('.html')) t = t + '/index.html';
+      if (inbound.has(t) && t !== f) inbound.get(t).add(f);
+    }
+  }
+  for (const [f, from] of inbound) ok(f === 'index.html' || from.size >= 3, `${f}: linked from the body of only ${from.size} other pages`);
+}
+
+// 6b. Exam pages say which notice they were last checked against, link a way to report an error, and cite sources.
+for (const f of pages.filter(f => /^[a-z]+-photo-signature-size\.html$/.test(f))) {
+  const s = read(f);
+  ok(/<p class="checked-line"><strong>Last checked against:<\/strong>[^<]*\d{4}/.test(s) && /Report an error<\/a>/.test(s), `${f}: Last checked line with a report link`);
+  ok(/<ul class="sources-list">[\s\S]*?href="https:\/\/(?!applyready)/.test(s), `${f}: sources list with official links`);
 }
 
 // 7. No leftover placeholder text on public pages
@@ -117,7 +178,7 @@ for (const f of pages) {
 }
 
 // 7b. Landing pages put the tool straight after the page head, before the reference content
-for (const f of pages.filter(f => /(^|\/)(resize-image-to-\d+kb|[a-z]+-photo-signature-size)\.html$/.test(f))) {
+for (const f of pages.filter(f => /(^|\/)(resize-image-to-(\d+kb|kb-limit)|[a-z]+-photo-signature-size)\.html$/.test(f) && !stubs.has(f))) {
   const s = read(f);
   const head = s.indexOf('</header>', s.indexOf('<header class="page-head">'));
   const tool = s.indexOf('<!-- tool:start -->');

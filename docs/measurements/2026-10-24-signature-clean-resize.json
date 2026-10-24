@@ -1,0 +1,67 @@
+[
+ {
+  "file": "img/samples/test-signature-cleaned.jpg",
+  "w": 300,
+  "h": 100,
+  "max": 20,
+  "bytes": 6403,
+  "kb": 6.3,
+  "outW": 300,
+  "outH": 100,
+  "quality": 0.95,
+  "at95kb": 6.3,
+  "error": null
+ },
+ {
+  "file": "img/samples/test-signature-cleaned.jpg",
+  "w": 600,
+  "h": 200,
+  "max": 20,
+  "bytes": 14618,
+  "kb": 14.3,
+  "outW": 600,
+  "outH": 200,
+  "quality": 0.95,
+  "at95kb": 14.3,
+  "error": null
+ },
+ {
+  "file": "img/samples/test-signature.jpg",
+  "w": 600,
+  "h": 200,
+  "max": 20,
+  "bytes": 19471,
+  "kb": 19,
+  "outW": 600,
+  "outH": 200,
+  "quality": 0.929,
+  "at95kb": 23.9,
+  "error": null
+ },
+ {
+  "file": "img/samples/test-signature.jpg",
+  "w": 400,
+  "h": 200,
+  "max": 20,
+  "bytes": 14797,
+  "kb": 14.5,
+  "outW": 400,
+  "outH": 200,
+  "quality": 0.95,
+  "at95kb": 14.5,
+  "error": null
+ },
+ {
+  "file": "img/samples/test-signature-cleaned.jpg",
+  "w": 400,
+  "h": 200,
+  "max": 20,
+  "bytes": 9269,
+  "kb": 9.1,
+  "outW": 400,
+  "outH": 200,
+  "quality": 0.95,
+  "at95kb": 9.1,
+  "error": null
+ }
+]

@@ -20,13 +20,13 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 // What a person calls each requirement. Specs are added from js/presets.js.
 const CHOICE_LABELS = {
   passport: 'ID / passport photo', signature: 'Signature', thumb: 'Thumb impression', declaration: 'Handwritten declaration', avatar: 'Profile photo', document: 'Document scan', 'web-banner': 'Social or web card',
-  'ssc-photo': 'SSC photo', 'ssc-signature': 'SSC signature', 'upsc-photo': 'UPSC photo', 'upsc-signature': 'UPSC signature (three times)', 'ibps-photo': 'IBPS photo', 'ibps-signature': 'IBPS signature',
-  'neet-photo': 'NEET photo', 'neet-signature': 'NEET signature', 'rrb-photo': 'RRB photo', 'rrb-signature': 'RRB signature'
+  'ssc-signature': 'SSC signature', 'upsc-photo': 'UPSC photo', 'upsc-signature': 'UPSC signature (three times)', 'ibps-photo': 'IBPS photo', 'ibps-signature': 'IBPS signature',
+  'neet-photo': 'NEET photo', 'neet-signature': 'NEET signature'
 };
 const CHOICE_LABELS_HI = {
   passport: 'आईडी / पासपोर्ट फोटो', signature: 'सिग्नेचर', thumb: 'अंगूठे का निशान', declaration: 'हस्तलिखित घोषणा', avatar: 'प्रोफ़ाइल फोटो', document: 'दस्तावेज़ स्कैन',
-  'ssc-photo': 'SSC फोटो', 'ssc-signature': 'SSC सिग्नेचर', 'upsc-photo': 'UPSC फोटो', 'upsc-signature': 'UPSC सिग्नेचर (तीन बार)', 'ibps-photo': 'IBPS फोटो', 'ibps-signature': 'IBPS सिग्नेचर',
-  'neet-photo': 'NEET फोटो', 'neet-signature': 'NEET सिग्नेचर', 'rrb-photo': 'RRB फोटो', 'rrb-signature': 'RRB सिग्नेचर'
+  'ssc-signature': 'SSC सिग्नेचर', 'upsc-photo': 'UPSC फोटो', 'upsc-signature': 'UPSC सिग्नेचर (तीन बार)', 'ibps-photo': 'IBPS फोटो', 'ibps-signature': 'IBPS सिग्नेचर',
+  'neet-photo': 'NEET फोटो', 'neet-signature': 'NEET सिग्नेचर'
 };
 
 const L = {
@@ -94,6 +94,8 @@ const L = {
 
 const specOf = (p, lang) => {
   const kb = p.minKB ? `${p.minKB}–${p.maxKB} KB` : (lang === 'hi' ? `${p.maxKB} KB से कम` : `under ${p.maxKB} KB`);
+  // A pixel size the exam body does not set is labelled as a suggestion, so it is not read as official.
+  if (p.suggested) return lang === 'hi' ? `${kb} · ${p.width} × ${p.height} px सुझाया गया` : `${kb} · ${p.width} × ${p.height} px suggested`;
   return `${p.width} × ${p.height} px · ${kb}`;
 };
 
@@ -366,4 +368,4 @@ ${bg}
     </section>`;
 }
 
-module.exports = { renderWorkspace, PRESETS, L, CHOICE_LABELS };
+module.exports = { renderWorkspace, choiceFor, PRESETS, L, CHOICE_LABELS };

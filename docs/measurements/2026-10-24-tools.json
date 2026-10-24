@@ -1,0 +1,125 @@
+{
+ "signatureDefault": {
+  "bytes": 47794,
+  "type": "image/jpeg",
+  "w": 1600,
+  "h": 900,
+  "name": "Cleaned_test-signature.jpg"
+ },
+ "signatureSettings": {
+  "white": "70",
+  "ink": "80",
+  "denoise": true,
+  "color": "original",
+  "fmt": "image/jpeg"
+ },
+ "signature_image/jpeg": {
+  "bytes": 47794,
+  "type": "image/jpeg",
+  "w": 1600,
+  "h": 900,
+  "name": "Cleaned_test-signature.jpg"
+ },
+ "signature_image/png": {
+  "bytes": 115365,
+  "type": "image/png",
+  "w": 1600,
+  "h": 900,
+  "name": "Cleaned_test-signature.png"
+ },
+ "signature_image/png-transparent": {
+  "bytes": 117606,
+  "type": "image/png",
+  "w": 1600,
+  "h": 900,
+  "name": "Cleaned_test-signature.png"
+ },
+ "print_4x6": {
+  "bytes": 320406,
+  "type": "image/jpeg",
+  "w": 1200,
+  "h": 1800,
+  "name": "Passport_Photos_6_Copies_300DPI.jpg",
+  "stats": [
+   "4 × 6 inch Photo Paper",
+   "6 Photos (35 × 45 mm)",
+   "300 DPI (High-Res)"
+  ],
+  "pdfBytes": 321111,
+  "pdfName": "Passport_Print_Sheet_4.pdf"
+ },
+ "print_a4": {
+  "bytes": 1543361,
+  "type": "image/jpeg",
+  "w": 2480,
+  "h": 3508,
+  "name": "Passport_Photos_30_Copies_300DPI.jpg",
+  "stats": [
+   "A4 Sheet",
+   "30 Photos (35 × 45 mm)",
+   "300 DPI (High-Res)"
+  ],
+  "pdfBytes": 1544068,
+  "pdfName": "Passport_Print_Sheet_A4.pdf"
+ },
+ "print_5x7": {
+  "bytes": 472437,
+  "type": "image/jpeg",
+  "w": 1500,
+  "h": 2100,
+  "name": "Passport_Photos_9_Copies_300DPI.jpg",
+  "stats": [
+   "5 × 7 inch Photo Paper",
+   "9 Photos (35 × 45 mm)",
+   "300 DPI (High-Res)"
+  ],
+  "pdfBytes": 473142,
+  "pdfName": "Passport_Print_Sheet_5.pdf"
+ },
+ "pdf_q0.92": {
+  "bytes": 633243,
+  "pages": 2,
+  "name": "Document_2_Pages.pdf"
+ },
+ "pdf_q0.80": {
+  "bytes": 232957,
+  "pages": 2,
+  "name": "Document_2_Pages.pdf"
+ },
+ "pdf_q0.65": {
+  "bytes": 139553,
+  "pages": 2,
+  "name": "Document_2_Pages.pdf"
+ },
+ "compress_100": {
+  "status": "Under 100 KB. Ready to upload.",
+  "stats": [
+   "136.3 KB",
+   "77.3 KB",
+   "43% smaller",
+   "2 Pages"
+  ]
+ },
+ "compress_200": {
+  "status": "Under 200 KB. Ready to upload.",
+  "stats": [
+   "136.3 KB",
+   "161.5 KB",
+   "0% smaller",
+   "2 Pages"
+  ]
+ },
+ "resumePages": "1 PDF page",
+ "resume_pdf": {
+  "name": "ALEX_R_MORGAN_Resume.pdf",
+  "bytes": 12450
+ },
+ "resume_docx": {
+  "name": "ALEX_R_MORGAN_Resume.docx",
+  "bytes": 19254
+ },
+ "resume_txt": {
+  "name": "ALEX_R_MORGAN_Resume.txt",
+  "bytes": 3137
+ }
+}
