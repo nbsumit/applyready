@@ -549,7 +549,10 @@ table { border-collapse: collapse; width: 100%; font-size: var(--fs-md); line-he
 /* Screenshots and diagrams in guides: the image, then a quiet caption */
 .shot { margin: var(--s-5) 0; max-width: 100%; }
 .shot img, .shot svg { display: block; max-width: 100%; height: auto; border: var(--bw) solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); }
-.shot svg { width: 100%; }
+.shot svg { width: 100%; box-sizing: border-box; padding: var(--s-2) var(--s-3); }
+/* On a phone a diagram keeps a readable text size and scrolls sideways inside its own frame. */
+.shot:has(> svg) { overflow-x: auto; }
+@media (max-width: 600px) { .shot > svg { min-width: 560px; } }
 .shot figcaption { margin-top: var(--s-2); font-size: var(--fs-label); line-height: 1.5; color: var(--c-text-3); }
 /* "Last checked against ..." and "Report an error" under exam and guide headings */
 .checked-line { margin-top: var(--s-3); font-size: var(--fs-label); line-height: 1.5; color: var(--c-text-3); }
