@@ -1,0 +1,100 @@
+{
+ "resizer-result-table": {
+  "file": "img/guides/resizer-result-table.webp",
+  "width": 1198,
+  "height": 378,
+  "alt": "An ApplyReady result for a 350 by 450 pixel photo under a 50 KB limit: the Download button, a preview, and a table comparing the required file size, dimensions and format with the produced file.",
+  "bytes": 30690
+ },
+ "resume-review": {
+  "file": "img/guides/resume-review.webp",
+  "width": 558,
+  "height": 900,
+  "alt": "The Review step of the ApplyReady resume builder listing what to fix before sending, each with the section it is in and a Fix button.",
+  "bytes": 37044
+ },
+ "resume-job-match": {
+  "file": "img/guides/resume-job-match.webp",
+  "width": 558,
+  "height": 555,
+  "alt": "The job description comparison in the ApplyReady resume builder, showing key terms from a pasted advert that the sample resume already uses and terms it does not.",
+  "bytes": 41692
+ },
+ "resume-skills": {
+  "file": "img/guides/resume-skills.webp",
+  "width": 606,
+  "height": 596,
+  "alt": "The Skills section of the ApplyReady resume builder with labelled skill rows such as Core Competencies and Tools and Platforms.",
+  "bytes": 25820
+ },
+ "resume-templates": {
+  "file": "img/guides/resume-templates.webp",
+  "width": 1264,
+  "height": 900,
+  "alt": "The Style step of the ApplyReady resume builder with the template list and the live preview of a one-page resume beside it.",
+  "bytes": 115502
+ },
+ "resume-download": {
+  "file": "img/guides/resume-download.webp",
+  "width": 558,
+  "height": 381,
+  "alt": "The Download step of the ApplyReady resume builder offering PDF, Word and plain text versions of the same resume.",
+  "bytes": 19086
+ },
+ "resizer-requirement": {
+  "file": "img/guides/resizer-requirement.webp",
+  "width": 1246,
+  "height": 633,
+  "alt": "The ApplyReady image resizer asking what you are preparing, with requirement cards that show each pixel size and KB limit, above the drop zone.",
+  "bytes": 35488
+ },
+ "resizer-settings": {
+  "file": "img/guides/resizer-settings.webp",
+  "width": 1198,
+  "height": 451,
+  "alt": "The Size, file limit and format panel of the ApplyReady resizer, showing width and height in pixels, the minimum and maximum KB fields and the file format menu.",
+  "bytes": 25820
+ },
+ "resizer-units-cm": {
+  "file": "img/guides/resizer-units-cm.webp",
+  "width": 410,
+  "height": 230,
+  "alt": "The ApplyReady resizer with the unit set to centimetres and 300 DPI, showing the width and height fields labelled in centimetres.",
+  "bytes": 11110
+ },
+ "resizer-crop": {
+  "file": "img/guides/resizer-crop.webp",
+  "width": 1198,
+  "height": 660,
+  "alt": "The ApplyReady crop frame over a test portrait, with the frame locked to the passport photo shape and the rotate and zoom buttons below it.",
+  "bytes": 20116
+ },
+ "signature-cleaner": {
+  "file": "img/guides/signature-cleaner.webp",
+  "width": 824,
+  "height": 292,
+  "alt": "The ApplyReady signature cleaner with a phone photo of a signature on the left and the cleaned version, white paper and dark ink, on the right.",
+  "bytes": 15490
+ },
+ "passport-sheet": {
+  "file": "img/guides/passport-sheet.webp",
+  "width": 858,
+  "height": 900,
+  "alt": "The ApplyReady passport photo print preview: copies of one photo laid out on a 4 by 6 inch sheet with thin cutting lines.",
+  "bytes": 23346
+ },
+ "image-to-pdf": {
+  "file": "img/guides/image-to-pdf.webp",
+  "width": 858,
+  "height": 473,
+  "alt": "The ApplyReady image to PDF tool with two pages in order, each with a drag handle, rotate, move and delete buttons.",
+  "bytes": 17382
+ },
+ "compress-pdf": {
+  "file": "img/guides/compress-pdf.webp",
+  "width": 1198,
+  "height": 272,
+  "alt": "The ApplyReady PDF compressor showing the file size before and after compression and the maximum file size choices.",
+  "bytes": 16988
+ }
+}
