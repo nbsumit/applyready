@@ -14,7 +14,7 @@ let checks = 0;
 const ok = (condition, message) => { assert(condition, message); checks++; };
 
 const walk = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const pages = [...walk('.'), ...walk('guides', 'guides'), ...walk('hi', 'hi')].filter(f => f !== 'offline.html');
+const pages = [...walk('.'), ...walk('guides', 'guides'), ...walk('hi', 'hi'), ...walk('author', 'author')].filter(f => f !== 'offline.html' && !/<meta http-equiv="refresh"/i.test(fs.readFileSync(path.join(root, f), 'utf8')));
 
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
@@ -394,8 +394,8 @@ const server = http.createServer((req, res) => {
       x.fillStyle = '#789'; x.fillRect(0, 0, 900, 1100); x.fillStyle = '#fed'; x.beginPath(); x.arc(450, 450, 250, 0, 7); x.fill();
       return c.toDataURL('image/png').split(',')[1];
     }), 'base64');
-    const embedded = pages.filter(f => /photo-signature-size\.html$|resize-image-to-\d+kb\.html$/.test(f));
-    ok(embedded.length === 15, `found the 15 embedded tool pages (${embedded.length})`);
+    const embedded = pages.filter(f => /photo-signature-size\.html$|resize-image-to-(\d+kb|kb-limit)\.html$/.test(f));
+    ok(embedded.length === 13, `found the 13 embedded tool pages (${embedded.length})`);
     // Errors must be visible on every embedded tool, not only on the home page.
     for (const file of embedded) {
       await page.goto(`${origin}/${file}`);
@@ -419,6 +419,8 @@ const server = http.createServer((req, res) => {
       const before = await page.evaluate(() => { const i = document.getElementById('cropperActiveArea').getBoundingClientRect().top, b = document.getElementById('btnProcess').getBoundingClientRect().top; return i <= b; });
       ok(before, `${file}: the image appears above the Resize button`);
       ok((await page.locator('#btnProcess').textContent()).trim() === label || !hindi, `${file}: button label is not replaced by another language`);
+      // The multi-target KB page asks which limit first, like the home page.
+      if (await page.locator('#btnProcess').isDisabled()) await choose(page, 'kb-100');
       await page.locator('#btnProcess').click();
       await page.locator('#resultArea').waitFor({ state: 'visible' });
       await page.waitForFunction(() => document.getElementById('resultFileSize') && document.getElementById('resultFileSize').textContent.trim().length > 2);

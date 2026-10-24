@@ -31,12 +31,12 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261121-3"></script>
+  <script src="js/theme.js?v=20261024-1"></script>
 
   <!-- Icons & Styles -->
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261121-3">
+  <link rel="stylesheet" href="css/app.css?v=20261024-1">
   <!-- shell:styles:end -->
 
   <!-- SoftwareApplication Schema -->
@@ -87,60 +87,60 @@
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "How do I combine multiple certificates into a single PDF?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Upload all your certificate photos or scans at once. You can drag or reorder them using the up and down buttons to match the required document sequence, choose A4 page size, and click 'Convert to PDF'."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Are my confidential documents uploaded to any remote server?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Never. ApplyReady builds the PDF binary directly inside your browser using client-side JavaScript. Your marksheets, degree certificates, and identity documents never leave your computer or phone."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What page size should I select for government job applications?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "A4 (210 × 297 mm) is the standard paper format for Indian government recruitment portals including UPSC, SSC, state PSCs, and universities."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can I convert landscape images without them getting cropped?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. Set Orientation to 'Auto (Match Image)'. The tool will automatically orient wide photos horizontally and tall documents vertically so nothing gets cut off."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What image formats are supported?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "You can upload standard JPEG (.jpg, .jpeg), PNG (.png), and modern WebP (.webp) images."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How can I reduce the PDF size if it exceeds portal limits?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Choose 'Compact (Medium Compression)' from the Image Quality dropdown before generating the PDF, or use our PDF Compressor tool to target exact KB limits like 200 KB or 500 KB."
-        }
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I combine several certificates into one PDF?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Add all the photos or scans at once, put them in the order the portal asks for by dragging the handles or using the arrows, choose the page size, then select Create PDF. Each image becomes one page."
       }
-    ]
-  }
+    },
+    {
+      "@type": "Question",
+      "name": "Are my documents uploaded to a server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. The PDF is built in your browser on your device. Your mark sheets, certificates and identity documents are not sent to ApplyReady or anyone else."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which page size should I choose?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A4 suits most uploads and prints cleanly. Choose Same as each image when the portal wants the page to match the photo's own proportions, and follow the portal's instructions if they name a size."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will landscape images be cropped?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. With Orientation set to Automatic, each page follows its image, so a wide photo gets a landscape page. Rotate any page that was photographed sideways before creating the PDF."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which image formats can I add?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "JPEG, PNG and WebP images. iPhone HEIC photos need to be shared or saved as JPEG first."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "The PDF is larger than the portal allows. What now?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Choose Compact quality and create the PDF again, or run it through the PDF compressor with the portal's limit. In our test, a two-page PDF went from 227.5 KB at Balanced to 136.3 KB at Compact, and to 77.3 KB with the compressor set to 100 KB."
+      }
+    }
+  ]
+}
   </script>
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
@@ -308,45 +308,50 @@
     </section>
     <!-- tool:end -->
 
-<!-- Educational Content Section -->
-      <section class="section prose">
-        <h2>Tips for Creating Clean PDF Submissions for Online Exams</h2>
-        <p>
-          Recruitment bodies including UPSC, SSC, state PSCs, and public sector banks frequently ask applicants to upload all marksheets or category proofs combined as a single PDF.
-        </p>
+      <section class="section prose" aria-labelledby="pdfHowHeading">
+        <h2 id="pdfHowHeading">How to turn photos of documents into one clean PDF</h2>
+        <p>Use this tool when a portal asks for several pages (mark sheets, a certificate and its back side, an ID card) as one PDF, and all you have are photos or scans. Each image becomes one page, in the order shown in the list.</p>
+        <ol>
+          <li><strong>Photograph each page flat, in even light,</strong> with the phone parallel to the paper. Crop away the table around the page.</li>
+          <li><strong>Add all the images at once,</strong> then check the numbered list. Drag a page by its handle, or use the arrows, until the order matches what the portal asks for.</li>
+          <li><strong>Rotate sideways pages</strong> with the rotate button so every page opens upright.</li>
+          <li><strong>Pick the page size and quality.</strong> A4 with a small margin suits most uploads; <em>Same as each image</em> keeps each photo's own proportions. Start with <em>Balanced</em>.</li>
+          <li><strong>Create the PDF and check its size</strong> against the portal's limit before you upload.</li>
+        </ol>
 
-        <div class="guide-card-grid">
-          <div class="guide-card">
-            <h3>Correct Document Order</h3>
-            <p>Ensure your pages are ordered logically (e.g. 10th marksheet, 12th marksheet, graduation degree, caste certificate). Use our Up and Down buttons to arrange pages before compiling.</p>
-          </div>
-          <div class="guide-card">
-            <h3>Standard A4 Paper Dimensions</h3>
-            <p>Almost all official document scanners in India expect standard A4 paper size. Selecting A4 ensures your certificates print with uniform borders without being cropped.</p>
-          </div>
-          <div class="guide-card">
-            <h3>Maintain Legibility</h3>
-            <p>Select 'Balanced' or 'High Quality' compression to ensure roll numbers, dates of birth, and university stamps remain razor sharp when inspected by verification officers.</p>
-          </div>
-        </div>
-      </section>
+        <figure class="shot">
+          <img src="img/guides/image-to-pdf.webp" width="858" height="473" alt="The ApplyReady image to PDF tool with two pages in order, each with a drag handle, rotate, move and delete buttons." loading="lazy">
+          <figcaption>Two test images as pages 1 and 2, with the controls for reordering and rotating.</figcaption>
+        </figure>
 
-      <section class="section prose" id="before-you-convert">
-        <h2>Before you convert: preparing images for a clean PDF</h2>
-        <p>A converted PDF is only as good as the pictures that go into it. A few minutes of preparation prevents most re-uploads.</p>
+        <h3>Real output sizes</h3>
+        <p>We combined the two images in our <a href="img/samples/test-portrait.jpg">sample set</a>, a 1200 × 1600 px photo (428.9 KB) and a 1600 × 900 px photo of a signature (251.5 KB), into a two-page A4 PDF with small margins. The quality setting decides the size:</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Quality setting</th><th>PDF size (2 pages)</th></tr></thead>
+          <tbody>
+            <tr><td>High, for clear text scans</td><td>618.4 KB</td></tr>
+            <tr><td>Balanced, for most forms</td><td>227.5 KB</td></tr>
+            <tr><td>Compact, for a smaller file</td><td>136.3 KB</td></tr>
+          </tbody>
+        </table></div>
+        <p>When a portal's limit is lower still, run the finished PDF through the <a href="compress-pdf.html">PDF compressor</a>: the Compact file above came down from 136.3 KB to 77.3 KB with a 100 KB target. Measure your own files; a page full of small print needs more bytes than our test images.</p>
+
+        <h3>Common mistakes</h3>
         <ul>
-          <li><strong>Photograph flat and square.</strong> Place the document on a plain surface, in even light, with the phone parallel to the page. Shadows and angled shots make text harder to read and files larger.</li>
-          <li><strong>Fill the frame.</strong> Crop away the table or floor around the paper. Every extra pixel of background adds size without adding anything a reviewer needs.</li>
-          <li><strong>Use one orientation.</strong> Rotate pages that were taken sideways before converting, so that every page opens the right way up for the person checking it.</li>
-          <li><strong>Name files so they sort.</strong> If you add several images at once, the order follows the order you chose. Check the numbered list and use the arrows to fix it before you convert.</li>
-          <li><strong>Mind the portal's limit.</strong> If the finished PDF is above the portal's size limit, run it through the <a href="compress-pdf.html">PDF compressor</a>, or choose a lower quality in the settings above and convert again.</li>
+          <li><strong>Pages in the wrong order.</strong> The PDF follows the list exactly. Check the page numbers before you create it, not after uploading.</li>
+          <li><strong>Choosing High quality by default.</strong> It nearly tripled the size in our test (618.4 KB against 227.5 KB). Use it only when small text is hard to read at Balanced.</li>
+          <li><strong>Mixing a photo of a page with a screenshot of it.</strong> Screenshots carry phone status bars and odd proportions. Photograph or scan the paper itself.</li>
+          <li><strong>Uploading without opening the PDF.</strong> Open it once on your phone or computer and scroll through every page.</li>
         </ul>
-        <h3>Choosing page size and margins</h3>
-        <p>A4 is the standard in India and the safe choice for almost every application and verification process. Use "fit to image" only when a portal asks for the original proportions. Add a small margin when the document will be printed, so that edges are not clipped by the printer.</p>
-        <h3>Privacy</h3>
-        <p>Your pictures are processed in the browser and are not uploaded. This matters for identity documents, mark sheets and photographs, which are exactly the files people hesitate to put on a website.</p>
-      </section>
 
+        <h3>When not to use this tool</h3>
+        <ul>
+          <li><strong>The document is already a PDF.</strong> Use the <a href="compress-pdf.html">PDF compressor</a> instead; turning a PDF into images and back loses text quality.</li>
+          <li><strong>The PDF must stay searchable or digitally signed.</strong> A PDF built from photos contains pictures of text, not text, and a document's digital signature does not survive being photographed. Upload the original file you received.</li>
+          <li><strong>The portal asks for separate files.</strong> Some forms have one upload slot per certificate, with a format and size given for each; the NEET (UG) 2026 bulletin, for example, sets 50 to 300 KB PDFs for certificates (<a href="https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf">Information Bulletin, page 16</a>). Follow the slots, not one combined file.</li>
+        </ul>
+        <p>For step-by-step help with ordering and naming several documents, read <a href="guides/combine-documents-into-one-pdf.html">how to combine documents into one PDF</a>; for portal size limits, read <a href="guides/compress-pdf-for-upload-portals.html">how to get a PDF under an upload limit</a>.</p>
+      </section>
       <!-- Reserved Ad Slot: Between Content Sections -->
       <div class="ad-slot-container ad-slot-article" role="complementary" aria-label="Advertisement">
         <div class="ad-slot-inner">
@@ -360,44 +365,44 @@
         <h2>Frequently Asked Questions</h2>
 
         <details class="faq-item">
-          <summary class="faq-question">How do I combine multiple certificates into a single PDF?</summary>
+          <summary class="faq-question">How do I combine several certificates into one PDF?</summary>
           <div class="faq-answer">
-            <p>Upload all your certificate photos or scans at once. You can drag or reorder them using the up and down buttons to match the required document sequence, choose A4 page size, and click 'Convert to PDF'.</p>
+            <p>Add all the photos or scans at once, put them in the order the portal asks for by dragging the handles or using the arrows, choose the page size, then select Create PDF. Each image becomes one page.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">Are my confidential documents uploaded to any remote server?</summary>
+          <summary class="faq-question">Are my documents uploaded to a server?</summary>
           <div class="faq-answer">
-            <p>Never. ApplyReady builds the PDF binary directly inside your browser using client-side JavaScript. Your marksheets, degree certificates, and identity documents never leave your computer or phone.</p>
+            <p>No. The PDF is built in your browser on your device. Your mark sheets, certificates and identity documents are not sent to ApplyReady or anyone else.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">What page size should I select for government job applications?</summary>
+          <summary class="faq-question">Which page size should I choose?</summary>
           <div class="faq-answer">
-            <p>A4 (210 × 297 mm) is the standard paper format for Indian government recruitment portals including UPSC, SSC, state PSCs, and universities.</p>
+            <p>A4 suits most uploads and prints cleanly. Choose Same as each image when the portal wants the page to match the photo's own proportions, and follow the portal's instructions if they name a size.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">Can I convert landscape images without them getting cropped?</summary>
+          <summary class="faq-question">Will landscape images be cropped?</summary>
           <div class="faq-answer">
-            <p>Yes. Set Orientation to 'Auto (Match Image)'. The tool will automatically orient wide photos horizontally and tall documents vertically so nothing gets cut off.</p>
+            <p>No. With Orientation set to Automatic, each page follows its image, so a wide photo gets a landscape page. Rotate any page that was photographed sideways before creating the PDF.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">What image formats are supported?</summary>
+          <summary class="faq-question">Which image formats can I add?</summary>
           <div class="faq-answer">
-            <p>You can upload standard JPEG (.jpg, .jpeg), PNG (.png), and modern WebP (.webp) images.</p>
+            <p>JPEG, PNG and WebP images. iPhone HEIC photos need to be shared or saved as JPEG first.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">How can I reduce the PDF size if it exceeds portal limits?</summary>
+          <summary class="faq-question">The PDF is larger than the portal allows. What now?</summary>
           <div class="faq-answer">
-            <p>Choose 'Compact (Medium Compression)' from the Image Quality dropdown before generating the PDF, or use our PDF Compressor tool to target exact KB limits like 200 KB or 500 KB.</p>
+            <p>Choose Compact quality and create the PDF again, or run it through the PDF compressor with the portal's limit. In our test, a two-page PDF went from 227.5 KB at Balanced to 136.3 KB at Compact, and to 77.3 KB with the compressor set to 100 KB.</p>
           </div>
         </details>
       </section>
@@ -458,11 +463,9 @@
       <div class="site-footer__col">
         <h2 class="site-footer__title">Resize to a file size</h2>
         <ul class="site-footer__list">
-          <li><a href="resize-image-to-10kb.html">10 KB</a></li>
           <li><a href="resize-image-to-20kb.html">20 KB</a></li>
           <li><a href="resize-image-to-50kb.html">50 KB</a></li>
-          <li><a href="resize-image-to-100kb.html">100 KB</a></li>
-          <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+          <li><a href="resize-image-to-kb-limit.html">10, 100 or 200 KB</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
@@ -481,9 +484,11 @@
           <li><a href="guides/">Guides</a></li>
           <li><a href="how-to-use.html">How to use</a></li>
           <li><a href="about.html">About</a></li>
+          <li><a href="author/sumit-sengar.html">Author</a></li>
+          <li><a href="editorial-policy.html">Editorial policy</a></li>
+          <li><a href="contact.html">Contact</a></li>
           <li><a href="privacy.html">Privacy</a></li>
           <li><a href="terms.html">Terms</a></li>
-          <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
     </div>
@@ -491,8 +496,8 @@
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261121-3" defer></script>
-  <script src="js/site.js?v=20261121-3"></script>
-  <script src="js/image-to-pdf.js?v=20261121-3"></script>
+  <script src="js/components.js?v=20261024-1" defer></script>
+  <script src="js/site.js?v=20261024-1"></script>
+  <script src="js/image-to-pdf.js?v=20261024-1"></script>
 </body>
 </html>

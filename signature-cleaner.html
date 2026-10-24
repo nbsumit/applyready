@@ -31,12 +31,12 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261121-3"></script>
+  <script src="js/theme.js?v=20261024-1"></script>
 
   <!-- Icons & Styles -->
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261121-3">
+  <link rel="stylesheet" href="css/app.css?v=20261024-1">
   <!-- shell:styles:end -->
 
   <!-- SoftwareApplication Schema -->
@@ -87,60 +87,60 @@
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Why do official exam portals reject photos of paper signatures?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Portals like SSC, UPSC, and IBPS use automated verification software. When candidates upload phone photos with dim room lighting, gray paper shadows, or yellow tints, the automated scanner cannot differentiate the ink from the background, resulting in application rejection."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Does this tool upload my signature to any server?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "No. ApplyReady runs 100% locally on your computer or mobile device using HTML5 Canvas pixel manipulation. Your signature image is processed in your device's memory and is never uploaded, stored, or transmitted over the internet."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Should I choose JPEG or Transparent PNG for exam forms?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "For Indian government recruitment portals (SSC, UPSC, RRB, IBPS), always choose JPEG with a crisp white background. Transparent PNGs are often converted to black background images by portal upload scripts. Choose Transparent PNG only for inserting your signature into digital PDFs or Word documents."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How do I remove phone camera shadows from my signature?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Increase the Paper Whiteness threshold slider to around 70–80%. The algorithm scans every pixel and converts gray and off-white background shadows to pure 255/255/255 white while preserving the dark ink lines."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can I convert a faint blue ink signature to deep black?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. Select 'Pure Black Ink' from the ink color option dropdown. The tool will convert all detected ink strokes to high-contrast black while smoothing edges."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How can I reduce the file size of the cleaned signature to 20 KB?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "After downloading your cleaned signature, click 'Open in Image Resizer' or use ApplyReady's 20 KB compressor tool to crop to 300 × 100 px and compress to under 20 KB in one click."
-        }
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does this tool upload my signature to a server?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. The cleaning runs in your browser on your device. The image is not sent to ApplyReady or anyone else, and the tool keeps working offline once the page has loaded."
       }
-    ]
-  }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I choose JPEG or PNG for an exam form?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Choose JPEG unless the form names another format. The SSC and IBPS notices both ask for JPEG/JPG signatures. Keep PNG and transparent PNG for placing your signature on your own documents."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I remove a shadow from the signature photo?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Raise Paper whiteness a little at a time until the grey patch turns white, then check that thin strokes are still visible. If they start to break up, retake the photo in daylight without your hand or phone over the page; that works better than any setting."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I turn blue ink into black?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Choose black in the Ink colour menu. Check your form first: some notices ask for black ink on the paper, which a colour change after the fact does not replace."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is the cleaned file still too large for the form?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 46.7 KB as JPEG. Use Resize it for an exam form to bring it to the pixel size and KB range your form asks for."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is a cleaned signature image a digital signature?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. It is a picture of your handwriting. A digital signature is created with a digital signature certificate and is tied to the content of a document; see the guide on signature images and digital signatures."
+      }
+    }
+  ]
+}
   </script>
   <!-- Google AdSense -->
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
@@ -305,65 +305,38 @@
     </section>
     <!-- tool:end -->
 
-<!-- Educational Content Section -->
-      <section class="section prose">
-        <h2>How to Capture and Clean Signatures for Online Forms</h2>
-        <p>
-          Online exam and recruitment portals across India (SSC CGL/CHSL, UPSC Civil Services, IBPS PO/Clerk, SBI, RRB NTPC, and state PSCs) require candidates to upload a clear signature on plain white paper.
-        </p>
+<!-- How-to: written against measured output from the tool -->
+      <section class="section prose" aria-labelledby="sigHowHeading">
+        <h2 id="sigHowHeading">How to get a clean signature file, step by step</h2>
+        <p>The cleaner does one job: it turns a phone photo of a signature into dark ink on plain white paper. It does not resize the file for a form; that is the second step, in the <a href="./">image resizer</a>.</p>
+        <ol>
+          <li><strong>Sign on plain white paper with a dark pen.</strong> IBPS, for example, asks applicants to "sign on white paper with Black Ink pen" and does not accept signatures in capital letters (<a href="https://www.ibps.in/wp-content/uploads/Detailed-Notification_CRP-PO-XVI_Final_V1_30.06.2026.pdf">CRP PO/MT-XVI notification, Annexure III</a>). Sign at your normal size: SSC lists "miniature" signatures as a major reason for rejection and advises signing inside a box so the signature fills at least 80% of it (<a href="https://ssc.gov.in/api/attachment/uploads/masterData/NoticeBoards/instructions_photo_signature_15_08_2024.pdf">SSC advisory on photos and signatures, 15 August 2024</a>).</li>
+          <li><strong>Photograph it flat, in daylight, from straight above.</strong> Keep your hand and phone from casting a shadow across the page.</li>
+          <li><strong>Clean it here.</strong> Add the photo and raise <em>Paper whiteness</em> only if grey patches remain.</li>
+          <li><strong>Resize it for the form.</strong> Use <em>Resize it for an exam form</em> and choose the signature requirement for your exam, for example the <a href="ssc-photo-signature-size.html">SSC signature</a> (10 to 20 KB, JPEG).</li>
+        </ol>
 
-        <div class="guide-card-grid">
-          <div class="guide-card">
-            <h3>1. Sign with the Right Pen</h3>
-            <p>Use a smooth black or dark blue ballpoint pen or micro gel pen on crisp unruled A4 paper. Avoid pencils, highlighters, or fountain pens that bleed into paper fibers.</p>
-          </div>
-          <div class="guide-card">
-            <h3>2. Photograph in Even Daylight</h3>
-            <p>Place the paper on a flat table near a window. Avoid standing directly over the page to prevent your body or mobile phone from casting a harsh shadow.</p>
-          </div>
-          <div class="guide-card">
-            <h3>3. Clean the Background</h3>
-            <p>Upload the image to ApplyReady. Adjust the <strong>Paper Whiteness</strong> slider until all paper texture and shadows turn pure white (#FFFFFF), and ensure ink lines remain dark.</p>
-          </div>
-        </div>
+        <figure class="shot">
+          <img src="img/guides/signature-cleaner.webp" width="824" height="292" alt="The ApplyReady signature cleaner with a phone photo of a signature on the left and the cleaned version, white paper and dark ink, on the right." loading="lazy">
+          <figcaption>Our synthetic test signature before and after cleaning, with the default settings.</figcaption>
+        </figure>
 
-        <h3>Recommended Settings by Pen Type</h3>
-        <div class="table-wrap"><table>
-          <thead>
-            <tr>
-              <th>Pen Type</th>
-              <th>Recommended Whiteness</th>
-              <th>Recommended Contrast</th>
-              <th>Ink Mode</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Black Ballpoint Pen</td>
-              <td>70%</td>
-              <td>80%</td>
-              <td>Pure Black (#000000)</td>
-            </tr>
-            <tr>
-              <td>Blue Gel Pen</td>
-              <td>65%</td>
-              <td>75%</td>
-              <td>Deep Blue (#0A1E6E) or Original</td>
-            </tr>
-            <tr>
-              <td>Faint Ballpoint Pen</td>
-              <td>75%</td>
-              <td>90%</td>
-              <td>Pure Black (#000000)</td>
-            </tr>
-            <tr>
-              <td>Phone Photo with Shadow</td>
-              <td>85%</td>
-              <td>85%</td>
-              <td>Original or Pure Black</td>
-            </tr>
-          </tbody>
-        </table></div>
+        <h3>A real before and after</h3>
+        <p>We ran the cleaner on the test signature in our <a href="img/samples/test-signature.jpg">sample images</a>: a 1600 × 900 px phone-style photo of blue ink on paper with a darker corner, 251.5 KB as a JPEG. With the default settings (paper whiteness 70, ink darkness 80, specks removed, original ink colour) the cleaned JPEG was still 1600 × 900 px and 46.7 KB. The same result saved as PNG was 112.7 KB, and as a transparent PNG 114.8 KB. None of these fits a 10 to 20 KB signature slot yet. Resized to 300 × 100 px in the resizer, the uncleaned photo came to 8.0 KB and the <a href="img/samples/test-signature-cleaned.jpg">cleaned version</a> to 6.3 KB, both at the resizer's top quality setting: plain white paper takes fewer bytes than grey, textured paper.</p>
+
+        <h3>Common mistakes</h3>
+        <ul>
+          <li><strong>Uploading the cleaned file as it is.</strong> It keeps the full camera resolution. Always resize to the form's limit afterwards.</li>
+          <li><strong>Pushing whiteness too far.</strong> Thin strokes from a ballpoint can vanish. If loops break up, lower <em>Paper whiteness</em> and raise <em>Ink darkness</em> instead.</li>
+          <li><strong>Choosing transparent PNG for a form.</strong> Forms that ask for JPEG will not accept PNG, and a transparent background can show up as black when a site converts it. Use transparent PNG only to place your signature on your own documents.</li>
+                  </ul>
+
+        <h3>When not to use this tool</h3>
+        <ul>
+          <li>When the form wants a scan of a signature inside a printed box or on a specific form page; upload that page as it is.</li>
+          <li>When you need a legally valid electronic signature on a document. A picture of a signature is not a digital signature certificate; see <a href="guides/digital-signature-for-online-forms.html">signature images versus digital signatures</a>.</li>
+          <li>On anyone's signature but your own. Exam bodies require the signature to be the applicant's own.</li>
+        </ul>
       </section>
 
       <!-- Reserved Ad Slot: Between Content Sections -->
@@ -379,44 +352,44 @@
         <h2>Frequently Asked Questions</h2>
 
         <details class="faq-item">
-          <summary class="faq-question">Why do official exam portals reject photos of paper signatures?</summary>
+          <summary class="faq-question">Does this tool upload my signature to a server?</summary>
           <div class="faq-answer">
-            <p>Portals like SSC, UPSC, and IBPS use automated verification software. When candidates upload phone photos with dim room lighting, gray paper shadows, or yellow tints, the automated scanner cannot differentiate the ink from the background, resulting in application rejection.</p>
+            <p>No. The cleaning runs in your browser on your device. The image is not sent to ApplyReady or anyone else, and the tool keeps working offline once the page has loaded.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">Does this tool upload my signature to any server?</summary>
+          <summary class="faq-question">Should I choose JPEG or PNG for an exam form?</summary>
           <div class="faq-answer">
-            <p>No. ApplyReady runs 100% locally on your computer or mobile device using HTML5 Canvas pixel manipulation. Your signature image is processed in your device's memory and is never uploaded, stored, or transmitted over the internet.</p>
+            <p>Choose JPEG unless the form names another format. The SSC and IBPS notices both ask for JPEG/JPG signatures. Keep PNG and transparent PNG for placing your signature on your own documents.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">Should I choose JPEG or Transparent PNG for exam forms?</summary>
+          <summary class="faq-question">How do I remove a shadow from the signature photo?</summary>
           <div class="faq-answer">
-            <p>For Indian government recruitment portals (SSC, UPSC, RRB, IBPS), always choose JPEG with a crisp white background. Transparent PNGs are often converted to black background images by portal upload scripts. Choose Transparent PNG only for inserting your signature into digital PDFs or Word documents.</p>
+            <p>Raise Paper whiteness a little at a time until the grey patch turns white, then check that thin strokes are still visible. If they start to break up, retake the photo in daylight without your hand or phone over the page; that works better than any setting.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">How do I remove phone camera shadows from my signature?</summary>
+          <summary class="faq-question">Can I turn blue ink into black?</summary>
           <div class="faq-answer">
-            <p>Increase the Paper Whiteness threshold slider to around 70–80%. The algorithm scans every pixel and converts gray and off-white background shadows to pure 255/255/255 white while preserving the dark ink lines.</p>
+            <p>Yes. Choose black in the Ink colour menu. Check your form first: some notices ask for black ink on the paper, which a colour change after the fact does not replace.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">Can I convert a faint blue ink signature to deep black?</summary>
+          <summary class="faq-question">Why is the cleaned file still too large for the form?</summary>
           <div class="faq-answer">
-            <p>Yes. Select 'Pure Black Ink' from the ink color option dropdown. The tool will convert all detected ink strokes to high-contrast black while smoothing edges.</p>
+            <p>The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 46.7 KB as JPEG. Use Resize it for an exam form to bring it to the pixel size and KB range your form asks for.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">How can I reduce the file size of the cleaned signature to 20 KB?</summary>
+          <summary class="faq-question">Is a cleaned signature image a digital signature?</summary>
           <div class="faq-answer">
-            <p>After downloading your cleaned signature, click 'Open in Image Resizer' or use ApplyReady's 20 KB compressor tool to crop to 300 × 100 px and compress to under 20 KB in one click.</p>
+            <p>No. It is a picture of your handwriting. A digital signature is created with a digital signature certificate and is tied to the content of a document; see the guide on signature images and digital signatures.</p>
           </div>
         </details>
       </section>
@@ -477,11 +450,9 @@
       <div class="site-footer__col">
         <h2 class="site-footer__title">Resize to a file size</h2>
         <ul class="site-footer__list">
-          <li><a href="resize-image-to-10kb.html">10 KB</a></li>
           <li><a href="resize-image-to-20kb.html">20 KB</a></li>
           <li><a href="resize-image-to-50kb.html">50 KB</a></li>
-          <li><a href="resize-image-to-100kb.html">100 KB</a></li>
-          <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+          <li><a href="resize-image-to-kb-limit.html">10, 100 or 200 KB</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
@@ -500,9 +471,11 @@
           <li><a href="guides/">Guides</a></li>
           <li><a href="how-to-use.html">How to use</a></li>
           <li><a href="about.html">About</a></li>
+          <li><a href="author/sumit-sengar.html">Author</a></li>
+          <li><a href="editorial-policy.html">Editorial policy</a></li>
+          <li><a href="contact.html">Contact</a></li>
           <li><a href="privacy.html">Privacy</a></li>
           <li><a href="terms.html">Terms</a></li>
-          <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
     </div>
@@ -510,8 +483,8 @@
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261121-3" defer></script>
-  <script src="js/site.js?v=20261121-3"></script>
-  <script src="js/signature-cleaner.js?v=20261121-3"></script>
+  <script src="js/components.js?v=20261024-1" defer></script>
+  <script src="js/site.js?v=20261024-1"></script>
+  <script src="js/signature-cleaner.js?v=20261024-1"></script>
 </body>
 </html>

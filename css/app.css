@@ -546,6 +546,17 @@ table { border-collapse: collapse; width: 100%; font-size: var(--fs-md); line-he
 .callout .text-muted { font-size: var(--fs-label); }
 .section > .callout, .article > .callout, .callout + .callout { margin-top: var(--s-5); }
 .guide-meta { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); margin-top: var(--s-4); font-size: var(--fs-label); color: var(--c-text-3); }
+/* Screenshots and diagrams in guides: the image, then a quiet caption */
+.shot { margin: var(--s-5) 0; max-width: 100%; }
+.shot img, .shot svg { display: block; max-width: 100%; height: auto; border: var(--bw) solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); }
+.shot svg { width: 100%; }
+.shot figcaption { margin-top: var(--s-2); font-size: var(--fs-label); line-height: 1.5; color: var(--c-text-3); }
+/* "Last checked against ..." and "Report an error" under exam and guide headings */
+.checked-line { margin-top: var(--s-3); font-size: var(--fs-label); line-height: 1.5; color: var(--c-text-3); }
+.checked-line strong { color: var(--c-text-2); font-weight: var(--fw-medium); }
+.sources-list { font-size: var(--fs-md); }
+.rb-howto { max-width: var(--w-read); }
+.sources-list li + li { margin-top: var(--s-2); }
 .tool-jump { margin-top: var(--s-5); }
 .tool-jump a { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--h-md); padding: 0 var(--s-4); border-radius: var(--r-sm); background: var(--c-accent); color: var(--c-on-accent); font-weight: var(--fw-medium); }
 .tool-jump a:hover { background: var(--c-accent-hover); text-decoration: none; }
@@ -1198,7 +1209,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 
 /* ================================================================== 16. PRINT AND MOTION */
 @media print {
-  .site-header, .site-footer, .skip-link, .task-notification, .toast-region, .dialog-backdrop, .ad-slot-container, .faq-section, .related-tool, .related-guides-section, .resource-section, .toolset, .sr-only, .rb-head, .rb-editor, .form-panel, .preview-toolbar, .rb-bar, .resume-mode-tabs, .preview-empty-note, .noscript-note { display: none !important; }
+  .site-header, .site-footer, .skip-link, .task-notification, .toast-region, .dialog-backdrop, .ad-slot-container, .faq-section, .rb-howto, .related-tool, .related-guides-section, .resource-section, .toolset, .sr-only, .rb-head, .rb-editor, .form-panel, .preview-toolbar, .rb-bar, .resume-mode-tabs, .preview-empty-note, .noscript-note { display: none !important; }
   body { background: #fff !important; color: #000 !important; }
   .page, .page--wide { max-width: none !important; width: auto !important; margin: 0 !important; padding: 0 !important; }
   .rb, .rb-preview { display: block !important; height: auto !important; max-height: none !important; overflow: visible !important; border: 0 !important; border-radius: 0 !important; background: #fff !important; }

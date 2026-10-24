@@ -58,7 +58,10 @@ function buildToolSection(page, html) {
   let choices = options.map(o => o[0]).filter(v => v !== 'custom');
   const exam = choices.filter(v => /^(ssc|upsc|ibps|neet|rrb)-/.test(v));
   if (exam.length) choices = exam;
-  const workspace = renderWorkspace({ lang, preset, maxKB, options, choices, sample: false });
+  // The shared KB page offers several targets, so it asks which one instead of preselecting.
+  const multi = page === 'resize-image-to-kb-limit.html';
+  if (multi) choices = choices.filter(v => /^kb-/.test(v));
+  const workspace = renderWorkspace({ lang, preset: multi ? 'custom' : preset, maxKB: multi ? undefined : maxKB, options, choices, sample: false, requireChoice: multi });
   const markup = `${START}
       <section class="section tool-section" id="resize-tool" aria-labelledby="toolHeading">
         <h2 class="section-title" id="toolHeading">${heading}</h2>${lede ? `
@@ -77,8 +80,11 @@ function buildToolSection(page, html) {
   return rest.slice(0, headEnd) + '\n      ' + markup + rest.slice(headEnd);
 }
 
-const pages = fs.readdirSync(root).filter(f => /^(resize-image-to-\d+kb|[a-z]+-photo-signature-size)\.html$/.test(f))
-  .concat(fs.readdirSync(path.join(root, 'hi')).filter(f => f.endsWith('.html')).map(f => 'hi/' + f));
+// Redirect stubs (pages merged into another one) have no tool and are skipped.
+const isStub = f => /<meta http-equiv="refresh"/.test(read(f));
+const pages = fs.readdirSync(root).filter(f => /^(resize-image-to-(\d+kb|kb-limit)|[a-z]+-photo-signature-size)\.html$/.test(f))
+  .concat(fs.readdirSync(path.join(root, 'hi')).filter(f => f.endsWith('.html')).map(f => 'hi/' + f))
+  .filter(f => !isStub(f));
 
 for (const page of pages) {
   write(page, buildToolSection(page, read(page)));

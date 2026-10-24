@@ -8,12 +8,17 @@ let checks = 0;
 const ok = (c, m) => { assert(c, m); checks++; };
 
 const list = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi')];
+const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...list('author', 'author')];
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const textOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [s])[0].replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<nav[\s\S]*?<\/nav>/g, ' ').replace(/<[^>]+>/g, ' ');
 const words = s => (textOf(s).match(/[A-Za-z0-9ऀ-ॿ][\w'ऀ-ॿ-]*/g) || []).length;
 const SITE = 'https://applyready.in';
 const utility = new Set(['404.html', 'offline.html']);
+// Redirect stubs (merged pages) carry a meta refresh and a canonical to the page that replaced them.
+const isStub = s => /<meta http-equiv="refresh"/i.test(s);
+const isNoindex = s => /<meta name="robots" content="[^"]*noindex/i.test(s);
+const stubs = new Set(pages.filter(f => isStub(read(f))));
+const indexable = new Set(pages.filter(f => !utility.has(f) && !isStub(read(f)) && !isNoindex(read(f))));
 
 // 1. Every page: language, title, description, canonical, one h1
 const titles = new Map(), descriptions = new Map();
@@ -29,7 +34,12 @@ for (const f of pages) {
     ok(!descriptions.has(desc), `${f}: duplicate description with ${descriptions.get(desc)}`); descriptions.set(desc, f);
     const canonical = (s.match(/<link rel="canonical" href="([^"]*)"/) || [])[1];
     const expected = f === 'index.html' ? SITE + '/' : f === 'guides/index.html' ? SITE + '/guides/' : `${SITE}/${f}`;
-    ok(canonical === expected, `${f}: canonical ${canonical} should be ${expected}`);
+    if (stubs.has(f)) {
+      const target = (canonical || '').replace(SITE + '/', '');
+      ok(isNoindex(s) && indexable.has(target), `${f}: a redirect stub must be noindex with a canonical to an indexable page (${canonical})`);
+      const refresh = (s.match(/<meta http-equiv="refresh" content="0;\s*url=([^"#]*)/i) || [])[1];
+      ok(refresh && path.posix.normalize(path.posix.join(path.posix.dirname(f), refresh)) === target, `${f}: meta refresh should go to its canonical page`);
+    } else ok(canonical === expected, `${f}: canonical ${canonical} should be ${expected}`);
   }
   const h1s = (s.match(/<h1[\s>]/g) || []).length;
   ok(h1s === 1, `${f}: exactly one h1 (found ${h1s})`);
@@ -62,10 +72,16 @@ const sw = read('sw.js');
 for (const f of pages) {
   if (utility.has(f)) continue;
   const url = f === 'index.html' ? SITE + '/' : f === 'guides/index.html' ? SITE + '/guides/' : `${SITE}/${f}`;
-  ok(locs.includes(url), `${f}: missing from sitemap.xml`);
-  if (f.startsWith('guides/')) ok(sw.includes(`'/${f}'`), `${f}: missing from the service worker precache`);
+  if (indexable.has(f)) ok(locs.includes(url), `${f}: missing from sitemap.xml`);
+  else ok(!locs.includes(url), `${f}: noindex or redirect pages must not be in sitemap.xml`);
+  if (f.startsWith('guides/') && !stubs.has(f)) ok(sw.includes(`'/${f}'`), `${f}: missing from the service worker precache`);
+  if (stubs.has(f)) ok(!sw.includes(`'/${f}'`), `${f}: redirect stubs should not be precached`);
 }
-for (const l of locs) ok(exists(l.replace(SITE + '/', '')) || l === SITE + '/', `sitemap lists a page that does not exist: ${l}`);
+for (const l of locs) {
+  const f = l === SITE + '/' ? 'index.html' : l.endsWith('/') ? l.replace(SITE + '/', '') + 'index.html' : l.replace(SITE + '/', '');
+  ok(exists(f), `sitemap lists a page that does not exist: ${l}`);
+  ok(indexable.has(f), `sitemap lists a page that is noindex or a redirect: ${l}`);
+}
 ok(new Set(locs).size === locs.length, 'sitemap has duplicate URLs');
 
 // 4. Ad network requirements
@@ -95,9 +111,10 @@ for (const f of pages) {
 
 // 5. Depth of content: guides and landing pages are not thin
 for (const f of pages) {
+  if (stubs.has(f)) continue;
   const n = words(read(f));
   if (f.startsWith('guides/') && f !== 'guides/index.html') ok(n >= 600, `${f}: only ${n} words`);
-  if (/^(resize-image-to-\d+kb|[a-z]+-photo-signature-size)\.html$/.test(f)) ok(n >= 600, `${f}: only ${n} words`);
+  if (/^(resize-image-to-(\d+kb|kb-limit)|[a-z]+-photo-signature-size)\.html$/.test(f)) ok(n >= 600, `${f}: only ${n} words`);
   if (f.startsWith('hi/')) ok(n >= 600, `${f}: only ${n} words`);
 }
 const guideCount = pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html').length;
@@ -117,7 +134,7 @@ for (const f of pages) {
 }
 
 // 7b. Landing pages put the tool straight after the page head, before the reference content
-for (const f of pages.filter(f => /(^|\/)(resize-image-to-\d+kb|[a-z]+-photo-signature-size)\.html$/.test(f))) {
+for (const f of pages.filter(f => /(^|\/)(resize-image-to-(\d+kb|kb-limit)|[a-z]+-photo-signature-size)\.html$/.test(f) && !stubs.has(f))) {
   const s = read(f);
   const head = s.indexOf('</header>', s.indexOf('<header class="page-head">'));
   const tool = s.indexOf('<!-- tool:start -->');
