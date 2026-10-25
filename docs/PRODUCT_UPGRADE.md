@@ -2,7 +2,7 @@
 
 ## Executive Overview
 ApplyReady (https://applyready.in) is a private, client-side document and image preparation utility. This upgrade elevates ApplyReady from a basic conversion tool into a production-grade utility interface featuring:
-1. **Calm, Utility-First Design System:** Eliminated oversized heroes, decorative marketing banners, trust banners, and all popup/modal interruptions. The site is sustained via non-intrusive online advertising with zero modal or donation interruptions.
+1. **Calm, Utility-First Design System:** Eliminated oversized heroes, decorative marketing banners, trust banners, and all popup/modal interruptions. ApplyReady is free and has no ads, modals or donation prompts.
 2. **8 Distinct ATS Resume Templates:** True applicant-tracking-system compliant templates with distinct typography, spacing, header arrangements, and precomputed SVG previews.
 3. **Structured 3-Tab Resume Editor:** Intuitive workflow segmented into Content, Design & Templates, and Review & Export, featuring bounded undo/redo (up to 30 states), dynamic entry controls (add/edit/duplicate/reorder/delete), and optional career sections.
 4. **Three Native Client-Side Export Formats:**

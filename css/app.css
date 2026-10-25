@@ -658,13 +658,6 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .faq-answer { padding: 0 0 var(--s-5); font-size: var(--fs-read); line-height: var(--lh-read); color: var(--c-text-2); max-width: var(--w-read); }
 .faq-answer > * + * { margin-top: var(--s-3); }
 
-/* Reserved ad slots stay out of the way until an ad unit is present. */
-.ad-slot-container { display: none; margin: var(--s-7) 0; }
-.ad-slot-container:has(ins) { display: block; }
-.adsbygoogle { display: block; width: 100%; }
-.ad-slot-container:has(ins) .ad-slot-inner { min-height: 90px; text-align: center; padding-top: var(--s-2); border-top: var(--bw) solid var(--c-line); }
-.ad-slot-label { display: block; margin-bottom: var(--s-1); font-size: var(--fs-xs); color: var(--c-text-3); }
-
 /* Status pages (404, offline) */
 .status-page { padding: var(--s-6) 0; }
 .status-page .actions { display: grid; gap: var(--s-2); max-width: 420px; margin: var(--s-6) 0; }
@@ -1251,7 +1244,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 
 /* ================================================================== 16. PRINT AND MOTION */
 @media print {
-  .site-header, .site-footer, .skip-link, .task-notification, .toast-region, .dialog-backdrop, .ad-slot-container, .faq-section, .rb-howto, .related-tool, .related-guides-section, .resource-section, .toolset, .sr-only, .rb-head, .rb-editor, .form-panel, .preview-toolbar, .rb-bar, .resume-mode-tabs, .preview-empty-note, .noscript-note { display: none !important; }
+  .site-header, .site-footer, .skip-link, .task-notification, .toast-region, .dialog-backdrop, .faq-section, .rb-howto, .related-tool, .related-guides-section, .resource-section, .toolset, .sr-only, .rb-head, .rb-editor, .form-panel, .preview-toolbar, .rb-bar, .resume-mode-tabs, .preview-empty-note, .noscript-note { display: none !important; }
   body { background: #fff !important; color: #000 !important; }
   .page, .page--wide { max-width: none !important; width: auto !important; margin: 0 !important; padding: 0 !important; }
   .rb, .rb-preview { display: block !important; height: auto !important; max-height: none !important; overflow: visible !important; border: 0 !important; border-radius: 0 !important; background: #fff !important; }

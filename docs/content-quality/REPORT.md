@@ -1,13 +1,13 @@
 # Content-quality remediation: report
 
-This branch responds to the AdSense "Low-value content" review. The aim was fewer, better pages: each one original, useful, maintained and trustworthy.
+This branch responds to a review that flagged the site's content as low-value. The aim was fewer, better pages: each one original, useful, maintained and trustworthy.
 This file records what changed, the prose word count of each page, the claims we could not fully verify, the TODOs for Sumit, and the issues found along the way.
 
 ## What changed
 
 - **Trust pages.**
   - New pages: `author/sumit-sengar.html` and `editorial-policy.html`. The editorial policy covers sourcing, measurements, review cadence, corrections, AI use and independence, and has a corrections log.
-  - `about.html`, `contact.html` and `privacy.html` were rewritten. Privacy now has a Cookies section and a note on the Google consent message.
+  - `about.html`, `contact.html` and `privacy.html` were rewritten. Privacy states plainly what is stored on your device.
   - The footer on every page links About, Author, Editorial policy, Contact, Privacy and Terms.
 - **Exam pages** (SSC, UPSC, IBPS, NEET, RRB). Each one now has:
   - a table of official requirements, citing the notice, its date and the section or page for every row;
@@ -58,7 +58,7 @@ This file records what changed, the prose word count of each page, the claims we
 
 ## Word count of each page
 
-Counted words of prose inside `<main>`. Excluded: navigation, breadcrumbs, the tool interface, FAQ sections, related-link cards, ad slots and diagrams. On the tool pages (compress PDF, image to PDF, passport print, signature cleaner, resume), only the prose sections are counted.
+Counted words of prose inside `<main>`. Excluded: navigation, breadcrumbs, the tool interface, FAQ sections, related-link cards and diagrams. On the tool pages (compress PDF, image to PDF, passport print, signature cleaner, resume), only the prose sections are counted.
 
 | Page | Status | Words of prose |
 |---|---|---|
@@ -159,7 +159,6 @@ These are HTML comments in the pages, so they are invisible to readers.
 - `editorial-policy.html`:
   - confirm the three-month review cadence;
   - add a sentence on how you review AI-drafted text.
-- `privacy.html`: confirm in AdSense, under Privacy & messaging, that the GDPR consent message is published.
 
 ## Issues found
 
