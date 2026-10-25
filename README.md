@@ -97,14 +97,12 @@ ApplyReady is a fast, responsive, and privacy-first web utility suite built for 
 |   |-- docx-engine.js  # Pure client-side OOXML DOCX document generator
 |   |-- keywords.js     # On-device job description keyword matching
 |   `-- resume-schema.js # Backup validation and lossless migration
-|-- scripts/            # Developer tooling: shell sync, page generators, enable-ads.js
+|-- scripts/            # Developer tooling: shell sync and page generators
 |-- favicon/            # Brand favicons, touch icons, and webmanifest
 |-- assets/             # Brand vector SVG assets
 |-- guides/             # In-depth workflow optimization guides
 |-- docs/
 |   |-- DESIGN_SYSTEM.md    # Tokens, components, rules and the tests that guard them
-|   |-- ADSENSE_READINESS.md     # What the site satisfies before an AdSense application
-|   |-- ADSENSE_AFTER_APPROVAL.md # Step by step: turn ads on after approval
 |   |-- PRODUCT_UPGRADE.md  # Architectural specification and upgrade details
 |   |-- UX_TASK_TESTS.md    # End-to-end task tests and verification records
 |   |-- UI_UX_REBUILD_PLAN.md # Why the interface was rebuilt and which contracts it preserves
@@ -147,4 +145,4 @@ node tests/run_tests.js
 ---
 
 ## Open Source & Sustainability
-ApplyReady is free, private, and open-source. All document processing runs entirely client-side in the browser. The project is supported through non-intrusive online advertising to cover hosting and domain maintenance.
+ApplyReady is free, private, and open-source. All document processing runs entirely client-side in the browser. ApplyReady is free and has no ads.

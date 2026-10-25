@@ -233,8 +233,7 @@ Notices are tinted blocks with a 3 px status rule, not cards. Severity is always
 per row (without script it scrolls sideways instead). `.callout` is a ruled aside (ink rule; `.is-warning` uses the
 warning rule). Related guides (`.guide-card-grid`, `.related-guides-grid`) are divided link rows in
 two columns, not cards. FAQ is a ruled `<details>` list. `.toolset` lists the product family after
-the home tool. Ad slots (`.ad-slot-container`) stay invisible until an ad unit exists, sit between
-content sections, never inside a workspace, and are labelled "Advertisement".
+the home tool.
 
 ### Resume builder (`.rb`)
 - App bar (`.rb-head`): title, one-line lede, privacy line, "Review and download".

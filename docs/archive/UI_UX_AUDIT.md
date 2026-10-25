@@ -313,4 +313,4 @@ Risk: low. `overflow-x: auto` on the bar, not the page.
 
 ## What must not change
 
-Algorithms, compression, crop math, presets, preset values, formats, file-size rules, resume data, PDF/Word/text generation, template output, print output, ATS behavior, storage, privacy, APIs, routes, URLs, metadata, SEO, ads.txt, AdSense placement rules.
+Algorithms, compression, crop math, presets, preset values, formats, file-size rules, resume data, PDF/Word/text generation, template output, print output, ATS behavior, storage, privacy, APIs, routes, URLs, metadata, SEO.
