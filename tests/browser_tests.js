@@ -32,7 +32,7 @@ const server = http.createServer((req,res) => {
   const browser=await chromium.launch({headless:true, ...(defaultBrowser ? {executablePath:defaultBrowser} : {}), args:['--no-sandbox','--disable-dev-shm-usage']});
   const errors=[], external=[];
   const context=await browser.newContext({viewport:{width:1440,height:1000},colorScheme:'light',acceptDownloads:true});
-  await context.route('**/*', route=>{ const url=route.request().url(); if(url.startsWith(origin) || /^(blob:|data:)/.test(url)) return route.continue(); if (url.includes('googlesyndication.com')) return route.abort(); external.push(url); return route.abort(); });
+  await context.route('**/*', route=>{ const url=route.request().url(); if(url.startsWith(origin) || /^(blob:|data:)/.test(url)) return route.continue(); external.push(url); return route.abort(); });
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   let dialogAction='dismiss'; const dialogs=[];
   page.on('dialog',d=>{dialogs.push(d.message()); return d[dialogAction]();});

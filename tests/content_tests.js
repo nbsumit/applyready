@@ -68,28 +68,24 @@ for (const f of pages) {
 for (const l of locs) ok(exists(l.replace(SITE + '/', '')) || l === SITE + '/', `sitemap lists a page that does not exist: ${l}`);
 ok(new Set(locs).size === locs.length, 'sitemap has duplicate URLs');
 
-// 4. Ad network requirements
-ok(/^google\.com, pub-\d+, DIRECT, f08c47fec0942fa0\s*$/m.test(read('ads.txt')), 'ads.txt has a valid DIRECT line');
+// 4. The site is free and ad-free: no ad network code, markup or file anywhere, and the privacy
+//    policy says so. The banned strings are assembled here so this file does not contain them itself.
+ok(!fs.existsSync(path.join(root, 'ads.txt')), 'ads.txt does not exist');
 for (const f of ['privacy.html', 'about.html', 'contact.html', 'terms.html']) ok(fs.existsSync(path.join(root, f)), `${f} exists`);
 const privacy = textOf(read('privacy.html'));
-for (const kw of ['AdSense', 'cookie', 'opt out', 'adssettings.google.com']) ok(privacy.includes(kw) || read('privacy.html').includes(kw), `privacy policy mentions ${kw}`);
+ok(/shows no advertisements/.test(privacy) && /no cookies|sets no cookies/.test(privacy) && /not use Google Analytics or any other analytics/.test(privacy), 'privacy policy says there are no ads, no cookies and no analytics');
+const banned = [['ads', 'bygoogle'], ['google', 'syndication'], ['ca-', 'pub-'], ['pub-', '2713609207324356'], ['google-ad', 'sense-account'], ['ad-', 'slot'], ['ad', 'sense'], ['double', 'click'], ['funding', 'choices']].map(p => p.join(''));
+const shipped = [...pages, 'sw.js', 'robots.txt',
+  ...fs.readdirSync(path.join(root, 'css')).filter(f => f.endsWith('.css')).map(f => 'css/' + f),
+  ...fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.js')).map(f => 'js/' + f),
+  ...fs.readdirSync(path.join(root, 'scripts')).filter(f => f.endsWith('.js')).map(f => 'scripts/' + f),
+  ...fs.readdirSync(path.join(root, 'scripts', 'lib')).map(f => 'scripts/lib/' + f)];
+for (const f of shipped) {
+  const s = read(f).toLowerCase();
+  for (const word of banned) ok(!s.includes(word), `${f}: contains "${word}"`);
+}
 for (const f of pages) {
   const s = read(f);
-  const has = s.includes('pagead2.googlesyndication.com/pagead/js/adsbygoogle.js');
-  ok(utility.has(f) ? !has : has, `${f}: AdSense loader should ${utility.has(f) ? 'not ' : ''}be present`);
-  // Ad units are placed by scripts/enable-ads.js after approval. Until then every slot is an empty placeholder;
-  // afterwards a live unit is only allowed inside a labelled slot, with a real unit id, and never in a tool.
-  const live = s.replace(/<!--[\s\S]*?-->/g, '').match(/<ins class="adsbygoogle"[^>]*>/g) || [];
-  for (const unit of live) ok(/data-ad-slot="\d{6,}"/.test(unit) && !/1234567890/.test(unit), `${f}: ad unit without a real slot id`);
-  const slots = (s.match(/<div class="ad-slot-container/g) || []).length;
-  ok(slots <= 2, `${f}: ${slots} ad slots (keep ads clearly secondary to the content)`);
-  ok(live.length <= slots, `${f}: ad unit outside a labelled slot`);
-  ok(!utility.has(f) || slots === 0, `${f}: ad slot on a page without publisher content`);
-  ok(f !== 'resume.html' || slots === 0, 'the resume builder carries no ad slots');
-  for (const m of s.matchAll(/<div class="ad-slot-container[^"]*"([^>]*)>/g)) ok(/role="complementary"/.test(m[1]) && /aria-label="Advertisement"/.test(m[1]), `${f}: ad slot is not labelled`);
-  ok(!/<section class="ws"[^>]*>(?:(?!<\/section>)[\s\S])*ad-slot-container/.test(s), `${f}: ad slot inside a tool workspace`);
-  const body = textOf(s).toLowerCase();
-  ok(!/click (on )?(the |our )?ads?\b|support us by clicking|please click/.test(body), `${f}: asks visitors to click ads`);
   if (!utility.has(f)) for (const link of ['privacy.html', 'terms.html', 'about.html', 'contact.html']) ok(s.includes(link), `${f}: footer link to ${link}`);
 }
 
@@ -163,4 +159,4 @@ for (const f of ['css/app.css', 'js/site.js', 'js/components.js', 'scripts/lib/s
   ok(!read(f).includes('—'), `${f}: no em dash in interface code`);
 }
 
-console.log(`✓ ${pages.length} pages checked: titles, descriptions, canonicals, links, sitemap, offline cache, ad requirements, depth (${checks} assertions)`);
+console.log(`✓ ${pages.length} pages checked: titles, descriptions, canonicals, links, sitemap, offline cache, ad-free, depth (${checks} assertions)`);
