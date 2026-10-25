@@ -308,7 +308,7 @@ const server = http.createServer((req,res) => {
   for (const pageTest of [
     { file: 'upsc-photo-signature-size.html', minKB: 20, maxKB: 200, name: 'UPSC exam page' },
     { file: 'resize-image-to-50kb.html', minKB: 0, maxKB: 50, name: '50 KB landing page' },
-    { file: 'hi/ssc-photo-signature-size.html', minKB: 20, maxKB: 50, name: 'Hindi SSC exam page' }
+    { file: 'hi/ssc-photo-signature-size.html', minKB: 10, maxKB: 20, name: 'Hindi SSC exam page' }
   ]) {
     await visit(pageTest.file);
     await page.locator('#fileInput').setInputFiles({ name: 'test.png', mimeType: 'image/png', buffer: Buffer.from(image, 'base64') });
@@ -326,7 +326,7 @@ const server = http.createServer((req,res) => {
     }
   }
   console.log('✓ Embedded resizer on exam page, KB page, and Hindi page resizes within preset range without errors');
-  for(const file of ['about.html','privacy.html','how-to-use.html','404.html','guides/ats-friendly-resume-guide.html','guides/image-dimensions-vs-file-size.html','guides/image-formats-guide.html','guides/compression-targets-guide.html']) {await visit(file);ok(!await overflow(),`${file} fits at 320px`);}
+  for(const file of ['about.html','privacy.html','how-to-use.html','404.html','guides/ats-friendly-resume-guide.html','guides/pixels-cm-inches-dpi-explained.html','guides/image-formats-guide.html','guides/how-to-reduce-photo-to-50kb-without-blur.html']) {await visit(file);ok(!await overflow(),`${file} fits at 320px`);}
   await visit('nested/missing-page');
   ok((await page.title()).includes('404'), 'Deep missing routes display the recovery page');
   ok(await page.locator('.site-header .brand').getAttribute('href')==='/','404 navigation resolves from nested missing routes');
@@ -341,8 +341,8 @@ const server = http.createServer((req,res) => {
     '', 'resume.html', 'about.html', 'contact.html', 'privacy.html', 'terms.html', 'how-to-use.html',
     'ssc-photo-signature-size.html', 'upsc-photo-signature-size.html', 'ibps-photo-signature-size.html',
     'neet-photo-signature-size.html', 'rrb-photo-signature-size.html',
-    'resize-image-to-10kb.html', 'resize-image-to-20kb.html', 'resize-image-to-50kb.html',
-    'resize-image-to-100kb.html', 'resize-image-to-200kb.html',
+    'resize-image-to-20kb.html', 'resize-image-to-50kb.html', 'resize-image-to-kb-limit.html',
+    'author/sumit-sengar.html', 'editorial-policy.html',
     'signature-cleaner.html', 'image-to-pdf.html', 'compress-pdf.html', 'passport-photo-print.html',
     'guides/index.html', 'guides/ats-friendly-resume-guide.html',
     'hi/ssc-photo-signature-size.html', 'hi/upsc-photo-signature-size.html', 'hi/ibps-photo-signature-size.html',

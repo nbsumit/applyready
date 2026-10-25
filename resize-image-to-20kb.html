@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Resize Image to 20 KB Online | Free Photo &amp; Signature Compressor</title>
-  <meta name="description" content="Compress image to 20 KB online for SSC, IBPS, UPSC and state exam application forms. 100% private, client-side photo and signature compressor.">
+  <meta name="description" content="Compress a signature or photo to under 20 KB with the exact pixel size your form asks for. Official 20 KB limits for SSC, IBPS and PAN, with measured results.">
   <link rel="canonical" href="https://applyready.in/resize-image-to-20kb.html">
 
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://applyready.in/resize-image-to-20kb.html">
   <meta property="og:title" content="Resize Image to 20 KB Online: Government Form Compressor">
-  <meta property="og:description" content="Quickly resize signatures and photos to under 20 KB for online recruitment portals. 100% private in-browser tool.">
+  <meta property="og:description" content="Compress a signature or photo to under 20 KB with the exact pixel size your form asks for. Official 20 KB limits for SSC, IBPS and PAN, with measured results.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -20,7 +20,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://applyready.in/resize-image-to-20kb.html">
   <meta name="twitter:title" content="Resize Image to 20 KB Online | ApplyReady">
-  <meta name="twitter:description" content="Compress signatures and photos to under 20 KB for government exams. Private, fast, free.">
+  <meta name="twitter:description" content="Compress a signature or photo to under 20 KB with the exact pixel size your form asks for. Official 20 KB limits for SSC, IBPS and PAN, with measured results.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -31,47 +31,91 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261025-1"></script>
+  <script src="js/theme.js?v=20261025-2"></script>
 
   <!-- Icons & Styles -->
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261025-1">
+  <link rel="stylesheet" href="css/app.css?v=20261025-2">
   <!-- shell:styles:end -->
 
   <!-- FAQPage Schema -->
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Why do government recruitment portals require signatures under 20 KB?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Portals like SSC, IBPS, and state PSCs process millions of applicants simultaneously. Restricting signatures to between 10 KB and 20 KB ensures fast server processing and compact admit card generation."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "How does ApplyReady ensure the output is strictly under 20 KB?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "ApplyReady employs iterative binary search compression inside your browser. It calculates the exact byte length of the encoded image and progressively adjusts the quality quantization parameter until the file is guaranteed to be under 20,480 bytes."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What dimensions work best for a 20 KB signature?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "For signatures under 20 KB, dimensions between 140 × 60 px and 400 × 200 px (roughly 4 cm × 2 cm) produce crystal-clear text without wasting data on empty space."
-        }
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Which forms ask for a file under 20 KB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Mostly signatures: SSC signatures must be 10 to 20 KB (JPEG/JPG) and IBPS signatures 10 to 20 KB at 140 × 60 px. The online PAN application with a digital signature allows a photograph of up to 20 KB. The table on this page links each official document."
       }
-    ]
-  }
+    },
+    {
+      "@type": "Question",
+      "name": "Is 20 KB the same as 20,000 bytes?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Not necessarily. With 1 KB counted as 1,024 bytes, 20 KB is 20,480 bytes. The result table shows the exact byte count; if you are unsure how a portal counts, set a slightly lower maximum such as 19 KB."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can a passport-size photo fit in 20 KB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, at small pixel sizes. Our test portrait was 17.5 KB at 350 × 450 px and 9.1 KB at 200 × 230 px. At 1000 × 1333 px it only fitted at a much lower quality, so use the pixel size your form states."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "My signature is under the minimum size. What do I do?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Enter the form's minimum, for example 10 KB, in Minimum (KB). The tool pads the JPEG with comment data to reach it without changing the picture."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why can't I get a PNG under 20 KB?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "PNG is lossless, so lowering the quality does not shrink it. Our 300 × 100 px test signature needed 37.8 KB as PNG. Choose JPEG."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is my image uploaded anywhere?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. The resizing and compression run in your browser on your device."
+      }
+    }
+  ]
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://applyready.in/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Resize an image to 20 KB",
+      "item": "https://applyready.in/resize-image-to-20kb.html"
+    }
+  ]
+}
   </script>
 </head>
 <body class="content-page">
@@ -117,7 +161,7 @@
           </li>
           <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
           <li><a class="site-nav__link" href="guides/">Guides</a></li>
-          <li class="site-nav__lang"><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+          <li class="site-nav__lang"><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi">हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
@@ -137,14 +181,13 @@
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
         <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
-          <li class="breadcrumb-item"><a href="guides/">Guides</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Resize Image to 20 KB</li>
+          <li class="breadcrumb-item active" aria-current="page">Resize an image to 20 KB</li>
         </ol>
       </nav>
 
       <header class="page-head">
         <h1 class="page-title">Resize Image to 20 KB Online: Government Form Signature Compressor</h1>
-        <p class="page-lede">The universal target for government exam signatures. Compresses files strictly under 20 KB (20,480 bytes) with crystal-clear ink lines and zero server uploads.</p>
+        <p class="page-lede">A common limit for exam signatures: SSC and IBPS both ask for 10 to 20 KB. This page compresses a file to under 20 KB (20,480 bytes) in your browser; nothing is uploaded.</p>
       </header>
       <!-- tool:start -->
       <section class="section tool-section" id="resize-tool" aria-labelledby="toolHeading">
@@ -382,83 +425,105 @@
       </section>
       <!-- tool:end -->
 
-      <!-- Why 20 KB is the Signature Benchmark -->
-      <section class="section prose">
-        <h2>The Standard Signature Limit for Indian Online Applications</h2>
-        <p>
-          Almost all major competitive examinations in India — including <strong>SSC CGL/CHSL/MTS, IBPS PO/Clerk, SBI, and State PSCs</strong> (note: Railway RRB signatures require 30–49 KB, not under 20 KB) — establish a strict maximum ceiling of <strong>20 KB</strong> for candidate signatures. Uploading a 21 KB file triggers an immediate validation failure on the submission portal.
-        </p>
-        <p>
-          With ApplyReady, your file is processed directly inside your web browser. You can rotate, crop out margins, set custom dimensions, and download a guaranteed sub-20 KB image without compromising the clarity of your handwritten signature.
-        </p>
-      </section>
-
-<!-- Guidelines for Signatures Under 20 KB -->
-      <section class="section prose">
-        <h2>How to Prepare Your Signature for 20 KB Portals</h2>
-        <ul>
-          <li><strong>Use Crisp Black or Dark Blue Ink:</strong> A dark ballpoint or gel pen on clean, bright white unlined paper ensures the best contrast.</li>
-          <li><strong>Good Lighting, No Shadows:</strong> Take the photo from directly above in natural daylight to prevent gloomy shadows that inflate JPEG file size.</li>
-          <li><strong>Crop Away Blank Margins:</strong> The tighter you crop around the signature, the higher the resolution and clarity you can retain within 20 KB.</li>
-        </ul>
-      </section>
-
-      <!-- Size budget: unique to the 20 KB page -->
-      <section class="section prose" data-unique-section="kb-20">
-        <h2>How many pixels can 20 KB afford?</h2>
-        <p>A 20 KB file is 20,480 bytes, or 163,840 bits. How far that goes depends entirely on the pixel count, which is why the same limit can feel easy for one form and impossible for another.</p>
+      <section class="section prose" aria-labelledby="kb20FormsHeading">
+        <h2 id="kb20FormsHeading">Which official forms use a 20 KB limit</h2>
+        <p>Twenty kilobytes is mostly a signature limit. These are the uploads we have checked in the official documents; the limits differ in their minimum and in whether a pixel size is given at all.</p>
         <div class="table-wrap"><table>
-<thead><tr><th>Kind of image</th><th>Dimensions</th><th>Pixels</th><th>Bits per pixel at 20 KB</th><th>For a photograph</th></tr></thead>
-<tbody>
-<tr><td>Signature</td><td>140 x 60</td><td>8,400</td><td>19.5</td><td>Comfortable</td></tr>
-<tr><td>Signature</td><td>400 x 200</td><td>80,000</td><td>2.0</td><td>Workable</td></tr>
-<tr><td>Portrait</td><td>200 x 230</td><td>46,000</td><td>3.6</td><td>Comfortable</td></tr>
-<tr><td>Portrait</td><td>300 x 300</td><td>90,000</td><td>1.8</td><td>Workable</td></tr>
-<tr><td>Portrait</td><td>350 x 450</td><td>157,500</td><td>1.0</td><td>Tight</td></tr>
-<tr><td>Thumb impression</td><td>240 x 240</td><td>57,600</td><td>2.8</td><td>Comfortable</td></tr>
-</tbody>
-</table></div>
-        <p class="text-muted">Rule of thumb for photographs: 2.5 or more bits per pixel is comfortable, 1.5 to 2.5 is workable, below 1.5 looks soft or blocky.</p>
-        <p><strong>The 350 x 450 portrait at 20 KB is the tight case.</strong> It has 157,500 pixels, so each pixel gets about one bit. Expect visible softness and blocky skin tones. If the form really requires both 350 x 450 and 20 KB, start from a sharp, evenly lit photo and a tight crop, and accept that the result will look plain.</p><p><strong>Smaller pixel sizes change the picture completely.</strong> At 200 x 230 the same 20 KB gives more than three and a half bits per pixel, which is comfortable. Many forms that cap the file at 20 KB also allow or require a small pixel size, so always read the dimension line before reaching for the quality slider.</p><p><strong>Signatures have room to spare.</strong> Even at 400 x 200 a clean black-on-white signature fits under 20 KB at good quality, so the thing to check is that the file is not smaller than any minimum the form sets.</p>
+          <thead><tr><th>Upload</th><th>Official limit</th><th>Size given</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td>SSC signature (CGL, CHSL, MTS, GD and other 2025–26 exams)</td><td>10 to 20 KB, JPEG/JPG</td><td>"about 6.0 cm (width) x 2.0 cm (height)"; no pixel size</td><td><a href="https://ssc.gov.in/api/attachment/uploads/masterData/NoticeBoards/Notice_of_adv_cgl_2026.pdf">SSC CGL 2026 notice</a>, 21 May 2026, para 9.6</td></tr>
+            <tr><td>IBPS signature (PO, Clerk, RRB, SO, 2026–27 cycle)</td><td>10 to 20 KB</td><td>140 × 60 px</td><td><a href="https://www.ibps.in/wp-content/uploads/Detailed-Notification_CRP-PO-XVI_Final_V1_30.06.2026.pdf">CRP PO/MT-XVI notification</a>, 1 July 2026, Annexure III</td></tr>
+            <tr><td>PAN photograph, online application with a digital signature</td><td>Maximum 20 KB, JPEG, colour, 200 DPI</td><td>3.5 × 2.5 cm</td><td><a href="https://tin.tin.proteantech.in/pan/form49Adsc.html">Protean guidelines for the DSC-based PAN application</a></td></tr>
+          </tbody>
+        </table></div>
+        <p>Two of these set a <strong>minimum</strong> as well as a maximum: an SSC or IBPS signature under 10 KB is rejected just like one over 20 KB. SSC gives only centimetres, and some of its notices' annexures say 4.0 × 2.0 cm instead of 6.0 × 2.0 cm; the <a href="ssc-photo-signature-size.html">SSC page</a> explains that conflict. Other exams use different limits; see <a href="upsc-photo-signature-size.html">UPSC</a> and <a href="neet-photo-signature-size.html">NEET</a>.</p>
+      </section>
+
+      <section class="section prose" aria-labelledby="kb20DataHeading">
+        <h2 id="kb20DataHeading">What fits in 20 KB: measured with this tool</h2>
+        <p>20 KB is 20,480 bytes. We ran this page's compressor, with a 20 KB maximum and JPEG output, on the two synthetic test images in our <a href="img/samples/test-portrait.jpg">sample set</a>: a 1200 × 1600 px portrait and a 1600 × 900 px phone photo of a signature. The tool always tries quality 0.95 first and only lowers it when the file is too large. Measured in Chromium 141 on 24 October 2026.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Image</th><th>Output pixels</th><th>Size at quality 0.95</th><th>Final size</th><th>Quality used</th></tr></thead>
+          <tbody>
+            <tr><td>Signature</td><td>140 × 60</td><td>3.1 KB</td><td>3.1 KB</td><td>0.95</td></tr>
+            <tr><td>Signature</td><td>300 × 100</td><td>8.0 KB</td><td>8.0 KB</td><td>0.95</td></tr>
+            <tr><td>Signature</td><td>400 × 200</td><td>14.5 KB</td><td>14.5 KB</td><td>0.95</td></tr>
+            <tr><td>Signature</td><td>600 × 200</td><td>23.9 KB</td><td>19.0 KB</td><td>0.93</td></tr>
+            <tr><td>Signature</td><td>800 × 400</td><td>55.6 KB</td><td>18.3 KB</td><td>0.82</td></tr>
+            <tr><td>Signature</td><td>1600 × 800</td><td>243.0 KB</td><td>19.9 KB</td><td>0.35</td></tr>
+            <tr><td>Portrait</td><td>200 × 230</td><td>9.1 KB</td><td>9.1 KB</td><td>0.95</td></tr>
+            <tr><td>Portrait</td><td>350 × 450</td><td>26.5 KB</td><td>17.5 KB</td><td>0.92</td></tr>
+            <tr><td>Portrait</td><td>600 × 800</td><td>94.7 KB</td><td>20.0 KB</td><td>0.76</td></tr>
+            <tr><td>Portrait</td><td>1000 × 1333</td><td>320.9 KB</td><td>19.3 KB</td><td>0.40</td></tr>
+          </tbody>
+        </table></div>
+        <p>Two things stand out. First, at the pixel sizes forms actually ask for (140 × 60, 300 × 100, 400 × 200) a signature fits under 20 KB without any loss of quality at all. Second, the same 20 KB spread over a large image forces the quality down to 0.35–0.40, where edges turn blocky. If a 20 KB file looks poor, the pixel size is almost always the reason, not the limit. Cleaning the signature first helps too: our cleaned test signature was 6.3 KB at 300 × 100 px instead of 8.0 KB.</p>
+      </section>
+
+      <section class="section prose" aria-labelledby="kb20FixHeading">
+        <h2 id="kb20FixHeading">Troubleshooting a 20 KB upload</h2>
         <ul>
-          <li>Choose the dimensions first, then the size limit. Reversing the order leads to blurry compromises.</li><li>Crop out everything except the face or the signature: borders cost bytes.</li><li>Look at the finished file at 100 percent zoom, not on the preview thumbnail.</li>
+          <li><strong>"File size should be at least 10 KB".</strong> Small signatures fall below SSC's and IBPS's minimum: our 140 × 60 px test signature was only 3.1 KB. Enter 10 in <em>Minimum (KB)</em>; the tool then pads the JPEG with harmless comment data until it reaches the minimum, without changing the image.</li>
+          <li><strong>The portal rejects a file the tool shows as 20.0 KB.</strong> Compare the exact byte count under the size with the limit. 20 KB is 20,480 bytes when a kilobyte is 1,024 bytes; if you are unsure how a portal counts, set the maximum to 19 KB to leave a margin.</li>
+          <li><strong>You chose PNG.</strong> PNG does not shrink by lowering quality: our 300 × 100 px signature needed 37.8 KB as PNG, and the tool says so instead of producing a file. Use JPEG, which both SSC and the PAN guidelines ask for anyway.</li>
+          <li><strong>The signature looks tiny or blurred after upload.</strong> The crop left too much empty paper. Crop close to the ink so it fills the frame; SSC advises a signature that fills at least 80% of its box (<a href="https://ssc.gov.in/api/attachment/uploads/masterData/NoticeBoards/instructions_photo_signature_15_08_2024.pdf">SSC advisory, 15 August 2024</a>).</li>
+          <li><strong>The photo looks blocky.</strong> A 20 KB photo only works at small pixel sizes. If the form asks for a photo under 20 KB, use the exact pixel size it states, not your camera's.</li>
         </ul>
-        <p>For the method behind this table, see <a href="guides/how-to-reduce-photo-to-50kb-without-blur.html">how to reduce a photo to 50 KB without blur</a> and <a href="guides/pixels-cm-inches-dpi-explained.html">pixels, centimetres and DPI</a>.</p>
+        <p>Need a different limit? The <a href="resize-image-to-50kb.html">50 KB page</a> covers photos, and <a href="resize-image-to-kb-limit.html">10, 100 and 200 KB limits</a> share one page. For the method behind these numbers, read <a href="guides/how-to-reduce-photo-to-50kb-without-blur.html">how to shrink a photo without blur</a>.</p>
       </section>
 
       <!-- Frequently Asked Questions -->
-      <section class="faq-section" aria-labelledby="faqHeading">
-        <div class="faq-header">
-          <h2 id="faqHeading" class="faq-title">Frequently Asked Questions: 20 KB Signature Sizing</h2>
-          <p class="faq-subtitle">Common questions regarding the 20 KB limit.</p>
-        </div>
-        <div class="faq-list">
-          <details class="faq-item">
-            <summary class="faq-question">
-              <span>What happens if my file is 20.2 KB?</span>
-              <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
-            </summary>
-            <div class="faq-answer">
-              <p>Government exam portals measure file size strictly in bytes. 20 KB equals 20,480 bytes. If your file is 20.2 KB (20,684 bytes), the portal validator rejects the file. ApplyReady tests byte size iteratively to guarantee the output is strictly below 20,480 bytes.</p>
-            </div>
-          </details>
-          <details class="faq-item">
-            <summary class="faq-question">
-              <span>Can I resize photos as well as signatures to 20 KB?</span>
-              <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
-            </summary>
-            <div class="faq-answer">
-              <p>Yes. Any image, including ID photos and stamps, can be cropped and compressed to under 20 KB using this page.</p>
-            </div>
-          </details>
-        </div>
+      <section class="faq-section">
+        <h2>Frequently asked questions: 20 KB</h2>
+
+        <details class="faq-item">
+          <summary class="faq-question">Which forms ask for a file under 20 KB?</summary>
+          <div class="faq-answer">
+            <p>Mostly signatures: SSC signatures must be 10 to 20 KB (JPEG/JPG) and IBPS signatures 10 to 20 KB at 140 × 60 px. The online PAN application with a digital signature allows a photograph of up to 20 KB. The table on this page links each official document.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">Is 20 KB the same as 20,000 bytes?</summary>
+          <div class="faq-answer">
+            <p>Not necessarily. With 1 KB counted as 1,024 bytes, 20 KB is 20,480 bytes. The result table shows the exact byte count; if you are unsure how a portal counts, set a slightly lower maximum such as 19 KB.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">Can a passport-size photo fit in 20 KB?</summary>
+          <div class="faq-answer">
+            <p>Yes, at small pixel sizes. Our test portrait was 17.5 KB at 350 × 450 px and 9.1 KB at 200 × 230 px. At 1000 × 1333 px it only fitted at a much lower quality, so use the pixel size your form states.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">My signature is under the minimum size. What do I do?</summary>
+          <div class="faq-answer">
+            <p>Enter the form's minimum, for example 10 KB, in Minimum (KB). The tool pads the JPEG with comment data to reach it without changing the picture.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">Why can't I get a PNG under 20 KB?</summary>
+          <div class="faq-answer">
+            <p>PNG is lossless, so lowering the quality does not shrink it. Our 300 × 100 px test signature needed 37.8 KB as PNG. Choose JPEG.</p>
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">Is my image uploaded anywhere?</summary>
+          <div class="faq-answer">
+            <p>No. The resizing and compression run in your browser on your device.</p>
+          </div>
+        </details>
       </section>
 
       <!-- Related Guides & Links -->
       <section class="related-guides-section" aria-labelledby="relatedHeading">
         <h2 id="relatedHeading" class="related-guides-title">Related Compression Targets &amp; Specs</h2>
         <div class="related-guides-grid">
-          <a href="resize-image-to-10kb.html" class="guide-card">
+          <a href="resize-image-to-kb-limit.html#10kb" class="guide-card">
             <strong>Resize Image to 10 KB</strong>
             <p class="text-muted">Compress micro signatures and thumb impressions.</p>
             <span class="resource-link">Open tool <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
@@ -506,11 +571,9 @@
       <div class="site-footer__col">
         <h2 class="site-footer__title">Resize to a file size</h2>
         <ul class="site-footer__list">
-          <li><a href="resize-image-to-10kb.html">10 KB</a></li>
           <li><a href="resize-image-to-20kb.html">20 KB</a></li>
           <li><a href="resize-image-to-50kb.html">50 KB</a></li>
-          <li><a href="resize-image-to-100kb.html">100 KB</a></li>
-          <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+          <li><a href="resize-image-to-kb-limit.html">10, 100 or 200 KB</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
@@ -529,9 +592,11 @@
           <li><a href="guides/">Guides</a></li>
           <li><a href="how-to-use.html">How to use</a></li>
           <li><a href="about.html">About</a></li>
+          <li><a href="author/sumit-sengar.html">Author</a></li>
+          <li><a href="editorial-policy.html">Editorial policy</a></li>
+          <li><a href="contact.html">Contact</a></li>
           <li><a href="privacy.html">Privacy</a></li>
           <li><a href="terms.html">Terms</a></li>
-          <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
     </div>
@@ -539,10 +604,10 @@
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261025-1" defer></script>
-  <script src="js/site.js?v=20261025-1"></script>
+  <script src="js/components.js?v=20261025-2" defer></script>
+  <script src="js/site.js?v=20261025-2"></script>
   <script src="js/vendor/cropper.min.js"></script>
-  <script src="js/presets.js?v=20261025-1"></script>
-  <script src="js/resizer.js?v=20261025-1"></script>
+  <script src="js/presets.js?v=20261025-2"></script>
+  <script src="js/resizer.js?v=20261025-2"></script>
 </body>
 </html>

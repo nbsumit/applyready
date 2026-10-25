@@ -5,7 +5,7 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
-const { renderWorkspace, PRESETS } = require('./lib/image-workspace');
+const { renderWorkspace, choiceFor, PRESETS } = require('./lib/image-workspace');
 
 const root = path.resolve(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
@@ -22,6 +22,15 @@ function balanced(html, from, tag) {
   }
   throw new Error(`unbalanced <${tag}>`);
 }
+
+// What each exam page offers, when it is not simply that exam's photo and signature.
+// SSC captures the photo live in its application module, so only the signature is a file.
+// No RRB notice could be opened and checked, so the RRB page offers only a custom size.
+const PAGE_CHOICES = {
+  'ssc-photo-signature-size.html': ['ssc-signature'],
+  'ibps-photo-signature-size.html': ['ibps-photo', 'ibps-signature', 'thumb', 'declaration'],
+  'rrb-photo-signature-size.html': []
+};
 
 const START = '<!-- tool:start -->';
 const END = '<!-- tool:end -->';
@@ -58,7 +67,21 @@ function buildToolSection(page, html) {
   let choices = options.map(o => o[0]).filter(v => v !== 'custom');
   const exam = choices.filter(v => /^(ssc|upsc|ibps|neet|rrb)-/.test(v));
   if (exam.length) choices = exam;
-  const workspace = renderWorkspace({ lang, preset, maxKB, options, choices, sample: false });
+  // Some exam pages offer a different set than the old markup: see PAGE_CHOICES.
+  const override = PAGE_CHOICES[page.replace(/^hi\//, '')];
+  let first = preset;
+  if (override) {
+    const labels = new Map(options);
+    choices = override;
+    options = [...override, 'custom'].map(v => [v, v === 'custom' ? (lang === 'hi' ? 'कस्टम साइज़' : 'Custom size') : (lang === 'hi' && labels.has(v) ? labels.get(v) : PRESETS[v].name)]);
+    first = override[0] || 'custom';
+  }
+  // Hindi labels are written from the presets too, so a changed limit never leaves an old figure behind.
+  if (lang === 'hi') options = options.map(([v, label]) => { const c = v !== 'custom' && choiceFor(v, 'hi'); return [v, c ? `${c.label} (${c.spec})` : label]; });
+  // The shared KB page offers several targets, so it asks which one instead of preselecting.
+  const multi = page === 'resize-image-to-kb-limit.html';
+  if (multi) choices = choices.filter(v => /^kb-/.test(v));
+  const workspace = renderWorkspace({ lang, preset: multi ? 'custom' : first, maxKB: multi ? undefined : maxKB, options, choices, sample: false, requireChoice: multi });
   const markup = `${START}
       <section class="section tool-section" id="resize-tool" aria-labelledby="toolHeading">
         <h2 class="section-title" id="toolHeading">${heading}</h2>${lede ? `
@@ -74,11 +97,15 @@ function buildToolSection(page, html) {
   const headAt = rest.indexOf('<header class="page-head">');
   if (headAt < 0) throw new Error(`${page}: no page head`);
   const headEnd = rest.indexOf('</header>', headAt) + '</header>'.length;
-  return rest.slice(0, headEnd) + '\n      ' + markup + rest.slice(headEnd);
+  // Collapse the blank lines left where the old section was, so re-running does not add more.
+  return rest.slice(0, headEnd) + '\n      ' + markup + '\n\n' + rest.slice(headEnd).replace(/^(?:[ \t]*\n)+/, '');
 }
 
-const pages = fs.readdirSync(root).filter(f => /^(resize-image-to-\d+kb|[a-z]+-photo-signature-size)\.html$/.test(f))
-  .concat(fs.readdirSync(path.join(root, 'hi')).filter(f => f.endsWith('.html')).map(f => 'hi/' + f));
+// Redirect stubs (pages merged into another one) have no tool and are skipped.
+const isStub = f => /<meta http-equiv="refresh"/.test(read(f));
+const pages = fs.readdirSync(root).filter(f => /^(resize-image-to-(\d+kb|kb-limit)|[a-z]+-photo-signature-size)\.html$/.test(f))
+  .concat(fs.readdirSync(path.join(root, 'hi')).filter(f => f.endsWith('.html')).map(f => 'hi/' + f))
+  .filter(f => !isStub(f));
 
 for (const page of pages) {
   write(page, buildToolSection(page, read(page)));

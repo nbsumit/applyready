@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Free Image Resizer & Compressor | ApplyReady.in</title>
-  <meta name="description" content="Resize, crop, and compress images to exact dimensions and strict file size targets in your browser. 100% private, client-side processing with zero server uploads.">
+  <meta name="description" content="Resize and compress a photo or signature to the exact pixel size and KB range a form asks for. Runs in your browser; your files are not uploaded.">
   <link rel="canonical" href="https://applyready.in/">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://applyready.in/">
   <meta property="og:title" content="Free Image Resizer & Compressor | ApplyReady.in">
-  <meta property="og:description" content="Resize, crop, and strictly compress images to exact dimensions and KB limits directly on your device. 100% private, client-side processing.">
+  <meta property="og:description" content="Resize a photo or signature to an exact pixel size and KB range, in your browser. Files are not uploaded.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -22,7 +22,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://applyready.in/">
   <meta name="twitter:title" content="Free Image Resizer & Compressor | ApplyReady.in">
-  <meta name="twitter:description" content="Resize, crop, and strictly compress images to exact dimensions and KB limits directly on your device. 100% private, client-side processing.">
+  <meta name="twitter:description" content="Resize a photo or signature to an exact pixel size and KB range, in your browser. Files are not uploaded.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -34,12 +34,12 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261025-1"></script>
+  <script src="js/theme.js?v=20261025-2"></script>
 
   <!-- shell:styles:start -->
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261025-1">
+  <link rel="stylesheet" href="css/app.css?v=20261025-2">
   <!-- shell:styles:end -->
 
   <!-- Structured Data: WebSite & WebApplication -->
@@ -101,7 +101,7 @@
             "name": "What are the standard photo and signature dimensions for Indian online exams?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Each exam sets its own limits. SSC and IBPS photos are often about 3.5 × 4.5 cm (around 350 × 450 or 200 × 230 pixels) at 20–50 KB, with signatures of 140 × 60 or 300 × 100 pixels at 10–20 KB. UPSC asks for a square 350 × 350 pixel photo at 20–200 KB and a triple signature at 20–100 KB, while NEET and RRB publish their own ranges. Check the exam's page before you resize."
+              "text": "There is no common standard; each exam sets its own. IBPS asks for a 200 × 230 px photo of 20–50 KB and a 140 × 60 px signature of 10–20 KB. UPSC asks for a photo of 20–200 KB with no set pixel size and a triple signature of 20–100 KB. NEET (UG) 2026 asks for a photo of 10–200 KB and a signature of 10–100 KB. SSC captures the photo live and asks for a 10–20 KB signature. Each exam page quotes the official notice."
             }
           },
           {
@@ -109,7 +109,7 @@
             "name": "Can I imprint my name and date of photo (DOP) on passport pictures?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Open Advanced options under the crop workspace and check 'Add name & date of photo'. You can type your name and the date you took the picture, and ApplyReady will cleanly format a compliant white annotation strip at the bottom of the photo without distorting image proportions."
+              "text": "Yes, if your form asks for one. Open Size, file limit and format, then Background and name strip, and turn on Add a name and date strip. The strip is added below the photo inside the output size. The current UPSC, NEET (UG), SSC and IBPS instructions do not ask for a name or date, so add it only when a notice says so."
             }
           },
           {
@@ -177,7 +177,7 @@
           </li>
           <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
           <li><a class="site-nav__link" href="guides/">Guides</a></li>
-          <li class="site-nav__lang"><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi" hreflang="hi">हिन्दी</a></li>
+          <li class="site-nav__lang"><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi">हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
@@ -450,6 +450,26 @@
     </section>
     <!-- tool:end -->
 
+    <section class="section prose home-explainer" aria-labelledby="homeExplainerHeading">
+      <h2 id="homeExplainerHeading">Who this resizer is for, and how to read its result</h2>
+      <p>ApplyReady is for anyone filling in an Indian online application that rejects a photo or signature straight from the phone: exam candidates, job applicants, students applying for admission, and the people who help them. A form usually states three things: a pixel size, a file-size range in KB and a file type. The resizer asks which requirement you are meeting, crops to that shape, then compresses until the file fits.</p>
+
+      <h3>Reading "Your file compared with the requirement"</h3>
+      <p>After processing, the result shows the requirement and your file side by side. <strong>File size</strong> gives the size in KB and the exact byte count, because portals count bytes and 1 KB is 1,024 bytes. <strong>Dimensions</strong> are read back from the finished file, not from the settings, so the number is what the portal will see. <strong>Format</strong> confirms the file type. Download only when every row has a tick; if a row is missing, change the setting it names and run it again.</p>
+
+      <figure class="shot">
+        <img src="img/guides/resizer-result-table.webp" width="1198" height="378" alt="An ApplyReady result for a 350 by 450 pixel photo under a 50 KB limit: the Download button, a preview, and a table comparing the required file size, dimensions and format with the produced file." loading="lazy">
+        <figcaption>The result for the worked example below: 26.47 KB (27,109 bytes) against a 50 KB limit, 350 × 450 px read back from the file.</figcaption>
+      </figure>
+
+      <h3>A worked example</h3>
+      <p>We ran the resizer on the synthetic test portrait in our <a href="img/samples/test-portrait.jpg">sample images</a>: 1200 × 1600 px and 428.9 KB, about the size of a phone photo. With <em>ID / passport photo</em> chosen (350 × 450 px, under 50 KB), the output was 26.47 KB at JPEG quality 0.95, the highest setting the resizer uses, so nothing was lost to compression. With the limit lowered to 20 KB, the same photo came out at 17.5 KB at quality 0.92. The same face at 1000 × 1333 px only fitted under 20 KB at quality 0.40, which is when blocky edges appear. That is why the pixel size the form asks for matters more than any quality slider. Results from your own photos will differ with the detail in the picture and the browser you use.</p>
+
+      <h3>Where to go next</h3>
+      <p>Each exam sets its own limits: see the pages for <a href="ssc-photo-signature-size.html">SSC</a>, <a href="upsc-photo-signature-size.html">UPSC</a>, <a href="ibps-photo-signature-size.html">IBPS</a>, <a href="rrb-photo-signature-size.html">RRB</a> and <a href="neet-photo-signature-size.html">NEET</a>, each linked to the official notice. If a portal still refuses the file, <a href="guides/fix-common-photo-upload-errors.html">match its error message to the fix</a>; to keep a photo sharp under a tight limit, read <a href="guides/how-to-reduce-photo-to-50kb-without-blur.html">how to shrink a photo without blur</a>; and if the form gives the size in centimetres, start with <a href="guides/pixels-cm-inches-dpi-explained.html">pixels, centimetres and DPI</a>.</p>
+        <p>New to the tools? The <a href="how-to-use.html">how to use</a> page walks through each one, and the <a href="guides/">guides</a> answer the questions that come up along the way.</p>
+    </section>
+
 <!-- Practical Resizing Guide Card -->
     <section class="resource-section" aria-labelledby="guideHeading">
       <h3 id="guideHeading">
@@ -458,22 +478,22 @@
       <div class="guide-card-grid">
         <a href="guides/ats-friendly-resume-guide.html" class="guide-card">
           <strong>What makes a resume ATS-friendly?</strong>
-          <p class="text-muted">Single-column layouts, clean section headings, and vector text PDF exports.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+          <p class="text-muted">What decides whether software can read every word of your resume.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
         </a>
-        <a href="guides/image-dimensions-vs-file-size.html" class="guide-card">
-          <strong>Pixels or kilobytes?</strong>
-          <p class="text-muted">Understand which setting to change when a form rejects your image.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+        <a href="guides/pixels-cm-inches-dpi-explained.html" class="guide-card">
+          <strong>Pixels, cm, DPI or KB?</strong>
+          <p class="text-muted">Which number the form is asking for, with examples from real notices.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
         </a>
-        <a href="guides/compression-targets-guide.html" class="guide-card">
-          <strong>Meet a strict file limit</strong>
-          <p class="text-muted">Prepare a 20 KB, 50 KB or 100 KB file while keeping it readable.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+        <a href="guides/fix-common-photo-upload-errors.html" class="guide-card">
+          <strong>Fix an upload error</strong>
+          <p class="text-muted">What each portal message means, and the rejection reasons exams publish.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a href="guides/image-formats-guide.html" class="guide-card">
           <strong>Choose the right format</strong>
           <p class="text-muted">Compare JPEG, PNG and WebP for photos, signatures and documents.</p><span class="resource-link">Read the guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a href="guides/how-to-reduce-photo-to-50kb-without-blur.html" class="guide-card">
-            <strong>How to Reduce a Photo to 50 KB Without Making It Blurry</strong>
+            <strong>Get under a KB limit without blur</strong>
             <p class="text-muted">Crop first, fix the pixel size second, compress last, and only once. The order matters more than any setting.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
@@ -537,7 +557,7 @@
             <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
           </summary>
           <div class="faq-answer">
-            <p>Each exam sets its own limits. <a href="ssc-photo-signature-size.html">SSC</a> and <a href="ibps-photo-signature-size.html">IBPS</a> photos are often about 3.5 × 4.5 cm (around 350 × 450 or 200 × 230 pixels) at 20–50 KB, with signatures of 140 × 60 or 300 × 100 pixels at 10–20 KB. <a href="upsc-photo-signature-size.html">UPSC</a> asks for a square 350 × 350 pixel photo at 20–200 KB and a triple signature at 20–100 KB, while <a href="neet-photo-signature-size.html">NEET</a> and <a href="rrb-photo-signature-size.html">RRB</a> publish their own ranges. Check the exam's page before you resize.</p>
+            <p>There is no common standard; each exam sets its own. <a href="ibps-photo-signature-size.html">IBPS</a> asks for a 200 × 230 px photo of 20–50 KB and a 140 × 60 px signature of 10–20 KB. <a href="upsc-photo-signature-size.html">UPSC</a> asks for a photo of 20–200 KB with no set pixel size and a triple signature of 20–100 KB. <a href="neet-photo-signature-size.html">NEET (UG) 2026</a> asks for a photo of 10–200 KB and a signature of 10–100 KB. <a href="ssc-photo-signature-size.html">SSC</a> captures the photo live and asks for a 10–20 KB signature, and <a href="rrb-photo-signature-size.html">RRB</a> sets its rules in each recruitment notice. Each exam page quotes the official notice.</p>
           </div>
         </details>
         <details class="faq-item">
@@ -546,7 +566,7 @@
             <i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i>
           </summary>
           <div class="faq-answer">
-            <p>Yes. Open Advanced options under the crop workspace and check "Add name &amp; date of photo". You can type your name and the date you took the picture, and ApplyReady will cleanly format a compliant white annotation strip at the bottom of the photo without distorting image proportions.</p>
+            <p>Yes, if your form asks for one. Open <em>Size, file limit and format</em>, then <em>Background and name strip</em>, and turn on <em>Add a name and date strip</em>. The strip is added below the photo inside the output size. The current UPSC, NEET (UG), SSC and IBPS instructions do not ask for a name or date, so add it only when a notice says so.</p>
           </div>
         </details>
         <details class="faq-item">
@@ -594,11 +614,9 @@
       <div class="site-footer__col">
         <h2 class="site-footer__title">Resize to a file size</h2>
         <ul class="site-footer__list">
-          <li><a href="resize-image-to-10kb.html">10 KB</a></li>
           <li><a href="resize-image-to-20kb.html">20 KB</a></li>
           <li><a href="resize-image-to-50kb.html">50 KB</a></li>
-          <li><a href="resize-image-to-100kb.html">100 KB</a></li>
-          <li><a href="resize-image-to-200kb.html">200 KB</a></li>
+          <li><a href="resize-image-to-kb-limit.html">10, 100 or 200 KB</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
@@ -617,9 +635,11 @@
           <li><a href="guides/">Guides</a></li>
           <li><a href="how-to-use.html">How to use</a></li>
           <li><a href="about.html">About</a></li>
+          <li><a href="author/sumit-sengar.html">Author</a></li>
+          <li><a href="editorial-policy.html">Editorial policy</a></li>
+          <li><a href="contact.html">Contact</a></li>
           <li><a href="privacy.html">Privacy</a></li>
           <li><a href="terms.html">Terms</a></li>
-          <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
     </div>
@@ -627,10 +647,10 @@
   </footer>
   <!-- shell:footer:end -->
 
-    <script src="js/components.js?v=20261025-1" defer></script>
-  <script defer src="js/site.js?v=20261025-1"></script>
-  <script defer src="js/presets.js?v=20261025-1"></script>
+    <script src="js/components.js?v=20261025-2" defer></script>
+  <script defer src="js/site.js?v=20261025-2"></script>
+  <script defer src="js/presets.js?v=20261025-2"></script>
   <script defer src="js/vendor/cropper.min.js"></script>
-  <script defer src="js/resizer.js?v=20261025-1"></script>
+  <script defer src="js/resizer.js?v=20261025-2"></script>
 </body>
 </html>

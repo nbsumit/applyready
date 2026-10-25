@@ -5,7 +5,7 @@
  * NOTE: Bump CACHE_NAME on every deploy to ensure clients receive updated assets.
  */
 
-const CACHE_NAME = 'applyready-v19';
+const CACHE_NAME = 'applyready-v20';
 
 const STATIC_ASSETS = [
   '/',
@@ -21,11 +21,8 @@ const STATIC_ASSETS = [
   '/guides/',
   '/guides/index.html',
   '/guides/ats-friendly-resume-guide.html',
-  '/guides/compression-targets-guide.html',
-  '/guides/image-dimensions-vs-file-size.html',
   '/guides/image-formats-guide.html',
   '/guides/aadhaar-pan-passport-photo-specifications.html',
-  '/guides/why-was-my-photo-rejected-online-applications.html',
   '/guides/fresher-resume-examples-by-role.html',
   '/guides/resume-summary-examples-indian-freshers.html',
   '/guides/cv-vs-resume-india-job-applications.html',
@@ -55,11 +52,11 @@ const STATIC_ASSETS = [
   '/ibps-photo-signature-size.html',
   '/neet-photo-signature-size.html',
   '/rrb-photo-signature-size.html',
-  '/resize-image-to-10kb.html',
   '/resize-image-to-20kb.html',
   '/resize-image-to-50kb.html',
-  '/resize-image-to-100kb.html',
-  '/resize-image-to-200kb.html',
+  '/resize-image-to-kb-limit.html',
+  '/author/sumit-sengar.html',
+  '/editorial-policy.html',
   '/signature-cleaner.html',
   '/image-to-pdf.html',
   '/compress-pdf.html',

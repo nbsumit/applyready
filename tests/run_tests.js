@@ -406,8 +406,8 @@ const htmlFiles = [
   'privacy.html',
   'how-to-use.html',
   '404.html',
-  'guides/image-dimensions-vs-file-size.html',
-  'guides/compression-targets-guide.html',
+  'guides/pixels-cm-inches-dpi-explained.html',
+  'guides/how-to-reduce-photo-to-50kb-without-blur.html',
   'guides/image-formats-guide.html',
   'guides/ats-friendly-resume-guide.html'
 ];
