@@ -5,7 +5,7 @@
  * NOTE: Bump CACHE_NAME on every deploy to ensure clients receive updated assets.
  */
 
-const CACHE_NAME = 'applyready-v20';
+const CACHE_NAME = 'applyready-v21';
 
 const STATIC_ASSETS = [
   '/',
@@ -55,7 +55,6 @@ const STATIC_ASSETS = [
   '/resize-image-to-20kb.html',
   '/resize-image-to-50kb.html',
   '/resize-image-to-kb-limit.html',
-  '/author/sumit-sengar.html',
   '/editorial-policy.html',
   '/signature-cleaner.html',
   '/image-to-pdf.html',

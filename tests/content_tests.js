@@ -8,7 +8,7 @@ let checks = 0;
 const ok = (c, m) => { assert(c, m); checks++; };
 
 const list = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...list('author', 'author')];
+const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi')];
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const textOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [s])[0].replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<nav[\s\S]*?<\/nav>/g, ' ').replace(/<[^>]+>/g, ' ');
 const words = s => (textOf(s).match(/[A-Za-z0-9ऀ-ॿ][\w'ऀ-ॿ-]*/g) || []).length;
@@ -116,16 +116,20 @@ for (const f of pages) {
 const guides = pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html' && indexable.has(f));
 ok(guides.length >= 20, `at least 20 indexable guides (found ${guides.length})`);
 
-// 6. Guides: a visible byline linking the author page, dates that match the structured data,
+// 5b. The author page was removed; nothing may still link to it.
+ok(!fs.existsSync(path.join(root, 'author')), 'the author directory does not exist');
+for (const f of pages) ok(!read(f).includes('author/sumit-sengar'), `${f}: no link to the removed author page`);
+
+// 6. Guides: a visible byline linking the about page, dates that match the structured data,
 //    an original visual, a Sources section with an outside link, and links to a tool and other guides.
 const ldDate = (s, key) => ((s.match(new RegExp(`"${key}": "(\\d{4}-\\d{2}-\\d{2})`)) || [])[1]);
 const bodyOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [''])[0].replace(/<section class="related-guides-section"[\s\S]*?<\/section>/, '');
 for (const f of guides) {
   const s = read(f);
-  ok(s.includes('"@type": "Article"') && /"author": \{[^}]*"@id": "https:\/\/applyready\.in\/author\/sumit-sengar\.html#person"/.test(s), `${f}: Article structured data with the author's Person id`);
+  ok(s.includes('"@type": "Article"') && /"author": \{[^}]*"@id": "https:\/\/applyready\.in\/about\.html#person"/.test(s), `${f}: Article structured data with the author's Person id`);
   ok(s.includes('"BreadcrumbList"') && s.includes('class="breadcrumb-nav"'), `${f}: breadcrumbs, visible and structured`);
   const meta = (s.match(/<p class="guide-meta">([\s\S]*?)<\/p>/) || [])[1] || '';
-  ok(/By <a href="\.\.\/author\/sumit-sengar\.html" rel="author">Sumit Sengar<\/a>/.test(meta), `${f}: visible byline links the author page`);
+  ok(/By <a href="\.\.\/about\.html" rel="author">Sumit Sengar<\/a>/.test(meta), `${f}: visible byline links the about page`);
   const times = [...meta.matchAll(/<time datetime="(\d{4}-\d{2}-\d{2})">/g)].map(m => m[1]);
   ok(times.length === 2 && times[0] === ldDate(s, 'datePublished') && times[1] === ldDate(s, 'dateModified'), `${f}: Published and Last updated dates match datePublished and dateModified (${times} vs ${ldDate(s, 'datePublished')}, ${ldDate(s, 'dateModified')})`);
   ok(times[0] <= times[1], `${f}: last updated is not before published`);

@@ -23,7 +23,7 @@ const check = process.argv.includes('--check');
 
 const list = (dir, base = '') => fs.existsSync(path.join(root, dir))
   ? fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f)) : [];
-const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...list('author', 'author')];
+const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi')];
 
 const isIndexable = html => !/<meta name="robots" content="[^"]*noindex/i.test(html) && !/<meta http-equiv="refresh"/i.test(html);
 const urlFor = f => f === 'index.html' ? SITE + '/' : f.endsWith('/index.html') ? `${SITE}/${f.slice(0, -'index.html'.length)}` : `${SITE}/${f}`;
@@ -55,9 +55,9 @@ function lastContentChange(f) {
 
 const old = fs.existsSync(path.join(root, 'sitemap.xml')) ? fs.readFileSync(path.join(root, 'sitemap.xml'), 'utf8') : '';
 const kept = new Map([...old.matchAll(/<url>\s*<loc>([^<]+)<\/loc>[\s\S]*?<changefreq>([^<]+)<\/changefreq>\s*<priority>([^<]+)<\/priority>\s*<\/url>/g)].map(m => [m[1], [m[2], m[3]]]));
-const defaults = f => f === 'index.html' ? ['weekly', '1.0'] : f.startsWith('guides/') ? ['monthly', '0.7'] : f.startsWith('author/') || /(about|contact|editorial-policy|privacy|terms)\.html$/.test(f) ? ['yearly', '0.5'] : ['monthly', '0.8'];
+const defaults = f => f === 'index.html' ? ['weekly', '1.0'] : f.startsWith('guides/') ? ['monthly', '0.7'] : /(about|contact|editorial-policy|privacy|terms)\.html$/.test(f) ? ['yearly', '0.5'] : ['monthly', '0.8'];
 
-const order = f => f === 'index.html' ? 0 : f.startsWith('guides/') ? 3 : f.startsWith('author/') ? 4 : /(about|contact|editorial-policy|privacy|terms|how-to-use)\.html$/.test(f) ? 5 : 1;
+const order = f => f === 'index.html' ? 0 : f.startsWith('guides/') ? 3 : /(about|contact|editorial-policy|privacy|terms|how-to-use)\.html$/.test(f) ? 5 : 1;
 const entries = pages
   .filter(f => !UTILITY.has(f) && isIndexable(fs.readFileSync(path.join(root, f), 'utf8')))
   .sort((a, b) => order(a) - order(b) || a.localeCompare(b))

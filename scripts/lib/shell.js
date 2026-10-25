@@ -26,7 +26,7 @@ const FOOTER_COLUMNS = [
   { title: 'Tools', links: [['Image resizer', ''], ['Signature cleaner', 'signature-cleaner.html'], ['Passport photo print', 'passport-photo-print.html'], ['Image to PDF', 'image-to-pdf.html'], ['Compress PDF', 'compress-pdf.html'], ['Resume builder', 'resume.html']] },
   { title: 'Resize to a file size', links: SIZES.map(([label, p]) => [label, p]) },
   { title: 'Exam requirements', links: EXAMS.map(([label, p]) => [label, p]) },
-  { title: 'ApplyReady', links: [['Guides', 'guides/'], ['How to use', 'how-to-use.html'], ['About', 'about.html'], ['Author', 'author/sumit-sengar.html'], ['Editorial policy', 'editorial-policy.html'], ['Contact', 'contact.html'], ['Privacy', 'privacy.html'], ['Terms', 'terms.html']] }
+  { title: 'ApplyReady', links: [['Guides', 'guides/'], ['How to use', 'how-to-use.html'], ['About', 'about.html'], ['Editorial policy', 'editorial-policy.html'], ['Contact', 'contact.html'], ['Privacy', 'privacy.html'], ['Terms', 'terms.html']] }
 ];
 
 const TAGLINE = {

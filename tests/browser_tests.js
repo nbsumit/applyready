@@ -342,7 +342,7 @@ const server = http.createServer((req,res) => {
     'ssc-photo-signature-size.html', 'upsc-photo-signature-size.html', 'ibps-photo-signature-size.html',
     'neet-photo-signature-size.html', 'rrb-photo-signature-size.html',
     'resize-image-to-20kb.html', 'resize-image-to-50kb.html', 'resize-image-to-kb-limit.html',
-    'author/sumit-sengar.html', 'editorial-policy.html',
+    'editorial-policy.html',
     'signature-cleaner.html', 'image-to-pdf.html', 'compress-pdf.html', 'passport-photo-print.html',
     'guides/index.html', 'guides/ats-friendly-resume-guide.html',
     'hi/ssc-photo-signature-size.html', 'hi/upsc-photo-signature-size.html', 'hi/ibps-photo-signature-size.html',

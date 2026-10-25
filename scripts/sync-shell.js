@@ -10,7 +10,7 @@ const { ASSET_VERSION, headerHTML, footerHTML, stylesheetLinks } = require('./li
 const root = path.resolve(__dirname, '..');
 const check = process.argv.includes('--check');
 const list = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...list('author', 'author')];
+const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi')];
 
 const block = (name, body) => `  <!-- shell:${name}:start -->\n${body}\n  <!-- shell:${name}:end -->`;
 const markers = name => new RegExp(`[ \\t]*<!-- shell:${name}:start -->[\\s\\S]*?<!-- shell:${name}:end -->`);

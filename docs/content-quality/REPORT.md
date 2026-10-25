@@ -6,9 +6,9 @@ This file records what changed, the prose word count of each page, the claims we
 ## What changed
 
 - **Trust pages.**
-  - New pages: `author/sumit-sengar.html` and `editorial-policy.html`. The editorial policy covers sourcing, measurements, review cadence, corrections, AI use and independence, and has a corrections log.
+  - New page: `editorial-policy.html`. (An author page was added too, then removed on 25 October 2026: the site is not applying for AdSense, so guide bylines now link the about page.) The editorial policy covers sourcing, measurements, review cadence, corrections, AI use and independence, and has a corrections log.
   - `about.html`, `contact.html` and `privacy.html` were rewritten. Privacy states plainly what is stored on your device.
-  - The footer on every page links About, Author, Editorial policy, Contact, Privacy and Terms.
+  - The footer on every page links About, Editorial policy, Contact, Privacy and Terms.
 - **Exam pages** (SSC, UPSC, IBPS, NEET, RRB). Each one now has:
   - a table of official requirements, citing the notice, its date and the section or page for every row;
   - the documented upload steps and portal quirks;
@@ -40,7 +40,7 @@ This file records what changed, the prose word count of each page, the claims we
   - The ATS, length, skills and tailoring guides, so each answers one question.
 - **Guides: campus placement.** The campus placement overview is `noindex,follow`.
 - **Guides: every remaining one** (21 indexable) now has:
-  - a byline linking the author page, plus Published and Last updated dates that match its JSON-LD;
+  - a byline linking the about page, plus Published and Last updated dates that match its JSON-LD;
   - an original screenshot or SVG diagram;
   - a Sources section;
   - a Report an error link;
@@ -64,7 +64,6 @@ Counted words of prose inside `<main>`. Excluded: navigation, breadcrumbs, the t
 |---|---|---|
 | 404.html | noindex | 34 |
 | about.html | indexable | 855 |
-| author/sumit-sengar.html | indexable | 480 |
 | compress-pdf.html | indexable | 465 |
 | contact.html | indexable | 384 |
 | editorial-policy.html | indexable | 1173 |
@@ -151,14 +150,9 @@ Counted words of prose inside `<main>`. Excluded: navigation, breadcrumbs, the t
 
 These are HTML comments in the pages, so they are invisible to readers.
 
-- `author/sumit-sengar.html`:
-  - a 160 × 160 profile photo (`img/author/sumit-sengar.jpg`);
-  - two or three sentences of background, plus LinkedIn, GitHub and X links, also added to `sameAs` in the Person JSON-LD;
-  - your own experience that led to the site, if you want to share it.
-- `contact.html`: the reply time you can commit to.
-- `editorial-policy.html`:
-  - confirm the three-month review cadence;
-  - add a sentence on how you review AI-drafted text.
+- `editorial-policy.html`: add a sentence on how you review AI-drafted text.
+
+Done on 25 October 2026: the author page was removed, the contact page gives a reply time of 3 to 4 business days, and the three-month review cadence was confirmed.
 
 ## Issues found
 
