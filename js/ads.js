@@ -1,6 +1,7 @@
-/* Loads the AdSense script only on pages that have slots, and only after the page
-   has loaded: on the first interaction, or later from requestIdleCallback.
-   Slots without a real unit stay hidden in CSS. An unfilled unit collapses. */
+/* The AdSense loader runs only when a slot already contains a real unit
+   (ins.adsbygoogle with data-ad-slot). Until then the script is not added,
+   so it cannot inject a page-level unit or move the layout.
+   Slots with no unit are hidden in CSS and collapsed here as well. */
 (function () {
   var CLIENT = 'ca-pub-2713609207324356';
   var preview = /(?:\?|&)adpreview=1(?:&|$)/.test(location.search);
@@ -19,17 +20,6 @@
     script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + CLIENT;
     document.head.appendChild(script);
   }
-
-  function schedule() {
-    var start = function () { inject(); };
-    ['pointerdown', 'keydown', 'scroll'].forEach(function (type) {
-      window.addEventListener(type, start, { once: true, passive: true });
-    });
-    var ric = window.requestIdleCallback || function (fn) { setTimeout(fn, 12000); };
-    ric(function () { setTimeout(start, 12000); }, { timeout: 15000 });
-  }
-  if (document.readyState === 'complete') schedule();
-  else window.addEventListener('load', schedule);
 
   function collapse(slot) {
     slot.classList.add('is-collapsed');
@@ -64,7 +54,8 @@
   function flush() {
     for (var i = 0; i < slots.length; i++) {
       var slot = slots[i];
-      if (!slot.querySelector('ins.adsbygoogle[data-ad-slot]')) continue;
+      var ins = slot.querySelector('ins.adsbygoogle');
+      if (!ins || !ins.getAttribute('data-ad-slot')) { collapse(slot); continue; }
       if (slot.getAttribute('data-ad-armed') === '1') continue;
       if (slot.getAttribute('data-ad-seen') !== '1') return;
       arm(slot);
@@ -85,4 +76,5 @@
     });
   }, { rootMargin: '400px 0px' });
   slots.forEach(function (slot) { io.observe(slot); });
+  flush();
 })();

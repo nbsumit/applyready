@@ -3,7 +3,7 @@
    checks that no page has drifted, so all pages look and behave like one product. */
 'use strict';
 
-const ASSET_VERSION = '20261104-3';
+const ASSET_VERSION = '20261104-4';
 const ADS_CLIENT = 'ca-pub-2713609207324356';
 const ADS_SRC = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + ADS_CLIENT;
 
@@ -151,7 +151,7 @@ function stylesheetLinks(page, { cropper, document: doc }) {
   const up = prefixFor(page);
   const v = `?v=${ASSET_VERSION}`;
   return [
-    `  <link rel="preload" href="${up}assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>`,
+    `  <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>`,
     `  <link rel="stylesheet" href="${up}css/vendor/icons.min.css">`,
     cropper ? `  <link rel="stylesheet" href="${up}css/vendor/cropper.min.css">` : null,
     `  <link rel="stylesheet" href="${up}css/app.css${v}">`,

@@ -13,6 +13,7 @@
 
 /* ================================================================== 0. TOKENS */
 @font-face { font-family: Inter; font-style: normal; font-weight: 100 900; font-display: optional; src: url('../assets/fonts/inter-latin.woff2') format('woff2'); }
+@font-face { font-family: 'Inter Fallback'; src: local('Arial'); size-adjust: 107.64%; ascent-override: 90.49%; descent-override: 22.56%; line-gap-override: 0%; }
 @font-face { font-family: 'ApplyReady Devanagari'; font-style: normal; font-weight: 100 900; font-display: optional; src: url('../assets/fonts/noto-devanagari.woff2') format('woff2'); unicode-range: U+0900-097F,U+1CD0-1CFF,U+200C-200D,U+20A8-20B9,U+A830-A839,U+A8E0-A8FF,U+11B00-11B09; }
 
 :root {
@@ -49,7 +50,7 @@
   --c-danger: #b3261e;   --c-danger-soft: #fcecea;   --c-danger-line: #efb4ae;
 
   /* Type: ten roles */
-  --font: Inter, 'ApplyReady Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font: Inter, 'Inter Fallback', 'ApplyReady Devanagari', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --fs-xs: 12px;    /* metadata, captions */
   --fs-sm: 13px;    /* helper text, footnotes */
@@ -615,6 +616,8 @@ html.ad-preview .ad-slot-inner {
   text-align: center;
 }
 .ad-slot-container.is-collapsed { display: none !important; min-height: 0 !important; margin: 0 !important; }
+.ad-slot-container:not(:has(ins.adsbygoogle)) { display: none !important; min-height: 0 !important; margin: 0 !important; }
+html.ad-preview .ad-slot-container { display: block !important; margin: var(--s-7) 0 !important; min-height: 280px !important; }
 .ad-slot-label { display: block; margin-bottom: var(--s-2); font-size: var(--fs-xs); font-weight: var(--fw-medium); letter-spacing: .04em; text-transform: uppercase; color: var(--c-text-3); }
 .ad-slot-container .adsbygoogle { display: block; width: 100%; min-height: 90px; }
 .tool-jump { margin-top: var(--s-5); }

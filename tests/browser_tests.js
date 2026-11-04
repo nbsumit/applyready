@@ -415,6 +415,15 @@ const server = http.createServer((req,res) => {
   }
   console.log('✓ Nav, theme, Tools menu, and single-file drop checked on all pages');
 
+  // Without a real unit the slot is invisible and the ad script is not requested.
+  await page.goto(`${origin}/index.html`);
+  const hidden = await page.evaluate(() => {
+    const slot = document.querySelector('.ad-slot-container');
+    const cs = getComputedStyle(slot);
+    return { display: cs.display, h: slot.getBoundingClientRect().height, script: !!document.querySelector('script[src*="adsbygoogle.js"]') };
+  });
+  ok(hidden.display === 'none' && hidden.h === 0 && !hidden.script, `empty slots stay out of the layout (${JSON.stringify(hidden)})`);
+
   // Ad slots stay below the tool and below the first screen. ?adpreview=1 shows the reserved box.
   for (const [file, width, height] of [['index.html', 390, 844], ['index.html', 1280, 800], ['signature-cleaner.html', 390, 844], ['guides/fix-common-photo-upload-errors.html', 1280, 800]]) {
     await page.setViewportSize({ width, height });

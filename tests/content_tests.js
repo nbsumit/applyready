@@ -117,7 +117,9 @@ ok(flatCss.includes('min-height:250px'), 'a live ad slot reserves 250px');
 ok(flatCss.includes('.ad-slot-container.is-collapsed{display:none'), 'unfilled slots collapse');
 ok(/#resize-tool\{min-height:540px/.test(flatCss) && /#resize-tool\{min-height:640px/.test(flatCss), 'the exam resizer reserves its settled height');
 ok(!/\.ad-slot[\w-]*\{[^}]*position:\s*(?:sticky|fixed)/.test(css), 'ad slots are not sticky or fixed');
-ok(read('js/ads.js').includes('IntersectionObserver') && read('js/ads.js').includes('requestIdleCallback') && read('js/ads.js').includes('adsbygoogle.js'), 'the loader is injected after idle, and only from js/ads.js');
+ok(flatCss.includes('.ad-slot-container:not(:has(ins.adsbygoogle)){display:none!important'), 'a slot with no ins is fully hidden');
+ok(read('js/ads.js').includes('adsbygoogle.js') && !read('js/ads.js').includes('requestIdleCallback'), 'the loader is not scheduled until a real ad unit exists');
+ok(/href="\/assets\/fonts\/inter-latin\.woff2" as="font"/.test(read('index.html')) && /href="\/assets\/fonts\/inter-latin\.woff2" as="font"/.test(read('guides/index.html')) && /href="\/assets\/fonts\/inter-latin\.woff2" as="font"/.test(read('404.html')), 'Inter is preloaded from the site root');
 {
   const { PRESETS } = require('../js/resizer.js');
   const sig = PRESETS['upsc-signature'];
