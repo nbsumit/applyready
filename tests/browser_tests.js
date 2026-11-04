@@ -450,6 +450,36 @@ const server = http.createServer((req,res) => {
   ok(dark.shown === 'block' && dark.bg !== 'rgb(241, 241, 238)', `dark theme slot is visible and not the light surface (${dark.bg}, ${dark.color})`);
   console.log('✓ Ad slots sit below the tool and the fold, in light and dark');
 
+  // The hosts AdSense uses once a unit is on, including a safeframe, a country TLD and an inline script.
+  const probePages = ['index.html', 'upsc-photo-signature-size.html', 'guides/how-to-reduce-photo-to-50kb-without-blur.html', 'resume.html', 'signature-cleaner.html', 'image-to-pdf.html', 'compress-pdf.html', 'passport-photo-print.html', 'privacy.html', '404.html'];
+  for (const file of probePages) {
+    await page.goto(`${origin}/${file}`);
+    const blocked = await page.evaluate(() => new Promise(resolve => {
+      const hits = [];
+      document.addEventListener('securitypolicyviolation', e => hits.push(e.violatedDirective + ' ' + e.blockedURI));
+      const frame = document.createElement('iframe');
+      frame.src = 'https://abc123.safeframe.googlesyndication.com/safeframe';
+      frame.hidden = true;
+      document.body.appendChild(frame);
+      const script = document.createElement('script');
+      script.src = 'https://adservice.google.co.in/adsid/integrator.js';
+      document.head.appendChild(script);
+      const pub = document.createElement('script');
+      pub.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
+      document.head.appendChild(pub);
+      const inline = document.createElement('script');
+      inline.textContent = 'window.__cspInline = 1';
+      document.head.appendChild(inline);
+      const img = new Image();
+      img.src = 'https://s0.2mdn.net/favicon.ico';
+      const fontImg = new Image();
+      fontImg.src = 'https://fonts.gstatic.com/s/a';
+      setTimeout(() => resolve(hits), 400);
+    }));
+    ok(blocked.length === 0, `${file}: CSP blocked ${blocked.join('; ') || 'nothing'}`);
+  }
+  console.log('✓ CSP allows the AdSense hosts used by a live unit');
+
   console.log(`\n${checks} browser assertions passed. Screenshots and real downloads: ${output}`);
   await browser.close();await new Promise(resolve=>server.close(resolve));
 })().catch(error=>{console.error(error);server.close();process.exit(1);});

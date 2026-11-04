@@ -98,6 +98,7 @@
       height: 400,
       minKB: 20,
       maxKB: 100,
+      padToKB: 30,
       defaultPrefix: 'UPSC_Signature'
     },
     'ibps-photo': {
