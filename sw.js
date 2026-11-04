@@ -5,7 +5,7 @@
  * NOTE: Bump CACHE_NAME on every deploy to ensure clients receive updated assets.
  */
 
-const CACHE_NAME = 'applyready-v24';
+const CACHE_NAME = 'applyready-v25';
 
 const STATIC_ASSETS = [
   '/',
