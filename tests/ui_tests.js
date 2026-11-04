@@ -13,8 +13,8 @@ const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', 
 let checks = 0;
 const ok = (condition, message) => { assert(condition, message); checks++; };
 
-const walk = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const pages = [...walk('.'), ...walk('guides', 'guides'), ...walk('hi', 'hi')].filter(f => f !== 'offline.html' && !/<meta http-equiv="refresh"/i.test(fs.readFileSync(path.join(root, f), 'utf8')));
+const walk = (dir, base = '') => fs.existsSync(path.join(root, dir)) ? fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f)) : [];
+const pages = [...walk('.'), ...walk('guides', 'guides'), ...walk('hi', 'hi'), ...walk('author', 'author')].filter(f => f !== 'offline.html' && !/<meta http-equiv="refresh"/i.test(fs.readFileSync(path.join(root, f), 'utf8')));
 
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
@@ -34,7 +34,9 @@ const server = http.createServer((req, res) => {
   const open = async (width, height, touch = false) => {
     const context = await browser.newContext({ viewport: { width, height }, colorScheme: 'light', ...(touch ? { hasTouch: true, isMobile: engine === chromium } : {}) });
     await context.route('**/*', route => { const u = route.request().url(); return /^(http:\/\/127\.|blob:|data:)/.test(u) ? route.continue() : route.abort(); });
-    return { context, page: await context.newPage() };
+    const page = await context.newPage();
+    page.on('console', msg => { if (/Content Security Policy/.test(msg.text())) throw new Error(msg.text()); });
+    return { context, page };
   };
   // The resizer asks for the requirement first; its list folds into a summary once one is chosen.
   const choose = async (page, key) => {

@@ -5,7 +5,7 @@
  * NOTE: Bump CACHE_NAME on every deploy to ensure clients receive updated assets.
  */
 
-const CACHE_NAME = 'applyready-v21';
+const CACHE_NAME = 'applyready-v23';
 
 const STATIC_ASSETS = [
   '/',
@@ -56,6 +56,9 @@ const STATIC_ASSETS = [
   '/resize-image-to-50kb.html',
   '/resize-image-to-kb-limit.html',
   '/editorial-policy.html',
+  '/author/sumit-sengar.html',
+  '/js/ads.js',
+  '/js/contact.js',
   '/signature-cleaner.html',
   '/image-to-pdf.html',
   '/compress-pdf.html',
@@ -90,7 +93,22 @@ const STATIC_ASSETS = [
   '/favicon/android-chrome-192x192.png',
   '/favicon/android-chrome-512x512.png',
   '/favicon/apple-touch-icon.png',
-  '/favicon/site.webmanifest'
+  '/favicon/site.webmanifest',
+  '/css/webfonts/fa-brands-400.woff2',
+  '/img/guides/compress-pdf.webp',
+  '/img/guides/image-to-pdf.webp',
+  '/img/guides/passport-sheet.webp',
+  '/img/guides/resizer-crop.webp',
+  '/img/guides/resizer-requirement.webp',
+  '/img/guides/resizer-result-table.webp',
+  '/img/guides/resizer-settings.webp',
+  '/img/guides/resizer-units-cm.webp',
+  '/img/guides/resume-download.webp',
+  '/img/guides/resume-job-match.webp',
+  '/img/guides/resume-review.webp',
+  '/img/guides/resume-skills.webp',
+  '/img/guides/resume-templates.webp',
+  '/img/guides/signature-cleaner.webp'
 ];
 
 self.addEventListener('install', event => {
@@ -98,9 +116,6 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
-      .catch(err => {
-        console.error('[SW] Precache failed:', err);
-      })
   );
 });
 
@@ -154,7 +169,7 @@ self.addEventListener('fetch', event => {
           return networkResponse;
         }).catch(() => null);
 
-        return cachedResponse || fetchPromise;
+        return cachedResponse || fetchPromise.then(response => response || Response.error());
       })
     );
   }

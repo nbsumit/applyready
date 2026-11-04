@@ -8,7 +8,8 @@ let checks = 0;
 const ok = (c, m) => { assert(c, m); checks++; };
 
 const list = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi')];
+const listDir = (dir, base = '') => fs.existsSync(path.join(root, dir)) ? fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f)) : [];
+const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...listDir('author', 'author')];
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const textOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [s])[0].replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<nav[\s\S]*?<\/nav>/g, ' ').replace(/<[^>]+>/g, ' ');
 const words = s => (textOf(s).match(/[A-Za-z0-9ऀ-ॿ][\w'ऀ-ॿ-]*/g) || []).length;
@@ -84,25 +85,55 @@ for (const l of locs) {
 }
 ok(new Set(locs).size === locs.length, 'sitemap has duplicate URLs');
 
-// 4. The site is free and ad-free: no ad network code, markup or file anywhere, and the privacy
-//    policy says so. The banned strings are assembled here so this file does not contain them itself.
-ok(!fs.existsSync(path.join(root, 'ads.txt')), 'ads.txt does not exist');
+// 4. AdSense account tag, loader, ads.txt, robots and the privacy disclosure.
+const ADS_LINE = 'google.com, pub-2713609207324356, DIRECT, f08c47fec0942fa0';
+ok(fs.readFileSync(path.join(root, 'ads.txt'), 'utf8').trim() === ADS_LINE, 'ads.txt is the AdSense record');
+const robots = read('robots.txt');
+ok(/User-agent:\s*Mediapartners-Google\s+Allow:\s*\//.test(robots), 'robots.txt allows Mediapartners-Google');
+const CLIENT = 'ca-pub-2713609207324356';
+const LOADER = `adsbygoogle.js?client=${CLIENT}`;
+for (const f of pages) {
+  const s = read(f);
+  if (utility.has(f)) {
+    ok(!s.includes('google-adsense-account') && !s.includes(LOADER) && !s.includes('ad-slot-container'), `${f}: no AdSense tag, loader or slot`);
+  } else {
+    ok(s.includes(`<meta name="google-adsense-account" content="${CLIENT}">`), `${f}: AdSense account meta tag`);
+    ok(s.includes(`<script async src="https://pagead2.googlesyndication.com/pagead/js/${LOADER}" crossorigin="anonymous"></script>`), `${f}: async AdSense loader`);
+  }
+}
 for (const f of ['privacy.html', 'about.html', 'contact.html', 'terms.html']) ok(fs.existsSync(path.join(root, f)), `${f} exists`);
-const privacy = textOf(read('privacy.html'));
-ok(/shows no advertisements/.test(privacy) && /no cookies|sets no cookies/.test(privacy) && /not use Google Analytics or any other analytics/.test(privacy), 'privacy policy says there are no ads, no cookies and no analytics');
-const banned = [['ads', 'bygoogle'], ['google', 'syndication'], ['ca-', 'pub-'], ['pub-', '2713609207324356'], ['google-ad', 'sense-account'], ['ad-', 'slot'], ['ad', 'sense'], ['double', 'click'], ['funding', 'choices']].map(p => p.join(''));
-const shipped = [...pages, 'sw.js', 'robots.txt',
-  ...fs.readdirSync(path.join(root, 'css')).filter(f => f.endsWith('.css')).map(f => 'css/' + f),
-  ...fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.js')).map(f => 'js/' + f),
-  ...fs.readdirSync(path.join(root, 'scripts')).filter(f => f.endsWith('.js')).map(f => 'scripts/' + f),
-  ...fs.readdirSync(path.join(root, 'scripts', 'lib')).map(f => 'scripts/lib/' + f)];
-for (const f of shipped) {
-  const s = read(f).toLowerCase();
-  for (const word of banned) ok(!s.includes(word), `${f}: contains "${word}"`);
+const privacyHtml = read('privacy.html');
+const privacy = textOf(privacyHtml);
+ok(/<h2 id="cookies">/.test(privacyHtml), 'privacy policy has a cookies heading');
+ok(/Google AdSense/.test(privacy) && /personalised ads/.test(privacy) && /DoubleClick/.test(privacy), 'privacy policy covers AdSense cookies and personalised ads');
+ok(/European Economic Area/.test(privacy) && /United Kingdom/.test(privacy) && /consent/.test(privacy), 'privacy policy covers the EEA and UK consent message');
+ok(/local storage/i.test(privacy) && /[Ss]ervice [Ww]orker/.test(privacy), 'privacy policy still covers local storage and the service worker');
+ok(/not use Google Analytics/.test(privacy), 'privacy policy still says there is no analytics');
+ok(!/enable_page_level_ads/.test(read('js/ads.js') + read('scripts/enable-ads.js')), 'auto ads are not enabled in code');
+const css = read('css/app.css');
+const flatCss = css.replace(/\s+/g, '');
+ok(flatCss.includes('.ad-slot-inner{box-sizing:border-box;min-height:250px') && flatCss.includes('.ad-slot-container{display:block'), 'ad slots reserve 250px from first paint');
+ok(flatCss.includes('.ad-slot-container.is-collapsed{display:none'), 'unfilled slots collapse');
+ok(/#resize-tool\{min-height:540px/.test(flatCss) && /#resize-tool\{min-height:640px/.test(flatCss), 'the exam resizer reserves its settled height');
+ok(!/\.ad-slot[\w-]*\{[^}]*position:\s*(?:sticky|fixed)/.test(css), 'ad slots are not sticky or fixed');
+ok(read('js/ads.js').includes('IntersectionObserver'), 'below-fold slots are requested lazily');
+const swText = read('sw.js');
+ok(!/applyready-v21/.test(swText) && swText.includes("'/js/ads.js'") && swText.includes("'/author/sumit-sengar.html'"), 'service worker cache lists ads.js and the author page');
+ok(!swText.includes("Precache failed"), 'a failed precache rejects install');
+ok(swText.includes('Response.error()'), 'an uncached offline asset gets an error response');
+ok(swText.includes("'/css/webfonts/fa-brands-400.woff2'") && swText.includes("'/img/guides/signature-cleaner.webp'"), 'guide images and fa-brands are precached');
+for (const asset of [...swText.matchAll(/'\/[^']+'/g)].map(m => m[0].slice(2, -1))) {
+  const rel = asset.endsWith('/') ? asset + 'index.html' : asset;
+  ok(fs.existsSync(path.join(root, rel)), `precache entry exists: /${asset}`);
 }
 for (const f of pages) {
   const s = read(f);
-  if (!utility.has(f)) for (const link of ['privacy.html', 'terms.html', 'about.html', 'contact.html']) ok(s.includes(link), `${f}: footer link to ${link}`);
+  if (!utility.has(f)) for (const link of ['privacy.html', 'terms.html', 'about.html', 'author/sumit-sengar.html', 'editorial-policy.html', 'contact.html']) ok(s.includes(link), `${f}: footer link to ${link}`);
+  ok(/http-equiv="Content-Security-Policy"[^>]*pagead2\.googlesyndication\.com/.test(s) && s.includes('fundingchoicesmessages.google.com') && s.includes('ep1.adtrafficquality.google') && s.includes('ep2.adtrafficquality.google'), `${f}: CSP allows the AdSense hosts`);
+  if (/photo-signature-size\.html$/.test(f) && !isStub(s)) {
+    const select = (s.match(/<select id="presetSelect"[\s\S]*?<\/select>/) || [''])[0];
+    ok(select && !/value="(?:passport|signature|avatar|document|web-banner)"/.test(select), `${f}: generic presets are not in the exam list`);
+  }
 }
 
 // 5. Depth of content: guides and landing pages are not thin
@@ -116,9 +147,9 @@ for (const f of pages) {
 const guides = pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html' && indexable.has(f));
 ok(guides.length >= 20, `at least 20 indexable guides (found ${guides.length})`);
 
-// 5b. The author page was removed; nothing may still link to it.
-ok(!fs.existsSync(path.join(root, 'author')), 'the author directory does not exist');
-for (const f of pages) ok(!read(f).includes('author/sumit-sengar'), `${f}: no link to the removed author page`);
+// 5b. The author page is indexable and is the byline target.
+ok(fs.existsSync(path.join(root, 'author/sumit-sengar.html')), 'author page exists');
+ok(indexable.has('author/sumit-sengar.html'), 'author page is indexable');
 
 // 6. Guides: a visible byline linking the about page, dates that match the structured data,
 //    an original visual, a Sources section with an outside link, and links to a tool and other guides.
@@ -126,10 +157,10 @@ const ldDate = (s, key) => ((s.match(new RegExp(`"${key}": "(\\d{4}-\\d{2}-\\d{2
 const bodyOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [''])[0].replace(/<section class="related-guides-section"[\s\S]*?<\/section>/, '');
 for (const f of guides) {
   const s = read(f);
-  ok(s.includes('"@type": "Article"') && /"author": \{[^}]*"@id": "https:\/\/applyready\.in\/about\.html#person"/.test(s), `${f}: Article structured data with the author's Person id`);
+  ok(s.includes('"@type": "Article"') && /"author": \{[^}]*"@id": "https:\/\/applyready\.in\/author\/sumit-sengar\.html#person"/.test(s), `${f}: Article structured data with the author's Person id`);
   ok(s.includes('"BreadcrumbList"') && s.includes('class="breadcrumb-nav"'), `${f}: breadcrumbs, visible and structured`);
   const meta = (s.match(/<p class="guide-meta">([\s\S]*?)<\/p>/) || [])[1] || '';
-  ok(/By <a href="\.\.\/about\.html" rel="author">Sumit Sengar<\/a>/.test(meta), `${f}: visible byline links the about page`);
+  ok(/By <a href="\.\.\/author\/sumit-sengar\.html" rel="author">Sumit Sengar<\/a>/.test(meta), `${f}: visible byline links the author page`);
   const times = [...meta.matchAll(/<time datetime="(\d{4}-\d{2}-\d{2})">/g)].map(m => m[1]);
   ok(times.length === 2 && times[0] === ldDate(s, 'datePublished') && times[1] === ldDate(s, 'dateModified'), `${f}: Published and Last updated dates match datePublished and dateModified (${times} vs ${ldDate(s, 'datePublished')}, ${ldDate(s, 'dateModified')})`);
   ok(times[0] <= times[1], `${f}: last updated is not before published`);
@@ -224,4 +255,45 @@ for (const f of ['css/app.css', 'js/site.js', 'js/components.js', 'scripts/lib/s
   ok(!read(f).includes('—'), `${f}: no em dash in interface code`);
 }
 
-console.log(`✓ ${pages.length} pages checked: titles, descriptions, canonicals, links, sitemap, offline cache, ad-free, depth (${checks} assertions)`);
+// 9. Ad slots: at most three, labelled, never in the tool, a form, or the resume editor.
+const NO_SLOTS = new Set(['404.html', 'offline.html', 'privacy.html', 'terms.html', 'contact.html']);
+const plain = s => s.replace(/<script[\s\S]*?<\/script>|<!--[\s\S]*?-->/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+for (const f of pages) {
+  const s = read(f);
+  const slots = [...s.matchAll(/<aside class="ad-slot-container" data-ad-position="(below-tool|mid-article|before-faq|before-footer)" role="complementary" aria-label="Advertisement">[\s\S]*?<span class="ad-slot-label">Advertisement<\/span>/g)];
+  const blocked = NO_SLOTS.has(f) || isStub(s) || isNoindex(s);
+  if (blocked) ok(slots.length === 0 && !s.includes('js/ads.js'), `${f}: no ad slots`);
+  else ok(slots.length >= 1 && slots.length <= 3, `${f}: ${slots.length} ad slots (expected 1 to 3)`);
+  if (s.includes('<!-- tool:start -->')) {
+    const tool = s.slice(s.indexOf('<!-- tool:start -->'), s.indexOf('<!-- tool:end -->'));
+    ok(!tool.includes('ad-slot'), `${f}: no ad inside the tool`);
+    if (!blocked) {
+      const after = s.indexOf('<!-- tool:end -->');
+      const firstSlot = s.indexOf('ad-slot-container', after);
+      const prose = s.indexOf('class="section prose', after);
+      ok(firstSlot > prose && prose > after, `${f}: the first ad follows the tool's prose, not its buttons`);
+    }
+  }
+  ok(!/<form\b[^>]*>[\s\S]*?ad-slot-container[\s\S]*?<\/form>/.test(s), `${f}: no ad inside a form`);
+  const actionAt = s.indexOf('class="ws-action"');
+  if (actionAt >= 0) {
+    const actionEnd = s.indexOf('</div>', actionAt);
+    ok(actionEnd > actionAt && !s.slice(actionAt, actionEnd).includes('ad-slot'), `${f}: no ad in the action row`);
+  }
+  if (f === 'resume.html') {
+    ok(slots.length === 1 && slots[0][1] === 'before-faq', 'resume: one slot, before the FAQ');
+    ok(s.indexOf('ad-slot-container') > s.indexOf('rb-howto') && s.indexOf('ad-slot-container') > s.indexOf('btnMobileDownload'), 'resume: the slot is after the editor and its download bar');
+  }
+  if (f.startsWith('guides/') && indexable.has(f) && f !== 'guides/index.html') {
+    ok(slots.some(m => m[1] === 'mid-article'), `${f}: mid-article slot`);
+    const main = (s.match(/<main[\s\S]*?<\/main>/) || [''])[0];
+    const at = main.indexOf('data-ad-position="mid-article"');
+    const cut = main.indexOf('related-guides-section');
+    const region = main.slice(0, cut > 0 ? cut : main.length);
+    const ratio = plain(region.slice(0, at)).length / plain(region).length;
+    ok(ratio >= 0.25 && ratio <= 0.85, `${f}: mid-article slot is at ${ratio.toFixed(2)} of the article`);
+  }
+  if (!blocked && slots.length) ok(s.includes('js/ads.js'), `${f}: loads js/ads.js`);
+}
+
+console.log(`✓ ${pages.length} pages checked: titles, descriptions, canonicals, links, sitemap, offline cache, ads, depth (${checks} assertions)`);
