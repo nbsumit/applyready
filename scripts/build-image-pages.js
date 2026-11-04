@@ -75,6 +75,11 @@ function buildToolSection(page, html) {
     choices = override;
     options = [...override, 'custom'].map(v => [v, v === 'custom' ? (lang === 'hi' ? 'कस्टम साइज़' : 'Custom size') : (lang === 'hi' && labels.has(v) ? labels.get(v) : PRESETS[v].name)]);
     first = override[0] || 'custom';
+  } else if (exam.length) {
+    // Generic passport/signature presets would ignore this exam's limits. The list is this exam, plus custom.
+    const labels = new Map(options);
+    const customLabel = lang === 'hi' ? 'कस्टम साइज़' : 'Custom size';
+    options = [...choices, 'custom'].map(v => [v, v === 'custom' ? customLabel : (labels.get(v) || (PRESETS[v] && PRESETS[v].name) || v)]);
   }
   // Hindi labels are written from the presets too, so a changed limit never leaves an old figure behind.
   if (lang === 'hi') options = options.map(([v, label]) => { const c = v !== 'custom' && choiceFor(v, 'hi'); return [v, c ? `${c.label} (${c.spec})` : label]; });

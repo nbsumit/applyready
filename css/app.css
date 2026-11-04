@@ -599,6 +599,21 @@ table { border-collapse: collapse; width: 100%; font-size: var(--fs-md); line-he
 .dg-sw-1-5 { stroke-width: 1.5; }
 .dg-sw-2 { stroke-width: 2; }
 /* guide-diagrams:end */
+/* Manual ad slots. The box is reserved from first paint so a filled unit does not move the page.
+   js/ads.js removes it only after Google reports the unit unfilled. */
+.ad-slot-container { display: block; margin: var(--s-7) 0; min-height: 280px; }
+.ad-slot-inner {
+  box-sizing: border-box;
+  min-height: 250px;
+  padding: var(--s-3);
+  border: var(--bw) solid var(--c-line);
+  border-radius: var(--r-md);
+  background: var(--c-surface-2);
+  text-align: center;
+}
+.ad-slot-container.is-collapsed { display: none !important; min-height: 0 !important; margin: 0 !important; }
+.ad-slot-label { display: block; margin-bottom: var(--s-2); font-size: var(--fs-xs); font-weight: var(--fw-medium); letter-spacing: .04em; text-transform: uppercase; color: var(--c-text-3); }
+.ad-slot-container .adsbygoogle { display: block; width: 100%; min-height: 90px; }
 .tool-jump { margin-top: var(--s-5); }
 .tool-jump a { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--h-md); padding: 0 var(--s-4); border-radius: var(--r-sm); background: var(--c-accent); color: var(--c-on-accent); font-weight: var(--fw-medium); }
 .tool-jump a:hover { background: var(--c-accent-hover); text-decoration: none; }
@@ -624,6 +639,10 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 
 /* Tool section on landing pages: the tool sits right under the page head */
 .page-head + .tool-section { margin-top: 0; }
+/* Settled height of the exam resizer (mobile ~629px, wider ~530px). Stops the section
+   shrinking after fonts and the requirement line paint, which was the UPSC layout shift. */
+#resize-tool { min-height: 540px; }
+@media (max-width: 639px) { #resize-tool { min-height: 640px; } }
 .tool-section > .section-title { font-size: var(--fs-xl); letter-spacing: -.01em; margin-bottom: var(--s-2); }
 .tool-section > .section-lede { font-size: var(--fs-md); margin: 0 0 var(--s-4); }
 .tool-section > .section-title + .ws { margin-top: var(--s-3); }
@@ -782,11 +801,11 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .ws-action { grid-area: action; position: sticky; bottom: 0; z-index: 2; display: grid; gap: var(--s-2); align-content: start; padding: var(--s-4) var(--s-5); border-top: var(--bw) solid var(--c-line); background: var(--c-surface); border-bottom-right-radius: var(--r-md); }
 .ws[data-state='empty'] #btnProcess, .ws[data-state='empty'] #btnStartCompress { display: none; }
 .ws[data-state='done'] .ws-action { display: none; }
-.process-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-1); font-size: var(--fs-label); color: var(--c-text-3); line-height: 1.5; }
+.process-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--s-1); min-height: 1.5em; font-size: var(--fs-label); color: var(--c-text-3); line-height: 1.5; }
 .process-summary.is-invalid { color: var(--c-danger); font-weight: var(--fw-medium); }
 .process-summary.is-pending { color: var(--c-text); font-weight: var(--fw-medium); }
 .process-summary button { color: var(--c-accent); text-decoration: underline; text-underline-offset: .2em; font-size: inherit; padding: 0 var(--s-1); }
-.process-summary:empty { display: none; }
+.process-summary:empty { visibility: hidden; }
 #processErrorBox { margin: 0; }
 
 /* Linear workspace (image resizer) */
@@ -806,7 +825,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .req-grid--d3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .req-grid--d4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .ws--linear .ws-head { border-bottom: var(--bw) solid var(--c-line); }
-.ws--linear .ws-stage { padding: var(--s-5); }
+.ws--linear .ws-stage { padding: var(--s-5); min-height: 360px; }
 .ws--linear .dropzone { min-height: 240px; }
 .ws--linear .ws-empty > .ws-step { margin-bottom: var(--s-1); }
 .ws-settings { grid-area: settings; padding: 0 var(--s-5); border-top: var(--bw) solid var(--c-line); }
@@ -1244,7 +1263,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 
 /* ================================================================== 16. PRINT AND MOTION */
 @media print {
-  .site-header, .site-footer, .skip-link, .task-notification, .toast-region, .dialog-backdrop, .faq-section, .rb-howto, .related-tool, .related-guides-section, .resource-section, .toolset, .sr-only, .rb-head, .rb-editor, .form-panel, .preview-toolbar, .rb-bar, .resume-mode-tabs, .preview-empty-note, .noscript-note { display: none !important; }
+  .site-header, .site-footer, .skip-link, .task-notification, .toast-region, .dialog-backdrop, .ad-slot-container, .faq-section, .rb-howto, .related-tool, .related-guides-section, .resource-section, .toolset, .sr-only, .rb-head, .rb-editor, .form-panel, .preview-toolbar, .rb-bar, .resume-mode-tabs, .preview-empty-note, .noscript-note { display: none !important; }
   body { background: #fff !important; color: #000 !important; }
   .page, .page--wide { max-width: none !important; width: auto !important; margin: 0 !important; padding: 0 !important; }
   .rb, .rb-preview { display: block !important; height: auto !important; max-height: none !important; overflow: visible !important; border: 0 !important; border-radius: 0 !important; background: #fff !important; }

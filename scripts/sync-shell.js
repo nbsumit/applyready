@@ -5,12 +5,12 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
-const { ASSET_VERSION, headerHTML, footerHTML, stylesheetLinks } = require('./lib/shell');
+const { ASSET_VERSION, headerHTML, footerHTML, stylesheetLinks, adsHead, cspMeta } = require('./lib/shell');
 
 const root = path.resolve(__dirname, '..');
 const check = process.argv.includes('--check');
-const list = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi')];
+const list = (dir, base = '') => fs.existsSync(path.join(root, dir)) ? fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f)) : [];
+const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...list('author', 'author')];
 
 const block = (name, body) => `  <!-- shell:${name}:start -->\n${body}\n  <!-- shell:${name}:end -->`;
 const markers = name => new RegExp(`[ \\t]*<!-- shell:${name}:start -->[\\s\\S]*?<!-- shell:${name}:end -->`);
@@ -52,7 +52,18 @@ function sync(page, html) {
     html = html.slice(0, fs_) + footer + html.slice(fe);
   }
 
-  // 4. Asset versions on local scripts (root-relative pages must not use relative script paths)
+  // 4. Content-Security-Policy, then the AdSense account tag. 404 and offline get the policy only.
+  const csp = block('csp', cspMeta());
+  if (markers('csp').test(html)) html = html.replace(markers('csp'), csp);
+  else html = html.replace(/[ \t]*<\/head>/, csp + '\n</head>');
+
+  // 5. AdSense account tag and async loader. Omitted on 404 and offline.
+  const ads = adsHead(page);
+  const adsBlock = ads ? block('ads', ads) : '';
+  if (markers('ads').test(html)) html = html.replace(markers('ads'), adsBlock);
+  else if (adsBlock) html = html.replace(/[ \t]*<\/head>/, adsBlock + '\n</head>');
+
+  // 6. Asset versions on local scripts (root-relative pages must not use relative script paths)
   if (page === '404.html' || page === 'offline.html') html = html.replace(/src="js\//g, 'src="/js/');
   html = html.replace(/(src="(?:\.\.\/|\/)?js\/(?!vendor\/)[^"?]+\.js)(?:\?v=[^"]*)?"/g, `$1?v=${ASSET_VERSION}"`);
   return html;

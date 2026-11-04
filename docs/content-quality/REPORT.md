@@ -6,7 +6,7 @@ This file records what changed, the prose word count of each page, the claims we
 ## What changed
 
 - **Trust pages.**
-  - New page: `editorial-policy.html`. (An author page was added too, then removed on 25 October 2026: the site is not applying for AdSense, so guide bylines now link the about page.) The editorial policy covers sourcing, measurements, review cadence, corrections, AI use and independence, and has a corrections log.
+  - New page: `editorial-policy.html`. The author page `author/sumit-sengar.html` was removed on 25 October 2026 and restored on 4 November 2026 for the AdSense application. Guide bylines link it. The editorial policy covers sourcing, measurements, review cadence, corrections, AI use and independence, and has a corrections log.
   - `about.html`, `contact.html` and `privacy.html` were rewritten. Privacy states plainly what is stored on your device.
   - The footer on every page links About, Editorial policy, Contact, Privacy and Terms.
 - **Exam pages** (SSC, UPSC, IBPS, NEET, RRB). Each one now has:

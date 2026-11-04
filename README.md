@@ -145,4 +145,4 @@ node tests/run_tests.js
 ---
 
 ## Open Source & Sustainability
-ApplyReady is free, private, and open-source. All document processing runs entirely client-side in the browser. ApplyReady is free and has no ads.
+ApplyReady is free, private, and open-source. All document processing runs entirely client-side in the browser. A few pages may show a labelled Google AdSense unit; files are still not uploaded.

@@ -3,7 +3,9 @@
    checks that no page has drifted, so all pages look and behave like one product. */
 'use strict';
 
-const ASSET_VERSION = '20261025-2';
+const ASSET_VERSION = '20261104-2';
+const ADS_CLIENT = 'ca-pub-2713609207324356';
+const ADS_SRC = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + ADS_CLIENT;
 
 // The product map. The header menu, the mobile sheet and the footer all read from here,
 // so every page presents the same five areas: image tools, PDF tools, resume, exam requirements, guides.
@@ -26,7 +28,7 @@ const FOOTER_COLUMNS = [
   { title: 'Tools', links: [['Image resizer', ''], ['Signature cleaner', 'signature-cleaner.html'], ['Passport photo print', 'passport-photo-print.html'], ['Image to PDF', 'image-to-pdf.html'], ['Compress PDF', 'compress-pdf.html'], ['Resume builder', 'resume.html']] },
   { title: 'Resize to a file size', links: SIZES.map(([label, p]) => [label, p]) },
   { title: 'Exam requirements', links: EXAMS.map(([label, p]) => [label, p]) },
-  { title: 'ApplyReady', links: [['Guides', 'guides/'], ['How to use', 'how-to-use.html'], ['About', 'about.html'], ['Editorial policy', 'editorial-policy.html'], ['Contact', 'contact.html'], ['Privacy', 'privacy.html'], ['Terms', 'terms.html']] }
+  { title: 'ApplyReady', links: [['Guides', 'guides/'], ['How to use', 'how-to-use.html'], ['About', 'about.html'], ['Author', 'author/sumit-sengar.html'], ['Editorial policy', 'editorial-policy.html'], ['Contact', 'contact.html'], ['Privacy', 'privacy.html'], ['Terms', 'terms.html']] }
 ];
 
 const TAGLINE = {
@@ -120,6 +122,43 @@ ${cols}
   </footer>`;
 }
 
+// GitHub Pages cannot set response headers, so the policy is a meta tag.
+// AdSense needs these hosts for the loader, the unit, the consent message and its frames.
+function cspMeta() {
+  const ads = [
+    'https://pagead2.googlesyndication.com',
+    'https://googleads.g.doubleclick.net',
+    'https://tpc.googlesyndication.com',
+    'https://adservice.google.com',
+    'https://fundingchoicesmessages.google.com',
+    'https://ep1.adtrafficquality.google',
+    'https://ep2.adtrafficquality.google',
+    'https://www.google.com',
+    'https://www.gstatic.com',
+    'https://www.googletagservices.com'
+  ].join(' ');
+  const policy = [
+    "default-src 'self'",
+    "script-src 'self' " + ads,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: " + ads,
+    "font-src 'self' data:",
+    "connect-src 'self' blob: data: " + ads,
+    "frame-src " + ads,
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'"
+  ].join('; ');
+  return `  <meta http-equiv="Content-Security-Policy" content="${policy}">`;
+}
+
+// 404 and the offline fallback are not content pages, so they do not carry the AdSense tag.
+function adsHead(page) {
+  if (page === '404.html' || page === 'offline.html') return '';
+  return `  <meta name="google-adsense-account" content="${ADS_CLIENT}">\n  <script async src="${ADS_SRC}" crossorigin="anonymous"></script>`;
+}
+
 function stylesheetLinks(page, { cropper, document: doc }) {
   const up = prefixFor(page);
   const v = `?v=${ASSET_VERSION}`;
@@ -131,4 +170,4 @@ function stylesheetLinks(page, { cropper, document: doc }) {
   ].filter(Boolean).join('\n');
 }
 
-module.exports = { ASSET_VERSION, TOOLS, EXAMS, SIZES, FOOTER_COLUMNS, headerHTML, footerHTML, stylesheetLinks, href };
+module.exports = { ASSET_VERSION, ADS_CLIENT, TOOLS, EXAMS, SIZES, FOOTER_COLUMNS, headerHTML, footerHTML, stylesheetLinks, adsHead, cspMeta, href };

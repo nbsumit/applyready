@@ -32,8 +32,9 @@ const server = http.createServer((req,res) => {
   const browser=await chromium.launch({headless:true, ...(defaultBrowser ? {executablePath:defaultBrowser} : {}), args:['--no-sandbox','--disable-dev-shm-usage']});
   const errors=[], external=[];
   const context=await browser.newContext({viewport:{width:1440,height:1000},colorScheme:'light',acceptDownloads:true});
-  await context.route('**/*', route=>{ const url=route.request().url(); if(url.startsWith(origin) || /^(blob:|data:)/.test(url)) return route.continue(); external.push(url); return route.abort(); });
+  await context.route('**/*', route=>{ const url=route.request().url(); if(url.startsWith(origin) || /^(blob:|data:)/.test(url)) return route.continue(); if(/googlesyndication\.com|doubleclick\.net|googleadservices\.com|fundingchoicesmessages\.google\.com/.test(url)) return route.abort(); external.push(url); return route.abort(); });
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+  page.on('console', msg => { const t = msg.text(); if (/Content Security Policy|Refused to (?:load|apply|execute|frame|connect)/.test(t)) errors.push(t); });
   let dialogAction='dismiss'; const dialogs=[];
   page.on('dialog',d=>{dialogs.push(d.message()); return d[dialogAction]();});
   const visit=async file=>{const path=file.endsWith('/')?file+'index.html':file; await page.goto(`${origin}/${path}`);await page.evaluate(()=>document.fonts.ready);};
@@ -342,7 +343,7 @@ const server = http.createServer((req,res) => {
     'ssc-photo-signature-size.html', 'upsc-photo-signature-size.html', 'ibps-photo-signature-size.html',
     'neet-photo-signature-size.html', 'rrb-photo-signature-size.html',
     'resize-image-to-20kb.html', 'resize-image-to-50kb.html', 'resize-image-to-kb-limit.html',
-    'editorial-policy.html',
+    'editorial-policy.html', 'author/sumit-sengar.html',
     'signature-cleaner.html', 'image-to-pdf.html', 'compress-pdf.html', 'passport-photo-print.html',
     'guides/index.html', 'guides/ats-friendly-resume-guide.html',
     'hi/ssc-photo-signature-size.html', 'hi/upsc-photo-signature-size.html', 'hi/ibps-photo-signature-size.html',
@@ -413,6 +414,41 @@ const server = http.createServer((req,res) => {
     }
   }
   console.log('✓ Nav, theme, Tools menu, and single-file drop checked on all pages');
+
+  // Ad slots stay below the tool and below the first screen. ?adpreview=1 shows the reserved box.
+  for (const [file, width, height] of [['index.html', 390, 844], ['index.html', 1280, 800], ['signature-cleaner.html', 390, 844], ['guides/fix-common-photo-upload-errors.html', 1280, 800]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto(`${origin}/${file}?adpreview=1`);
+    const placed = await page.evaluate((vh) => {
+      const slots = [...document.querySelectorAll('.ad-slot-container')];
+      return {
+        theme: document.documentElement.classList.contains('ad-preview'),
+        n: slots.length,
+        rows: slots.map(s => {
+          const r = s.getBoundingClientRect();
+          const inner = s.querySelector('.ad-slot-inner');
+          const minH = inner ? parseFloat(getComputedStyle(inner).minHeight) : 0;
+          return { pos: s.getAttribute('data-ad-position'), top: r.top + window.scrollY, minH, label: (s.querySelector('.ad-slot-label') || {}).textContent || '' };
+        }),
+        toolBottom: (() => { const t = document.getElementById('resizerApp') || document.querySelector('.workspace'); return t ? t.getBoundingClientRect().bottom + window.scrollY : 0; })(),
+        vh
+      };
+    }, height);
+    ok(placed.theme && placed.n >= 1 && placed.n <= 3, `${file} @${width}: ${placed.n} preview slots`);
+    ok(placed.rows.every(r => r.label.trim() === 'Advertisement' && r.minH >= 250), `${file} @${width}: labelled slots keep a 250px reserve (${JSON.stringify(placed.rows)})`);
+    ok(placed.rows.every(r => r.top > height), `${file} @${width}: every slot starts below the fold (${JSON.stringify(placed.rows.map(r => Math.round(r.top)))} vs ${height})`);
+    if (placed.toolBottom) ok(placed.rows.every(r => r.top >= placed.toolBottom - 1), `${file} @${width}: slots are below the tool`);
+  }
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto(`${origin}/index.html?adpreview=1`);
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
+  const dark = await page.evaluate(() => {
+    const slot = document.querySelector('.ad-slot-inner');
+    const cs = getComputedStyle(slot);
+    return { bg: cs.backgroundColor, color: getComputedStyle(slot.querySelector('.ad-slot-label')).color, shown: getComputedStyle(document.querySelector('.ad-slot-container')).display };
+  });
+  ok(dark.shown === 'block' && dark.bg !== 'rgb(241, 241, 238)', `dark theme slot is visible and not the light surface (${dark.bg}, ${dark.color})`);
+  console.log('✓ Ad slots sit below the tool and the fold, in light and dark');
 
   console.log(`\n${checks} browser assertions passed. Screenshots and real downloads: ${output}`);
   await browser.close();await new Promise(resolve=>server.close(resolve));
