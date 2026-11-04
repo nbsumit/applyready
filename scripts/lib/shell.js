@@ -3,7 +3,7 @@
    checks that no page has drifted, so all pages look and behave like one product. */
 'use strict';
 
-const ASSET_VERSION = '20261104-2';
+const ASSET_VERSION = '20261104-3';
 const ADS_CLIENT = 'ca-pub-2713609207324356';
 const ADS_SRC = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + ADS_CLIENT;
 
@@ -125,26 +125,14 @@ ${cols}
 // GitHub Pages cannot set response headers, so the policy is a meta tag.
 // AdSense needs these hosts for the loader, the unit, the consent message and its frames.
 function cspMeta() {
-  const ads = [
-    'https://pagead2.googlesyndication.com',
-    'https://googleads.g.doubleclick.net',
-    'https://tpc.googlesyndication.com',
-    'https://adservice.google.com',
-    'https://fundingchoicesmessages.google.com',
-    'https://ep1.adtrafficquality.google',
-    'https://ep2.adtrafficquality.google',
-    'https://www.google.com',
-    'https://www.gstatic.com',
-    'https://www.googletagservices.com'
-  ].join(' ');
   const policy = [
     "default-src 'self'",
-    "script-src 'self' " + ads,
+    "script-src 'self' https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.gstatic.com https://adservice.google.com https://adservice.google.co.in https://fundingchoicesmessages.google.com 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: " + ads,
-    "font-src 'self' data:",
-    "connect-src 'self' blob: data: " + ads,
-    "frame-src " + ads,
+    "img-src 'self' https: data: blob:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self' blob: data: https://*.google https://*.googlesyndication.com https://*.doubleclick.net https://*.adtrafficquality.google",
+    "frame-src https://*.googlesyndication.com https://*.safeframe.googlesyndication.com https://*.doubleclick.net https://*.google https://www.google.com",
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
@@ -153,16 +141,17 @@ function cspMeta() {
   return `  <meta http-equiv="Content-Security-Policy" content="${policy}">`;
 }
 
-// 404 and the offline fallback are not content pages, so they do not carry the AdSense tag.
+// The account tag stays in the head. The loader is injected later by js/ads.js, and only on pages with slots.
 function adsHead(page) {
   if (page === '404.html' || page === 'offline.html') return '';
-  return `  <meta name="google-adsense-account" content="${ADS_CLIENT}">\n  <script async src="${ADS_SRC}" crossorigin="anonymous"></script>`;
+  return `  <meta name="google-adsense-account" content="${ADS_CLIENT}">`;
 }
 
 function stylesheetLinks(page, { cropper, document: doc }) {
   const up = prefixFor(page);
   const v = `?v=${ASSET_VERSION}`;
   return [
+    `  <link rel="preload" href="${up}assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>`,
     `  <link rel="stylesheet" href="${up}css/vendor/icons.min.css">`,
     cropper ? `  <link rel="stylesheet" href="${up}css/vendor/cropper.min.css">` : null,
     `  <link rel="stylesheet" href="${up}css/app.css${v}">`,

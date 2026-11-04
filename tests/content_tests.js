@@ -98,7 +98,7 @@ for (const f of pages) {
     ok(!s.includes('google-adsense-account') && !s.includes(LOADER) && !s.includes('ad-slot-container'), `${f}: no AdSense tag, loader or slot`);
   } else {
     ok(s.includes(`<meta name="google-adsense-account" content="${CLIENT}">`), `${f}: AdSense account meta tag`);
-    ok(s.includes(`<script async src="https://pagead2.googlesyndication.com/pagead/js/${LOADER}" crossorigin="anonymous"></script>`), `${f}: async AdSense loader`);
+    ok(!/src="[^"]*adsbygoogle\.js/.test(s), `${f}: the AdSense loader is not in the page head`);
   }
 }
 for (const f of ['privacy.html', 'about.html', 'contact.html', 'terms.html']) ok(fs.existsSync(path.join(root, f)), `${f} exists`);
@@ -112,11 +112,21 @@ ok(/not use Google Analytics/.test(privacy), 'privacy policy still says there is
 ok(!/enable_page_level_ads/.test(read('js/ads.js') + read('scripts/enable-ads.js')), 'auto ads are not enabled in code');
 const css = read('css/app.css');
 const flatCss = css.replace(/\s+/g, '');
-ok(flatCss.includes('.ad-slot-inner{box-sizing:border-box;min-height:250px') && flatCss.includes('.ad-slot-container{display:block'), 'ad slots reserve 250px from first paint');
+ok(flatCss.includes('.ad-slot-container{display:none') && flatCss.includes('ins.adsbygoogle[data-ad-slot]'), 'slots without a unit are hidden; live units reserve space');
+ok(flatCss.includes('min-height:250px'), 'a live ad slot reserves 250px');
 ok(flatCss.includes('.ad-slot-container.is-collapsed{display:none'), 'unfilled slots collapse');
 ok(/#resize-tool\{min-height:540px/.test(flatCss) && /#resize-tool\{min-height:640px/.test(flatCss), 'the exam resizer reserves its settled height');
 ok(!/\.ad-slot[\w-]*\{[^}]*position:\s*(?:sticky|fixed)/.test(css), 'ad slots are not sticky or fixed');
-ok(read('js/ads.js').includes('IntersectionObserver'), 'below-fold slots are requested lazily');
+ok(read('js/ads.js').includes('IntersectionObserver') && read('js/ads.js').includes('requestIdleCallback') && read('js/ads.js').includes('adsbygoogle.js'), 'the loader is injected after idle, and only from js/ads.js');
+{
+  const { PRESETS } = require('../js/resizer.js');
+  const sig = PRESETS['upsc-signature'];
+  ok(sig && sig.minKB === 20 && sig.maxKB === 100 && sig.padToKB === 30, 'UPSC signature still allows 20–100 KB and pads toward 30 KB');
+}
+for (const f of pages) {
+  const visible = read(f).replace(/<!--[\s\S]*?-->/g, ' ').replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ');
+  ok(!/\bTODO\b|\[\.\.\.\]/.test(visible), `${f}: visible TODO or placeholder brackets`);
+}
 const swText = read('sw.js');
 ok(!/applyready-v21/.test(swText) && swText.includes("'/js/ads.js'") && swText.includes("'/author/sumit-sengar.html'"), 'service worker cache lists ads.js and the author page');
 ok(!swText.includes("Precache failed"), 'a failed precache rejects install');
@@ -129,7 +139,7 @@ for (const asset of [...swText.matchAll(/'\/[^']+'/g)].map(m => m[0].slice(2, -1
 for (const f of pages) {
   const s = read(f);
   if (!utility.has(f)) for (const link of ['privacy.html', 'terms.html', 'about.html', 'author/sumit-sengar.html', 'editorial-policy.html', 'contact.html']) ok(s.includes(link), `${f}: footer link to ${link}`);
-  ok(/http-equiv="Content-Security-Policy"[^>]*pagead2\.googlesyndication\.com/.test(s) && s.includes('fundingchoicesmessages.google.com') && s.includes('ep1.adtrafficquality.google') && s.includes('ep2.adtrafficquality.google'), `${f}: CSP allows the AdSense hosts`);
+  ok(s.includes('https://*.safeframe.googlesyndication.com') && s.includes('https://*.googlesyndication.com') && s.includes('adservice.google.co.in') && s.includes('https://*.doubleclick.net') && s.includes("script-src") && s.includes("'unsafe-inline'") && s.includes('https://*.adtrafficquality.google') && s.includes('img-src \'self\' https: data: blob:') && s.includes('https://fonts.gstatic.com'), `${f}: CSP allows AdSense safeframes, country ad hosts and inline scripts`);
   if (/photo-signature-size\.html$/.test(f) && !isStub(s)) {
     const select = (s.match(/<select id="presetSelect"[\s\S]*?<\/select>/) || [''])[0];
     ok(select && !/value="(?:passport|signature|avatar|document|web-banner)"/.test(select), `${f}: generic presets are not in the exam list`);
@@ -256,11 +266,13 @@ for (const f of ['css/app.css', 'js/site.js', 'js/components.js', 'scripts/lib/s
 }
 
 // 9. Ad slots: at most three, labelled, never in the tool, a form, or the resume editor.
-const NO_SLOTS = new Set(['404.html', 'offline.html', 'privacy.html', 'terms.html', 'contact.html']);
+const NO_SLOTS = new Set(['404.html', 'offline.html', 'privacy.html', 'terms.html', 'contact.html', 'resume.html']);
 const plain = s => s.replace(/<script[\s\S]*?<\/script>|<!--[\s\S]*?-->/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 for (const f of pages) {
   const s = read(f);
-  const slots = [...s.matchAll(/<aside class="ad-slot-container" data-ad-position="(below-tool|mid-article|before-faq|before-footer)" role="complementary" aria-label="Advertisement">[\s\S]*?<span class="ad-slot-label">Advertisement<\/span>/g)];
+  const slots = [...s.matchAll(/<aside class="ad-slot-container" data-ad-position="(below-tool|mid-article|before-faq|before-footer)" role="complementary" aria-label="(Advertisement \d+)">[\s\S]*?<span class="ad-slot-label">Advertisement<\/span>/g)];
+  const labels = slots.map(m => m[2]);
+  ok(new Set(labels).size === labels.length, `${f}: ad landmarks share a label`);
   const blocked = NO_SLOTS.has(f) || isStub(s) || isNoindex(s);
   if (blocked) ok(slots.length === 0 && !s.includes('js/ads.js'), `${f}: no ad slots`);
   else ok(slots.length >= 1 && slots.length <= 3, `${f}: ${slots.length} ad slots (expected 1 to 3)`);
@@ -280,10 +292,7 @@ for (const f of pages) {
     const actionEnd = s.indexOf('</div>', actionAt);
     ok(actionEnd > actionAt && !s.slice(actionAt, actionEnd).includes('ad-slot'), `${f}: no ad in the action row`);
   }
-  if (f === 'resume.html') {
-    ok(slots.length === 1 && slots[0][1] === 'before-faq', 'resume: one slot, before the FAQ');
-    ok(s.indexOf('ad-slot-container') > s.indexOf('rb-howto') && s.indexOf('ad-slot-container') > s.indexOf('btnMobileDownload'), 'resume: the slot is after the editor and its download bar');
-  }
+  if (f === 'resume.html') ok(!s.includes('ad-slot-container') && !s.includes('js/ads.js'), 'resume: no ad slot and no ad script');
   if (f.startsWith('guides/') && indexable.has(f) && f !== 'guides/index.html') {
     ok(slots.some(m => m[1] === 'mid-article'), `${f}: mid-article slot`);
     const main = (s.match(/<main[\s\S]*?<\/main>/) || [''])[0];

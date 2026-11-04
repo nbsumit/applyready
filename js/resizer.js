@@ -96,6 +96,7 @@
       height: 400,
       minKB: 20,
       maxKB: 100,
+      padToKB: 30,
       defaultPrefix: 'UPSC_Signature'
     },
     'ibps-photo': {
@@ -643,6 +644,7 @@
       height = p.height;
       maxKB = p.maxKB;
       minKB = p.minKB || 0;
+      var padToKB = p.padToKB || 0;
       prefix = p.defaultPrefix;
 
       if (addDate && height < 80) {
@@ -662,6 +664,7 @@
       height,
       maxKB,
       minKB,
+      padToKB: typeof padToKB === 'number' ? padToKB : 0,
       mimeType,
       bgFill,
       prefix,
@@ -1705,9 +1708,10 @@
       let compressedBlob = await compressStrictly(canvas, specs.maxKB, specs.mimeType, () => (opId !== currentOpId || revision !== configRevision));
       if (opId !== currentOpId || revision !== configRevision) return;
 
-      // Ensure Minimum KB if requested
-      if (specs.minKB && specs.minKB > 0 && compressedBlob.size < specs.minKB * 1024) {
-        compressedBlob = await ensureMinKB(compressedBlob, specs.minKB, specs.maxKB);
+      // Official minimum, or a higher pad (UPSC signature aims at 30 KB so a small file cannot sit on the 20 KB line).
+      const floorKB = specs.padToKB > specs.minKB && specs.padToKB < specs.maxKB ? specs.padToKB : specs.minKB;
+      if (floorKB > 0 && compressedBlob.size < floorKB * 1024) {
+        compressedBlob = await ensureMinKB(compressedBlob, floorKB, specs.maxKB);
         if (opId !== currentOpId || revision !== configRevision) return;
       }
 

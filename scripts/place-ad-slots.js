@@ -2,7 +2,7 @@
 /* Inserts the manual ad slots. Safe to re-run: existing slots are replaced.
    At most three per page: below the tool, about 40% through the article, and before the FAQ or footer.
    None on 404, offline, privacy, terms, contact, redirect stubs or noindex pages.
-   The resume page gets a single slot before its FAQ, after the editor and its download bar. */
+   None on the resume page: the whole page is the editor. */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
@@ -12,12 +12,12 @@ const list = (dir, base = '') => fs.existsSync(path.join(root, dir))
   ? fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f)) : [];
 const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...list('author', 'author')];
 
-const NO_SLOTS = new Set(['404.html', 'offline.html', 'privacy.html', 'terms.html', 'contact.html']);
+const NO_SLOTS = new Set(['404.html', 'offline.html', 'privacy.html', 'terms.html', 'contact.html', 'resume.html']);
 const plain = s => s.replace(/<script[\s\S]*?<\/script>|<!--[\s\S]*?-->/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
-function slot(position) {
+function slot(position, n) {
   return [
-    '    <aside class="ad-slot-container" data-ad-position="' + position + '" role="complementary" aria-label="Advertisement">',
+    '    <aside class="ad-slot-container" data-ad-position="' + position + '" role="complementary" aria-label="Advertisement ' + n + '">',
     '      <div class="ad-slot-inner">',
     '        <span class="ad-slot-label">Advertisement</span>',
     '      </div>',
@@ -64,10 +64,7 @@ function midPoint(html, start, end) {
 function pointsFor(file, html) {
   if (NO_SLOTS.has(file)) return [];
   if (/<meta http-equiv="refresh"/i.test(html) || /<meta name="robots" content="[^"]*noindex/i.test(html)) return [];
-  if (file === 'resume.html') {
-    const faq = html.indexOf('<section class="faq-section"');
-    return faq < 0 ? [] : [{ pos: faq, position: 'before-faq' }];
-  }
+  if (file === 'resume.html') return [];
   const mainEnd = html.indexOf('</main>');
   if (mainEnd < 0) return [];
   const toolAt = html.indexOf('<!-- tool:end -->');
@@ -109,7 +106,7 @@ for (const file of pages) {
   const abs = path.join(root, file);
   let html = strip(fs.readFileSync(abs, 'utf8'));
   const points = pointsFor(file, html).sort((a, b) => b.pos - a.pos);
-  for (const p of points) html = html.slice(0, p.pos) + '\n' + slot(p.position) + '\n' + html.slice(p.pos);
+  points.forEach((p, i) => { html = html.slice(0, p.pos) + '\n' + slot(p.position, points.length - i) + '\n' + html.slice(p.pos); });
   if (points.length) html = html.replace(/<\/body>/, scriptTag(file) + '\n</body>');
   if (html !== fs.readFileSync(abs, 'utf8')) { fs.writeFileSync(abs, html); changed++; }
   const names = pointsFor(file, strip(html)).map(p => p.position);

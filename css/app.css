@@ -12,8 +12,8 @@
 */
 
 /* ================================================================== 0. TOKENS */
-@font-face { font-family: Inter; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../assets/fonts/inter-latin.woff2') format('woff2'); }
-@font-face { font-family: 'ApplyReady Devanagari'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../assets/fonts/noto-devanagari.woff2') format('woff2'); unicode-range: U+0900-097F,U+1CD0-1CFF,U+200C-200D,U+20A8-20B9,U+A830-A839,U+A8E0-A8FF,U+11B00-11B09; }
+@font-face { font-family: Inter; font-style: normal; font-weight: 100 900; font-display: optional; src: url('../assets/fonts/inter-latin.woff2') format('woff2'); }
+@font-face { font-family: 'ApplyReady Devanagari'; font-style: normal; font-weight: 100 900; font-display: optional; src: url('../assets/fonts/noto-devanagari.woff2') format('woff2'); unicode-range: U+0900-097F,U+1CD0-1CFF,U+200C-200D,U+20A8-20B9,U+A830-A839,U+A8E0-A8FF,U+11B00-11B09; }
 
 :root {
   color-scheme: light;
@@ -599,10 +599,13 @@ table { border-collapse: collapse; width: 100%; font-size: var(--fs-md); line-he
 .dg-sw-1-5 { stroke-width: 1.5; }
 .dg-sw-2 { stroke-width: 2; }
 /* guide-diagrams:end */
-/* Manual ad slots. The box is reserved from first paint so a filled unit does not move the page.
-   js/ads.js removes it only after Google reports the unit unfilled. */
-.ad-slot-container { display: block; margin: var(--s-7) 0; min-height: 280px; }
-.ad-slot-inner {
+/* Empty slots take no space. A real unit (data-ad-slot) reserves 250px, then js/ads.js
+   collapses it if Google leaves it unfilled. ?adpreview=1 shows the box for layout checks. */
+.ad-slot-container { display: none; margin: 0; min-height: 0; }
+.ad-slot-container:has(ins.adsbygoogle[data-ad-slot]),
+html.ad-preview .ad-slot-container { display: block; margin: var(--s-7) 0; min-height: 280px; }
+.ad-slot-container:has(ins.adsbygoogle[data-ad-slot]) .ad-slot-inner,
+html.ad-preview .ad-slot-inner {
   box-sizing: border-box;
   min-height: 250px;
   padding: var(--s-3);
@@ -639,8 +642,8 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 
 /* Tool section on landing pages: the tool sits right under the page head */
 .page-head + .tool-section { margin-top: 0; }
-/* Settled height of the exam resizer (mobile ~629px, wider ~530px). Stops the section
-   shrinking after fonts and the requirement line paint, which was the UPSC layout shift. */
+/* Measured with the font loaded: 633px at 390px wide, 539px at 768 and 1280.
+   The reserve sits a few pixels above that so a late wrap does not move the page. */
 #resize-tool { min-height: 540px; }
 @media (max-width: 639px) { #resize-tool { min-height: 640px; } }
 .tool-section > .section-title { font-size: var(--fs-xl); letter-spacing: -.01em; margin-bottom: var(--s-2); }

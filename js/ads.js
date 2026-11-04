@@ -1,12 +1,35 @@
-/* Manual AdSense slots only. The loader in the page head stays async.
-   A slot is requested when it nears the viewport, and an unfilled unit collapses.
-   Auto ads are not turned on here: no anchors, vignettes or interstitials. */
+/* Loads the AdSense script only on pages that have slots, and only after the page
+   has loaded: on the first interaction, or later from requestIdleCallback.
+   Slots without a real unit stay hidden in CSS. An unfilled unit collapses. */
 (function () {
+  var CLIENT = 'ca-pub-2713609207324356';
   var preview = /(?:\?|&)adpreview=1(?:&|$)/.test(location.search);
   if (preview) document.documentElement.classList.add('ad-preview');
 
   var slots = Array.prototype.slice.call(document.querySelectorAll('.ad-slot-container'));
   if (!slots.length) return;
+
+  var loaded = false;
+  function inject() {
+    if (loaded || document.querySelector('script[src*="adsbygoogle.js"]')) { loaded = true; return; }
+    loaded = true;
+    var script = document.createElement('script');
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + CLIENT;
+    document.head.appendChild(script);
+  }
+
+  function schedule() {
+    var start = function () { inject(); };
+    ['pointerdown', 'keydown', 'scroll'].forEach(function (type) {
+      window.addEventListener(type, start, { once: true, passive: true });
+    });
+    var ric = window.requestIdleCallback || function (fn) { setTimeout(fn, 12000); };
+    ric(function () { setTimeout(start, 12000); }, { timeout: 15000 });
+  }
+  if (document.readyState === 'complete') schedule();
+  else window.addEventListener('load', schedule);
 
   function collapse(slot) {
     slot.classList.add('is-collapsed');
@@ -25,9 +48,10 @@
 
   function arm(slot) {
     if (slot.getAttribute('data-ad-armed') === '1') return;
-    var ins = slot.querySelector('ins.adsbygoogle');
+    var ins = slot.querySelector('ins.adsbygoogle[data-ad-slot]');
     if (!ins || ins.getAttribute('data-adsbygoogle-status')) return;
     slot.setAttribute('data-ad-armed', '1');
+    inject();
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
     } catch (err) {
@@ -37,11 +61,10 @@
     watch(slot, ins);
   }
 
-  // push() fills the next unit in document order, so a later slot must not jump the queue.
   function flush() {
     for (var i = 0; i < slots.length; i++) {
       var slot = slots[i];
-      if (!slot.querySelector('ins.adsbygoogle')) continue;
+      if (!slot.querySelector('ins.adsbygoogle[data-ad-slot]')) continue;
       if (slot.getAttribute('data-ad-armed') === '1') continue;
       if (slot.getAttribute('data-ad-seen') !== '1') return;
       arm(slot);

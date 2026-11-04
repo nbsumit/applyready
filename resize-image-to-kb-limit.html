@@ -31,13 +31,14 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261104-2"></script>
+  <script src="js/theme.js?v=20261104-3"></script>
 
   <!-- Icons & Styles -->
   <!-- shell:styles:start -->
+  <link rel="preload" href="assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/vendor/icons.min.css">
   <link rel="stylesheet" href="css/vendor/cropper.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261104-2">
+  <link rel="stylesheet" href="css/app.css?v=20261104-3">
   <!-- shell:styles:end -->
 
   <!-- FAQPage Schema -->
@@ -112,10 +113,9 @@
   </script>
   <!-- shell:ads:start -->
   <meta name="google-adsense-account" content="ca-pub-2713609207324356">
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2713609207324356" crossorigin="anonymous"></script>
   <!-- shell:ads:end -->
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://adservice.google.com https://fundingchoicesmessages.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://www.google.com https://www.gstatic.com https://www.googletagservices.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://adservice.google.com https://fundingchoicesmessages.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://www.google.com https://www.gstatic.com https://www.googletagservices.com; font-src 'self' data:; connect-src 'self' blob: data: https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://adservice.google.com https://fundingchoicesmessages.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://www.google.com https://www.gstatic.com https://www.googletagservices.com; frame-src https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://adservice.google.com https://fundingchoicesmessages.google.com https://ep1.adtrafficquality.google https://ep2.adtrafficquality.google https://www.google.com https://www.gstatic.com https://www.googletagservices.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.gstatic.com https://adservice.google.com https://adservice.google.co.in https://fundingchoicesmessages.google.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' blob: data: https://*.google https://*.googlesyndication.com https://*.doubleclick.net https://*.adtrafficquality.google; frame-src https://*.googlesyndication.com https://*.safeframe.googlesyndication.com https://*.doubleclick.net https://*.google https://www.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
 </head>
 <body class="content-page">
@@ -429,11 +429,12 @@
         <h2 id="kbIntroHeading">How to use this page</h2>
         <p>Pick <em>Under 10 KB</em>, <em>Under 100 KB</em> or <em>Under 200 KB</em> in the tool, or choose <em>Custom size</em> and type the exact minimum and maximum from your form. Then set the pixel size the form gives; the limit only decides how hard the compressor has to work. The sections below say which official forms use each limit and what the compressor produced on our synthetic test images (a 1200 × 1600 px portrait and a 1600 × 900 px phone photo of a signature, both in <a href="img/samples/test-portrait.jpg">/img/samples/</a>), measured in Chromium 141 on 24 October 2026. Jump to <a href="#10kb">10 KB</a>, <a href="#100kb">100 KB</a> or <a href="#200kb">200 KB</a>. For the two most common limits there are dedicated pages: <a href="resize-image-to-20kb.html">20 KB</a> and <a href="resize-image-to-50kb.html">50 KB</a>.</p>
       </section>
-    <aside class="ad-slot-container" data-ad-position="below-tool" role="complementary" aria-label="Advertisement">
+    <aside class="ad-slot-container" data-ad-position="below-tool" role="complementary" aria-label="Advertisement 1">
       <div class="ad-slot-inner">
         <span class="ad-slot-label">Advertisement</span>
       </div>
     </aside>
+
 
 
 
@@ -477,11 +478,12 @@
         </table></div>
         <p>At the IBPS declaration size, 800 × 400 px, our signature photo came to 55.6 KB at full quality: inside the 50 to 100 KB window with no compression. A full page of handwriting has more ink than our test signature, so a real declaration may need slight compression, which 100 KB leaves room for. For declarations, write on plain white paper in black ink, as IBPS asks, and crop close to the text before resizing.</p>
       </section>
-    <aside class="ad-slot-container" data-ad-position="mid-article" role="complementary" aria-label="Advertisement">
+    <aside class="ad-slot-container" data-ad-position="mid-article" role="complementary" aria-label="Advertisement 2">
       <div class="ad-slot-inner">
         <span class="ad-slot-label">Advertisement</span>
       </div>
     </aside>
+
 
 
 
@@ -523,7 +525,8 @@
       
 
 
-    <aside class="ad-slot-container" data-ad-position="before-faq" role="complementary" aria-label="Advertisement">
+
+    <aside class="ad-slot-container" data-ad-position="before-faq" role="complementary" aria-label="Advertisement 3">
       <div class="ad-slot-inner">
         <span class="ad-slot-label">Advertisement</span>
       </div>
@@ -627,11 +630,11 @@
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261104-2" defer></script>
-  <script src="js/site.js?v=20261104-2"></script>
+  <script src="js/components.js?v=20261104-3" defer></script>
+  <script src="js/site.js?v=20261104-3"></script>
   <script src="js/vendor/cropper.min.js"></script>
-  <script src="js/presets.js?v=20261104-2"></script>
-  <script src="js/resizer.js?v=20261104-2"></script>
-  <script src="js/ads.js?v=20261104-2" defer></script>
+  <script src="js/presets.js?v=20261104-3"></script>
+  <script src="js/resizer.js?v=20261104-3"></script>
+  <script src="js/ads.js?v=20261104-3" defer></script>
 </body>
 </html>
