@@ -22,7 +22,7 @@ const list = (dir, base = '') => fs.existsSync(path.join(root, dir))
 const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...list('author', 'author')];
 const isTool = f => !f.startsWith('guides/') && !f.startsWith('author/');
 
-const SLOT = /(<aside class="ad-slot-container"[^>]*>\s*<div class="ad-slot-inner">\s*<span class="ad-slot-label">Advertisement<\/span>)([\s\S]*?)(\s*<\/div>\s*<\/aside>)/g;
+const SLOT = /(<aside class="ad-slot-container"[^>]*>\s*<div class="ad-slot-inner">\s*<span class="ad-slot-label">Advertisements<\/span>)([\s\S]*?)(\s*<\/div>\s*<\/aside>)/g;
 const LIVE = /<ins class="adsbygoogle"[\s\S]*?<\/ins>/;
 
 const unit = (client, slot) => `\n        <ins class="adsbygoogle" data-ad-client="${client}" data-ad-slot="${slot}" data-ad-format="auto" data-full-width-responsive="true"></ins>`;

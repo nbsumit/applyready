@@ -6,6 +6,7 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const { ASSET_VERSION } = require('./lib/shell');
 
 const root = path.resolve(__dirname, '..');
 const list = (dir, base = '') => fs.existsSync(path.join(root, dir))
@@ -17,9 +18,9 @@ const plain = s => s.replace(/<script[\s\S]*?<\/script>|<!--[\s\S]*?-->/g, ' ').
 
 function slot(position, n) {
   return [
-    '    <aside class="ad-slot-container" data-ad-position="' + position + '" role="complementary" aria-label="Advertisement ' + n + '">',
+    '    <aside class="ad-slot-container" data-ad-position="' + position + '" role="complementary" aria-label="Advertisements ' + n + '">',
     '      <div class="ad-slot-inner">',
-    '        <span class="ad-slot-label">Advertisement</span>',
+    '        <span class="ad-slot-label">Advertisements</span>',
     '      </div>',
     '    </aside>'
   ].join('\n');
@@ -98,7 +99,7 @@ function pointsFor(file, html) {
 function scriptTag(file) {
   const depth = file.split('/').length - 1;
   const prefix = depth > 0 ? '../'.repeat(depth) : '';
-  return '  <script src="' + prefix + 'js/ads.js" defer></script>';
+  return '  <script src="' + prefix + 'js/ads.js?v=' + ASSET_VERSION + '" defer></script>';
 }
 
 let changed = 0;

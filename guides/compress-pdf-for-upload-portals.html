@@ -33,12 +33,12 @@
   <link rel="manifest" href="../favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="../js/theme.js?v=20261104-4"></script>
+  <script src="../js/theme.js?v=20261106"></script>
 
   <!-- shell:styles:start -->
   <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="../css/vendor/icons.min.css">
-  <link rel="stylesheet" href="../css/app.css?v=20261104-4">
+  <link rel="stylesheet" href="../css/app.css?v=20261106">
   <!-- shell:styles:end -->
 
   <script type="application/ld+json">
@@ -102,7 +102,7 @@
   <meta name="google-adsense-account" content="ca-pub-2713609207324356">
   <!-- shell:ads:end -->
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.gstatic.com https://adservice.google.com https://adservice.google.co.in https://fundingchoicesmessages.google.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' blob: data: https://*.google https://*.googlesyndication.com https://*.doubleclick.net https://*.adtrafficquality.google; frame-src https://*.googlesyndication.com https://*.safeframe.googlesyndication.com https://*.doubleclick.net https://*.google https://www.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' blob: data: https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google; frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google https://*.safeframe.googlesyndication.com; media-src 'self' blob: data: https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
 </head>
 <body class="content-page">
@@ -179,7 +179,7 @@
 <section class="section prose">
 <h2>Why a scanned PDF is large</h2>
 <p>A PDF made from a scan or a phone photo holds a picture of each page, not text. An A4 page at 300 DPI is 2480 × 3508 pixels, about 8.7 million pixels; uncompressed, that is about 26 MB in colour. Fitting it into 100 or 300 KB means keeping far fewer pixels, compressing them harder, or both. A certificate is mostly white paper and dark text, which helps: it compresses much better than a photograph.</p>
-<p>Limits for certificates are often ranges. UPSC and NEET (UG) 2026 both ask for PDFs of 50 to 300 KB (<a href="https://upsconline.nic.in/candidate/resources/bzh30/login/upsc-candidates-portal/dist/assets/Instructions%20for%20uploading%20documents-new-2-CFBYTKvU.pdf">UPSC instructions</a>; <a href="https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf">NEET bulletin</a>, p. 16), IBPS for a 10th certificate up to 500 KB, and the PAN application for supporting documents of at most 300 KB per page at 200 DPI in black and white (<a href="https://tin.tin.proteantech.in/pan/form49Adsc.html">Protean guidelines</a>).</p>
+<p>Limits for certificates are often ranges. UPSC and NEET (UG) 2026 both ask for PDFs of 50 to 300 KB (<a href="https://upsconline.nic.in/caf/assets/PDF/Instructions%20for%20uploading%20documents-new-2.pdf">UPSC instructions</a>; <a href="https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf">NEET bulletin</a>, p. 16), IBPS for a 10th certificate up to 500 KB, and the PAN application for supporting documents of at most 300 KB per page at 200 DPI in black and white (<a href="https://tin.tin.proteantech.in/pan/form49Adsc.html">Protean guidelines</a>).</p>
 </section>
 
 <section class="section prose">
@@ -206,11 +206,15 @@
 <p>In our test, the 136.3 KB Compact PDF compressed to a 100 KB maximum came out at 77.3 KB. Check the result against your limit and read it at 100% zoom: if the smallest text is not readable, the limit is too tight for that many pages.</p>
 <p><strong>Only compress a file that is over the limit.</strong> Re-encoding pages that are already compressed loses detail and may not save anything. The compressor therefore keeps your original PDF, unchanged, when it is already under the limit you set or when compressing would not make it smaller, and says so.</p>
 </section>
-    <aside class="ad-slot-container" data-ad-position="mid-article" role="complementary" aria-label="Advertisement 1">
+    <aside class="ad-slot-container" data-ad-position="mid-article" role="complementary" aria-label="Advertisements 1">
       <div class="ad-slot-inner">
-        <span class="ad-slot-label">Advertisement</span>
+        <span class="ad-slot-label">Advertisements</span>
       </div>
     </aside>
+
+
+
+
 
 
 
@@ -240,7 +244,7 @@
 <section class="section prose" aria-labelledby="sourcesHeading">
 <h2 id="sourcesHeading">Sources</h2>
 <ul class="sources-list">
-<li><a href="https://upsconline.nic.in/candidate/resources/bzh30/login/upsc-candidates-portal/dist/assets/Instructions%20for%20uploading%20documents-new-2-CFBYTKvU.pdf">UPSC: Instructions for uploading documents</a>, 50–300 KB PDF certificates</li>
+<li><a href="https://upsconline.nic.in/caf/assets/PDF/Instructions%20for%20uploading%20documents-new-2.pdf">UPSC: Instructions for uploading documents</a>, 50–300 KB PDF certificates</li>
 <li><a href="https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf">NTA: Information Bulletin NEET (UG)-2026</a>, p. 16</li>
 <li><a href="https://www.ibps.in/wp-content/uploads/Detailed-Notification_CRP-PO-XVI_Final_V1_30.06.2026.pdf">IBPS: CRP PO/MT-XVI notification</a>, Annexure III</li>
 <li><a href="https://tin.tin.proteantech.in/pan/form49Adsc.html">Protean: Guidelines for the DSC-based online PAN application</a>, supporting documents, 300 KB per page</li>
@@ -253,9 +257,13 @@
 
 
 
-    <aside class="ad-slot-container" data-ad-position="before-footer" role="complementary" aria-label="Advertisement 2">
+
+
+
+
+    <aside class="ad-slot-container" data-ad-position="before-footer" role="complementary" aria-label="Advertisements 2">
       <div class="ad-slot-inner">
-        <span class="ad-slot-label">Advertisement</span>
+        <span class="ad-slot-label">Advertisements</span>
       </div>
     </aside>
 <section class="related-guides-section" aria-labelledby="relatedHeading">
@@ -341,8 +349,8 @@
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="../js/components.js?v=20261104-4" defer></script>
-  <script src="../js/site.js?v=20261104-4"></script>
-  <script src="../js/ads.js?v=20261104-4" defer></script>
+  <script src="../js/components.js?v=20261106" defer></script>
+  <script src="../js/site.js?v=20261106"></script>
+  <script src="../js/ads.js?v=20261106" defer></script>
 </body>
 </html>

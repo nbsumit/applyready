@@ -3,7 +3,7 @@
    checks that no page has drifted, so all pages look and behave like one product. */
 'use strict';
 
-const ASSET_VERSION = '20261104-4';
+const ASSET_VERSION = '20261106';
 const ADS_CLIENT = 'ca-pub-2713609207324356';
 const ADS_SRC = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + ADS_CLIENT;
 
@@ -54,6 +54,14 @@ function isCurrent(path, page) {
   return page === path;
 }
 
+
+// The header's Hindi link opens this page's own Hindi version when it has one
+// (the five exam pages); every other page opens the Hindi SSC page, the first of the set.
+function hindiTwin(page) {
+  const base = page.replace(/^hi\//, '');
+  return /^(ssc|upsc|ibps|neet|rrb)-photo-signature-size\.html$/.test(base) ? 'hi/' + base : 'hi/ssc-photo-signature-size.html';
+}
+
 function headerHTML(page) {
   const prefix = prefixFor(page);
   const rel = p => href(p, prefix);
@@ -90,7 +98,7 @@ ${EXAMS.map(([label, p, desc]) => `                <li><a class="menu__item menu
           </li>
           <li><a class="site-nav__link" href="${rel('resume.html')}"${resumeCur}>Resume builder</a></li>
           <li><a class="site-nav__link" href="${rel('guides/')}"${guidesCur}>Guides</a></li>
-          <li class="site-nav__lang"><a class="site-nav__link" href="${rel('hi/ssc-photo-signature-size.html')}" lang="hi"${hindi}>हिन्दी</a></li>
+          <li class="site-nav__lang"><a class="site-nav__link" href="${rel(hindiTwin(page))}" lang="hi"${hindi}>हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
@@ -125,14 +133,20 @@ ${cols}
 // GitHub Pages cannot set response headers, so the policy is a meta tag.
 // AdSense needs these hosts for the loader, the unit, the consent message and its frames.
 function cspMeta() {
+  // Google documents no fixed host list for AdSense and supports only a nonce-based policy,
+  // which a static site cannot issue. This allowlist names the hosts its scripts, frames and
+  // beacons are observed to use, including the consent message (fundingchoicesmessages) and
+  // the ad-traffic-quality checks; test with ?adpreview=1 and the console after any change.
+  const ads = 'https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google';
   const policy = [
     "default-src 'self'",
-    "script-src 'self' https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.gstatic.com https://adservice.google.com https://adservice.google.co.in https://fundingchoicesmessages.google.com 'unsafe-inline'",
+    `script-src 'self' ${ads} 'unsafe-inline' 'unsafe-eval'`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' https: data: blob:",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "connect-src 'self' blob: data: https://*.google https://*.googlesyndication.com https://*.doubleclick.net https://*.adtrafficquality.google",
-    "frame-src https://*.googlesyndication.com https://*.safeframe.googlesyndication.com https://*.doubleclick.net https://*.google https://www.google.com",
+    `connect-src 'self' blob: data: ${ads}`,
+    `frame-src ${ads} https://*.safeframe.googlesyndication.com`,
+    `media-src 'self' blob: data: ${ads}`,
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
@@ -141,7 +155,6 @@ function cspMeta() {
   return `  <meta http-equiv="Content-Security-Policy" content="${policy}">`;
 }
 
-// The account tag stays in the head. The loader is injected later by js/ads.js, and only on pages with slots.
 function adsHead(page) {
   if (page === '404.html' || page === 'offline.html') return '';
   return `  <meta name="google-adsense-account" content="${ADS_CLIENT}">`;

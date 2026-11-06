@@ -3,6 +3,10 @@
 This branch responds to a review that flagged the site's content as low-value. The aim was fewer, better pages: each one original, useful, maintained and trustworthy.
 This file records what changed, the prose word count of each page, the claims we could not fully verify, the TODOs for Sumit, and the issues found along the way.
 
+## Update, 6 November 2026
+
+A second audit covered every page, every tool, every external link and Google's current AdSense policies. Its findings, the fixes made and the remaining owner steps are in [AUDIT-2026-11-06.md](AUDIT-2026-11-06.md). In short: no numeric figure was wrong; citations were tightened; the Compress PDF page's unsourced size-limit table was replaced; the compressor now keeps page size and reads camera JPEGs; the passport sheet records 300 DPI; the ad label, privacy policy and Content Security Policy were brought in line with Google's publisher policies; the header's Hindi link now opens the page's own Hindi version.
+
 ## What changed
 
 - **Trust pages.**
