@@ -223,28 +223,72 @@
   }
 
   /**
-   * Parse PDF binary for embedded JPEG streams (/DCTDecode)
+   * Read the page boxes of a PDF whose page dictionaries are stored uncompressed
+   * (scanner output, print-to-PDF, this site's image to PDF tool). Returns one
+   * [width, height] in points per /MediaBox found, in file order, or [] when the
+   * page dictionaries are inside compressed object streams and cannot be read here.
+   */
+  function readMediaBoxes(bytes) {
+    const text = new TextDecoder('latin1').decode(bytes);
+    const boxes = [];
+    const re = /\/MediaBox\s*\[\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s*\]/g;
+    let m;
+    while ((m = re.exec(text))) {
+      const w = Math.abs(parseFloat(m[3]) - parseFloat(m[1]));
+      const h = Math.abs(parseFloat(m[4]) - parseFloat(m[2]));
+      if (w > 1 && h > 1 && w < 20000 && h < 20000) boxes.push([w, h]);
+    }
+    return boxes;
+  }
+
+  /**
+   * Find the end of the JPEG that starts at `start`. Walks the marker segments
+   * up to the start of scan, then looks for the end-of-image marker in the
+   * entropy-coded data, where FF D9 cannot occur except as that marker. Searching
+   * for FF D9 from the start instead stops at the EXIF thumbnail many camera
+   * JPEGs carry, which yields an unreadable file and silently drops the page.
+   * Returns -1 when the bytes are not a well-formed JPEG.
+   */
+  function jpegEnd(bytes, start) {
+    const len = bytes.length;
+    let pos = start + 2;
+    while (pos + 4 <= len) {
+      if (bytes[pos] !== 0xFF) return -1;
+      const marker = bytes[pos + 1];
+      if (marker === 0xFF) { pos++; continue; }                // fill byte
+      if (marker === 0xD8 || (marker >= 0xD0 && marker <= 0xD7) || marker === 0x01) { pos += 2; continue; }
+      if (marker === 0xD9) return pos + 2;                     // empty image
+      const segLen = (bytes[pos + 2] << 8) | bytes[pos + 3];
+      if (segLen < 2) return -1;
+      if (marker === 0xDA) {                                   // start of scan: entropy-coded data follows
+        pos += 2 + segLen;
+        for (let j = pos; j < len - 1; j++) {
+          if (bytes[j] === 0xFF && bytes[j + 1] === 0xD9) return j + 2;
+        }
+        return -1;
+      }
+      pos += 2 + segLen;
+    }
+    return -1;
+  }
+
+  /**
+   * Parse PDF binary for embedded JPEG streams (/DCTDecode). Each one becomes a page.
+   * When the file's page boxes can be read and there is one image per page, the
+   * original page size is kept and the image is placed on it as the source placed it
+   * (fitted and centred); otherwise the page takes the image's own size.
    */
   async function extractPagesFromPdf(arrayBuffer) {
     const bytes = new Uint8Array(arrayBuffer);
     const pages = [];
     const len = bytes.length;
 
-    // Search for JPEG SOI (0xFF, 0xD8) and EOI (0xFF, 0xD9) markers
     let pos = 0;
     while (pos < len - 4) {
-      if (bytes[pos] === 0xFF && bytes[pos + 1] === 0xD8) {
+      if (bytes[pos] === 0xFF && bytes[pos + 1] === 0xD8 && bytes[pos + 2] === 0xFF) {
         const start = pos;
-        let end = -1;
-        // Search forward for EOI
-        for (let j = start + 2; j < len - 1; j++) {
-          if (bytes[j] === 0xFF && bytes[j + 1] === 0xD9) {
-            end = j + 2;
-            break;
-          }
-        }
+        const end = jpegEnd(bytes, start);
         if (end !== -1 && (end - start) > 5000) {
-          // Found JPEG stream
           const jpegSlice = bytes.subarray(start, end);
           const blob = new Blob([jpegSlice], { type: 'image/jpeg' });
           const url = URL.createObjectURL(blob);
@@ -266,6 +310,11 @@
         }
       }
       pos++;
+    }
+
+    const boxes = readMediaBoxes(bytes);
+    if (boxes.length === pages.length) {
+      pages.forEach((p, i) => { p.pageWidthPt = boxes[i][0]; p.pageHeightPt = boxes[i][1]; });
     }
 
     return pages;
@@ -321,17 +370,28 @@
     const jpegBuf = await bestBlob.arrayBuffer();
     const jpegBytes = new Uint8Array(jpegBuf);
 
-    // Preserve original aspect ratio and dimensions in PDF points (0.75 pt/px assuming standard 96 DPI)
-    const pw = Number((page.width * 0.75).toFixed(2));
-    const ph = Number((page.height * 0.75).toFixed(2));
+    // Keep the original page size when it is known (so an A4 scan stays A4, with its
+    // orientation and margins); otherwise the page takes the image's size in PDF points
+    // (0.75 pt/px, the standard 96 DPI). The image is fitted to the page and centred.
+    let pw, ph, drawW, drawH;
+    if (page.pageWidthPt && page.pageHeightPt) {
+      pw = Number(page.pageWidthPt.toFixed(2));
+      ph = Number(page.pageHeightPt.toFixed(2));
+      const fit = Math.min(pw / page.width, ph / page.height);
+      drawW = Number((page.width * fit).toFixed(2));
+      drawH = Number((page.height * fit).toFixed(2));
+    } else {
+      pw = drawW = Number((page.width * 0.75).toFixed(2));
+      ph = drawH = Number((page.height * 0.75).toFixed(2));
+    }
 
     return {
       pageWidth: pw,
       pageHeight: ph,
-      drawW: pw,
-      drawH: ph,
-      posX: 0,
-      posY: 0,
+      drawW,
+      drawH,
+      posX: Number(((pw - drawW) / 2).toFixed(2)),
+      posY: Number(((ph - drawH) / 2).toFixed(2)),
       imgWidthPx: canvas.width,
       imgHeightPx: canvas.height,
       jpegBytes

@@ -529,6 +529,40 @@ const server = http.createServer((req, res) => {
       }
     }
 
+    // Compress PDF keeps the page geometry: an A4 scan stays A4 with the image fitted on it, and a
+    // camera JPEG with an EXIF thumbnail (whose first FF D9 marker is inside the EXIF segment) is
+    // still read as a page instead of being skipped.
+    {
+      const main = fs.readFileSync(path.join(root, 'img/samples/test-signature-cleaned.jpg'));
+      const thumbB64 = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 24; c.height = 16; c.getContext('2d').fillRect(4, 4, 12, 8); return c.toDataURL('image/jpeg', 0.5).split(',')[1]; });
+      const thumb = Buffer.from(thumbB64, 'base64');
+      const be16 = n => Buffer.from([(n >> 8) & 255, n & 255]), be32 = n => Buffer.from([(n >>> 24) & 255, (n >> 16) & 255, (n >> 8) & 255, n & 255]);
+      const ifd0 = Buffer.concat([be16(1), be16(0x0112), be16(3), be32(1), Buffer.from([0, 1, 0, 0]), be32(8 + 2 + 12 + 4)]);
+      const thumbOff = 8 + ifd0.length + 2 + 24 + 4;
+      const ifd1 = Buffer.concat([be16(2), be16(0x0201), be16(4), be32(1), be32(thumbOff), be16(0x0202), be16(4), be32(1), be32(thumb.length), be32(0)]);
+      const exif = Buffer.concat([Buffer.from('Exif\0\0'), Buffer.from('MM\0\x2a\0\0\0\x08', 'latin1'), ifd0, ifd1, thumb]);
+      const jpeg = Buffer.concat([main.subarray(0, 2), Buffer.from([0xFF, 0xE1]), be16(exif.length + 2), exif, main.subarray(2)]);
+      const content = Buffer.from('q 523.28 0 0 294.35 36 511.54 cm /Im1 Do Q');
+      const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+        '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Contents 4 0 R /Resources << /XObject << /Im1 5 0 R >> >> >>',
+        Buffer.concat([Buffer.from(`<< /Length ${content.length} >>\nstream\n`), content, Buffer.from('\nendstream')]),
+        Buffer.concat([Buffer.from(`<< /Type /XObject /Subtype /Image /Width 1600 /Height 900 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`), jpeg, Buffer.from('\nendstream')])];
+      const parts = [Buffer.from('%PDF-1.4\n')]; const offs = []; let len = parts[0].length;
+      objs.forEach((o, i) => { offs.push(len); const b = Buffer.concat([Buffer.from(`${i + 1} 0 obj\n`), Buffer.isBuffer(o) ? o : Buffer.from(o), Buffer.from('\nendobj\n')]); parts.push(b); len += b.length; });
+      parts.push(Buffer.from(`xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offs.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('')}trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${len}\n%%EOF\n`));
+      const pdf = Buffer.concat(parts);
+      await page.goto(`${origin}/compress-pdf.html`);
+      await page.locator('#compressFileInput').setInputFiles({ name: 'camera-scan.pdf', mimeType: 'application/pdf', buffer: pdf });
+      await page.locator('#targetKbInput').fill('30');
+      await page.locator('#btnStartCompress').click();
+      await page.locator('#compressResultArea:not(.hidden)').waitFor({ timeout: 30000 });
+      const out = await page.evaluate(async () => { const b = await fetch(document.getElementById('btnDownloadCompressedPdf').href).then(r => r.blob()); return { size: b.size, text: new TextDecoder('latin1').decode(await b.arrayBuffer()) }; });
+      ok(/\/MediaBox \[0 0 595\.28 841\.89\]/.test(out.text) && /\/Count 1\b/.test(out.text), 'compress: an A4 page with an EXIF-thumbnail JPEG comes back as one A4 page');
+      const draw = out.text.match(/q ([\d.]+) 0 0 ([\d.]+) ([\d.]+) ([\d.]+) cm \/Im1 Do Q/);
+      ok(draw && Math.abs(parseFloat(draw[1]) - 595.28) < 0.1 && Math.abs(parseFloat(draw[2]) - 334.85) < 0.5 && parseFloat(draw[3]) === 0 && Math.abs(parseFloat(draw[4]) - 253.52) < 0.5, `compress: the image is fitted to the page width and centred (${draw && draw[0]})`);
+      ok(out.size <= 30 * 1024 && out.size < pdf.length, `compress: the result (${out.size} bytes) is under 30 KB and smaller than the input (${pdf.length} bytes)`);
+    }
+
     // Exam page: the preset switch shows which preset is in use
     await page.goto(`${origin}/upsc-photo-signature-size.html`);
     ok(await page.locator('.choice[data-preset="upsc-photo"]').getAttribute('aria-pressed') === 'true', 'UPSC photo preset is marked as selected on load');

@@ -444,7 +444,7 @@ const server = http.createServer((req,res) => {
       };
     }, height);
     ok(placed.theme && placed.n >= 1 && placed.n <= 3, `${file} @${width}: ${placed.n} preview slots`);
-    ok(placed.rows.every(r => r.label.trim() === 'Advertisement' && r.minH >= 250), `${file} @${width}: labelled slots keep a 250px reserve (${JSON.stringify(placed.rows)})`);
+    ok(placed.rows.every(r => r.label.trim() === 'Advertisements' && r.minH >= 250), `${file} @${width}: labelled slots keep a 250px reserve (${JSON.stringify(placed.rows)})`);
     ok(placed.rows.every(r => r.top > height), `${file} @${width}: every slot starts below the fold (${JSON.stringify(placed.rows.map(r => Math.round(r.top)))} vs ${height})`);
     if (placed.toolBottom) ok(placed.rows.every(r => r.top >= placed.toolBottom - 1), `${file} @${width}: slots are below the tool`);
   }

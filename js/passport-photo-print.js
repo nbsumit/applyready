@@ -272,14 +272,38 @@
     ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
   }
 
+
+  /**
+   * Write the print resolution into the JPEG's JFIF header, so photo labs and
+   * image viewers read the sheet as 300 DPI (4 x 6 in) instead of the 96 DPI
+   * default. Canvas encoders write a JFIF APP0 segment with no density; the
+   * pixels are untouched. Returns the original blob if the header is not JFIF.
+   */
+  async function withJfifDensity(blob, dpi) {
+    try {
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      // SOI, then APP0 with the "JFIF\0" identifier: density unit at offset 13, X and Y density at 14-17.
+      const isJfif = bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF && bytes[3] === 0xE0 &&
+        bytes[6] === 0x4A && bytes[7] === 0x46 && bytes[8] === 0x49 && bytes[9] === 0x46 && bytes[10] === 0x00;
+      if (!isJfif) return blob;
+      bytes[13] = 1;                       // units: dots per inch
+      bytes[14] = (dpi >> 8) & 0xFF; bytes[15] = dpi & 0xFF;
+      bytes[16] = (dpi >> 8) & 0xFF; bytes[17] = dpi & 0xFF;
+      return new Blob([bytes], { type: 'image/jpeg' });
+    } catch (e) {
+      return blob;
+    }
+  }
+
   function updateDownloadLinks(count, paperSpec, canvasW, canvasH) {
     if (!sheetCanvas) return;
 
     // 1. High-Res JPEG blob. Encoding takes a moment; a click that lands before it is ready
     //    downloads the new sheet as soon as it exists, never the previous one.
     jpgPending = true;
-    sheetCanvas.toBlob(blob => {
-      if (!blob) return;
+    sheetCanvas.toBlob(async rawBlob => {
+      if (!rawBlob) return;
+      const blob = await withJfifDensity(rawBlob, DPI);
       if (jpgBlobUrl) URL.revokeObjectURL(jpgBlobUrl);
       jpgBlobUrl = URL.createObjectURL(blob);
 

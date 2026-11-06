@@ -272,7 +272,7 @@ const NO_SLOTS = new Set(['404.html', 'offline.html', 'privacy.html', 'terms.htm
 const plain = s => s.replace(/<script[\s\S]*?<\/script>|<!--[\s\S]*?-->/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 for (const f of pages) {
   const s = read(f);
-  const slots = [...s.matchAll(/<aside class="ad-slot-container" data-ad-position="(below-tool|mid-article|before-faq|before-footer)" role="complementary" aria-label="(Advertisement \d+)">[\s\S]*?<span class="ad-slot-label">Advertisement<\/span>/g)];
+  const slots = [...s.matchAll(/<aside class="ad-slot-container" data-ad-position="(below-tool|mid-article|before-faq|before-footer)" role="complementary" aria-label="(Advertisements \d+)">[\s\S]*?<span class="ad-slot-label">Advertisements<\/span>/g)];
   const labels = slots.map(m => m[2]);
   ok(new Set(labels).size === labels.length, `${f}: ad landmarks share a label`);
   const blocked = NO_SLOTS.has(f) || isStub(s) || isNoindex(s);
