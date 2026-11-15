@@ -60,7 +60,7 @@ Each was reproduced in Chromium on the original code before the fix, and `tests/
 - **Dead code:** lookups of elements that no longer exist (`specDims`, `specSize`, `specFormat`, `examDateInput`, three empty-state ids), the unused `window.ApplyReadyResizer` global, an unreachable unsanitised fallback in `migrateResumeSchema`, two unused variables in the PDF engine, the leftover `console.error`, and `sync-shell.js` branches for markup no page has had for weeks (a page without shell markers now fails with a clear message instead).
 - **CSS:** about 45 unused selectors removed from `css/app.css` (old aliases such as `.form-control`, `.toast`, `.radio`, `.badge--*`, `.spinner`) and two from `css/document.css` (exported resume unchanged; the pinned hash in the content test was updated).
 - **Docs:** removed `docs/archive/` (13 superseded audits describing stylesheets that no longer exist), `docs/PRODUCT_UPGRADE.md` and `docs/UX_TASK_TESTS.md` (8 templates, support modals and ad slots that do not exist). README rewritten. They remain in Git history.
-- **Owner notes moved out of public HTML:** four `TODO(Sumit)` comments were visible in the page source of the Author and Editorial policy pages; they are listed in section 8 instead.
+- **Owner notes removed from public HTML:** four `TODO(Sumit)` comments were visible in the page source of the Author and Editorial policy pages.
 - **Consistency:** card links now say "Read guide", "View requirements" or "Open tool" consistently; the Privacy card in a guide no longer says "Open tool".
 - **Git:** the remote has only `main`; no stale branches to delete. `.gitignore` covers `node_modules/`, `test-results/` and `playwright-report/`. No secrets or `.env` files in the history; `npm audit` reports 0 vulnerabilities (dev dependencies only).
 
@@ -92,12 +92,10 @@ The same browser suites passed on the original code before any change, so no reg
 
 ## 8. Manual steps that need outside access
 
-1. **Merge to `main`.** GitHub Pages deploys only `main`; until then the live site still serves the AdSense code and `ads.txt`. CI runs on the pull request.
-2. **AdSense account:** remove `applyready.in` from Sites in the AdSense dashboard (or close the account) so Google stops expecting the site. Nothing in the repository can do this.
-3. **Security headers (optional):** to add HSTS and clickjacking protection, put the domain behind a proxy that can set headers (for example Cloudflare with a Transform Rule adding `Strict-Transport-Security`, `X-Content-Type-Options: nosniff` and `Content-Security-Policy: frame-ancestors 'none'`), or accept GitHub Pages' defaults. Enforce HTTPS in the repository's Pages settings if it is not already on.
-4. **Search Console:** after deploying, request reindexing of the Privacy and Terms pages so search snippets stop mentioning ads.
-5. **Owner content** (previously TODO comments in the HTML): add a 160 x 160 profile photo and two or three sentences of background with profile links (and the same links in the Person `sameAs`) on `author/sumit-sengar.html`; optionally a sentence on how AI-drafted text is reviewed in `editorial-policy.html#ai`.
-6. Still open from the 6 November audit: add RRB photo and signature figures once a CEN can be opened from an Indian network (`docs/content-quality/research/rrb.md`).
+1. **AdSense account:** remove `applyready.in` from Sites in the AdSense dashboard (or close the account) so Google stops expecting the site. Nothing in the repository can do this.
+2. **Security headers (optional):** to add HSTS and clickjacking protection, put the domain behind a proxy that can set headers (for example Cloudflare with a Transform Rule adding `Strict-Transport-Security`, `X-Content-Type-Options: nosniff` and `Content-Security-Policy: frame-ancestors 'none'`), or accept GitHub Pages' defaults. Enforce HTTPS in the repository's Pages settings if it is not already on.
+3. **Search Console:** after deploying, request reindexing of the Privacy and Terms pages so search snippets stop mentioning ads.
+4. Still open from the 6 November audit: add RRB photo and signature figures once a CEN can be opened from an Indian network (`docs/content-quality/research/rrb.md`).
 
 ## 9. What to watch after deploying
 
