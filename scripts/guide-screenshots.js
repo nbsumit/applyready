@@ -71,14 +71,6 @@ async function resizerWith(page, origin, preset, file) {
 }
 
 const SHOTS = {
-  'resizer-requirement': {
-    alt: 'The ApplyReady image resizer asking what you are preparing, with requirement cards that show each pixel size and KB limit, above the drop zone.',
-    async run(page, origin) {
-      await page.goto(origin + '/index.html');
-      await annotate(page, [['#reqGrid', 'Pick the requirement from your form', 'above'], ['#dropzone', 'Then add the photo or signature', 'above']]);
-      return regionOf(page, ['#reqPanel', '#dropzone']);
-    }
-  },
   'resizer-result-table': {
     alt: 'An ApplyReady result for a 350 by 450 pixel photo under a 50 KB limit: the Download button, a preview, and a table comparing the required file size, dimensions and format with the produced file.',
     async run(page, origin) {

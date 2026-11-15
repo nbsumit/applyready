@@ -265,7 +265,8 @@
     const clean = url.trim();
     if (/[\u0000-\u001f]/.test(clean)) return '#';
     try {
-      const hasProtocol = /^[a-z][a-z0-9+.-]*:/i.test(clean);
+      // host:port (example.com:8080/x) is not a scheme, so it is given https:// like any bare host.
+      const hasProtocol = /^[a-z][a-z0-9+.-]*:/i.test(clean) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(clean);
       const parsed = new URL(hasProtocol ? clean : 'https://' + clean);
       return ['https:', 'http:', 'mailto:', 'tel:'].includes(parsed.protocol) ? parsed.href : '#';
     } catch (e) { return '#'; }
@@ -297,19 +298,7 @@
    * Migrate any v1 or partial data safely into v2
    */
   function migrateResumeSchema(raw) {
-    if (SCHEMA && typeof SCHEMA.migrate === 'function') {
-      return SCHEMA.migrate(raw);
-    }
-    if (typeof ApplyReadyTemplates !== 'undefined' && ApplyReadyTemplates.migrateResumeSchema) {
-      return ApplyReadyTemplates.migrateResumeSchema(raw);
-    }
-    const src = (raw && raw.data) ? raw.data : (raw || {});
-    return Object.assign(JSON.parse(JSON.stringify(EMPTY_DATA)), src, {
-      personal: Object.assign({}, EMPTY_DATA.personal, src.personal || {}),
-      skills: Object.assign({}, EMPTY_DATA.skills, src.skills || {}),
-      design: Object.assign({}, EMPTY_DATA.design, src.design || {}),
-      sectionVisibility: Object.assign({}, EMPTY_DATA.sectionVisibility, src.sectionVisibility || {})
-    });
+    return SCHEMA.migrate(raw);
   }
 
   /**
@@ -1137,15 +1126,15 @@
     }
   }
 
-  const iconButton = (action, extra, label, icon, extraClass = '') =>
-    `<button type="button" class="btn btn-sm btn-icon btn-ghost ${extraClass}" data-action="${action}" ${extra} title="${label}" aria-label="${label}"${/disabled/.test(extra) ? ' disabled' : ''}><i aria-hidden="true" class="${icon}"></i></button>`;
+  const iconButton = (action, attr, label, icon, extraClass = '', disabled = false) =>
+    `<button type="button" class="btn btn-sm btn-icon btn-ghost ${extraClass}" data-action="${action}" ${attr} title="${label}" aria-label="${label}"${disabled ? ' disabled' : ''}><i aria-hidden="true" class="${icon}"></i></button>`;
 
   // Reorder, duplicate and delete share one quiet style; delete sits apart and only turns red when aimed at.
   function entryActions(kind, id, index, count, noun) {
     const attr = `data-id="${id}"`;
     return `<div class="dynamic-item-actions entry__actions">
-            ${iconButton('move-up-' + kind, `${attr}${index === 0 ? ' disabled' : ''}`, `Move ${noun} ${index + 1} up`, 'fa-solid fa-arrow-up')}
-            ${iconButton('move-down-' + kind, `${attr}${index === count - 1 ? ' disabled' : ''}`, `Move ${noun} ${index + 1} down`, 'fa-solid fa-arrow-down')}
+            ${iconButton('move-up-' + kind, attr, `Move ${noun} ${index + 1} up`, 'fa-solid fa-arrow-up', '', index === 0)}
+            ${iconButton('move-down-' + kind, attr, `Move ${noun} ${index + 1} down`, 'fa-solid fa-arrow-down', '', index === count - 1)}
             ${iconButton('duplicate-' + kind, attr, `Duplicate ${noun} ${index + 1}`, 'fa-regular fa-copy')}
             <span class="entry__sep" aria-hidden="true"></span>
             ${iconButton('remove-' + kind, attr, `Delete ${noun} ${index + 1}`, 'fa-regular fa-trash-can', 'btn-danger-ghost')}
@@ -2321,14 +2310,12 @@
                 return;
               }
             }
+            // Migrate before touching the editor, so a backup that fails here leaves the resume as it was.
+            const restored = migrateResumeSchema(parsed);
             pushHistoryState();
-            resumeData = migrateResumeSchema(parsed);
+            resumeData = restored;
             isDirty = false;
-            populateAllFormFields();
-            renderAllDynamicLists();
-            updateDesignControlsFromState();
-            renderResumePreview();
-            runResumeReview();
+            refreshWholeEditor();
             notify('Resume backup restored.');
             // Restored sections can change the page height substantially. Show the
             // restored identity instead of leaving a field beneath the sticky header.

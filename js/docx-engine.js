@@ -255,7 +255,9 @@
     function registerHyperlink(targetUrl) {
       if (!targetUrl) return null;
       let safeUrl = targetUrl.trim();
-      if (/[\u0000-\u001f\s]/.test(safeUrl) || (/^[a-z][a-z0-9+.-]*:/i.test(safeUrl) && !/^(https?:|mailto:|tel:)/i.test(safeUrl))) return null;
+      // host:port (example.com:8080/x) is not a scheme, so it is given https:// like any bare host.
+      const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(safeUrl) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(safeUrl);
+      if (/[\u0000-\u001f\s]/.test(safeUrl) || (hasScheme && !/^(https?:|mailto:|tel:)/i.test(safeUrl))) return null;
       if (!/^https?:\/\//i.test(safeUrl) && !/^(mailto:|tel:)/i.test(safeUrl)) {
         safeUrl = 'https://' + safeUrl;
       }

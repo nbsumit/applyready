@@ -5,7 +5,7 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
-const { ASSET_VERSION, headerHTML, footerHTML, stylesheetLinks, adsHead, cspMeta } = require('./lib/shell');
+const { ASSET_VERSION, headerHTML, footerHTML, stylesheetLinks, cspMeta } = require('./lib/shell');
 
 const root = path.resolve(__dirname, '..');
 const check = process.argv.includes('--check');
@@ -17,53 +17,19 @@ const markers = name => new RegExp(`[ \\t]*<!-- shell:${name}:start -->[\\s\\S]*
 
 function sync(page, html) {
   const lang = (html.match(/<html lang="([a-z]+)"/) || [])[1] || 'en';
-  const hadCropper = /cropper\.min\.css/.test(html) || /<!-- shell:styles:start -->[\s\S]*cropper\.min\.css/.test(html);
-  const needsCropper = hadCropper;
-  const needsDocument = page === 'resume.html';
-
-  // 1. Stylesheets
-  const styles = block('styles', stylesheetLinks(page, { cropper: needsCropper, document: needsDocument }));
-  if (markers('styles').test(html)) html = html.replace(markers('styles'), styles);
-  else {
-    const re = /[ \t]*<link rel="stylesheet" href="[^"]*css\/(?:vendor\/icons\.min|vendor\/cropper\.min|style|workspace|app)\.css[^"]*">[ \t]*\r?\n?/g;
-    let first = true;
-    html = html.replace(re, () => { if (first) { first = false; return styles + '\n'; } return ''; });
-    html = html.replace(/[ \t]*<!-- (?:Font Awesome Icons|Cropper\.js CSS|Custom Styles) -->[ \t]*\r?\n/g, '');
+  const parts = {
+    styles: stylesheetLinks(page, { cropper: /cropper\.min\.css/.test(html), document: page === 'resume.html' }),
+    header: headerHTML(page),
+    footer: footerHTML(page, lang),
+    csp: cspMeta()
+  };
+  for (const [name, body] of Object.entries(parts)) {
+    // Every page carries the four marker pairs. A new page copies them from an existing one.
+    if (!markers(name).test(html)) throw new Error(`${page}: missing <!-- shell:${name}:start --> / <!-- shell:${name}:end --> markers`);
+    html = html.replace(markers(name), block(name, body));
   }
 
-  // 2. Header
-  const header = block('header', headerHTML(page));
-  if (markers('header').test(html)) html = html.replace(markers('header'), header);
-  else {
-    const start = html.search(/[ \t]*<a class="skip-link"/);
-    const navStart = html.indexOf('<nav class="navbar"', start);
-    const navEnd = html.indexOf('</nav>', navStart) + '</nav>'.length;
-    if (start < 0 || navStart < 0) throw new Error(`${page}: header not found`);
-    html = html.slice(0, start) + header + html.slice(navEnd);
-  }
-
-  // 3. Footer
-  const footer = block('footer', footerHTML(page, lang));
-  if (markers('footer').test(html)) html = html.replace(markers('footer'), footer);
-  else {
-    const fs_ = html.search(/[ \t]*<footer class="site-footer">/);
-    const fe = html.indexOf('</footer>', fs_) + '</footer>'.length;
-    if (fs_ < 0) throw new Error(`${page}: footer not found`);
-    html = html.slice(0, fs_) + footer + html.slice(fe);
-  }
-
-  // 4. Content-Security-Policy, then the AdSense account tag. 404 and offline get the policy only.
-  const csp = block('csp', cspMeta());
-  if (markers('csp').test(html)) html = html.replace(markers('csp'), csp);
-  else html = html.replace(/[ \t]*<\/head>/, csp + '\n</head>');
-
-  // 5. AdSense account tag and async loader. Omitted on 404 and offline.
-  const ads = adsHead(page);
-  const adsBlock = ads ? block('ads', ads) : '';
-  if (markers('ads').test(html)) html = html.replace(markers('ads'), adsBlock);
-  else if (adsBlock) html = html.replace(/[ \t]*<\/head>/, adsBlock + '\n</head>');
-
-  // 6. Asset versions on local scripts (root-relative pages must not use relative script paths)
+  // Asset versions on local scripts (root-relative pages must not use relative script paths)
   if (page === '404.html' || page === 'offline.html') html = html.replace(/src="js\//g, 'src="/js/');
   html = html.replace(/(src="(?:\.\.\/|\/)?js\/(?!vendor\/)[^"?]+\.js)(?:\?v=[^"]*)?"/g, `$1?v=${ASSET_VERSION}"`);
   return html;

@@ -14,6 +14,11 @@
   const doc = typeof document !== 'undefined' ? document : null;
   if (!doc) return;
 
+  // Larger files are rare for upload portals and would hold several copies in memory at once.
+  const MAX_FILE_BYTES = 50 * 1024 * 1024;
+  // A problem with the file itself, explained to the person as it is.
+  class FileProblem extends Error {}
+
   const dropzone = doc.getElementById('compressDropzone');
   const fileInput = doc.getElementById('compressFileInput');
   const btnBrowse = doc.getElementById('btnCompressBrowse');
@@ -125,6 +130,11 @@
       return;
     }
 
+    if (file.size > MAX_FILE_BYTES) {
+      notifyError(`That file is ${(file.size / 1048576).toFixed(1)} MB. Choose a file under 50 MB.`);
+      return;
+    }
+
     currentFile = file;
     if (fileInfoBox) fileInfoBox.classList.remove('hidden');
     if (fileInfoText) fileInfoText.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
@@ -142,6 +152,7 @@
     if (resultArea) resultArea.classList.add('hidden');
     updateProgress(15, 'Reading document…');
 
+    const objectUrls = [];
     try {
       const targetKB = parseInt(targetKbInput ? targetKbInput.value : '200', 10) || 200;
       lastTargetKB = targetKB;
@@ -160,22 +171,23 @@
       if (isPdf) {
         updateProgress(30, 'Extracting document pages…');
         const buffer = await currentFile.arrayBuffer();
-        pages = await extractPagesFromPdf(buffer);
+        pages = await extractPagesFromPdf(buffer, objectUrls);
 
         if (!pages.length) {
-          // If no embedded DCTDecode images could be parsed, wrap original or notify
-          throw new Error('This tool works best for scanned documents and image-based PDFs. Your PDF appears to contain selectable text or vector forms with no embedded page images to compress. If your file is already under the portal size limit, you can upload it directly.');
+          throw new FileProblem('This tool compresses scanned documents and image-based PDFs. This PDF has selectable text or drawings and no page images to compress. If it is already under the portal limit, upload it as it is.');
+        }
+        // Each page image becomes one output page, so a PDF with text pages, or with more than one
+        // image on a page, would come back with pages missing. Refuse rather than drop content.
+        const pageCount = countPdfPages(buffer);
+        if (pageCount && pageCount !== pages.length) {
+          throw new FileProblem(`This PDF has ${pageCount} ${pageCount === 1 ? 'page' : 'pages'} but ${pages.length} scanned ${pages.length === 1 ? 'image' : 'images'}, so compressing it here would lose content. This tool works on PDFs where every page is one scanned image. Scan the pages again as photos and combine them with the image to PDF tool.`);
         }
       } else {
         updateProgress(30, 'Processing document image…');
-        const dataUrl = await new Promise(res => {
-          const r = new FileReader();
-          r.onload = e => res(e.target.result);
-          r.readAsDataURL(currentFile);
-        });
+        const url = URL.createObjectURL(currentFile);
+        objectUrls.push(url);
         const img = new Image();
-        img.src = dataUrl;
-        await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('The image could not be read')); });
+        await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new FileProblem('That image could not be opened. Check that it is a JPG or PNG that opens on your device.')); img.src = url; });
         pages.push({
           width: img.naturalWidth,
           height: img.naturalHeight,
@@ -209,8 +221,10 @@
       else displayResult(outputBlob, pages.length);
 
     } catch (err) {
-      notifyError('Compression did not finish. ' + String(err.message).replace(/\.$/, '') + '. Check that the file opens on your device, then try again.');
+      if (err instanceof FileProblem) notifyError(err.message);
+      else notifyError('Compression did not finish. ' + String(err && err.message || err).replace(/\.$/, '') + '. Check that the file opens on your device, then try again.');
     } finally {
+      objectUrls.forEach(u => URL.revokeObjectURL(u));
       isCompressing = false;
       btnStartCompress.disabled = false;
       if (progressBox) progressBox.classList.add('hidden');
@@ -239,6 +253,15 @@
       if (w > 1 && h > 1 && w < 20000 && h < 20000) boxes.push([w, h]);
     }
     return boxes;
+  }
+
+  /**
+   * Count the page objects (/Type /Page, not /Pages) in a PDF whose page dictionaries are
+   * stored uncompressed. Returns 0 when none can be read (they sit in compressed object streams).
+   */
+  function countPdfPages(bytes) {
+    const text = new TextDecoder('latin1').decode(bytes);
+    return (text.match(/\/Type\s*\/Page(?![a-zA-Z])/g) || []).length;
   }
 
   /**
@@ -278,7 +301,7 @@
    * original page size is kept and the image is placed on it as the source placed it
    * (fitted and centred); otherwise the page takes the image's own size.
    */
-  async function extractPagesFromPdf(arrayBuffer) {
+  async function extractPagesFromPdf(arrayBuffer, objectUrls) {
     const bytes = new Uint8Array(arrayBuffer);
     const pages = [];
     const len = bytes.length;
@@ -292,6 +315,7 @@
           const jpegSlice = bytes.subarray(start, end);
           const blob = new Blob([jpegSlice], { type: 'image/jpeg' });
           const url = URL.createObjectURL(blob);
+          objectUrls.push(url);
           const img = new Image();
           img.src = url;
           try {

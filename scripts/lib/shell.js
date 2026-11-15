@@ -3,9 +3,7 @@
    checks that no page has drifted, so all pages look and behave like one product. */
 'use strict';
 
-const ASSET_VERSION = '20261106';
-const ADS_CLIENT = 'ca-pub-2713609207324356';
-const ADS_SRC = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=' + ADS_CLIENT;
+const ASSET_VERSION = '20261115';
 
 // The product map. The header menu, the mobile sheet and the footer all read from here,
 // so every page presents the same five areas: image tools, PDF tools, resume, exam requirements, guides.
@@ -131,33 +129,25 @@ ${cols}
 }
 
 // GitHub Pages cannot set response headers, so the policy is a meta tag.
-// AdSense needs these hosts for the loader, the unit, the consent message and its frames.
+// Every script, style, font and image is served from this origin; nothing is loaded from a third party.
+// style-src keeps 'unsafe-inline' for style attributes the tools set while cropping and previewing.
+// blob: and data: cover generated previews and downloads, which never leave the browser.
 function cspMeta() {
-  // Google documents no fixed host list for AdSense and supports only a nonce-based policy,
-  // which a static site cannot issue. This allowlist names the hosts its scripts, frames and
-  // beacons are observed to use, including the consent message (fundingchoicesmessages) and
-  // the ad-traffic-quality checks; test with ?adpreview=1 and the console after any change.
-  const ads = 'https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google';
   const policy = [
     "default-src 'self'",
-    `script-src 'self' ${ads} 'unsafe-inline' 'unsafe-eval'`,
+    "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' https: data: blob:",
-    "font-src 'self' data: https://fonts.gstatic.com",
-    `connect-src 'self' blob: data: ${ads}`,
-    `frame-src ${ads} https://*.safeframe.googlesyndication.com`,
-    `media-src 'self' blob: data: ${ads}`,
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' blob: data:",
+    "media-src 'self' blob: data:",
     "worker-src 'self' blob:",
+    "frame-src 'none'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'"
   ].join('; ');
   return `  <meta http-equiv="Content-Security-Policy" content="${policy}">`;
-}
-
-function adsHead(page) {
-  if (page === '404.html' || page === 'offline.html') return '';
-  return `  <meta name="google-adsense-account" content="${ADS_CLIENT}">`;
 }
 
 function stylesheetLinks(page, { cropper, document: doc }) {
@@ -172,4 +162,4 @@ function stylesheetLinks(page, { cropper, document: doc }) {
   ].filter(Boolean).join('\n');
 }
 
-module.exports = { ASSET_VERSION, ADS_CLIENT, TOOLS, EXAMS, SIZES, FOOTER_COLUMNS, headerHTML, footerHTML, stylesheetLinks, adsHead, cspMeta, href };
+module.exports = { ASSET_VERSION, TOOLS, EXAMS, SIZES, FOOTER_COLUMNS, headerHTML, footerHTML, stylesheetLinks, cspMeta, href };

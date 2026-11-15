@@ -246,7 +246,9 @@
     if (!raw || /[\u0000-\u001f]/.test(String(raw))) return '';
     const clean = String(raw).trim();
     try {
-      const url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(clean) ? clean : 'https://' + clean);
+      // host:port (example.com:8080/x) is not a scheme, so it is given https:// like any bare host.
+      const hasProtocol = /^[a-z][a-z0-9+.-]*:/i.test(clean) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(clean);
+      const url = new URL(hasProtocol ? clean : 'https://' + clean);
       return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol) ? url.href : '';
     } catch (e) { return ''; }
   }
@@ -364,10 +366,10 @@
       }
 
       // 1. Catalog Object (id 1)
-      const catalogId = addObject('<< /Type /Catalog /Pages 2 0 R >>');
+      addObject('<< /Type /Catalog /Pages 2 0 R >>');
 
       // 2. Pages Root Placeholder (id 2)
-      const pagesRootId = addObject('');
+      addObject('');
 
       // Standard Font Objects
       const f1 = addObject('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');

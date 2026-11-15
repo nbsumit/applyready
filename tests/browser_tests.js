@@ -32,7 +32,7 @@ const server = http.createServer((req,res) => {
   const browser=await chromium.launch({headless:true, ...(defaultBrowser ? {executablePath:defaultBrowser} : {}), args:['--no-sandbox','--disable-dev-shm-usage']});
   const errors=[], external=[];
   const context=await browser.newContext({viewport:{width:1440,height:1000},colorScheme:'light',acceptDownloads:true});
-  await context.route('**/*', route=>{ const url=route.request().url(); if(url.startsWith(origin) || /^(blob:|data:)/.test(url)) return route.continue(); if(/googlesyndication\.com|doubleclick\.net|googleadservices\.com|fundingchoicesmessages\.google\.com/.test(url)) return route.abort(); external.push(url); return route.abort(); });
+  await context.route('**/*', route=>{ const url=route.request().url(); if(url.startsWith(origin) || /^(blob:|data:)/.test(url)) return route.continue(); external.push(url); return route.abort(); });
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   page.on('console', msg => { const t = msg.text(); if (/Content Security Policy|Refused to (?:load|apply|execute|frame|connect)/.test(t)) errors.push(t); });
   let dialogAction='dismiss'; const dialogs=[];
@@ -415,79 +415,35 @@ const server = http.createServer((req,res) => {
   }
   console.log('✓ Nav, theme, Tools menu, and single-file drop checked on all pages');
 
-  // Without a real unit the slot is invisible and the ad script is not requested.
-  await page.goto(`${origin}/index.html`);
-  const hidden = await page.evaluate(() => {
-    const slot = document.querySelector('.ad-slot-container');
-    const cs = getComputedStyle(slot);
-    return { display: cs.display, h: slot.getBoundingClientRect().height, script: !!document.querySelector('script[src*="adsbygoogle.js"]') };
-  });
-  ok(hidden.display === 'none' && hidden.h === 0 && !hidden.script, `empty slots stay out of the layout (${JSON.stringify(hidden)})`);
-
-  // Ad slots stay below the tool and below the first screen. ?adpreview=1 shows the reserved box.
-  for (const [file, width, height] of [['index.html', 390, 844], ['index.html', 1280, 800], ['signature-cleaner.html', 390, 844], ['guides/fix-common-photo-upload-errors.html', 1280, 800]]) {
-    await page.setViewportSize({ width, height });
-    await page.goto(`${origin}/${file}?adpreview=1`);
-    const placed = await page.evaluate((vh) => {
-      const slots = [...document.querySelectorAll('.ad-slot-container')];
-      return {
-        theme: document.documentElement.classList.contains('ad-preview'),
-        n: slots.length,
-        rows: slots.map(s => {
-          const r = s.getBoundingClientRect();
-          const inner = s.querySelector('.ad-slot-inner');
-          const minH = inner ? parseFloat(getComputedStyle(inner).minHeight) : 0;
-          return { pos: s.getAttribute('data-ad-position'), top: r.top + window.scrollY, minH, label: (s.querySelector('.ad-slot-label') || {}).textContent || '' };
-        }),
-        toolBottom: (() => { const t = document.getElementById('resizerApp') || document.querySelector('.workspace'); return t ? t.getBoundingClientRect().bottom + window.scrollY : 0; })(),
-        vh
-      };
-    }, height);
-    ok(placed.theme && placed.n >= 1 && placed.n <= 3, `${file} @${width}: ${placed.n} preview slots`);
-    ok(placed.rows.every(r => r.label.trim() === 'Advertisements' && r.minH >= 250), `${file} @${width}: labelled slots keep a 250px reserve (${JSON.stringify(placed.rows)})`);
-    ok(placed.rows.every(r => r.top > height), `${file} @${width}: every slot starts below the fold (${JSON.stringify(placed.rows.map(r => Math.round(r.top)))} vs ${height})`);
-    if (placed.toolBottom) ok(placed.rows.every(r => r.top >= placed.toolBottom - 1), `${file} @${width}: slots are below the tool`);
-  }
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto(`${origin}/index.html?adpreview=1`);
-  await page.evaluate(() => { document.documentElement.dataset.theme = 'dark'; });
-  const dark = await page.evaluate(() => {
-    const slot = document.querySelector('.ad-slot-inner');
-    const cs = getComputedStyle(slot);
-    return { bg: cs.backgroundColor, color: getComputedStyle(slot.querySelector('.ad-slot-label')).color, shown: getComputedStyle(document.querySelector('.ad-slot-container')).display };
-  });
-  ok(dark.shown === 'block' && dark.bg !== 'rgb(241, 241, 238)', `dark theme slot is visible and not the light surface (${dark.bg}, ${dark.color})`);
-  console.log('✓ Ad slots sit below the tool and the fold, in light and dark');
-
-  // The hosts AdSense uses once a unit is on, including a safeframe, a country TLD and an inline script.
+  // No advertising, and the CSP refuses third-party scripts, frames and inline scripts.
   const probePages = ['index.html', 'upsc-photo-signature-size.html', 'guides/how-to-reduce-photo-to-50kb-without-blur.html', 'resume.html', 'signature-cleaner.html', 'image-to-pdf.html', 'compress-pdf.html', 'passport-photo-print.html', 'privacy.html', '404.html'];
+  await page.setViewportSize({ width: 1280, height: 800 });
   for (const file of probePages) {
     await page.goto(`${origin}/${file}`);
-    const blocked = await page.evaluate(() => new Promise(resolve => {
+    const state = await page.evaluate(() => new Promise(resolve => {
       const hits = [];
-      document.addEventListener('securitypolicyviolation', e => hits.push(e.violatedDirective + ' ' + e.blockedURI));
+      document.addEventListener('securitypolicyviolation', e => hits.push(e.violatedDirective.split(' ')[0]));
       const frame = document.createElement('iframe');
-      frame.src = 'https://abc123.safeframe.googlesyndication.com/safeframe';
+      frame.src = 'https://example.com/frame';
       frame.hidden = true;
       document.body.appendChild(frame);
       const script = document.createElement('script');
-      script.src = 'https://adservice.google.co.in/adsid/integrator.js';
+      script.src = 'https://example.com/third-party.js';
       document.head.appendChild(script);
-      const pub = document.createElement('script');
-      pub.src = 'https://securepubads.g.doubleclick.net/tag/js/gpt.js';
-      document.head.appendChild(pub);
       const inline = document.createElement('script');
       inline.textContent = 'window.__cspInline = 1';
       document.head.appendChild(inline);
-      const img = new Image();
-      img.src = 'https://s0.2mdn.net/favicon.ico';
-      const fontImg = new Image();
-      fontImg.src = 'https://fonts.gstatic.com/s/a';
-      setTimeout(() => resolve(hits), 400);
+      setTimeout(() => resolve({
+        hits: [...new Set(hits)].sort(),
+        inlineRan: window.__cspInline === 1,
+        ads: document.querySelectorAll('ins.adsbygoogle, .ad-slot-container, script[src*="adsbygoogle"], meta[name="google-adsense-account"]').length
+      }), 400);
     }));
-    ok(blocked.length === 0, `${file}: CSP blocked ${blocked.join('; ') || 'nothing'}`);
+    ok(state.ads === 0, `${file}: no ad markup or ad script`);
+    ok(!state.inlineRan && ['frame-src', 'script-src-elem'].every(d => state.hits.includes(d)), `${file}: CSP blocks third-party frames, scripts and inline scripts (${JSON.stringify(state)})`);
   }
-  console.log('✓ CSP allows the AdSense hosts used by a live unit');
+  ok(external.every(u => /^https:\/\/example\.com\//.test(u)), `pages requested no third-party URL on their own: ${external.filter(u => !/^https:\/\/example\.com\//.test(u)).join(', ') || 'none'}`);
+  console.log('✓ No ads on any page; the CSP refuses third-party scripts, frames and inline scripts');
 
   console.log(`\n${checks} browser assertions passed. Screenshots and real downloads: ${output}`);
   await browser.close();await new Promise(resolve=>server.close(resolve));

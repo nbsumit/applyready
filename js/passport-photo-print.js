@@ -31,7 +31,6 @@
   const gapSelect = doc.getElementById('gapSelect');
 
   const sheetCanvas = doc.getElementById('sheetCanvas');
-  const emptyState = doc.getElementById('printEmptyState');
   const previewArea = doc.getElementById('printPreviewArea');
 
   const statPaper = doc.getElementById('statPrintPaper');
@@ -126,6 +125,7 @@
 
     loadedFile = file;
     const reader = new FileReader();
+    reader.onerror = () => { loadedFile = null; notifyError('That file could not be read. Choose it again, or save a copy to your device first.'); };
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
@@ -133,7 +133,6 @@
         if (fileInfoBox) fileInfoBox.classList.remove('hidden');
         if (fileInfoText) fileInfoText.textContent = `${file.name} (${img.naturalWidth} × ${img.naturalHeight} px)`;
         if (dropzone) dropzone.classList.add('hidden');
-        if (emptyState) emptyState.classList.add('hidden');
         if (previewArea) previewArea.classList.remove('hidden');
         renderSheet();
         if (window.ApplyReadyUI && window.ApplyReadyUI.reveal && previewArea) window.ApplyReadyUI.reveal(previewArea.closest('section') || previewArea);
@@ -423,7 +422,6 @@
     if (fileInput) fileInput.value = '';
     if (fileInfoBox) fileInfoBox.classList.add('hidden');
     if (previewArea) previewArea.classList.add('hidden');
-    if (emptyState) emptyState.classList.remove('hidden');
     if (dropzone) dropzone.classList.remove('hidden');
   }
 

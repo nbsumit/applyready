@@ -104,18 +104,6 @@
   flex-wrap: wrap;
 }
 
-.resume-entry-sub {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-style: italic;
-  font-size: 9pt;
-  color: #4B5563 !important;
-  margin-top: 1pt;
-  margin-bottom: 2pt;
-  flex-wrap: wrap;
-}
-
 .resume-bullets {
   list-style: disc;
   margin-left: 14pt;
@@ -329,7 +317,6 @@
   line-height: 1.4;
 }
 
-
 /* ---- Paper typography shared by screen and print ---- */
 /* Resume paper typography is shared by screen and print. */
 .ats-resume-sheet { --document-size: 11pt; font-size: var(--document-size) !important; }
@@ -374,7 +361,6 @@
     color: #000000 !important;
   }
 
-  .main-content,
   .resume-app-layout,
   .preview-panel,
   .resume-preview-outer,
@@ -481,7 +467,6 @@
   .resume-section-title { break-after: avoid; }
   .resume-bullets li { break-inside: avoid; }
 }
-
 
 /* PDF coordinates already include safe paper margins. */
 .ats-resume-sheet.resume-vector-page { padding: 0 !important; }

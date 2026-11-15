@@ -9,6 +9,7 @@
   'use strict';
   // Errors use the site's notification instead of a blocking browser dialog.
   const notifyError = message => (window.ApplyReadyUI && window.ApplyReadyUI.notify) ? window.ApplyReadyUI.notify(message, true) : window.alert(message);
+  const MAX_SIDE_PX = 2400;
 
   const doc = typeof document !== 'undefined' ? document : null;
   if (!doc) return;
@@ -31,7 +32,6 @@
   const btnResetSettings = doc.getElementById('btnResetSettings');
 
   const previewArea = doc.getElementById('cleanerPreviewArea');
-  const emptyState = doc.getElementById('cleanerEmptyState');
   const canvas = doc.getElementById('cleanerCanvas');
   const originalCanvas = doc.getElementById('cleanerOriginalCanvas');
   const btnDownload = doc.getElementById('btnCleanerDownload');
@@ -137,6 +137,7 @@
 
     originalFile = file;
     const reader = new FileReader();
+    reader.onerror = () => { originalFile = null; notifyError('That file could not be read. Choose it again, or save a copy to your device first.'); };
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
@@ -144,21 +145,24 @@
         if (fileInfoBox) fileInfoBox.classList.remove('hidden');
         if (fileInfoText) fileInfoText.textContent = `${file.name} (${img.naturalWidth} × ${img.naturalHeight} px, ${(file.size / 1024).toFixed(1)} KB)`;
         if (dropzone) dropzone.classList.add('hidden');
-        if (emptyState) emptyState.classList.add('hidden');
         if (previewArea) previewArea.classList.remove('hidden');
 
-        // Draw to offscreen buffer
+        // Work on at most MAX_SIDE_PX on the long side: the cleaning pass runs over every pixel on each
+        // slider change, and a phone photo of a signature can be 12 MP or more. Forms ask for far less.
+        const k = Math.min(1, MAX_SIDE_PX / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * k));
+        const h = Math.max(1, Math.round(img.naturalHeight * k));
         const offscreen = doc.createElement('canvas');
-        offscreen.width = img.naturalWidth;
-        offscreen.height = img.naturalHeight;
+        offscreen.width = w;
+        offscreen.height = h;
         const ctx = offscreen.getContext('2d');
-        ctx.drawImage(img, 0, 0);
-        originalImageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height);
+        ctx.drawImage(img, 0, 0, w, h);
+        originalImageData = ctx.getImageData(0, 0, w, h);
         // The original stays on screen beside the cleaned version.
         if (originalCanvas) {
-          originalCanvas.width = img.naturalWidth;
-          originalCanvas.height = img.naturalHeight;
-          originalCanvas.getContext('2d').drawImage(img, 0, 0);
+          originalCanvas.width = w;
+          originalCanvas.height = h;
+          originalCanvas.getContext('2d').drawImage(img, 0, 0, w, h);
         }
 
         processSignature();
@@ -332,7 +336,6 @@
     if (fileInput) fileInput.value = '';
     if (fileInfoBox) fileInfoBox.classList.add('hidden');
     if (previewArea) previewArea.classList.add('hidden');
-    if (emptyState) emptyState.classList.remove('hidden');
     if (dropzone) dropzone.classList.remove('hidden');
   }
 

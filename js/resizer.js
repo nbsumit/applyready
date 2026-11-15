@@ -222,15 +222,12 @@
   const processErrorMessage = getEl('processErrorMessage');
 
   const processSummary = getEl('processSummary');
-  const specDims = getEl('specDims');
-  const specSize = getEl('specSize');
-  const specFormat = getEl('specFormat');
 
   // Annotation Elements
   const dateOptionsBox = getEl('dateOptionsBox');
   const addDateCheckbox = getEl('addDateCheckbox');
   const dateInputGroup = getEl('dateInputGroup');
-  const annotationDateInput = getEl('annotationDateInput') || getEl('examDateInput');
+  const annotationDateInput = getEl('annotationDateInput');
   const btnTodayDate = getEl('btnTodayDate');
   const candidateNameInput = getEl('candidateNameInput');
 
@@ -757,22 +754,7 @@
       const kb = specs.minKB > 0 ? `${specs.minKB}–${specs.maxKB} KB` : (hindi ? `${specs.maxKB} KB से कम` : `under ${specs.maxKB} KB`);
       customSpec.textContent = currentPresetKey === 'custom' && requirementChosen && specs.isValid ? `${specs.width} × ${specs.height} px · ${kb}` : customSpec.dataset.empty;
     }
-    if (specs.isValid) {
-      if (specDims) specDims.textContent = `${specs.width} × ${specs.height} px`;
-      if (specSize) {
-        specSize.textContent = specs.minKB > 0 ? `${specs.minKB} KB – ${specs.maxKB} KB` : `Under ${specs.maxKB} KB`;
-      }
-      if (btnProcess) btnProcess.disabled = !cropperReady || processing || !requirementChosen;
-    } else {
-      if (specDims) specDims.textContent = 'Invalid dimensions';
-      if (specSize) specSize.textContent = 'Invalid size limit';
-      if (btnProcess) btnProcess.disabled = true;
-    }
-
-    if (specFormat) {
-      const formatNames = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
-      specFormat.textContent = formatNames[specs.mimeType] || 'JPEG';
-    }
+    if (btnProcess) btnProcess.disabled = !specs.isValid || !cropperReady || processing || !requirementChosen;
 
     renderProcessSummary(specs);
     invalidateResult();
@@ -1601,8 +1583,13 @@
         const buffer = await blob.arrayBuffer();
         const bytes = new Uint8Array(buffer);
         if (bytes[0] === 0xFF && bytes[1] === 0xD8) {
+          // JFIF requires its APP0 segment straight after the start-of-image marker, and some
+          // portals check for it there, so the padding comments go after APP0 when it is present.
+          let head = 2;
+          if (bytes[2] === 0xFF && bytes[3] === 0xE0) head = 4 + ((bytes[4] << 8) | bytes[5]);
+          if (head > bytes.length) head = 2;
           let remaining = padNeeded;
-          const chunks = [bytes.subarray(0, 2)];
+          const chunks = [bytes.subarray(0, head)];
           while (remaining > 0) {
             const segTotalLen = Math.min(remaining + 4, 65535);
             if (segTotalLen < 5) break;
@@ -1615,7 +1602,7 @@
             chunks.push(seg);
             remaining -= payloadLen;
           }
-          chunks.push(bytes.subarray(2));
+          chunks.push(bytes.subarray(head));
           const newBlob = new Blob(chunks, { type: 'image/jpeg' });
           if (newBlob.size <= maxBytes) return newBlob;
         }
@@ -1829,17 +1816,16 @@
       if (opId !== currentOpId || revision !== configRevision) return;
 
       const msg = err && err.message ? err.message : 'An unexpected error occurred while processing the image.';
-      console.error('RESIZER PROCESS ERROR:', err);
       showProcessError(msg);
     } finally {
       if (validationUrl) URL.revokeObjectURL(validationUrl);
-      if (opId === currentOpId) {
-        processing = false;
-        if (btnProcess) {
-          btnProcess.disabled = !cropperReady || !getActiveSpecs().isValid || !requirementChosen;
-          btnProcess.innerHTML = processLabel;
-          btnProcess.removeAttribute('aria-busy');
-        }
+      // Only one run can hold the flag (a run cannot start while it is set), so release it even when
+      // this run was superseded by a new image or a reset; otherwise the button stays locked.
+      processing = false;
+      if (btnProcess) {
+        btnProcess.disabled = !cropperReady || !getActiveSpecs().isValid || !requirementChosen;
+        btnProcess.innerHTML = processLabel;
+        btnProcess.removeAttribute('aria-busy');
       }
     }
   }
@@ -1849,14 +1835,6 @@
     document.addEventListener('DOMContentLoaded', init);
   }
 
-  // Global browser API
-  if (typeof window !== 'undefined') {
-    window.ApplyReadyResizer = {
-      applyPreset,
-      PRESETS,
-      useOriginalSize
-    };
-  }
 
   // Export for testing
   if (typeof module !== 'undefined' && module.exports) {

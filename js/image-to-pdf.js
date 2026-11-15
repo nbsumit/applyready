@@ -19,6 +19,7 @@
   const A4_H = 841.89;
   const LETTER_W = 612.00;
   const LETTER_H = 792.00;
+  const MAX_SIDE_PX = 4000;
 
   const dropzone = doc.getElementById('imgPdfDropzone');
   const fileInput = doc.getElementById('imgPdfFileInput');
@@ -32,7 +33,6 @@
   const qualitySelect = doc.getElementById('pdfQualitySelect');
 
   const imageListContainer = doc.getElementById('imageListContainer');
-  const emptyState = doc.getElementById('imgPdfEmptyState');
   const workspaceControls = doc.getElementById('workspaceControls');
   const btnConvert = doc.getElementById('btnConvertToPdf');
   const btnClearAll = doc.getElementById('btnClearAllImages');
@@ -132,14 +132,25 @@
       return;
     }
 
-    let loaded = 0;
-    validFiles.forEach(file => {
-      const id = 'img_' + Math.random().toString(36).substr(2, 9);
+    // Files finish loading in any order; keep the order they were chosen in.
+    const loadedItems = new Array(validFiles.length).fill(null);
+    let settled = 0;
+    const settle = () => {
+      settled++;
+      if (settled === validFiles.length) {
+        loadedItems.forEach(item => { if (item) items.push(item); });
+        renderList();
+      }
+    };
+    const unreadable = file => notifyError('"' + file.name + '" could not be read as an image. Choose JPG, PNG or WebP files that open on your device.');
+    validFiles.forEach((file, index) => {
+      const id = 'img_' + Math.random().toString(36).slice(2, 11);
       const reader = new FileReader();
+      reader.onerror = () => { unreadable(file); settle(); };
       reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-          items.push({
+          loadedItems[index] = {
             id,
             file,
             name: file.name,
@@ -147,17 +158,10 @@
             width: img.naturalWidth,
             height: img.naturalHeight,
             rotation: 0
-          });
-          loaded++;
-          if (loaded === validFiles.length) {
-            renderList();
-          }
+          };
+          settle();
         };
-        img.onerror = () => {
-          loaded++;
-          notifyError('"' + file.name + '" could not be read as an image. Choose JPG, PNG or WebP files that open on your device.');
-          if (loaded === validFiles.length) renderList();
-        };
+        img.onerror = () => { unreadable(file); settle(); };
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
@@ -170,13 +174,11 @@
     imageListContainer.innerHTML = '';
 
     if (items.length === 0) {
-      if (emptyState) emptyState.classList.remove('hidden');
       if (workspaceControls) workspaceControls.classList.add('hidden');
       if (resultArea) resultArea.classList.add('hidden');
       return;
     }
 
-    if (emptyState) emptyState.classList.add('hidden');
     if (workspaceControls) workspaceControls.classList.remove('hidden');
 
     items.forEach((item, index) => {
@@ -384,24 +386,29 @@
       for (const item of items) {
         // Draw to offscreen canvas to standardize to JPEG bytes
         const { w: itemW, h: itemH } = turned(item);
+        // Phone cameras produce 24 to 50 MP photos, beyond the canvas limit of mobile browsers.
+        // 4000 px on the long side is still over 300 DPI on an A4 or Letter page.
+        const k = Math.min(1, MAX_SIDE_PX / Math.max(itemW, itemH));
         const canvas = doc.createElement('canvas');
-        canvas.width = itemW;
-        canvas.height = itemH;
+        canvas.width = Math.max(1, Math.round(itemW * k));
+        canvas.height = Math.max(1, Math.round(itemH * k));
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         const img = new Image();
-        img.src = item.dataUrl;
-        await new Promise(res => {
-          if (img.complete) return res();
+        await new Promise((res, rej) => {
           img.onload = () => res();
+          img.onerror = () => rej(new Error('"' + item.name + '" could not be read'));
+          img.src = item.dataUrl;
         });
-        ctx.translate(itemW / 2, itemH / 2);
+        ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate(item.rotation * Math.PI / 180);
+        ctx.scale(k, k);
         ctx.drawImage(img, -item.width / 2, -item.height / 2);
 
         const jpegBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+        if (!jpegBlob) throw new Error('"' + item.name + '" is too large for this browser to convert');
         const jpegBuffer = await jpegBlob.arrayBuffer();
         const jpegBytes = new Uint8Array(jpegBuffer);
 
@@ -450,8 +457,8 @@
           drawH,
           posX,
           posY,
-          imgWidthPx: itemW,
-          imgHeightPx: itemH,
+          imgWidthPx: canvas.width,
+          imgHeightPx: canvas.height,
           jpegBytes
         });
       }
