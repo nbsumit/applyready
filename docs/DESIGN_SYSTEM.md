@@ -204,7 +204,7 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
 - **Fields**: `.field` > `.field-label` (+ `.optional`), control (`.input`, `.textarea`, custom select),
   `.field-hint`, `.field-error`. Invalid fields get a danger border and tint. `.input-unit`,
   `.input-group`, `.field-row`, `.field-row--3`.
-- **Choice**: `.check`, `.radio`, `.switch` (native inputs drawn in CSS), the custom select (listbox with
+- **Choice**: `.check`, `.switch` (native inputs drawn in CSS), the custom select (listbox with
   arrows, Home, End, Enter, Space, Escape, type-ahead; native `<select>` keeps value and events),
   ranges with `.range-head`, `.segmented` (`aria-pressed`) for 2 to 4 views, `.chip` for filters only.
 - **Disclosure**: `.disclosure` (`<details>`), `.ws-customize`, accordion sections in the resume.
@@ -223,7 +223,7 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
 | Selected | `aria-pressed` / `aria-selected` with an ink marker and weight, never colour alone |
 | Saving / saved | Resume `#draftStatusText` (`role="status"`) |
 | Offline | `offline.html` served by the service worker |
-| Temporary confirmation | Toast (`ApplyReadyUI.notify`) |
+| Temporary confirmation | `.task-notification` toast (`ApplyReadyUI.notify`) |
 
 Notices are tinted blocks with a 3 px status rule, not cards. Severity is always named in text.
 

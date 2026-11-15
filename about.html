@@ -32,18 +32,15 @@
   <link rel="manifest" href="favicon/site.webmanifest">
   <meta name="theme-color" content="#2563EB">
 
-  <script src="js/theme.js?v=20261106"></script>
+  <script src="js/theme.js?v=20261115"></script>
 
   <!-- shell:styles:start -->
   <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261106">
+  <link rel="stylesheet" href="css/app.css?v=20261115">
   <!-- shell:styles:end -->
-  <!-- shell:ads:start -->
-  <meta name="google-adsense-account" content="ca-pub-2713609207324356">
-  <!-- shell:ads:end -->
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' blob: data: https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google; frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google https://*.safeframe.googlesyndication.com; media-src 'self' blob: data: https://*.googlesyndication.com https://*.doubleclick.net https://*.google https://*.google.com https://*.gstatic.com https://*.googleadservices.com https://*.googletagservices.com https://adservice.google.co.in https://*.adtrafficquality.google; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
 </head>
 <body class="content-page">
@@ -127,20 +124,7 @@
         <h2>Who makes it</h2>
         <p>ApplyReady is built and maintained by <a href="author/sumit-sengar.html">Sumit Sengar</a>, an independent software engineer based in India. He started it after seeing candidates without photo-editing software pay a cyber caf&eacute; to resize a photo, or use free websites that upload their identity photos, add watermarks or hide the real download button among advertisements.</p>
 
-        
-
-
-
-
-
-
-
-    <aside class="ad-slot-container" data-ad-position="mid-article" role="complementary" aria-label="Advertisements 1">
-      <div class="ad-slot-inner">
-        <span class="ad-slot-label">Advertisements</span>
-      </div>
-    </aside>
-<h2>Project history</h2>
+        <h2>Project history</h2>
         <ul>
           <li><strong>30 September 2026:</strong> first public version: the image resizer, the resume builder with PDF and Word export, and light and dark themes.</li>
           <li><strong>1 October 2026:</strong> more resume templates, a comparison with a pasted job description, and export fixes.</li>
@@ -155,30 +139,17 @@
         <p>Exam figures are taken only from the exam body's own notice or bulletin, and each table row links to it. File-size examples come from running ApplyReady's own tools on the test images in <a href="img/samples/test-portrait.jpg">/img/samples/</a>. The <a href="editorial-policy.html">editorial policy</a> explains the process, how often pages are re-checked, how AI tools are used, and lists every correction. If a figure is wrong, please <a href="mailto:hello@nbsumit.com?subject=Report%20a%20wrong%20spec&amp;body=Page%3A%20%0AWhat%20is%20wrong%3A%20%0ALink%20to%20the%20official%20notice%3A%20">report it</a> with a link to the official notice.</p>
 
         <h2>Privacy</h2>
-        <p>Images, signatures, PDFs and resume text are processed by JavaScript in your browser. They are not sent to a server run by ApplyReady, and the tools keep working offline once a page has loaded. The resume builder saves a draft on your device only if you turn that option on. The <a href="privacy.html">privacy policy</a> covers the advertising cookies and the offline cache.</p>
+        <p>Images, signatures, PDFs and resume text are processed by JavaScript in your browser. They are not sent to a server run by ApplyReady, and the tools keep working offline once a page has loaded. The resume builder saves a draft on your device only if you turn that option on. The <a href="privacy.html">privacy policy</a> covers local storage and the offline cache.</p>
 
         <h2>Independence and funding</h2>
         <p>ApplyReady is not affiliated with, endorsed by or connected to the Staff Selection Commission, UPSC, IBPS, the National Testing Agency, the Railway Recruitment Boards or any other examination body, employer or government department. Their names appear only to describe the requirements candidates must meet.</p>
-        <p>ApplyReady is free to use. There is no paid version and no sponsored content. A few pages may show a labelled Google AdSense unit, placed below a tool or inside a guide, never beside an upload, download or export button, and never on the resume editor. Advertising cookies are described in the <a href="privacy.html#cookies">privacy policy</a>.</p>
+        <p>ApplyReady is free to use. There is no paid version, no sponsored content and no advertising.</p>
 
         <h2>How it is built</h2>
         <p>The site is plain HTML, CSS and JavaScript hosted on GitHub Pages, with no server-side code. Images are processed with the browser's Canvas API, cropping uses the Cropper.js library, PDFs and Word files are written directly in the browser, and a service worker keeps the tools available offline.</p>
       </section>
     </article>
-  
-
-
-
-
-
-
-
-    <aside class="ad-slot-container" data-ad-position="before-footer" role="complementary" aria-label="Advertisements 2">
-      <div class="ad-slot-inner">
-        <span class="ad-slot-label">Advertisements</span>
-      </div>
-    </aside>
-</main>
+  </main>
 
   <!-- FOOTER -->
   <!-- shell:footer:start -->
@@ -235,8 +206,7 @@
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261106" defer></script>
-  <script src="js/site.js?v=20261106"></script>
-  <script src="js/ads.js?v=20261106" defer></script>
+  <script src="js/components.js?v=20261115" defer></script>
+  <script src="js/site.js?v=20261115"></script>
 </body>
 </html>

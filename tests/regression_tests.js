@@ -231,4 +231,27 @@ check('Job-description matching finds real terms, ignores filler, and matches wo
   assert.equal(result.found.length + result.missing.length, result.keywords.length);
   assert.deepEqual(keywords.matchKeywords('', 'anything').keywords, []);
 });
-console.log(`\n${checks} behavior regression checks passed.`);
+check('Links written as host:port keep their link; unsafe schemes are still refused', () => {
+  assert.equal(pdf.sanitizeUrl('www.example.com:8080/work'), 'https://www.example.com:8080/work');
+  assert.equal(pdf.sanitizeUrl('localhost:3000'), 'https://localhost:3000/');
+  for (const bad of ['javascript:alert(1)', 'JavaScript:alert(1)', 'data:text/html,x', 'vbscript:x', 'file:///etc/passwd']) assert.equal(pdf.sanitizeUrl(bad), '', bad);
+  const d = resumeFixture();
+  d.personal.website = 'www.example.com:8080/work';
+  const rels = new TextDecoder().decode(docx.generateResumeDOCX(d).files.find(f => f.name === 'word/_rels/document.xml.rels').data);
+  assert(rels.includes('Target="https://www.example.com:8080/work"'), 'Word file links the host:port website');
+});
+(async () => {
+  const { ensureMinKB } = require('../js/resizer');
+  // A tiny JFIF JPEG header: SOI, APP0 (16 bytes), then the rest of an image.
+  const app0 = [0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00];
+  const jpeg = new Blob([new Uint8Array([0xFF, 0xD8, ...app0, 0xFF, 0xDB, 0x00, 0x04, 0x00, 0x00, 0xFF, 0xD9])], { type: 'image/jpeg' });
+  const padded = await ensureMinKB(jpeg, 20, 30);
+  const bytes = new Uint8Array(await padded.arrayBuffer());
+  assert(padded.size >= 20 * 1024 && padded.size <= 30 * 1024, `padded size ${padded.size}`);
+  assert.deepEqual([...bytes.subarray(0, 4)], [0xFF, 0xD8, 0xFF, 0xE0], 'APP0 stays straight after SOI');
+  assert.equal(String.fromCharCode(...bytes.subarray(6, 10)), 'JFIF');
+  assert.deepEqual([...bytes.subarray(20, 22)], [0xFF, 0xFE], 'padding is a comment segment after APP0');
+  assert.deepEqual([...bytes.subarray(-2)], [0xFF, 0xD9], 'image still ends with EOI');
+  checks++; console.log('✓ Padding a JPEG up to a minimum KB keeps the JFIF header first');
+  console.log(`\n${checks} behavior regression checks passed.`);
+})().catch(e => { console.error(e); process.exit(1); });

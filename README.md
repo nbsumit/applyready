@@ -1,148 +1,104 @@
-# ApplyReady.in
+# ApplyReady
 
-> **100% Client-Side Image Resizer, Strict Compressor and ATS Resume Builder**
+[applyready.in](https://applyready.in) prepares the files that Indian exam and job portals ask for: photos and signatures at an exact pixel size and KB range, PDFs under a size limit, printable passport-photo sheets, and an ATS-friendly resume.
 
-ApplyReady is a fast, responsive, and privacy-first web utility suite built for professionals, job applicants, and students. It provides two essential in-browser tools:
+Everything runs in the visitor's browser. Files are never uploaded, there are no accounts, no cookies, no analytics and no advertising.
 
-1. **Image Resizer and Strict Compressor**: Crop to exact pixel dimensions, resize without distortion, lock aspect ratios, preserve transparency in PNG and WebP, compare before and after results, and compress strictly under target file sizes (20KB, 50KB, 100KB, custom).
-2. **Single-Column ATS-Friendly Resume Builder**: Build clean, standard resumes across 15 ATS-friendly templates with real-time preview, local draft persistence, JSON backup, transparent diagnostic review, and instant client-side exports to Vector PDF, editable DOCX, and formatted Plain Text.
+## What the site does
 
-**Zero Server Uploads**: 100% of processing runs directly in your browser on your device using HTML5 Canvas, modern JavaScript, and direct client-side document generators. No photos, signatures, or resumes are ever transmitted to an external server.
+| Tool | Page | Script |
+|---|---|---|
+| Image resizer and strict compressor (exam presets, KB limits, crop, rotate, name/date strip) | `index.html`, `resize-image-to-*.html`, `*-photo-signature-size.html`, `hi/*.html` | `js/resizer.js`, `js/presets.js` |
+| Signature cleaner | `signature-cleaner.html` | `js/signature-cleaner.js` |
+| Passport photo print sheet | `passport-photo-print.html` | `js/passport-photo-print.js` |
+| Image to PDF | `image-to-pdf.html` | `js/image-to-pdf.js` |
+| Compress PDF (scanned / image PDFs) | `compress-pdf.html` | `js/compress-pdf.js` |
+| Resume builder: 15 single-column templates, live preview, PDF / Word / text export, JSON backup, review checks, job-description keyword match | `resume.html` | `js/resume.js`, `js/templates.js`, `js/pdf-engine.js`, `js/docx-engine.js`, `js/keywords.js`, `js/resume-schema.js` |
 
----
+Around the tools: 22 guides (`guides/`), five exam requirement pages with Hindi versions, and the About, Editorial policy, Author, Contact, Privacy and Terms pages.
 
-## Key Features
+## Technology
 
-### 1. General-Purpose Image Resizer and Compressor
-- **Standard Presets and Custom Control**:
-  - `Custom Dimensions`: Enter any width, height, and target KB limit with immediate input validation and aspect-ratio locking.
-  - `Profile / Avatar`: 400 x 400 px, max 100 KB.
-  - `ID / Passport Photo`: 350 x 450 px, max 50 KB.
-  - `Signature / Stamp`: 300 x 100 px, max 30 KB.
-  - `Social / Web Card`: 1200 x 630 px, max 300 KB.
-  - `Document Scan`: 800 x 1000 px, max 200 KB.
-- **Aspect-Ratio Lock and File Replacement**: Lock aspect ratio while entering custom dimensions to prevent distortion; swap source files in one click with the Replace action.
-- **Requirement First**: Step 1 asks what you are preparing (passport photo, signature, thumb impression, declaration, profile photo, document scan, web card or a custom size) and shows each option's pixels and file limit. Exam and file-size pages arrive with their requirement chosen. Preset values stay editable; switching to custom keeps the current proportions.
-- **Original-Size Compression**: Select the full image at its original dimensions, reset rotation and remove the text strip with one button. Output limits are still validated before processing.
-- **Local Sample Document**: Try the complete workflow without providing a personal file. The demonstration image is generated in the browser.
-- **Before and After Visual Comparison**: Toggle between original source and processed output with real-time file size indicators.
-- **Multiple Formats and Transparency**: Supports JPEG, PNG, and WebP. Transparent backgrounds are preserved in PNG and WebP, with configurable background fill (White / Black) when converting to JPEG.
-- **Strict Byte-Level Verification**: Compression uses adaptive quality quantization. Never reports false success if an image remains oversized, and verifies output dimensions, MIME type, and exact byte size prior to download.
-- **Distortion-Free Annotations**: Optional name and date strip for official identification. Automatically matches crop aspect ratio to the photo area above the strip, eliminating vertical stretching. Dynamically scales long and Unicode names.
-- **Interactive Cropper**: Touch-friendly zoom, rotation (+90 / -90 degrees), and aspect ratio locking (Target, Original, 1:1, 4:3, 16:9, Free).
+- Plain HTML, CSS and JavaScript. No framework, no bundler, no runtime dependencies.
+- Hosted as static files on **GitHub Pages** from the `main` branch, custom domain `applyready.in` (`CNAME`).
+- Only third-party code: Cropper.js (`js/vendor/`), a Font Awesome icon subset (`css/vendor/`), Inter and Noto Devanagari fonts (`assets/fonts/`). All are self-hosted; licences are in `docs/licenses/`.
+- No backend, database, authentication, API keys or environment variables. Nothing to configure for deployment.
+- A service worker (`sw.js`) caches the pages and assets so the tools work offline.
+- Every page carries a Content Security Policy (meta tag, because GitHub Pages cannot set headers) that allows scripts, styles, fonts and images from this origin only.
 
-### 2. Single-Column ATS-Friendly Resume Builder
-- **15 ATS-Friendly Templates** (all single-column, standard fonts, real selectable text), filterable by audience:
-  - *General*: `Classic Professional` (serif, centred, default), `Modern Minimal`, `Compact Professional`, `Career Transition` (skills before history), and `ATS Plain (Maximum Compatibility)` (no lines, no colour, dates on their own line for older portals, government and bank job sites).
-  - *Students & freshers*: `Campus Placement / Fresher` (education with CGPA first, projects, internships, certifications, positions of responsibility), `Graduate / Early Career`, and `Ivy Classic` (university career-office format).
-  - *Tech*: `Software Engineer` (technical skills under the summary) and `Project Focused`.
-  - *Senior & executive*: `Executive Impact` (selected achievements before experience) and `Experienced Professional`.
-  - *Specialist roles*: `Healthcare & Licensed Roles` (licences near the top), `Finance & Consulting` (dense one-page serif), and `Academic / Research CV` (publications, teaching, presentations, grants).
-- **One Style Definition per Template**: Each template declares its alignment, rules, heading colour, date placement and wording once in `js/templates.js`; the PDF (and the live preview drawn from it), Word, plain-text and print renderers all read the same definition.
-- **Editable Headings and Labels**: Rename section headings (for example *Internships* instead of *Work Experience*) and skill row labels; untouched headings follow the selected template's wording.
-- **Accessible Template Gallery**: Full preview modal with demonstration data and focus management before applying templates.
-- **Multi-Format Document Exports**:
-  - `Vector PDF`: Selectable, searchable text, standard fonts (Times and Helvetica), clickable hyperlinks, and deliberate pagination (A4 and US Letter). Text outside WinAnsi uses the browser's **Save as PDF** dialog to preserve the characters.
-  - `Vector PDF` files also carry title, author, subject and keyword metadata.
-  - `Editable DOCX`: Pure client-side Open Packaging Conventions (OPC) OOXML generator with real Word bullet lists, right-aligned date tab stops, Heading styles, document properties, and removal of control characters that Word rejects.
-  - `Plain Text (.txt)`: Clean formatted text for application form text-areas.
-- **Transparent Review Panel**: Explainable checks for contact details, missing dates and job titles, measurable results, passive openers ("Responsible for"), first-person wording, bullet length and count, empty skills, placeholders and page count. Zero fake ATS scores or arbitrary percentages.
-- **Job Description Comparison**: Paste a job advert in the Download tab to see which of its key terms (including multi-word names such as *Power BI* or *Lean Six Sigma*) already appear in your resume and which are missing. Matching handles word forms (*reports* / *reporting*), runs entirely on the device, and the advert is never stored.
-- **Unsaved-Work Protection**: With device saving off, the page asks before closing or reloading over edits that have not been downloaded or backed up.
-- **Editor and Live Preview Workspace**: Write, Style, Review and Download stages you can move between freely, an outline of sections with a status line each, collapsible entries, a review count on the Review tab, bounded undo/redo (up to 30 states) and focus restoration.
-- **Draft Persistence and JSON Backup**: Local device saving (`localStorage`) with deletion controls and versioned JSON backup and restore with schema migration.
-
-### 3. Responsive Design and Accessible Themes
-- **Light and Dark Themes**: System-driven with manual toggle, persisted in local storage with zero theme flash.
-- **Accessibility**: High-contrast themes, visible focus, keyboard controls, and automated WCAG accessibility checks. Physical-device and assistive-technology testing remain useful.
-- **Three Layout Modes**: Desktop (1000 px and up), tablet (640 to 999 px) and phone (under 640 px), each designed rather than squeezed: the resume editor sits beside its preview on desktops and switches with an Edit / Preview / Download bar below that; tools keep one sticky action and no inner scrolling; phones get stacked fields, full-width actions and tables laid out as blocks, from 320 px up.
-
----
-
-## Architecture and Tech Stack
-
-- **Markup and Styling**: Semantic HTML5, CSS custom properties, responsive media queries, and print stylesheets.
-- **Client-Side Logic**: Pure Vanilla JavaScript (ES6+). Zero backend server or database required.
-- **Vector PDF Engine (`js/pdf-engine.js`)**: Standalone, zero-dependency PDF 1.4 stream builder.
-- **DOCX Engine (`js/docx-engine.js`)**: Pure client-side Open Packaging Conventions OOXML generator.
-- **Template Catalogue (`js/templates.js`)**: Metadata, visual style definitions, section and skill labels, audience groups, and SVG thumbnails for all 15 templates.
-- **Image Manipulation (`js/resizer.js`)**: HTML5 Canvas 2D context and Cropper.js for touch manipulation.
-- **Deployment**: Static hosting on GitHub Pages with custom domain `applyready.in` and HTTPS via Cloudflare/GitHub.
-
----
-
-## Repository Structure
+## Repository layout
 
 ```
-/
-|-- index.html          # Image Resizer and Compressor
-|-- resume.html         # ATS-Friendly Resume Builder
-|-- 404.html            # Custom 404 Error Page
-|-- about.html          # About ApplyReady and Technical Overview
-|-- privacy.html        # Comprehensive Client-Side Privacy Policy
-|-- how-to-use.html     # User Documentation and Step-by-Step Guides
-|-- robots.txt          # Crawler Directives and Sitemap Reference
-|-- sitemap.xml         # Canonical Public URL Index
-|-- CNAME               # Custom Domain: applyready.in
-|-- css/
-|   |-- app.css         # The whole interface: tokens, shell, controls, tool workspace, reading pages, resume builder
-|   `-- document.css    # Resume sheet, templates and print layout (resume.html only)
-|-- js/
-|   |-- site.js         # Header, navigation, theme, toasts, confirm dialog
-|   |-- components.js   # Custom select, range, segmented control, tool workspace states
-|   |-- resizer.js      # Image cropping, canvas scaling and strict compression
-|   |-- resume.js       # Form state, live preview and draft management
-|   |-- templates.js    # 15 template styles, labels and SVG thumbnails
-|   |-- pdf-engine.js   # Client-side vector text PDF generator
-|   |-- docx-engine.js  # Pure client-side OOXML DOCX document generator
-|   |-- keywords.js     # On-device job description keyword matching
-|   `-- resume-schema.js # Backup validation and lossless migration
-|-- scripts/            # Developer tooling: shell sync and page generators
-|-- favicon/            # Brand favicons, touch icons, and webmanifest
-|-- assets/             # Brand vector SVG assets
-|-- guides/             # In-depth workflow optimization guides
-|-- docs/
-|   |-- DESIGN_SYSTEM.md    # Tokens, components, rules and the tests that guard them
-|   |-- PRODUCT_UPGRADE.md  # Architectural specification and upgrade details
-|   |-- UX_TASK_TESTS.md    # End-to-end task tests and verification records
-|   |-- UI_UX_REBUILD_PLAN.md # Why the interface was rebuilt and which contracts it preserves
-|   |-- SEO_SETUP.md        # Google Search Console, Bing and IndexNow setup
-|   `-- archive/            # Earlier interface audits and plans, kept as history
-`-- tests/
-    |-- run_tests.js         # Node.js unit suite (438 assertions)
-    |-- regression_tests.js  # Behaviour regression checks (46)
-    |-- browser_tests.js     # Playwright end-to-end, accessibility and download checks (2,900+)
-    |-- image_workflow_tests.js # Image tool end to end: presets, units, DPI, crop, rotate, zoom, formats, limits, drop (279)
-    |-- resume_flow_tests.js # Resume builder editing flow, exports, backup and phone flow (66)
-    |-- ui_tests.js          # Visible-control checks: dropdowns, labels, focus, errors, layout modes at both sides of each breakpoint, overflow at 32 widths, axe on every page (3,000+)
-    `-- browser_smoke.js     # Real image, PDF and resume exports; run with BROWSER=firefox for Firefox
+*.html, guides/, hi/, author/   Pages (57, of which 43 are indexable and listed in sitemap.xml)
+css/app.css                     The whole interface: tokens, shell, controls, tools, reading pages, resume builder
+css/document.css                Resume sheet and print layout (resume.html only)
+js/                             One script per tool, plus site.js (header, theme, notifications, dialogs),
+                                components.js (custom select, ranges, segmented controls) and theme.js
+js/vendor/, css/vendor/         Cropper.js and the icon subset
+assets/, favicon/, img/         Fonts, social card, icons, guide screenshots and sample images
+scripts/                        Developer tooling (not served to visitors; disallowed in robots.txt)
+tests/                          Node and Playwright test suites
+docs/                           Design system, SEO setup, research notes and measurements behind page figures
+sw.js, robots.txt, sitemap.xml, 404.html, offline.html
 ```
 
----
+## Local development
 
-## Testing and Verification
+Requirements: Node.js 22 and npm. The pages use root-relative paths, so serve the repository root over HTTP:
 
-The unit suite in `tests/run_tests.js` covers 14 test suites and 438 assertions, and `tests/regression_tests.js` adds 46 behaviour checks:
-- Vector PDF stream generation, valid PDF 1.4 headers, trailers, xref tables, and text streams.
-- Client-side DOCX Open Packaging Conventions structure and styles.
-- All 15 resume templates: configuration, rendering parity, template wording, and long-document pagination.
-- JSON backup schema validation, v1 to v2 migration, and draft resilience.
-- Transparent review engine diagnostic checks.
-- Image resizer dimension validation, aspect-ratio lock, and strict byte-size enforcement.
-- Strict prohibition of support popups, modals, nags, and timed overlays across all files.
-- Sitemap XML validity, canonical link consistency, and robots.txt rules.
-- Responsive styling, focus preservation, and WCAG AA color contrast ratios.
-
-For the current interface, see [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) and [docs/UI_UX_REBUILD_PLAN.md](docs/UI_UX_REBUILD_PLAN.md). The additional behavior and browser suites validate actual exports, draft recovery, responsive layouts, editable presets, original-size compression, and accessibility.
-
-Run the complete checks with `npm ci`, `npm test`, `npx playwright install chromium`, and `npm run test:browser`. Browser verification requires Poppler (`pdftotext`, `pdfinfo`) and `unzip`; CI installs these and retains screenshots and exported documents. This includes 60 long PDF cases across all templates, paper sizes, and font families. If Playwright's bundled browser is not installed, set `BROWSER_EXECUTABLE_PATH` to a local Chromium. `npm run test:firefox` runs the UI and smoke tests in Firefox (`npx playwright install firefox`). To run the same browser suites in Google Chrome or Microsoft Edge, point `BROWSER_EXECUTABLE_PATH` at that browser's binary. The interface was rebuilt as one design system; its tokens, components and rules are in `docs/DESIGN_SYSTEM.md`. Shared page chrome and the tool pages are generated by `scripts/sync-shell.js`, `scripts/build-image-pages.js` and `scripts/build-tool-pages.js` (`node scripts/sync-shell.js --check` verifies every page is in sync).
-
-To run the original verification suite:
 ```bash
-node tests/run_tests.js
+python3 -m http.server 8000
 ```
 
----
+Then open http://localhost:8000/. The service worker caches aggressively; use a private window or "Update on reload" in DevTools while editing.
 
-## Open Source & Sustainability
-ApplyReady is free, private, and open-source. All document processing runs entirely client-side in the browser. A few pages may show a labelled Google AdSense unit; files are still not uploaded.
+## Generated parts of pages
+
+Shared markup is written into the pages by scripts, between marker comments. Edit the generator, not the page:
+
+| Script | Writes |
+|---|---|
+| `node scripts/sync-shell.js` | Header, footer, stylesheet links, CSP and asset version (`<!-- shell:*:start -->` markers) on every page, from `scripts/lib/shell.js`. `--check` fails if any page is out of sync. |
+| `node scripts/build-image-pages.js` | The resizer workspace on the image pages, from `scripts/lib/image-workspace.js` |
+| `node scripts/build-tool-pages.js` | The workspace of the four single-file tools (`<!-- tool:start -->` markers) |
+| `node scripts/build-sitemap.js` | `sitemap.xml` from the indexable pages; `--check` verifies it |
+| `node scripts/guide-screenshots.js` | The annotated screenshots in `img/guides/` |
+| `python3 scripts/make-sample-images.py` | The sample images in `img/samples/` |
+
+A new page must contain the four `shell:*` marker pairs (copy them from an existing page).
+
+## Releasing a change
+
+1. Bump `ASSET_VERSION` in `scripts/lib/shell.js` and run `node scripts/sync-shell.js`, so browsers fetch the new CSS and JS.
+2. Bump `CACHE_NAME` in `sw.js`, so the service worker replaces its cache. Add any new page or asset to `STATIC_ASSETS`.
+3. Run `node scripts/build-sitemap.js` if page text changed.
+4. Run the tests (below), then merge to `main`. GitHub Pages deploys `main` automatically.
+
+## Testing
+
+```bash
+npm ci
+npm test
+```
+
+`npm test` runs the unit suite (`tests/run_tests.js`: PDF and DOCX engines, templates, schema migration, review checks, resizer validation), behaviour regressions (`tests/regression_tests.js`) and the content checks (`tests/content_tests.js`: titles, descriptions, canonicals, links and anchors, sitemap, offline cache, CSP, structured data, and a guard that fails if any ad-network code reappears).
+
+```bash
+npx playwright install chromium
+npm run test:browser
+```
+
+The browser suites drive every tool and page in Chromium: exports read back with Poppler (`pdftotext`, `pdfinfo`) and `unzip`, responsive layouts at 32 widths, keyboard and focus checks, axe accessibility scans, and the CSP. Set `BROWSER_EXECUTABLE_PATH` to use a locally installed Chromium, Chrome or Edge. `npm run test:firefox` runs the UI and smoke suites in Firefox.
+
+CI (`.github/workflows/quality.yml`) runs both commands on every push and pull request to `main`.
+
+## Further documentation
+
+- `docs/DESIGN_SYSTEM.md`: tokens, components, states and the rules the tests enforce.
+- `docs/SEO_SETUP.md`: Search Console, Bing and IndexNow.
+- `docs/PRODUCTION_READINESS.md`: the latest full audit, what changed, and the manual steps that remain.
+- `docs/content-quality/`: how the exam pages were researched, with the official sources; `docs/measurements/` holds the measured tool outputs quoted on the pages.
+
+## Licence and contact
+
+The code is public at [github.com/nbsumit/applyready](https://github.com/nbsumit/applyready). Third-party licences are in `docs/licenses/`. Questions and corrections: hello@nbsumit.com (also via `contact.html`).

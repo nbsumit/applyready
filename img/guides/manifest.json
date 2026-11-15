@@ -41,13 +41,6 @@
   "alt": "The Download step of the ApplyReady resume builder offering PDF, Word and plain text versions of the same resume.",
   "bytes": 19086
  },
- "resizer-requirement": {
-  "file": "img/guides/resizer-requirement.webp",
-  "width": 1246,
-  "height": 633,
-  "alt": "The ApplyReady image resizer asking what you are preparing, with requirement cards that show each pixel size and KB limit, above the drop zone.",
-  "bytes": 35488
- },
  "resizer-settings": {
   "file": "img/guides/resizer-settings.webp",
   "width": 1198,

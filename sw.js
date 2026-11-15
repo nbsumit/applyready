@@ -5,7 +5,7 @@
  * NOTE: Bump CACHE_NAME on every deploy to ensure clients receive updated assets.
  */
 
-const CACHE_NAME = 'applyready-v26';
+const CACHE_NAME = 'applyready-v27';
 
 const STATIC_ASSETS = [
   '/',
@@ -57,7 +57,6 @@ const STATIC_ASSETS = [
   '/resize-image-to-kb-limit.html',
   '/editorial-policy.html',
   '/author/sumit-sengar.html',
-  '/js/ads.js',
   '/js/contact.js',
   '/signature-cleaner.html',
   '/image-to-pdf.html',
@@ -94,12 +93,10 @@ const STATIC_ASSETS = [
   '/favicon/android-chrome-512x512.png',
   '/favicon/apple-touch-icon.png',
   '/favicon/site.webmanifest',
-  '/css/webfonts/fa-brands-400.woff2',
   '/img/guides/compress-pdf.webp',
   '/img/guides/image-to-pdf.webp',
   '/img/guides/passport-sheet.webp',
   '/img/guides/resizer-crop.webp',
-  '/img/guides/resizer-requirement.webp',
   '/img/guides/resizer-result-table.webp',
   '/img/guides/resizer-settings.webp',
   '/img/guides/resizer-units-cm.webp',
@@ -129,6 +126,13 @@ self.addEventListener('activate', event => {
   );
 });
 
+// Pages request versioned assets (app.css?v=...) and may carry a query (?preset=...), while the
+// precache stores plain paths. The cache is rebuilt under a new name on every release, so falling
+// back to a match that ignores the query cannot serve an asset from an older release.
+function matchCached(request) {
+  return caches.match(request).then(hit => hit || caches.match(request, { ignoreSearch: true }));
+}
+
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
@@ -151,7 +155,7 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => {
-          return caches.match(request).then(cached => {
+          return matchCached(request).then(cached => {
             if (cached) return cached;
             return caches.match('/offline.html');
           });
@@ -160,7 +164,7 @@ self.addEventListener('fetch', event => {
   } else {
     // Static assets: stale-while-revalidate
     event.respondWith(
-      caches.match(request).then(cachedResponse => {
+      matchCached(request).then(cachedResponse => {
         const fetchPromise = fetch(request).then(networkResponse => {
           if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
             const responseToCache = networkResponse.clone();

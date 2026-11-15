@@ -5,12 +5,12 @@ This file records what changed, the prose word count of each page, the claims we
 
 ## Update, 6 November 2026
 
-A second audit covered every page, every tool, every external link and Google's current AdSense policies. Its findings, the fixes made and the remaining owner steps are in [AUDIT-2026-11-06.md](AUDIT-2026-11-06.md). In short: no numeric figure was wrong; citations were tightened; the Compress PDF page's unsourced size-limit table was replaced; the compressor now keeps page size and reads camera JPEGs; the passport sheet records 300 DPI; the ad label, privacy policy and Content Security Policy were brought in line with Google's publisher policies; the header's Hindi link now opens the page's own Hindi version.
+A second audit covered every page, every tool and every external link. Its findings, the fixes made and the remaining owner steps are in [AUDIT-2026-11-06.md](AUDIT-2026-11-06.md). In short: no numeric figure was wrong; citations were tightened; the Compress PDF page's unsourced size-limit table was replaced; the compressor now keeps page size and reads camera JPEGs; the passport sheet records 300 DPI; the ad label, privacy policy and Content Security Policy were brought in line with Google's publisher policies; the header's Hindi link now opens the page's own Hindi version.
 
 ## What changed
 
 - **Trust pages.**
-  - New page: `editorial-policy.html`. The author page `author/sumit-sengar.html` was removed on 25 October 2026 and restored on 4 November 2026 for the AdSense application. Guide bylines link it. The editorial policy covers sourcing, measurements, review cadence, corrections, AI use and independence, and has a corrections log.
+  - New page: `editorial-policy.html`. The author page `author/sumit-sengar.html` was removed on 25 October 2026 and restored on 4 November 2026. Guide bylines link it. The editorial policy covers sourcing, measurements, review cadence, corrections, AI use and independence, and has a corrections log.
   - `about.html`, `contact.html` and `privacy.html` were rewritten. Privacy states plainly what is stored on your device.
   - The footer on every page links About, Editorial policy, Contact, Privacy and Terms.
 - **Exam pages** (SSC, UPSC, IBPS, NEET, RRB). Each one now has:

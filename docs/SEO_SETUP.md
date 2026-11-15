@@ -85,8 +85,8 @@ IndexNow is an open protocol that instantly alerts participating search engines 
             "https://applyready.in/",
             "https://applyready.in/resume.html",
             "https://applyready.in/how-to-use.html",
-            "https://applyready.in/guides/image-dimensions-vs-file-size.html",
-            "https://applyready.in/guides/compression-targets-guide.html",
+            "https://applyready.in/guides/pixels-cm-inches-dpi-explained.html",
+            "https://applyready.in/guides/how-to-reduce-photo-to-50kb-without-blur.html",
             "https://applyready.in/guides/image-formats-guide.html",
             "https://applyready.in/guides/ats-friendly-resume-guide.html"
           ]
@@ -99,5 +99,5 @@ IndexNow is an open protocol that instantly alerts participating search engines 
 
 - [ ] **Monitor Indexing Coverage:** Review the "Pages" report in GSC monthly to resolve any 404s, redirect errors, or soft 404s.
 - [ ] **Audit Core Web Vitals:** Verify that Largest Contentful Paint (LCP) is under 2.5s and Cumulative Layout Shift (CLS) is near 0. Measure the deployed site; privacy and the absence of tracking do not guarantee good Core Web Vitals.
-- [ ] **Sitemap Updates:** When adding new guides or features, append the canonical URL and current `lastmod` date to `sitemap.xml`.
+- [ ] **Sitemap Updates:** After adding or changing a page, run `node scripts/build-sitemap.js` (it lists every indexable page and sets `lastmod` from the last commit that changed the page's text). `node scripts/build-sitemap.js --check` verifies it.
 - [ ] **Check Robots.txt:** Ensure `robots.txt` consistently permits crawling of public HTML, styles, and favicon assets while referencing the sitemap.

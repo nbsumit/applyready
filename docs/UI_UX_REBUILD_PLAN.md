@@ -109,7 +109,6 @@ Phones get Edit / Preview / Download in a bottom bar.
 - Custom select keeps the native `<select>` as the source of truth (value, change events).
 - Compression, crop maths, PDF/DOCX engines, schema migration, template output, storage keys,
   service worker, metadata, structured data, sitemap: untouched.
-- Ad slots stay outside the workspace and between content sections.
 
 ## 8. Test strategy
 

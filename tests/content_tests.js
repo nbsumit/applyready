@@ -1,4 +1,4 @@
-/* Site content checks that matter for search and ad-network review. No browser needed. */
+/* Site content checks: metadata, links, sitemap, offline cache, structure and the no-ads guarantee. No browser needed. */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
@@ -85,40 +85,28 @@ for (const l of locs) {
 }
 ok(new Set(locs).size === locs.length, 'sitemap has duplicate URLs');
 
-// 4. AdSense account tag, loader, ads.txt, robots and the privacy disclosure.
-const ADS_LINE = 'google.com, pub-2713609207324356, DIRECT, f08c47fec0942fa0';
-ok(fs.readFileSync(path.join(root, 'ads.txt'), 'utf8').trim() === ADS_LINE, 'ads.txt is the AdSense record');
-const robots = read('robots.txt');
-ok(/User-agent:\s*Mediapartners-Google\s+Allow:\s*\//.test(robots), 'robots.txt allows Mediapartners-Google');
-const CLIENT = 'ca-pub-2713609207324356';
-const LOADER = `adsbygoogle.js?client=${CLIENT}`;
-for (const f of pages) {
-  const s = read(f);
-  if (utility.has(f)) {
-    ok(!s.includes('google-adsense-account') && !s.includes(LOADER) && !s.includes('ad-slot-container'), `${f}: no AdSense tag, loader or slot`);
-  } else {
-    ok(s.includes(`<meta name="google-adsense-account" content="${CLIENT}">`), `${f}: AdSense account meta tag`);
-    ok(!/src="[^"]*adsbygoogle\.js/.test(s), `${f}: the AdSense loader is not in the page head`);
-  }
+// 4. No advertising: no ad network script, tag, slot, record or crawler rule anywhere in what the site ships.
+const AD_MARKERS = /adsbygoogle|googlesyndication|google-adsense|ca-pub-\d|pub-\d{10,}|doubleclick|googleadservices|googletagservices|adservice\.google|adtrafficquality|fundingchoices|Mediapartners-Google|ad-slot|ads\.js/i;
+const shipped = [...pages, 'robots.txt', 'sw.js', 'favicon/site.webmanifest',
+  ...fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.js')).map(f => 'js/' + f),
+  ...fs.readdirSync(path.join(root, 'css')).filter(f => f.endsWith('.css')).map(f => 'css/' + f),
+  'scripts/lib/shell.js', 'scripts/sync-shell.js'];
+for (const f of shipped) {
+  const m = read(f).match(AD_MARKERS);
+  ok(!m, `${f}: no advertising code (found "${m && m[0]}")`);
 }
+for (const f of ['ads.txt', 'app-ads.txt', 'js/ads.js', 'scripts/enable-ads.js', 'scripts/place-ad-slots.js']) ok(!fs.existsSync(path.join(root, f)), `${f} is not shipped`);
 for (const f of ['privacy.html', 'about.html', 'contact.html', 'terms.html']) ok(fs.existsSync(path.join(root, f)), `${f} exists`);
 const privacyHtml = read('privacy.html');
 const privacy = textOf(privacyHtml);
 ok(/<h2 id="cookies">/.test(privacyHtml), 'privacy policy has a cookies heading');
-ok(/Google AdSense/.test(privacy) && /personalised ads/.test(privacy) && /DoubleClick/.test(privacy), 'privacy policy covers AdSense cookies and personalised ads');
-ok(/European Economic Area/.test(privacy) && /United Kingdom/.test(privacy) && /consent/.test(privacy), 'privacy policy covers the EEA and UK consent message');
+ok(/shows no advertisements/.test(privacy) && /sets no cookies/.test(privacy), 'privacy policy says there are no ads and no cookies');
+for (const f of ['privacy.html', 'terms.html', 'about.html', 'editorial-policy.html']) ok(!/AdSense|advertising cookies|personalised ads/i.test(textOf(read(f))), `${f}: no advertising disclosure left over`);
 ok(/local storage/i.test(privacy) && /[Ss]ervice [Ww]orker/.test(privacy), 'privacy policy still covers local storage and the service worker');
 ok(/not use Google Analytics/.test(privacy), 'privacy policy still says there is no analytics');
-ok(!/enable_page_level_ads/.test(read('js/ads.js') + read('scripts/enable-ads.js')), 'auto ads are not enabled in code');
 const css = read('css/app.css');
 const flatCss = css.replace(/\s+/g, '');
-ok(flatCss.includes('.ad-slot-container{display:none') && flatCss.includes('ins.adsbygoogle[data-ad-slot]'), 'slots without a unit are hidden; live units reserve space');
-ok(flatCss.includes('min-height:250px'), 'a live ad slot reserves 250px');
-ok(flatCss.includes('.ad-slot-container.is-collapsed{display:none'), 'unfilled slots collapse');
 ok(/#resize-tool\{min-height:540px/.test(flatCss) && /#resize-tool\{min-height:640px/.test(flatCss), 'the exam resizer reserves its settled height');
-ok(!/\.ad-slot[\w-]*\{[^}]*position:\s*(?:sticky|fixed)/.test(css), 'ad slots are not sticky or fixed');
-ok(flatCss.includes('.ad-slot-container:not(:has(ins.adsbygoogle)){display:none!important'), 'a slot with no ins is fully hidden');
-ok(read('js/ads.js').includes('adsbygoogle.js') && !read('js/ads.js').includes('requestIdleCallback'), 'the loader is not scheduled until a real ad unit exists');
 ok(/href="\/assets\/fonts\/inter-latin\.woff2" as="font"/.test(read('index.html')) && /href="\/assets\/fonts\/inter-latin\.woff2" as="font"/.test(read('guides/index.html')) && /href="\/assets\/fonts\/inter-latin\.woff2" as="font"/.test(read('404.html')), 'Inter is preloaded from the site root');
 {
   const { PRESETS } = require('../js/resizer.js');
@@ -130,10 +118,11 @@ for (const f of pages) {
   ok(!/\bTODO\b|\[\.\.\.\]/.test(visible), `${f}: visible TODO or placeholder brackets`);
 }
 const swText = read('sw.js');
-ok(!/applyready-v21/.test(swText) && swText.includes("'/js/ads.js'") && swText.includes("'/author/sumit-sengar.html'"), 'service worker cache lists ads.js and the author page');
+ok(!/applyready-v2[1-6]'/.test(swText) && swText.includes("'/author/sumit-sengar.html'"), 'service worker cache is bumped past the ad-serving versions and lists the author page');
 ok(!swText.includes("Precache failed"), 'a failed precache rejects install');
 ok(swText.includes('Response.error()'), 'an uncached offline asset gets an error response');
-ok(swText.includes("'/css/webfonts/fa-brands-400.woff2'") && swText.includes("'/img/guides/signature-cleaner.webp'"), 'guide images and fa-brands are precached');
+ok(swText.includes("'/css/webfonts/fa-solid-900.woff2'") && swText.includes("'/css/webfonts/fa-regular-400.woff2'") && swText.includes("'/img/guides/signature-cleaner.webp'"), 'guide images and the icon fonts are precached');
+for (const m of read('css/vendor/icons.min.css').matchAll(/url\("\.\.\/webfonts\/([^"]+)"\)/g)) ok(swText.includes(`'/css/webfonts/${m[1]}'`), `${m[1]} is precached`);
 for (const asset of [...swText.matchAll(/'\/[^']+'/g)].map(m => m[0].slice(2, -1))) {
   const rel = asset.endsWith('/') ? asset + 'index.html' : asset;
   ok(fs.existsSync(path.join(root, rel)), `precache entry exists: /${asset}`);
@@ -141,7 +130,8 @@ for (const asset of [...swText.matchAll(/'\/[^']+'/g)].map(m => m[0].slice(2, -1
 for (const f of pages) {
   const s = read(f);
   if (!utility.has(f)) for (const link of ['privacy.html', 'terms.html', 'about.html', 'author/sumit-sengar.html', 'editorial-policy.html', 'contact.html']) ok(s.includes(link), `${f}: footer link to ${link}`);
-  ok(s.includes('https://*.safeframe.googlesyndication.com') && s.includes('https://*.googlesyndication.com') && s.includes('adservice.google.co.in') && s.includes('https://*.doubleclick.net') && s.includes("script-src") && s.includes("'unsafe-inline'") && s.includes('https://*.adtrafficquality.google') && s.includes('img-src \'self\' https: data: blob:') && s.includes('https://fonts.gstatic.com'), `${f}: CSP allows AdSense safeframes, country ad hosts and inline scripts`);
+  const csp = (s.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/) || [])[1] || '';
+  ok(/(?:^|; )script-src 'self'(?:;|$)/.test(csp) && /default-src 'self'/.test(csp) && /object-src 'none'/.test(csp) && /frame-src 'none'/.test(csp) && !/https?:/.test(csp) && !/unsafe-eval/.test(csp), `${f}: CSP allows only this origin's scripts, no frames and no third-party hosts (${csp})`);
   if (/photo-signature-size\.html$/.test(f) && !isStub(s)) {
     const select = (s.match(/<select id="presetSelect"[\s\S]*?<\/select>/) || [''])[0];
     ok(select && !/value="(?:passport|signature|avatar|document|web-banner)"/.test(select), `${f}: generic presets are not in the exam list`);
@@ -259,7 +249,7 @@ for (const f of pages) {
   ok(problems.length === 0, `${f}: unbalanced markup (${problems.slice(0, 3).join(', ')})`);
 }
 // The resume sheet, templates and print layout are the output format: change them on purpose, then update this hash.
-ok(require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, 'css/document.css'))).digest('hex') === '8b569558fa22be9e9f0be8833bb6da023d6282930df6c23242d2f5b2279b388b', 'css/document.css (resume sheet and print layout) changed; confirm the exported resume is meant to change, then update the hash');
+ok(require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, 'css/document.css'))).digest('hex') === '5518e883c77adb7de2b939e506d7fc7ca9cea1e70ed1cdd926b4d55d7100ccc1', 'css/document.css (resume sheet and print layout) changed; confirm the exported resume is meant to change, then update the hash');
 ok(!fs.existsSync(path.join(root, 'css/style.css')) && !fs.existsSync(path.join(root, 'css/workspace.css')), 'retired stylesheets are deleted');
 const sync = spawnSync(process.execPath, [path.join(root, 'scripts/sync-shell.js'), '--check'], { encoding: 'utf8' });
 ok(sync.status === 0, `shared header and footer are in sync on every page: ${sync.stdout}${sync.stderr}`);
@@ -267,44 +257,4 @@ for (const f of ['css/app.css', 'js/site.js', 'js/components.js', 'scripts/lib/s
   ok(!read(f).includes('—'), `${f}: no em dash in interface code`);
 }
 
-// 9. Ad slots: at most three, labelled, never in the tool, a form, or the resume editor.
-const NO_SLOTS = new Set(['404.html', 'offline.html', 'privacy.html', 'terms.html', 'contact.html', 'resume.html']);
-const plain = s => s.replace(/<script[\s\S]*?<\/script>|<!--[\s\S]*?-->/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-for (const f of pages) {
-  const s = read(f);
-  const slots = [...s.matchAll(/<aside class="ad-slot-container" data-ad-position="(below-tool|mid-article|before-faq|before-footer)" role="complementary" aria-label="(Advertisements \d+)">[\s\S]*?<span class="ad-slot-label">Advertisements<\/span>/g)];
-  const labels = slots.map(m => m[2]);
-  ok(new Set(labels).size === labels.length, `${f}: ad landmarks share a label`);
-  const blocked = NO_SLOTS.has(f) || isStub(s) || isNoindex(s);
-  if (blocked) ok(slots.length === 0 && !s.includes('js/ads.js'), `${f}: no ad slots`);
-  else ok(slots.length >= 1 && slots.length <= 3, `${f}: ${slots.length} ad slots (expected 1 to 3)`);
-  if (s.includes('<!-- tool:start -->')) {
-    const tool = s.slice(s.indexOf('<!-- tool:start -->'), s.indexOf('<!-- tool:end -->'));
-    ok(!tool.includes('ad-slot'), `${f}: no ad inside the tool`);
-    if (!blocked) {
-      const after = s.indexOf('<!-- tool:end -->');
-      const firstSlot = s.indexOf('ad-slot-container', after);
-      const prose = s.indexOf('class="section prose', after);
-      ok(firstSlot > prose && prose > after, `${f}: the first ad follows the tool's prose, not its buttons`);
-    }
-  }
-  ok(!/<form\b[^>]*>[\s\S]*?ad-slot-container[\s\S]*?<\/form>/.test(s), `${f}: no ad inside a form`);
-  const actionAt = s.indexOf('class="ws-action"');
-  if (actionAt >= 0) {
-    const actionEnd = s.indexOf('</div>', actionAt);
-    ok(actionEnd > actionAt && !s.slice(actionAt, actionEnd).includes('ad-slot'), `${f}: no ad in the action row`);
-  }
-  if (f === 'resume.html') ok(!s.includes('ad-slot-container') && !s.includes('js/ads.js'), 'resume: no ad slot and no ad script');
-  if (f.startsWith('guides/') && indexable.has(f) && f !== 'guides/index.html') {
-    ok(slots.some(m => m[1] === 'mid-article'), `${f}: mid-article slot`);
-    const main = (s.match(/<main[\s\S]*?<\/main>/) || [''])[0];
-    const at = main.indexOf('data-ad-position="mid-article"');
-    const cut = main.indexOf('related-guides-section');
-    const region = main.slice(0, cut > 0 ? cut : main.length);
-    const ratio = plain(region.slice(0, at)).length / plain(region).length;
-    ok(ratio >= 0.25 && ratio <= 0.85, `${f}: mid-article slot is at ${ratio.toFixed(2)} of the article`);
-  }
-  if (!blocked && slots.length) ok(s.includes('js/ads.js'), `${f}: loads js/ads.js`);
-}
-
-console.log(`✓ ${pages.length} pages checked: titles, descriptions, canonicals, links, sitemap, offline cache, ads, depth (${checks} assertions)`);
+console.log(`✓ ${pages.length} pages checked: titles, descriptions, canonicals, links, sitemap, offline cache, no ads, depth (${checks} assertions)`);
