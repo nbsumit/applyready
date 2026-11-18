@@ -367,6 +367,26 @@ check('A referee\'s name, details and contact stay on one page (RES-02)', () => 
     }
   }
 });
+check('Word export puts a link or dates on their own line when they do not fit beside the title (RES-04)', () => {
+  const paragraphs = d => new TextDecoder().decode(docx.generateResumeDOCX(d).files.find(f => f.name === 'word/document.xml').data).split('</w:p>');
+  const withText = (ps, text) => ps.find(p => p.includes(text));
+  for (const template of ['executive-impact', 'classic-professional', 'compact-professional']) {
+    const longLink = 'github.com/example-user/warehouse-capacity-planner-with-a-very-long-repository-name-for-testing';
+    const d = schema.migrate({ template, design: { templateId: template }, personal: { fullName: 'Tab Case' },
+      projects: [{ name: 'Warehouse capacity planner', tech: 'Python, Pandas, Power BI', link: longLink, bulletsText: 'Built it' }, { name: 'Short one', link: 'example.org/a' }],
+      education: [{ degree: 'MBA, Operations Management', institution: 'Indian Institute of Management (a long campus name for testing)', duration: '2014 - 2016', location: 'Ahmedabad', score: 'CGPA 3.6 / 4' }],
+      experience: [{ role: 'Analyst', company: 'Northwind', duration: '2020 - 2021', location: 'Pune' }] });
+    const ps = paragraphs(d);
+    const head = withText(ps, 'Warehouse capacity planner');
+    assert(!head.includes('<w:tab/>') && !head.includes(longLink), `${template}: a long link is not glued to the title with an overflowing tab`);
+    assert(withText(ps, longLink) !== head, `${template}: the long link has its own line`);
+    const edu = withText(ps, 'MBA, Operations Management');
+    assert(!edu.includes('<w:tab/>') && !edu.includes('Ahmedabad'), `${template}: education details that do not fit go below the title`);
+    const exp = withText(ps, 'Analyst');
+    const inline = !/below/.test(require('../js/templates').getTemplateStyle(template).datePlacement || '');
+    if (inline) assert(exp.includes('<w:tab/>') && exp.includes('2020 - 2021'), `${template}: details that fit stay on the right of the title`);
+  }
+});
 check('Project tools start without a separator when they sit on their own line', () => {
   for (const template of Object.keys(TEMPLATES)) {
     const d = schema.migrate(require('../js/resume').SAMPLE_DATA);
