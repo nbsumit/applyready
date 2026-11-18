@@ -268,8 +268,11 @@
           <h2 class="yd-panel__title" id="ydOfflineHeading"><i class="fa-solid fa-wifi" aria-hidden="true"></i> Offline copy</h2>
           <span class="badge" id="ydOfflineSize">Checking…</span>
         </div>
-        <p class="yd-panel__lede">A copy of ApplyReady’s own pages, styles and code, so the tools open without an internet connection. It holds nothing you typed or opened. If you remove it, ApplyReady saves a fresh copy the next time you open one of its pages while online.</p>
+        <p class="yd-panel__lede">A copy of the ApplyReady pages you have opened, with their styles and code, so they open again without an internet connection. It holds nothing you typed or opened. Pages you have not opened are not downloaded unless you choose to save every tool.</p>
+        <p class="yd-note" id="ydOfflineAllNote" hidden></p>
+        <p class="yd-note" id="ydOfflineProgress" role="status" hidden></p>
         <div class="yd-actions">
+          <button type="button" class="btn" id="ydOfflineAll" hidden><i class="fa-solid fa-download" aria-hidden="true"></i> Save every tool for offline use</button>
           <button type="button" class="btn" id="ydOfflineRemove"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Remove the offline copy</button>
         </div>
       </section>

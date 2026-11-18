@@ -164,7 +164,9 @@ async function makePdf() {
     await page.fill('#fcMinKB', '600');
     await page.waitForTimeout(400);
     ok(await page.locator('#fcReqError').isVisible() && /larger than the maximum/.test(await page.locator('#fcReqError').innerText()), 'requirement: min above max is an error');
+    ok(await page.getAttribute('#fcMinKB', 'aria-describedby') === 'fcReqError' && await page.getAttribute('#fcMaxKB', 'aria-describedby') === 'fcReqError' && await page.getAttribute('#fcWidth', 'aria-describedby') === null, 'requirement: the invalid fields point to the error message');
     await page.click('#fcReqClear');
+    ok(await page.getAttribute('#fcMinKB', 'aria-describedby') === null && await page.getAttribute('#fcMinKB', 'aria-invalid') === 'false', 'requirement: fixed fields no longer point to an error');
     ok(await page.locator('.fc-badge').count() === 0 && /Optional/.test(await page.locator('#fcReqState').innerText()), 'requirement cleared');
     await axe(page, 'file checker with the requirement open');
 
@@ -207,6 +209,35 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await page.waitForFunction(() => document.querySelector('.fc-item[data-status="done"]'), null, { timeout: 30000 });
     ok(/larger than the 50 MB/.test(await card('huge.jpg').innerText()) && /51\.0 MB|52,224\.0 KB/.test(await card('huge.jpg').innerText()), 'file over the inspection limit: type and size only, explained');
     await page.click('#fcClear');
+
+    // Names that disguise the extension, program extensions, and a picture too large to open safely
+    {
+      const gpsBytes = fs.readFileSync(path.join(tmp, 'gps.jpg'));
+      const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(20000, 0); ihdr.writeUInt32BE(20000, 4); ihdr[8] = 8; ihdr[9] = 0;
+      const bombPng = Buffer.concat([Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]), F.pngChunk('IHDR', ihdr), F.pngChunk('IDAT', require('node:zlib').deflateSync(Buffer.alloc(20001))), F.pngChunk('IEND', Buffer.alloc(0))]);
+      await page.setInputFiles('#fcDropInput', [
+        { name: 'invoice\u202Efdp.exe', mimeType: 'image/jpeg', buffer: gpsBytes },
+        { name: 'photo.exe', mimeType: 'application/octet-stream', buffer: gpsBytes },
+        { name: 'bomb.png', mimeType: 'image/png', buffer: bombPng }
+      ]);
+      await page.waitForFunction(() => document.querySelectorAll('.fc-item[data-status="done"]').length === 3, null, { timeout: 30000 });
+      const names = await page.locator('.fc-card__name').allInnerTexts();
+      ok(names.includes('invoicefdp.exe') && !names.some(n => /\u202E/.test(n)), `a name with a right-to-left override is shown as it really is (${names})`);
+      const rlo = await card('invoicefdp.exe').innerText();
+      ok(/hidden characters that reverse the direction of text/.test(rlo) && /really ends in \.exe/.test(rlo) && /Does not match the name/.test(rlo) && /\.exe are treated as programs/.test(rlo), 'disguised name: warned, real extension shown, mismatch and program warnings');
+      const exe = await card('photo.exe').innerText();
+      ok(/name ends in \.exe, but the contents are a JPEG image/.test(exe) && /Does not match the name/.test(exe), 'a JPEG named .exe is a mismatch');
+      const bomb = await card('bomb.png').innerText();
+      ok(/400 megapixels/.test(bomb) && /too large to open safely/.test(bomb) && /Not tested/.test(bomb) && !/Opens in this browser\s+Yes/.test(bomb) && await card('bomb.png').locator('.file-row__thumb img').count() === 0, 'a picture over 50 megapixels is not decoded or reported as opening');
+      await page.evaluate(() => { document.getElementById('fcReq').open = true; });
+      await page.check('#fcReq input[value="jpg"]');
+      await page.waitForTimeout(400);
+      ok(/Does not meet it/.test(await card('photo.exe').locator('.fc-card__head').innerText()) && /Does not meet it/.test(await card('invoicefdp.exe').locator('.fc-card__head').innerText()), 'a JPEG under a program extension fails a JPEG requirement');
+      await page.click('#fcReqClear');
+      await axe(page, 'file checker with disguised and oversized files');
+      await page.click('#fcClear');
+      if (await page.locator('.dialog [data-act="ok"]').count()) await page.click('.dialog [data-act="ok"]');
+    }
 
     // More than 50 files, cancel and retry
     const many = Array.from({ length: 52 }, (_, i) => ({ name: `doc-${i + 1}.pdf`, mimeType: 'application/pdf', buffer: pdf }));
@@ -380,7 +411,26 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await page.goto(origin + '/your-data.html');
     await page.waitForFunction(() => document.getElementById('ydResumeCount').textContent !== 'Checking\u2026');
     ok(await page.locator('#ydResumeCount').innerText() === 'None' && await page.locator('#ydResumeEmpty').isVisible() && await page.locator('#ydExport').isHidden(), 'your data: zero resumes shown gracefully');
+    await page.waitForTimeout(500);
+    ok(await page.evaluate(async () => !(await indexedDB.databases()).some(d => d.name === 'applyready')), 'your data: looking at the page creates no database');
     await axe(page, 'your data, empty');
+
+    // A readable draft left in localStorage by a release before the resume library is listed,
+    // downloadable as an importable backup, and deletable, even with saving off in the builder.
+    await page.evaluate(d => localStorage.setItem('applyready_resume_draft', JSON.stringify({ app: 'ApplyReady', version: 2, savedAt: '2026-06-01T10:00:00Z', data: Object.assign({}, d, { personal: Object.assign({}, d.personal, { fullName: 'Previous Person' }) }) })), resumeFixture());
+    await page.reload();
+    await page.waitForFunction(() => /earlier draft/.test(document.getElementById('ydResumeCount').textContent));
+    ok(await page.locator('#ydResumeCount').innerText() === '1 earlier draft' && await page.locator('#ydResumeEmpty').isHidden(), 'your data: an earlier draft is counted');
+    const draftRow = await page.locator('#ydResumeList [data-legacy]').innerText();
+    ok(/Draft from an earlier version: Previous Person/.test(draftRow) && /1 Jun 2026/.test(draftRow), `your data: the earlier draft is listed with its name and date (${draftRow})`);
+    await axe(page, 'your data, earlier draft');
+    const draftFile = await download(page, () => page.click('[data-act="legacy-download"]'));
+    const draftBody = JSON.parse(fs.readFileSync(draftFile.file, 'utf8'));
+    ok(draftBody.app === 'ApplyReady' && draftBody.data && draftBody.data.personal.fullName === 'Previous Person' && Schema.validate(draftBody), 'your data: the earlier draft downloads as an importable backup');
+    await page.click('[data-act="legacy-delete"]');
+    await page.click('.dialog [data-act="ok"]');
+    await page.waitForFunction(() => document.getElementById('ydResumeCount').textContent === 'None');
+    ok(await page.evaluate(() => localStorage.getItem('applyready_resume_draft') === null), 'your data: the earlier draft is deleted');
 
     // Seed resumes in the ARCHITECTURE.md record format and localStorage keys
     const data = resumeFixture();
@@ -397,9 +447,9 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     }, { data, now });
     await page.reload();
     await page.waitForFunction(() => /resumes/.test(document.getElementById('ydResumeCount').textContent));
-    ok(await page.locator('#ydResumeCount').innerText() === '3 resumes, 1 damaged', 'your data: count with damaged records');
+    ok(await page.locator('#ydResumeCount').innerText() === '3 resumes, 1 damaged, 1 earlier draft', 'your data: count with damaged records and the unreadable earlier draft');
     const rows = await page.locator('#ydResumeList .file-row').allInnerTexts();
-    ok(/Operations resume/.test(rows[0]) && /Resume for analyst roles/.test(rows[1]) && /Damaged/.test(rows[2]), 'resumes listed by last edited, damaged one marked');
+    ok(/Operations resume/.test(rows[0]) && /Resume for analyst roles/.test(rows[1]) && /Damaged/.test(rows[2]) && /earlier version/.test(rows[3]) && /cannot be read/.test(rows[3]), 'resumes listed by last edited, damaged one marked, earlier draft last');
     ok(await page.locator('#ydResumeList a[href="resume.html?id=r_ops02"]').count() === 1 && await page.locator('[data-id="r_broken3"] a').count() === 0, 'valid resumes link to the builder; the damaged one cannot be opened');
     ok(/File checker/.test(await page.locator('#ydRecentList').innerText()) && await page.locator('#ydRecentList li').count() === 2, 'recent tools shown by name (unknown ids skipped)');
     ok(/^Dark, chosen/.test(await page.locator('#ydThemeText').innerText()), 'theme preference shown');
@@ -418,7 +468,7 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     // Import: good, then bad files
     await page.setInputFiles('#ydImportInput', backup.file);
     await page.waitForFunction(() => /Added 2 resumes/.test(document.getElementById('ydImportResult').textContent));
-    ok(await page.locator('#ydResumeCount').innerText() === '5 resumes, 1 damaged', 'import adds every resume as new');
+    ok(await page.locator('#ydResumeCount').innerText() === '5 resumes, 1 damaged, 1 earlier draft', 'import adds every resume as new');
     const ids = await page.evaluate(async () => (await window.ApplyReadyStore.getAll('resumes')).map(r => r.id));
     ok(new Set(ids).size === 5 && ids.filter(i => /^r_[a-z0-9]{6,38}$/.test(i) && !['r_analyst01', 'r_ops02', 'r_broken3'].includes(i)).length === 2, 'imported resumes get new ids');
     const single = { app: 'ApplyReady', version: 2, exportedAt: new Date().toISOString(), data };
@@ -438,7 +488,7 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     ok(/up to 5 MB/.test(await page.locator('#ydResumeError').innerText()), 'import refused: over 5 MB');
     await page.setInputFiles('#ydImportInput', { name: 'single.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(single)) });
     await page.waitForFunction(() => /Added 1 resume /.test(document.getElementById('ydImportResult').textContent));
-    ok(await page.locator('#ydResumeCount').innerText() === '6 resumes, 1 damaged', 'single-resume backup (version 2) imports');
+    ok(await page.locator('#ydResumeCount').innerText() === '6 resumes, 1 damaged, 1 earlier draft', 'single-resume backup (version 2) imports');
 
     // Recent tools off, theme reset
     await page.uncheck('#ydRecentOn');
@@ -457,6 +507,8 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await page.click('.dialog [data-act="ok"]');
     await page.waitForFunction(() => document.getElementById('ydResumeCount').textContent === 'None');
     ok(await page.evaluate(async () => (await window.ApplyReadyStore.getAll('resumes')).length === 0 && !(await window.ApplyReadyStore.get('meta', 'lastResumeId'))), 'delete all resumes empties the store and forgets the last resume');
+    ok(await page.evaluate(() => localStorage.getItem('applyready_resume_draft') === null), 'delete all resumes also removes the earlier draft');
+    await page.evaluate(() => localStorage.setItem('applyready_resume_draft', '{"old":true}'));
 
     // Works with the real resume builder: what it saves is listed (not damaged), and deleting here
     // stops an open builder tab from saving the deleted resume again.

@@ -284,7 +284,20 @@
   window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, { notify, reveal, confirm: confirmDialog, openSearch });
 
   /* ----------------------------------------------- Offline support (PWA) */
+  // The service worker keeps the pages this browser opens (sw.js). A page loaded before it was in
+  // control tells it which of the site's files it used, and the service worker copies them from the
+  // browser's HTTP cache, so this page works offline without anything being downloaded twice.
   if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-    window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+    window.addEventListener('load', () => {
+      const controlled = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.register('/sw.js').then(() => {
+        if (controlled) return null;
+        return navigator.serviceWorker.ready.then(reg => {
+          const loaded = [location.href].concat(performance.getEntriesByType ? performance.getEntriesByType('resource').map(e => e.name) : []);
+          const urls = loaded.filter(u => { try { return new URL(u).origin === location.origin; } catch (e) { return false; } });
+          if (reg.active) reg.active.postMessage({ type: 'cache-page', urls: urls.slice(0, 300) });
+        });
+      }).catch(() => {});
+    });
   }
 })();
