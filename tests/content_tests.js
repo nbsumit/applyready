@@ -165,7 +165,8 @@ for (const f of pages) {
   ok(donations.length >= 1 && donations.every(d => d === 'https://pages.razorpay.com/support-applyready'), `${f}: the footer carries the one donation link`);
   ok(!/checkout\.razorpay|paypal\.|buymeacoffee|ko-fi|patreon|stripe\.com|upi:\/\//i.test(s), `${f}: no other payment links or scripts`);
   const csp = (s.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/) || [])[1] || '';
-  ok(/(?:^|; )script-src 'self'(?:;|$)/.test(csp) && /default-src 'self'/.test(csp) && /object-src 'none'/.test(csp) && /frame-src 'none'/.test(csp) && !/https?:/.test(csp) && !/unsafe-eval/.test(csp), `${f}: CSP allows only this origin's scripts, no frames and no third-party hosts (${csp})`);
+  // 'wasm-unsafe-eval' lets the pdf.js worker compile its WebAssembly decoders; JavaScript eval stays blocked.
+  ok(/(?:^|; )script-src 'self' 'wasm-unsafe-eval'(?:;|$)/.test(csp) && /default-src 'self'/.test(csp) && /object-src 'none'/.test(csp) && /frame-src 'none'/.test(csp) && !/https?:/.test(csp) && !/'unsafe-eval'/.test(csp) && !/script-src[^;]*'unsafe-inline'/.test(csp), `${f}: CSP allows only this origin's scripts, no frames and no third-party hosts (${csp})`);
 }
 
 // 5. Depth of content: guides and landing pages are not thin

@@ -225,9 +225,14 @@ stale-while-revalidate.
 
 ## 6. Security boundaries
 
-- CSP meta on every page: `default-src 'self'; script-src 'self'; connect-src 'self' blob: data:;
+- CSP meta on every page: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' blob: data:;
   worker-src 'self' blob:; frame-src 'none'; object-src 'none'` and related directives. No inline
   scripts, no `eval`. GitHub Pages cannot send headers, so `frame-ancestors` and HSTS are not set.
+- A `<meta>` policy covers only its page: a worker started from a file URL would take its policy from
+  that file's response headers, which GitHub Pages leaves empty. So the pdf.js worker and the image
+  worker are started from one-line `blob:` scripts that load the real files from this origin, and a
+  `blob:` worker takes the policy of the page that starts it (`connect-src 'self'` applies inside it).
+  `'wasm-unsafe-eval'` is there only so the pdf.js worker can compile its WebAssembly image decoders.
 - No third-party requests. Tool pages link out only to the source repository and the donation page;
   guides also link to reference sites (MDN, government portals) as ordinary links the visitor chooses
   to follow.
