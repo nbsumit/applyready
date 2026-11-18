@@ -23,6 +23,8 @@ Pages (*.html, guides/)          Hand-written content + generated shell and tool
   │               js/lib/image-pool.js Web Worker pool for image-ops (main-thread fallback)
   │               js/lib/store.js      IndexedDB wrapper with memory fallback and storage status
   │               js/lib/pdf-kit.js    lazy loader and helpers for pdf-lib and pdf.js
+  │               js/lib/inspect.js    file checker parsers: real type, image/PDF/Office details, requirement check, lossless metadata removal
+  │               js/lib/text-pdf.js   text to PDF: WinAnsi character check, word wrap, pagination, PDF writing (pdf-lib standard fonts)
   │
   ├─ Workers      js/workers/image-worker.js
   │

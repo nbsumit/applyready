@@ -213,6 +213,13 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
   is announced in `#pageOrderStatus` and focus follows the moved page. Any change hides a stale PDF.
 - **Compress PDF**: `.target-grid` of limit choices plus a typed limit; the result is `.size-compare`
   (Before, After, reduction, pages) under a `.result-status` verdict.
+- **File checker** (section 18): a one-column `.ws.fc-ws`; the optional requirement is a `.disclosure.fc-req`
+  above the list; each file is an `.fc-card` with notices (problem, privacy, check, info), a `.check-table.fc-check`
+  (rule, required, this file, result in words) and `.fc-group` blocks of `.meta-stats`. Risky values use `.fc-risk`.
+- **Text to PDF** (section 18): editor and compact drop zone in the stage, settings in the rail; unsupported characters
+  are a `.notice--warning.ttp-chars` with replace, print and remove actions; the print fallback is `.ttp-print`.
+- **Your data** (section 18): `.yd-grid` of `.yd-panel` blocks (saved resumes, recent tools, theme, storage, offline
+  copy, delete everything as `.yd-panel--danger`).
 - **Signature cleaner**: `.compare-pair` shows the original and the cleaned result side by side from
   640 px (stacked on phones); the cleaned pane is outlined in ink.
 - **Print sheet**: preview on `.ws-preview--desk`, facts in a `.meta-stats--row`, and a reminder to

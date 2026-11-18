@@ -18,6 +18,9 @@ there are no accounts, no cookies, no analytics and no advertising, and every fe
 | Passport photo print sheet | `passport-photo-print.html` | `js/passport-photo-print.js` |
 | Image to PDF | `image-to-pdf.html` | `js/image-to-pdf.js` |
 | Compress PDF (scanned PDFs) | `compress-pdf.html` | `js/compress-pdf.js` |
+| File checker: real type, size, pixels, DPI, PDF pages, document properties, photo metadata removal | `file-checker.html` | `js/file-checker.js` (+ `lib/inspect.js`) |
+| Text to PDF | `text-to-pdf.html` | `js/text-to-pdf.js` (+ `lib/text-pdf.js`) |
+| Your data: everything stored on the device, resume backup and restore, delete | `your-data.html` | `js/your-data.js` |
 
 Every tool is listed in one registry, `scripts/lib/tools.js`, which generates the header menu, footer,
 the tool directory (`tools.html`), the home page entry points and the site search index.
