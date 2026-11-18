@@ -109,17 +109,23 @@ sides of every former and current breakpoint.
 - **Header** (`.site-header`): brand, Tools menu, Resume builder, Guides; on the right the search
   control (`.search-trigger`, a field-like button with a `/` hint; an icon button below 1000 px) and the
   theme toggle. The current page gets a 2 px ink underline. Below 640 px the nav becomes a full-height
-  sheet listing every tool by category.
-- **Tools menu** (`.menu`): every live tool from the registry, grouped by category in up to four columns
-  (`.menu__cols--N`): Resume and Document tools, Image tools, PDF tools, Batch and Cyber cafe tools
-  (tinted). Category titles link to their section of `tools.html`; a foot row links "All tools" and
-  teaches the `/` shortcut. Arrow keys, Home, End and Escape work. Two columns on tablets.
+  sheet in DOM order: Search tools, one `.menu__toggle` button per category that shows or hides its
+  tools (the current page's category starts open), All tools, Guides. Opening it moves focus to its
+  first item; Tab stays in the header while it is open; Escape returns focus to the menu button.
+- **Tools menu** (`.menu`): every live tool from the registry, grouped by category in three columns
+  (`.menu__cols--N`), read in registry order: Resume and Image tools, PDF tools, Document, Batch and
+  Cyber cafe tools (tinted). Each category lists the same tools as the home page and the directory
+  (`toolsIn`). Category titles link to their section of `tools.html`; a foot row links "All tools" and
+  teaches the `/` shortcut. Arrow keys, Home, End and Escape work. Two columns on tablets; the menu
+  scrolls when the window is short.
 - **Search** (`js/search.js`): a combobox (`role="combobox"`, `aria-activedescendant`, listbox of
-  `.search-result` options with icon, name, one-line summary and category). In the header it opens as a
+  `.search-result` options with icon, name, one-line summary and category; an option holds no link, and
+  Enter or a click opens it). In the header it opens as a
   dialog (full screen on phones); on the home page it is inline (`.search-inline`). With an empty query
   it lists recently used tools, or the most used ones.
 - **Footer** (`.site-footer`): brand statement and motto, then four link columns generated from the
-  registry (Resume and images, PDF and documents, Batch and help, ApplyReady). A project page appears in
+  registry (Resume and images, PDF and documents, Batch and help, ApplyReady), each tool once under its
+  own category. The column titles are labels under one visually hidden "Site links" heading. A project page appears in
   the footer as soon as its file exists. The base row carries the Source code link and the single
   voluntary donation link.
 
@@ -130,7 +136,9 @@ sides of every former and current breakpoint.
   points with their first four tools, `.tool-grid` of the most used tools, and `.promise-list`.
 - **Directory** (`tools.html`): filter box (same matching as search, `js/directory.js`), `.dir-nav`
   category chips, then a `.dir-section` per category (stable ids: `#resume`, `#image`, `#pdf`,
-  `#document`, `#batch`, `#cafe`) with a `.tool-grid` of `.tool-card` links.
+  `#document`, `#batch`, `#cafe`) with a `.tool-grid` of `.tool-card` links. A tool with preset pages
+  (`presetOf` in the registry) lists them as "Common limits" links on its card (`.tool-card--presets`).
+  The filter shows each match once, in its own category, and counts what it shows.
 
 ### Page heads
 `.page-head` holds an optional `.breadcrumb-nav`, `.eyebrow`, `.page-title`, `.page-lede` and on the

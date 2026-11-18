@@ -109,6 +109,8 @@
     header.dataset.open = String(open);
     navToggle.setAttribute('aria-expanded', String(open));
     navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    const icon = navToggle.querySelector('.fa-solid');
+    if (icon) { icon.classList.toggle('fa-bars', !open); icon.classList.toggle('fa-xmark', open); }
     root.classList.toggle('nav-open', open);
     pageRegions().forEach(el => { el.inert = open; });
   }
@@ -119,7 +121,8 @@
       if (e.key === 'ArrowDown') { e.preventDefault(); setToolsMenu(true); const first = toolsMenu.querySelector('a'); if (first) first.focus(); }
     });
     toolsMenu.addEventListener('keydown', e => {
-      const links = Array.from(toolsMenu.querySelectorAll('a'));
+      const links = Array.from(toolsMenu.querySelectorAll('a')).filter(a => a.offsetParent !== null);
+      if (!links.length) return;
       const i = links.indexOf(doc.activeElement);
       if (e.key === 'ArrowDown') { e.preventDefault(); links[(i + 1) % links.length].focus(); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); links[(i - 1 + links.length) % links.length].focus(); }
@@ -134,12 +137,35 @@
       setToolsMenu(false, inside);
     });
   }
+  // The phone menu sheet. Opening it moves focus to its first item (Search tools), and while it is
+  // open Tab stays inside the header and the sheet, because the page behind it is inert.
+  const focusables = () => Array.from(header.querySelectorAll('a[href], button, input')).filter(el => !el.disabled && el.offsetParent !== null);
   if (navToggle && nav) {
-    navToggle.addEventListener('click', () => setNav(header.dataset.open !== 'true'));
+    navToggle.addEventListener('click', () => {
+      const open = header.dataset.open !== 'true';
+      setNav(open);
+      if (open) { const first = nav.querySelector('#navSearch'); if (first && first.offsetParent !== null) first.focus(); }
+    });
     doc.addEventListener('keydown', e => { if (e.key === 'Escape' && header.dataset.open === 'true') { setNav(false); navToggle.focus(); } });
+    header.addEventListener('keydown', e => {
+      if (e.key !== 'Tab' || header.dataset.open !== 'true') return;
+      const items = focusables();
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && doc.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && doc.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
     nav.addEventListener('click', e => { if (e.target.closest('a')) setNav(false); });
     window.addEventListener('resize', () => { if (!isMobile() && header.dataset.open === 'true') setNav(false); });
   }
+  // Category buttons in the sheet show or hide that category's tools.
+  doc.querySelectorAll('.menu__toggle').forEach(button => {
+    button.addEventListener('click', () => {
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      button.setAttribute('aria-expanded', String(open));
+      button.parentElement.toggleAttribute('data-open', open);
+    });
+  });
 
   // Mark the current page in the header and footer (also marked in the HTML for no-JS).
   (function markCurrent() {
@@ -329,6 +355,10 @@
   }
   const searchButton = doc.getElementById('searchOpen');
   if (searchButton) searchButton.addEventListener('click', () => { if (header && header.dataset.open === 'true') setNav(false); openSearch(); });
+  // "Search tools" at the top of the phone menu: the sheet closes and focus returns to the menu
+  // button when the search closes.
+  const navSearch = doc.getElementById('navSearch');
+  if (navSearch) navSearch.addEventListener('click', () => { setNav(false); if (navToggle) navToggle.focus(); openSearch(); });
   doc.addEventListener('keydown', e => {
     const target = e.target;
     const typing = target && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable);

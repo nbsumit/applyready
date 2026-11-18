@@ -380,7 +380,10 @@ const server = http.createServer((req,res) => {
         const toggle = page.locator('#navMenuToggle');
         await toggle.click();
         ok(await toggle.getAttribute('aria-expanded') === 'true', `${file || 'index'}: mobile menu opens with one click`);
-        ok(await page.locator('#siteNav .menu__list a').first().isVisible(), `${file || 'index'}: every tool link is listed in the mobile menu`);
+        // The sheet lists the categories; each one opens to show its tools.
+        const imageToggle = page.locator('#siteNav .menu__toggle[aria-controls="menuList-image"]');
+        if (await imageToggle.getAttribute('aria-expanded') !== 'true') await imageToggle.click();
+        ok(await imageToggle.getAttribute('aria-expanded') === 'true' && await page.locator('#menuList-image a').first().isVisible(), `${file || 'index'}: a category in the mobile menu opens to list its tools`);
         await toggle.click();
         ok(await toggle.getAttribute('aria-expanded') === 'false', `${file || 'index'}: mobile menu closes with one click`);
       } else {

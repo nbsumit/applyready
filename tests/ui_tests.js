@@ -299,7 +299,7 @@ const server = http.createServer((req, res) => {
       if (mode(width) === 'phone') {
         ok(await page.locator('#navMenuToggle').isVisible() && await page.locator('#toolsMenuButton').isHidden(), `@${width}: phones get the menu button`);
         await page.locator('#navMenuToggle').click();
-        ok(await page.locator('#siteNav .menu__item').first().isVisible(), `@${width}: the menu sheet lists the tools`);
+        ok(await page.locator('#siteNav .menu__toggle').first().isVisible() && await page.locator('#menuList-image .menu__item').first().isVisible(), `@${width}: the menu sheet lists the categories, with this page's category open`);
         ok(!await page.evaluate(() => { const n = document.getElementById('siteNav'); return n.scrollWidth > n.clientWidth + 1; }), `@${width}: the menu sheet does not scroll sideways`);
         await page.locator('#navMenuToggle').click();
       } else {
@@ -729,6 +729,132 @@ const server = http.createServer((req, res) => {
     await phone.context.close();
   }
   console.log('✓ Rebuild interactions: PDF rotation, drag and keyboard reorder, stale results, focus, signature compare, no inner scrolling, tool order, entry folding, exact-field Fix, phone Download');
+
+  // 10. Navigation and search: the phone menu sheet, the search dialog and the directory filter.
+  {
+    // Phone menu sheet: short, search first, focus moves in and stays in while it is open.
+    const { context, page } = await open(360, 740, true);
+    await page.goto(`${origin}/index.html`);
+    const toggle = page.locator('#navMenuToggle');
+    await toggle.click();
+    ok(await toggle.getAttribute('aria-expanded') === 'true', 'phone menu: opens');
+    ok(await page.evaluate(() => document.activeElement.id) === 'navSearch', 'phone menu: focus moves to Search tools, the first item of the sheet');
+    ok(await page.evaluate(() => { const n = document.getElementById('siteNav'); return n.scrollHeight <= n.clientHeight + 1; }), 'phone menu: with the categories closed the sheet fits a 360 × 740 screen');
+    // Tab order: sheet top to bottom, then the header buttons, then round again; never out of the header.
+    const seen = [];
+    for (let i = 0; i < 16; i++) {
+      seen.push(await page.evaluate(() => { const a = document.activeElement; const r = a.getBoundingClientRect(); return { id: a.id || a.textContent.trim().slice(0, 24), inHeader: !!a.closest('#siteHeader'), inSheet: !!a.closest('#siteNav'), top: r.top }; }));
+      await page.keyboard.press('Tab');
+    }
+    ok(seen.every(s => s.inHeader), `phone menu: Tab stays in the header and sheet while open (${seen.filter(s => !s.inHeader).map(s => s.id)})`);
+    const sheet = seen.slice(0, seen.findIndex(s => !s.inSheet));
+    ok(sheet.length >= 8 && sheet.every((s, i) => i === 0 || s.top > sheet[i - 1].top), `phone menu: the sheet is reached top to bottom, in the order it is drawn (${sheet.map(s => s.id + '@' + Math.round(s.top))})`);
+    ok(sheet[0].id === 'navSearch' && /Resume/.test(sheet[1].id), 'phone menu: Search tools, then the categories from Resume');
+    await page.locator('.site-header .brand').focus();
+    await page.keyboard.press('Shift+Tab');
+    ok(await page.evaluate(() => document.activeElement.id) === 'navMenuToggle', 'phone menu: Shift+Tab from the first item in the header goes round to the menu button');
+    // Categories open and close; Resume builder is listed once.
+    const resume = page.locator('.menu__toggle[aria-controls="menuList-resume"]');
+    await resume.click();
+    ok(await resume.getAttribute('aria-expanded') === 'true' && await page.locator('#menuList-resume a').isVisible(), 'phone menu: a category opens to show its tools');
+    ok(await page.locator('#siteNav a:visible', { hasText: 'Resume builder' }).count() === 1, 'phone menu: Resume builder is listed once');
+    await resume.click();
+    ok(await page.locator('#menuList-resume').isHidden(), 'phone menu: and closes again');
+    await page.keyboard.press('Escape');
+    ok(await toggle.getAttribute('aria-expanded') === 'false' && await page.evaluate(() => document.activeElement.id) === 'navMenuToggle', 'phone menu: Escape closes it and returns focus to the menu button');
+    // Search from the sheet: the sheet closes, the dialog opens, and closing it returns to the menu button.
+    await toggle.click();
+    await page.locator('#navSearch').click();
+    await page.locator('.search-dialog input').waitFor();
+    ok(await toggle.getAttribute('aria-expanded') === 'false' && await page.evaluate(() => document.activeElement.closest('.search-dialog') !== null), 'phone menu: Search tools opens the search dialog');
+    await page.keyboard.press('Escape');
+    ok(await page.evaluate(() => document.activeElement.id) === 'navMenuToggle', 'phone menu: closing the search returns focus to the menu button');
+    // On a tool page its own category starts open.
+    await page.goto(`${origin}/merge-pdf.html`);
+    await toggle.click();
+    ok(await page.locator('#menuList-pdf a[aria-current="page"]').isVisible() && await page.locator('#menuList-image').isHidden(), 'phone menu: on Merge PDF the PDF tools are open and the rest closed');
+    await context.close();
+  }
+  {
+    // Search dialog: results are options without links inside, open by Enter or click, pass axe in both themes.
+    for (const scheme of ['light', 'dark']) {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: scheme });
+      await context.route('**/*', route => /^(http:\/\/127\.|blob:|data:)/.test(route.request().url()) ? route.continue() : route.abort());
+      const page = await context.newPage();
+      const scan = async label => {
+        // The dialog fades in; contrast is measured once it has settled.
+        await page.waitForFunction(() => document.getAnimations().every(a => a.playState !== 'running'));
+        const result = await new AxeBuilder({ page }).include('.search-dialog').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+        ok(result.violations.length === 0, `search ${scheme} ${label}: ${result.violations.map(v => v.id + ' ' + v.nodes[0].target.join(' ')).join('; ')}`);
+      };
+      await page.goto(`${origin}/merge-pdf.html`);
+      await page.keyboard.press('Control+K');
+      const input = page.locator('.search-dialog input');
+      await input.waitFor();
+      await scan('popular tools');
+      await input.fill('merge');
+      ok(await page.locator('.search-dialog [role="option"]').count() > 0 && await page.locator('.search-dialog [role="option"] a, .search-dialog [role="option"] button').count() === 0, `search ${scheme}: options hold no links or buttons`);
+      await scan('results');
+      await input.fill('zzqqxx');
+      const link = page.locator('.search-results__empty a');
+      ok(await link.isVisible() && /underline/.test(await link.evaluate(a => getComputedStyle(a).textDecorationLine)), `search ${scheme}: the "browse all tools" link is underlined`);
+      await scan('no results');
+      // Tab goes round the field, Close and (only while it shows) the "browse all tools" link.
+      const tabRound = async (shift) => {
+        const seen = [];
+        await input.focus();
+        for (let i = 0; i < 4; i++) {
+          await page.keyboard.press(shift ? 'Shift+Tab' : 'Tab');
+          seen.push(await page.evaluate(() => { const a = document.activeElement; return a.tagName + (a.closest('.search-dialog') ? '' : ':outside'); }));
+        }
+        return seen.join();
+      };
+      ok(await tabRound(false) === 'BUTTON,A,INPUT,BUTTON', `search ${scheme}: Tab reaches the "browse all tools" link when nothing matches (${await tabRound(false)})`);
+      await input.fill('merge');
+      ok(await page.locator('.search-results__empty').isHidden(), `search ${scheme}: results hide the empty message`);
+      ok(await tabRound(false) === 'BUTTON,INPUT,BUTTON,INPUT', `search ${scheme}: Tab goes round the field and Close after a no-results query, skipping the hidden link (${await tabRound(false)})`);
+      ok(await tabRound(true) === 'BUTTON,INPUT,BUTTON,INPUT', `search ${scheme}: Shift+Tab goes round the same way (${await tabRound(true)})`);
+      if (scheme === 'light') {
+        await input.fill('mrege pdf');
+        await page.keyboard.press('Enter');
+        await page.waitForURL(/merge-pdf\.html$/, { waitUntil: 'domcontentloaded' });
+        ok(true, 'search: Enter opens the first result of a misspelt query');
+        await page.goto(`${origin}/index.html`, { waitUntil: 'domcontentloaded' });
+        await page.keyboard.press('/');
+        await page.locator('.search-dialog input').fill('word to pdf');
+        ok(await page.locator('.search-dialog [role="option"]').count() === 1, 'search: "word to pdf" offers one answer, the export help');
+        await page.locator('.search-dialog [role="option"]').first().click();
+        await page.waitForURL(/file-checker\.html#word-to-pdf$/);
+        ok(await page.locator('#word-to-pdf').isVisible(), 'search: a click on a result opens it; the Word to PDF help is on the page');
+      }
+      await context.close();
+    }
+  }
+  {
+    // Directory filter: counts what it shows, shows each tool once, says when nothing matches.
+    const { context, page } = await open(1280, 900);
+    await page.goto(`${origin}/tools.html?q=50kb`);
+    const visible = () => page.locator('.tool-card:not([hidden])').evaluateAll(cards => cards.filter(c => c.offsetParent !== null).map(c => c.dataset.tool));
+    let shown = await visible();
+    ok(shown.join() === 'image-resizer' && (await page.locator('#toolFilterStatus').textContent()) === '1 tool matches “50kb”', `directory: "50kb" shows the image resizer with its 50 KB link (${shown})`);
+    ok(await page.locator('.tool-card[data-tool="image-resizer"] a[data-tool="resize-50kb"]').isVisible(), 'directory: the 50 KB page is one click away');
+    for (const q of ['20kb', '100kb', 'photo under 50 kb', 'join pdf', 'compress', 'text to pdf', 'batch']) {
+      await page.locator('#toolFilter').fill(q);
+      shown = await visible();
+      const status = await page.locator('#toolFilterStatus').textContent();
+      ok(shown.length > 0 && new Set(shown).size === shown.length, `directory: "${q}" shows each tool once (${shown})`);
+      ok(status.startsWith(`${shown.length} tool${shown.length === 1 ? ' matches' : 's match'}`), `directory: "${q}" counts the cards it shows (${status}; ${shown.length})`);
+      ok(await page.locator('#toolFilterEmpty').isHidden(), `directory: "${q}" does not show the empty message`);
+    }
+    await page.locator('#toolFilter').fill('zzqq');
+    ok((await visible()).length === 0 && await page.locator('#toolFilterEmpty').isVisible() && /No tool matches/.test(await page.locator('#toolFilterStatus').textContent()), 'directory: no match says so');
+    await page.locator('#toolFilter').fill('word to pdf');
+    ok(await page.locator('#toolFilterEmpty a[href="file-checker.html#word-to-pdf"]').isVisible(), 'directory: "word to pdf" points to the export help');
+    await page.locator('#toolFilter').fill('');
+    ok((await visible()).length === await page.locator('.tool-card').count(), 'directory: clearing the filter shows every card again');
+    await context.close();
+  }
+  console.log('✓ Navigation: phone menu sheet order, focus and categories; search dialog options and axe; directory filter counts');
 
   await browser.close();
   server.close();
