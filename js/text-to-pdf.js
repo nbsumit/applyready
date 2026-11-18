@@ -198,7 +198,9 @@
     const done = () => { document.body.classList.remove('ttp-printing'); window.removeEventListener('afterprint', done); };
     window.addEventListener('afterprint', done);
     window.print();
-    setTimeout(done, 1000);
+    // The class only matters to print styles, so it can stay until the dialog closes; phones return
+    // from print() before the preview is made, so a short timer would print the editor instead.
+    if (!('onafterprint' in window)) setTimeout(done, 60000);
   });
 
   /* ---------------------------------------------------------------- input */

@@ -14,7 +14,7 @@
   const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const MAX_FILES = 50;
   const els = {
-    bar: $('fcBar'), counts: $('fcCounts'), add: $('fcAdd'), cancel: $('fcCancel'), zip: $('fcZip'), clear: $('fcClear'),
+    bar: $('fcBar'), counts: $('fcCounts'), add: $('fcAdd'), cancel: $('fcCancel'), resume: $('fcResume'), zip: $('fcZip'), clear: $('fcClear'),
     list: $('fcList'), error: $('fcError'), progress: $('fcProgress'), progressBar: $('fcProgressBar'), progressText: $('fcProgressText'),
     req: $('fcReq'), reqState: $('fcReqState'), reqError: $('fcReqError'), reqClear: $('fcReqClear'),
     minKB: $('fcMinKB'), maxKB: $('fcMaxKB'), width: $('fcWidth'), height: $('fcHeight'), maxPages: $('fcMaxPages')
@@ -379,6 +379,7 @@
     }
     els.counts.innerHTML = text;
     els.cancel.hidden = !(s.running && (s.queued || s.processing));
+    els.resume.hidden = !!(s.running && (s.queued || s.processing)) || (s.cancelled + s.error) < 2;
     const cleaned = items.filter(i => i.result && i.result.cleaned && i.result.cleaned.blob);
     els.zip.hidden = cleaned.length < 2;
     const showProgress = s.running && s.total > 1;
@@ -416,7 +417,9 @@
   });
   const input = $('fcDropInput');
   els.add.addEventListener('click', () => { input.value = ''; input.click(); });
-  els.cancel.addEventListener('click', () => { queue.cancel(); Kit.announce('Checking stopped.'); });
+  els.cancel.addEventListener('click', () => { queue.cancel(); Kit.announce('Checking stopped.'); els.add.focus(); });
+  // After Stop, check every file that was not checked (or failed) in one go, not one button per file.
+  els.resume.addEventListener('click', () => { queue.retry(); if (!queue.running) queue.start(); Kit.announce('Checking the rest of the files.'); els.add.focus(); });
   els.clear.addEventListener('click', async () => {
     const unsaved = queue.items.some(i => i.result && i.result.cleaned && !i.result.cleaned.downloaded);
     if (unsaved && ui().confirm) {

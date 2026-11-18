@@ -221,6 +221,12 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await first.locator('[data-action="retry"]').click();
     await page.waitForFunction(i => document.querySelector(`.fc-item[data-id="${i}"]`).dataset.status === 'done', id, { timeout: 15000 });
     ok(true, 'retry checks a stopped file');
+    if (cancelled > 2) {
+      ok(await page.locator('#fcResume').isVisible(), 'stop: Check the rest is offered');
+      await page.click('#fcResume');
+      await page.waitForFunction(() => document.querySelectorAll('.fc-item[data-status="done"]').length === 50, null, { timeout: 60000 });
+      ok(await page.locator('#fcResume').isHidden() && /50 checked/.test(await page.locator('#fcCounts').innerText()), 'Check the rest checks every stopped file');
+    }
     await page.click('#fcClear');
     // Protected and incomplete PDFs, and a file removed while its metadata is being removed
     await page.goto(origin + '/file-checker.html');
