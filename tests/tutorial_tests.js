@@ -191,13 +191,27 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     ok(squash(await toast(page)) === 'Imported 1 resume and opened "Priya Sharma, Junior Data Analyst".', 'import message');
     says(B, 'Imported 1 resume and opened');
     ok(/^Saved on this device/.test(await statusText(page)), 'an imported resume is saved on this device');
-    // Importing again adds a second entry; nothing is replaced.
+    // Importing the same file again adds nothing: that resume is already here exactly as it is.
     await page.setInputFiles('#fileImportInput', backupFile);
-    await page.waitForFunction(() => /Imported/.test((document.getElementById('taskNotification') || {}).textContent));
+    await page.waitForFunction(() => /already saved/.test((document.getElementById('taskNotification') || {}).textContent));
+    says(B, 'importing the same file twice does not give you two copies');
     await page.evaluate(() => scrollTo(0, 0));
     await page.click('#btnLibrary');
     await page.waitForSelector('#libraryDialog:not([hidden]) #libList li');
-    ok(await page.locator('#libList [data-act="open"]').count() === 2, 'importing the same file twice gives two copies');
+    ok(await page.locator('#libList [data-act="open"]').count() === 1, 'importing the same file twice keeps one copy');
+    await page.keyboard.press('Escape');
+    // After an edit, the backup is an older version: it is imported beside the edited one, marked restored.
+    await page.click('#tabContent');
+    await page.fill('#targetTitle', 'Data Analyst');
+    await page.waitForFunction(() => /^Saved on this device/.test(document.getElementById('saveStatusText').textContent));
+    await page.click('#tabDownload');
+    await page.setInputFiles('#fileImportInput', backupFile);
+    await page.waitForFunction(() => /Imported/.test((document.getElementById('taskNotification') || {}).textContent));
+    ok(/\(restored \d{1,2} \w{3}\)|\(restored \w{3} \d{1,2}\)/.test(await page.locator('#resumeName').textContent()), 'the older copy from the backup is marked restored');
+    says(B, 'the imported one is marked restored with the date');
+    await page.click('#btnLibrary');
+    await page.waitForSelector('#libraryDialog:not([hidden]) #libList li');
+    ok(await page.locator('#libList [data-act="open"]').count() === 2, 'the edited version and the restored one are both kept');
     await page.keyboard.press('Escape');
     const bad = path.join(tmp, 'not-a-backup.json');
     fs.writeFileSync(bad, '{"hello":1}');

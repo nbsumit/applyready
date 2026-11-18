@@ -304,13 +304,22 @@
     api.render();
     api.refreshOrder();
   }
+  // After a move, focus stays in the moved entry (the other arrow once it reaches an end) and its
+  // new position is announced.
   function focusAction(listSel, itemSel, act) {
     setTimeout(() => {
       const item = document.querySelector(`${listSel} ${itemSel}`);
-      const btn = item && (item.querySelector(`button[data-act="${act}"]:not(:disabled)`) || item.querySelector('button:not(:disabled)'));
+      const other = act === 'up' ? 'down' : 'up';
+      const btn = item && (item.querySelector(`button[data-act="${act}"]:not(:disabled)`) || item.querySelector(`button[data-act="${other}"]:not(:disabled)`) || item.querySelector('button:not(:disabled)'));
       if (btn) btn.focus();
+      if (item && api.announce) {
+        const items = Array.from(item.parentElement.children).filter(el => el.classList.contains('dynamic-item'));
+        const noun = (item.getAttribute('aria-label') || 'Entry').replace(/\s+\d+$/, '');
+        announce(`${noun} moved to position ${items.indexOf(item) + 1} of ${items.length}.`);
+      }
     }, 0);
   }
+  const announce = message => api.announce(message);
 
   function render() {
     if (!api) return;

@@ -413,15 +413,37 @@
       notify(message, true);
       return;
     }
+    // Restoring into a browser that already has these resumes must not create look-alikes. A resume
+    // identical to one saved here is skipped. One whose name is taken (usually an older or newer
+    // version of the same resume) is imported as "Name (restored 18 Nov)", so the two can be told
+    // apart in My resumes and in the editor's title.
+    const now = Date.now();
+    if (state.savingOn) { await flush(); await loadList(); }
+    const here = state.savingOn ? state.records : [];
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const incoming = result.resumes.filter(item => !here.some(rec => same(rec.data, item.data)));
+    const alreadyHere = result.resumes.length - incoming.length;
+    if (!incoming.length) {
+      const message = alreadyHere === 1 ? 'This resume is already saved in this browser, exactly as it is in the backup, so nothing was imported.'
+        : `All ${alreadyHere} resumes in this backup are already saved in this browser, exactly as they are, so nothing was imported.`;
+      notify(message);
+      if (state.dialogOpen) renderList();
+      return;
+    }
     if (!(await leaveCurrent('Import and open'))) return;
+    const restoredOn = new Date(now).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+    let renamed = 0;
     // Each resume becomes a new entry with a new id, but keeps the edit dates it had in the backup
     // (never later than now), so the list shows how old each version really is.
-    const now = Date.now();
-    const created = result.resumes.map((item, i) => LIB.createRecord(item.data, {
-      name: item.name,
-      createdAt: Math.min(item.createdAt || now, now) || undefined,
-      updatedAt: Math.min(item.updatedAt || now - i, now) || undefined
-    }));
+    const created = incoming.map((item, i) => {
+      const taken = here.some(rec => rec.name === item.name);
+      if (taken) renamed++;
+      return LIB.createRecord(item.data, {
+        name: taken ? LIB.cleanName(`${item.name} (restored ${restoredOn})`) : item.name,
+        createdAt: Math.min(item.createdAt || now, now) || undefined,
+        updatedAt: Math.min(item.updatedAt || now - i, now) || undefined
+      });
+    });
     let saved = 0;
     if (state.savingOn) {
       for (const rec of created) {
@@ -443,6 +465,8 @@
     } else {
       message = `${saved === 1 ? 'Imported 1 resume' : `Imported ${saved} resumes`} and opened “${first.name}”.`;
       if (saved < created.length) message += ` ${created.length - saved} could not be stored: this browser's storage for the site may be full.`;
+      if (renamed) message += ` ${renamed === 1 ? 'One has the name of a resume already here, so it is marked' : `${renamed} have the names of resumes already here, so they are marked`} “restored ${restoredOn}”; the versions you had are unchanged.`;
+      if (alreadyHere) message += ` ${alreadyHere} ${plural(alreadyHere, 'was', 'were')} already saved here exactly as in the backup and ${plural(alreadyHere, 'was', 'were')} skipped.`;
     }
     if (result.skipped) message += ` ${result.skipped} could not be read and ${plural(result.skipped, 'was', 'were')} skipped.`;
     if (result.overLimit) message += ` One import holds at most ${LIB.MAX_IMPORT_RESUMES} resumes, so the last ${result.overLimit} in the file ${plural(result.overLimit, 'was', 'were')} not imported.`;
@@ -545,7 +569,24 @@
     const rec = state.records[index];
     const name = LIB.cleanName(value);
     if (!rec) return;
-    if (!name) { const input = doc.querySelector('#libList .rl-rename .input'); if (input) { input.setAttribute('aria-invalid', 'true'); input.focus(); } return; }
+    if (!name) {
+      // Say what is wrong under the field, and link it, so it is read with the field.
+      const input = doc.querySelector('#libList .rl-rename .input');
+      if (!input) return;
+      let error = $('libRenameError');
+      if (!error) {
+        error = doc.createElement('p');
+        error.id = 'libRenameError';
+        error.className = 'field-error rl-rename__error';
+        input.insertAdjacentElement('afterend', error);
+        input.addEventListener('input', () => { if (LIB.cleanName(input.value)) { error.remove(); input.removeAttribute('aria-invalid'); input.removeAttribute('aria-describedby'); } });
+      }
+      error.textContent = 'Enter a name for this resume.';
+      input.setAttribute('aria-invalid', 'true');
+      input.setAttribute('aria-describedby', 'libRenameError');
+      input.focus();
+      return;
+    }
     state.renaming = -1;
     if (name !== rec.name) {
       try {
@@ -839,8 +880,8 @@
       importButton.addEventListener('click', () => importInput.click());
       importInput.addEventListener('change', e => { const file = e.target.files && e.target.files[0]; e.target.value = ''; importFile(file); });
     }
-    const openLibrary = $('btnOpenLibrary');
-    if (openLibrary) openLibrary.addEventListener('click', openDialog);
+    // Also reachable from the Download step and, on a phone, from the Preview view's toolbar.
+    ['btnOpenLibrary', 'btnLibraryPreview'].map($).forEach(button => { if (button) button.addEventListener('click', openDialog); });
     doc.querySelectorAll('[data-save-switch]').forEach(input => input.addEventListener('change', () => setSaving(input.checked)));
     const notice = $('saveNotice');
     if (notice) notice.addEventListener('click', e => {

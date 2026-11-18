@@ -311,6 +311,27 @@ check('Characters the PDF fonts cannot write are named', () => {
   assert.deepEqual(pdf.unsupportedCharacters('Closed ₹12 lakh → done 😀, café – “ok” €5'), ['₹', '→', '😀']);
   assert.deepEqual(pdf.unsupportedCharacters('Plain​ text'), []);
 });
+check('The review names the character and the field that keep the PDF from downloading', () => {
+  const { generateReviewReport } = require('../js/resume');
+  const d = schema.migrate({ personal: { fullName: 'Asha Verma', email: 'asha@example.com', phone: '+91 98765 43210' },
+    experience: [{ id: 'exp-a', role: 'Analyst', company: 'Firm', duration: '2024', bulletsText: 'Did a thing' }, { id: 'exp-b', role: 'Sales Associate', company: 'Shop', duration: '2023', bulletsText: 'Closed deals worth ₹12 lakh in three months' }] });
+  const item = generateReviewReport(d, null).find(x => x.targetField === 'exp-bul-exp-b');
+  assert(item, 'a finding points at the bullet field that holds ₹');
+  assert(item.message.includes('“₹”'), item.message);
+  assert.equal(item.where, 'Work experience, role 2');
+  assert.deepEqual(item.replace, ['₹']);
+  d.sectionVisibility.experience = false;
+  assert(!generateReviewReport(d, 1).some(x => /built-in fonts/.test(x.message)), 'a hidden section does not print, so it is not reported');
+});
+check('Job keywords split a title line, skip degree words and match British and American spellings', () => {
+  const keywords = require('../js/keywords');
+  const job = 'Business Analyst - Graduate Programme\nYou will gather requirements from senior stakeholders and own data visualization in Power BI. A degree in any field is required. Organise workshops.';
+  const result = keywords.matchKeywords(job, 'Business Analyst | B.Tech. Visualising sales data in Power BI; organised workshops for stakeholders.');
+  assert(result.found.includes('Business Analyst'), 'the role in the title line is found on its own');
+  assert(!result.keywords.some(term => /graduate programme/i.test(term) && /analyst/i.test(term)), 'the title line is not one long term');
+  for (const filler of ['degree', 'field', 'senior', 'gather']) assert(!result.keywords.includes(filler), filler);
+  for (const term of ['visualization', 'organise']) assert(result.found.some(found => found.toLowerCase() === term), `${term} matches the other spelling`);
+});
 (async () => {
   const { ensureMinKB } = require('../js/resizer');
   // A tiny JFIF JPEG header: SOI, APP0 (16 bytes), then the rest of an image.

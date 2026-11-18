@@ -196,6 +196,46 @@
     customSections: []
   };
 
+  // A fictional final-year student, used to preview the student and fresher templates: education
+  // with CGPA and percentage first, an internship, projects, a certificate and a position of
+  // responsibility.
+  const STUDENT_SAMPLE = {
+    version: 2,
+    app: 'ApplyReady',
+    template: 'campus-fresher',
+    design: { fontFamily: 'serif', fontSize: 'standard', density: 'standard', pageSize: 'a4', accentColor: 'navy', sectionOrder: [] },
+    sectionVisibility: { summary: true, experience: true, education: true, projects: true, skills: true, certifications: true, achievements: true, volunteering: true, languages: false, academic: false },
+    personal: {
+      fullName: 'Ananya Rao',
+      targetTitle: 'B.Tech Computer Science, 2026 | Data Analyst Intern',
+      email: 'ananya.rao@email.com',
+      phone: '+91 98765 43210',
+      location: 'Bengaluru, Karnataka',
+      linkedin: 'linkedin.com/in/ananyarao',
+      github: 'github.com/ananyarao',
+      website: ''
+    },
+    summary: 'Final-year computer science student who builds data dashboards and small web tools. Looking for an analyst or software role that works with real data.',
+    experience: [
+      { id: 'exp-s1', role: 'Data Analyst Intern', company: 'Northwind Retail', location: 'Bengaluru', duration: 'May 2025 - Jul 2025', bulletsText: 'Built a weekly sales dashboard in Power BI used by 6 store managers.\nCleaned two years of billing data in Python, cutting report preparation from 3 hours to 40 minutes.' }
+    ],
+    education: [
+      { id: 'edu-s1', degree: 'B.Tech in Computer Science and Engineering', institution: 'State Institute of Technology', location: 'Bengaluru', duration: '2022 - 2026', score: 'CGPA 8.6 / 10' },
+      { id: 'edu-s2', degree: 'Class XII (PCM), CBSE', institution: 'Central Public School', location: 'Mysuru', duration: '2022', score: '92.4%' }
+    ],
+    projects: [
+      { id: 'proj-s1', name: 'Campus Placement Analytics Dashboard', tech: 'Python, Pandas, Power BI', link: 'github.com/ananyarao/placement-dashboard', bulletsText: 'Analysed four years of placement records to show offers by branch and CGPA band.\nPresented the findings to the placement cell, which now updates the dashboard each term.' },
+      { id: 'proj-s2', name: 'Library Seat Booking App', tech: 'Flask, SQLite', link: '', bulletsText: 'Built a seat booking web app for the college library with a team of three.\nHandled 3,000 bookings in the first semester with no double bookings.' }
+    ],
+    skills: { languages: 'Python, SQL, Java, C', frameworks: 'Pandas, NumPy, Flask, scikit-learn', tools: 'Power BI, Excel, Git, Jupyter', other: 'Data structures, DBMS, Operating systems, Statistics' },
+    skillLabels: { languages: 'Programming', frameworks: 'Libraries', tools: 'Tools', other: 'Coursework' },
+    certifications: [{ id: 'cert-s1', name: 'Python for Data Science (online course)', issuer: '', year: '2024' }],
+    achievements: ['Second place in an inter-college hackathon on smart campus ideas (2024)'],
+    volunteering: [{ id: 'vol-s1', role: 'Student Placement Coordinator', organization: 'Training and Placement Cell', duration: '2025 - 2026' }],
+    languages: [],
+    academic: { teaching: [], presentations: [], grants: [] }
+  };
+
   // Active Resume State
   let resumeData = SCHEMA.migrate(EMPTY_DATA);
   let isDirty = false;
@@ -317,7 +357,8 @@
     escapeHTML,
     confirm: askConfirm,
     downloadName: suffix => downloadName(suffix),
-    openSection: id => openAccordion(getEl(id))
+    openSection: id => openAccordion(getEl(id)),
+    announce: message => announce(message)
   };
   if (typeof window !== 'undefined') window.ApplyReadyResumeEditor = editorApi;
 
@@ -356,6 +397,7 @@
         if (btn.id === 'tabReview') {
           runResumeReview();
         }
+        if (btn.id === 'tabDownload') loadDocxEngine().catch(() => { /* retried on the Word download itself */ });
         // A new step starts at its top, below the sticky header.
         const panel = getEl('formPanel');
         if (panel && panel.getBoundingClientRect().top < 0) {
@@ -570,14 +612,27 @@
       title.textContent = `${tmpl.name} | Full template preview`;
     }
 
-    const sample = SCHEMA.migrate(SAMPLE_DATA);
+    // Student templates are shown with a student's resume; the others with the general sample.
+    const student = tmpl.group === 'students';
+    const sample = SCHEMA.migrate(student ? STUDENT_SAMPLE : SAMPLE_DATA);
     sample.template = templateId;
     sample.design.templateId = templateId;
     sample.design.fontFamily = tmpl.fontFamily;
     sample.design.density = tmpl.density || 'standard';
     sample.design.pageSize = resumeData.design.pageSize || 'a4';
-    sample.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, sample);
-    Object.assign(sample.sectionVisibility, tmpl.defaultVisibility || {});
+    Object.assign(sample.sectionVisibility, tmpl.defaultVisibility || {}, student ? STUDENT_SAMPLE.sectionVisibility : {});
+    // The sample shows the section order this resume will have with the template: the template's
+    // own order, or the person's order when they have arranged the sections themselves.
+    const keepsOwnOrder = orderIsOwn(resumeData);
+    sample.design.sectionOrder = keepsOwnOrder
+      ? SCHEMA.normalizeSectionOrder(SCHEMA.sectionKeys(resumeData).filter(key => !SCHEMA.isCustomKey(key)), sample)
+      : recommendedOrderFor(templateId, sample);
+    const note = getEl('tmplModalNote');
+    if (note) {
+      note.textContent = `${student ? 'A sample student resume' : 'Sample content'}, for illustration. Choosing this template keeps everything you wrote${keepsOwnOrder
+        ? ' and the section order you set yourself, as shown here.'
+        : ', and your sections follow the order shown here.'}`;
+    }
     // Draw the first page with the export engine so the preview is the download.
     try {
       const doc = window.ApplyReadyPDF.generateResumePDF(sample);
@@ -664,7 +719,7 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Tab' && modal && !modal.classList.contains('hidden')) {
-        const buttons = Array.from(modal.querySelectorAll('button:not(:disabled)'));
+        const buttons = Array.from(modal.querySelectorAll('button:not(:disabled), [tabindex="0"]'));
         const first = buttons[0], last = buttons[buttons.length - 1];
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
@@ -678,16 +733,26 @@
     });
   }
 
-  function restoreListFocus(listId, targetId, preferredAction, fallbackAddBtnId) {
+  // After a move or duplicate, focus stays in the same entry: the pressed button, or once the entry
+  // reaches the top or the bottom (and that button is disabled) the opposite move button. A move is
+  // announced with the entry's new position.
+  function restoreListFocus(listId, targetId, preferredAction, fallbackAddBtnId, noun) {
     setTimeout(() => {
       const list = getEl(listId);
       if (!list) return;
       if (targetId) {
         const item = list.querySelector(`.dynamic-item[data-id="${targetId}"]`);
         if (item) {
-          const btn = item.querySelector(`button[data-action="${preferredAction}"]`) || item.querySelector('button');
-          if (btn && !btn.disabled) {
+          const opposite = preferredAction.startsWith('move-up-') ? preferredAction.replace('move-up-', 'move-down-')
+            : preferredAction.startsWith('move-down-') ? preferredAction.replace('move-down-', 'move-up-') : '';
+          const btn = [`button[data-action="${preferredAction}"]`, opposite && `button[data-action="${opposite}"]`, '.entry__toggle', 'button']
+            .filter(Boolean).map(sel => item.querySelector(sel)).find(b => b && !b.disabled);
+          if (btn) {
             btn.focus();
+            if (noun) {
+              const items = Array.from(list.querySelectorAll(':scope > .dynamic-item'));
+              announce(`${noun[0].toUpperCase()}${noun.slice(1)} moved to position ${items.indexOf(item) + 1} of ${items.length}.`);
+            }
             return;
           }
         }
@@ -804,6 +869,9 @@
     if (!TEMPLATES[templateId]) return;
     pushHistoryState();
 
+    const previousTemplate = resumeData.template;
+    const previousOrder = SCHEMA.sectionKeys(resumeData);
+    const previousLabels = TPL.getSkillLabels(previousTemplate, resumeData);
     resumeData.template = templateId;
     resumeData.design.templateId = templateId;
     const tmpl = TEMPLATES[templateId];
@@ -812,10 +880,24 @@
     if (tmpl.fontFamily) resumeData.design.fontFamily = tmpl.fontFamily;
     if (tmpl.density) resumeData.design.density = tmpl.density;
 
-    // An empty resume takes the template's section order; one with content keeps its own order,
-    // and the Style step offers the template's order as a button (updateRecommendedOrderButton).
-    if (Array.isArray(tmpl.recommendedOrder) && isDocumentEmpty()) {
-      resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData);
+    // The template's section order is part of what it promises, so it applies unless the person
+    // has arranged the sections by hand. The note under the card says what changed and undoes it.
+    if (Array.isArray(tmpl.recommendedOrder) && !orderIsOwn(resumeData)) {
+      resumeData.design.sectionOrder = recommendedOrderFor(templateId, resumeData);
+      resumeData.design.orderCustom = false;
+    }
+
+    // Skill rows the person has filled in keep the label they were written under. Otherwise a
+    // template would silently turn "Core Competencies: Python, SQL" into "Leadership: Python, SQL".
+    const keptLabels = [];
+    if (previousTemplate !== templateId) {
+      const next = TPL.getSkillLabels(templateId, resumeData);
+      const custom = resumeData.skillLabels && typeof resumeData.skillLabels === 'object' ? resumeData.skillLabels : (resumeData.skillLabels = {});
+      SKILL_KEYS.forEach(key => {
+        const filled = typeof resumeData.skills[key] === 'string' && resumeData.skills[key].trim();
+        const named = typeof custom[key] === 'string' && custom[key].trim();
+        if (filled && !named && next[key] !== previousLabels[key]) { custom[key] = previousLabels[key]; keptLabels.push(key); }
+      });
     }
 
     // Update gallery UI active states
@@ -830,6 +912,99 @@
     updateTemplateFieldLabels();
     renderResumePreview();
     runResumeReview();
+    showTemplateNote(previousOrder, keptLabels);
+  }
+
+  const SKILL_KEYS = ['languages', 'frameworks', 'tools', 'other'];
+  // Names of the editor's sections, as review findings refer to them.
+  const SECTION_NAMES = {
+    personal: 'Contact details', summary: 'Professional summary', experience: 'Work experience', education: 'Education', skills: 'Skills', projects: 'Projects',
+    certifications: 'Certifications', achievements: 'Achievements', volunteering: 'Leadership and volunteering', languages: 'Languages', publications: 'Publications',
+    academic: 'Academic and research', references: 'References', custom: 'Custom sections'
+  };
+  // A template's order for a resume. A template that does not place the summary (it hides it by
+  // default) keeps a written summary at the top rather than after every other section.
+  function recommendedOrderFor(templateId, data) {
+    const order = (TEMPLATES[templateId] || {}).recommendedOrder || [];
+    return SCHEMA.normalizeSectionOrder(order.includes('summary') ? order : ['summary', ...order], data);
+  }
+
+  // Whether the person arranged the sections themselves. Resumes saved before this was recorded
+  // count as arranged by hand only when their order is not the recommended order of any template.
+  function orderIsOwn(data) {
+    if (typeof data.design.orderCustom === 'boolean') return data.design.orderCustom;
+    const current = JSON.stringify(SCHEMA.sectionKeys(data));
+    return !Object.keys(TEMPLATES).some(id => Array.isArray(TEMPLATES[id].recommendedOrder)
+      && [recommendedOrderFor(id, data), SCHEMA.normalizeSectionOrder(TEMPLATES[id].recommendedOrder, data)].some(order => JSON.stringify(order) === current));
+  }
+
+  // The headings of the sections that print, in order, for messages ("Education, Key Projects, ...").
+  function shownSectionNames(order) {
+    const names = sectionLabels();
+    const shown = order.filter(key => {
+      if (!names[key]) return false;
+      if (SCHEMA.isCustomKey(key)) { const s = (resumeData.customSections || []).find(c => SCHEMA.customKey(c.id) === key); return !!s && s.visible !== false; }
+      return resumeData.sectionVisibility[key] !== false;
+    }).map(key => names[key]);
+    return shown.length > 6 ? shown.slice(0, 6).join(', ') + ' and more' : shown.join(', ');
+  }
+
+  // A short note under the chosen template card: what choosing it did to the section order and
+  // the skill labels, with a way back. An empty resume has nothing to rearrange, so it gets none.
+  function showTemplateNote(previousOrder, keptLabels) {
+    document.querySelectorAll('.template-note').forEach(el => el.remove());
+    if (isDocumentEmpty()) return;
+    const tmpl = TEMPLATES[resumeData.template];
+    const card = document.querySelector(`#templateGalleryGrid .template-card[data-template-id="${resumeData.template}"]`);
+    if (!tmpl || !card) return;
+    const order = SCHEMA.sectionKeys(resumeData);
+    const changed = JSON.stringify(order) !== JSON.stringify(previousOrder);
+    const recommended = recommendedOrderFor(resumeData.template, resumeData);
+    const parts = [], spoken = [];
+    const say = (text, button) => { spoken.push(text); parts.push(`<p>${escapeHTML(text)}</p>${button || ''}`); };
+    if (changed) {
+      say(`Your sections now follow this template's order: ${shownSectionNames(order)}.`, '<button type="button" class="btn btn-sm" data-note="keep-order">Keep my previous order</button>');
+    } else if (JSON.stringify(order) !== JSON.stringify(recommended)) {
+      say(`Your own section order is kept. This template suggests: ${shownSectionNames(recommended)}.`, '<button type="button" class="btn btn-sm" data-note="use-order">Use this template\'s order</button>');
+    }
+    if (keptLabels.length) {
+      const labels = TPL.getSkillLabels(resumeData.template, resumeData);
+      say(`Your skill rows keep their labels (${keptLabels.map(key => labels[key]).join(', ')}). To use this template's wording instead, clear the label boxes in Skills.`);
+    }
+    if (!parts.length) return;
+    const note = document.createElement('div');
+    note.className = 'template-note';
+    note.innerHTML = parts.join('');
+    card.appendChild(note);
+    announce(spoken.join(' '));
+    const restore = note.querySelector('[data-note="keep-order"]');
+    if (restore) restore.addEventListener('click', () => {
+      pushHistoryState();
+      resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(previousOrder, resumeData);
+      resumeData.design.orderCustom = true;
+      renderSectionOrderControls();
+      renderResumePreview();
+      note.innerHTML = `<p>Your previous section order is back: ${escapeHTML(shownSectionNames(SCHEMA.sectionKeys(resumeData)))}.</p>`;
+      note.tabIndex = -1;
+      note.focus();
+      announce(note.textContent.trim());
+    });
+    const use = note.querySelector('[data-note="use-order"]');
+    if (use) use.addEventListener('click', () => {
+      applyRecommendedOrder();
+      note.innerHTML = `<p>Your sections now follow this template's order: ${escapeHTML(shownSectionNames(SCHEMA.sectionKeys(resumeData)))}.</p>`;
+      note.tabIndex = -1;
+      note.focus();
+      announce(note.textContent.trim());
+    });
+  }
+
+  // Polite screen-reader updates for changes that move things around (reordering, template notes).
+  function announce(message) {
+    const region = getEl('rbAnnounce');
+    if (!region) return;
+    region.textContent = '';
+    setTimeout(() => { region.textContent = message; }, 50);
   }
 
   /**
@@ -1190,15 +1365,34 @@
     renderSectionOrderControls();
     const apply = getEl('btnApplyRecommendedOrder');
     if (apply) apply.addEventListener('click', () => {
-      const tmpl = TEMPLATES[resumeData.template];
-      if (!tmpl || !Array.isArray(tmpl.recommendedOrder)) return;
-      pushHistoryState();
-      resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData);
-      renderSectionOrderControls();
-      renderResumePreview();
+      if (!applyRecommendedOrder()) return;
+      document.querySelectorAll('.template-note').forEach(el => el.remove());
       const first = document.querySelector('#sectionOrderContainer button:not(:disabled), #sectionOrderContainer input');
       if (first) first.focus();
+      announce(`Sections now follow the ${TEMPLATES[resumeData.template].name} order.`);
     });
+  }
+
+  // Put the sections in the open template's recommended order; choosing templates then follows
+  // their orders again until the person rearranges sections by hand.
+  function applyRecommendedOrder() {
+    const tmpl = TEMPLATES[resumeData.template];
+    if (!tmpl || !Array.isArray(tmpl.recommendedOrder)) return false;
+    pushHistoryState();
+    resumeData.design.sectionOrder = recommendedOrderFor(resumeData.template, resumeData);
+    resumeData.design.orderCustom = false;
+    renderSectionOrderControls();
+    renderResumePreview();
+    return true;
+  }
+
+  // Heading of every section as the resume prints it, by section key.
+  function sectionLabels() {
+    const labels = { academic: 'Academic & Research (CV)' };
+    ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => { labels[key] = TPL.getSectionTitle(resumeData, resumeData.template, key); });
+    ['certifications', 'achievements', 'volunteering', 'languages', 'publications', 'references'].forEach(key => { labels[key] = TPL.getSectionLabel(resumeData.template, key); });
+    (resumeData.customSections || []).forEach(s => { labels[SCHEMA.customKey(s.id)] = s.title.trim() || 'Custom section'; });
+    return labels;
   }
 
   // Offer the template's own section order whenever the resume uses a different one.
@@ -1206,7 +1400,7 @@
     const apply = getEl('btnApplyRecommendedOrder');
     if (!apply) return;
     const tmpl = TEMPLATES[resumeData.template] || {};
-    const differs = Array.isArray(tmpl.recommendedOrder) && JSON.stringify(SCHEMA.sectionKeys(resumeData)) !== JSON.stringify(SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData));
+    const differs = Array.isArray(tmpl.recommendedOrder) && JSON.stringify(SCHEMA.sectionKeys(resumeData)) !== JSON.stringify(recommendedOrderFor(resumeData.template, resumeData));
     apply.classList.toggle('hidden', !differs);
     if (differs) apply.innerHTML = `<i aria-hidden="true" class="fa-solid fa-arrows-rotate"></i> Use the ${escapeHTML(tmpl.name)} section order`;
   }
@@ -1239,10 +1433,7 @@
 
     const order = SCHEMA.sectionKeys(resumeData);
     updateRecommendedOrderButton();
-    const labels = { academic: 'Academic & Research (CV)' };
-    ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => { labels[key] = TPL.getSectionTitle(resumeData, resumeData.template, key); });
-    ['certifications', 'achievements', 'volunteering', 'languages', 'publications', 'references'].forEach(key => { labels[key] = TPL.getSectionLabel(resumeData.template, key); });
-    (resumeData.customSections || []).forEach(s => { labels[SCHEMA.customKey(s.id)] = s.title.trim() || 'Custom section'; });
+    const labels = sectionLabels();
 
     order.forEach((key, index) => {
       if (!labels[key]) return;
@@ -1291,19 +1482,20 @@
             order[idx + 1] = temp;
           }
           resumeData.design.sectionOrder = order;
+          resumeData.design.orderCustom = true;
           renderSectionOrderControls();
           renderResumePreview();
-          setTimeout(() => {
-            const newIdx = (action === 'order-up') ? idx - 1 : idx + 1;
-            const c = getEl('sectionOrderContainer');
-            if (c) {
-              const rows = c.querySelectorAll('.dynamic-item');
-              if (rows[newIdx]) {
-                const b = rows[newIdx].querySelector(`button[data-action="${action}"]`);
-                if (b && !b.disabled) b.focus();
-              }
-            }
-          }, 20);
+          // Focus stays on the moved row: the same button, or the other one once the row reaches the
+          // top or the bottom and the pressed button is disabled.
+          const newIdx = (action === 'order-up') ? idx - 1 : idx + 1;
+          const rows = container.querySelectorAll('.section-order-row');
+          const moved = rows[newIdx];
+          if (moved) {
+            const other = action === 'order-up' ? 'order-down' : 'order-up';
+            const target = [`button[data-action="${action}"]`, `button[data-action="${other}"]`, '.chk-section-vis'].map(sel => moved.querySelector(sel)).find(b => b && !b.disabled);
+            if (target) target.focus();
+            announce(`${labels[order[newIdx]]} moved to position ${newIdx + 1} of ${rows.length}.`);
+          }
         });
       });
 
@@ -1382,6 +1574,7 @@
     emitChange();
     updatePreviewScale();
     updateSectionMeta();
+    refreshReview();
   }
 
   /**
@@ -1489,11 +1682,133 @@
     if (/lorem ipsum|\[company name\]|\[your name\]|xxx|todo:/.test(strPayload)) add('warning', 'Placeholder text detected (for example "[Company Name]" or "Lorem ipsum"). Replace it before you send the file.', 'summary');
     if (pageCount && pageCount > 2 && data.template !== 'academic-cv') add('warning', `Your PDF is ${pageCount} pages. Most employers expect one or two pages; consider trimming older roles.`, 'experience');
     else if (pageCount === 2 && experience.length <= 1 && education.length <= 2) add('info', 'Your PDF runs to two pages with little experience. Try the Compact density or 10 pt text to fit one page.', 'experience');
-    if (!pageCount) add('info', 'Some characters need a Unicode font, so PDF download uses your browser\'s Save as PDF. Word and text downloads keep every character.', 'personal');
+    // Characters outside the PDF's built-in fonts (₹, arrows, emoji, Indian scripts): name them and
+    // the first field that has them, and offer a plain replacement where one exists.
+    const odd = findUnsupportedText(data);
+    if (odd.length) {
+      const chars = [...new Set(odd.flatMap(x => x.chars))];
+      const more = odd.length > 1 ? ` (and ${odd.length - 1} more ${odd.length === 2 ? 'place' : 'places'})` : '';
+      issues.push({
+        type: 'warning',
+        message: `${quoteList(chars)} cannot be written with the PDF's built-in fonts, so Download PDF opens your browser's print dialog instead, where Save as PDF keeps every character. Word and text downloads keep them as well.`,
+        section: odd[0].section,
+        where: odd[0].where + more,
+        targetField: odd[0].field,
+        replace: chars.some(c => REPLACEMENTS[c]) ? chars.filter(c => REPLACEMENTS[c]) : null
+      });
+    } else if (!pageCount) add('info', 'Some characters need a Unicode font, so PDF download uses your browser\'s Save as PDF. Word and text downloads keep every character.', 'personal');
 
     if (data.template === 'academic-cv') add('info', 'Academic / Research CV is designed for comprehensive multi-page dossiers with publications and teaching.', 'academic');
 
     return issues;
+  }
+
+  // Plain stand-ins for common symbols the PDF fonts lack. Each is offered, never applied silently.
+  const REPLACEMENTS = {
+    '₹': { pattern: /₹\s*/g, with: 'Rs. ', label: 'Rs.' },
+    '→': { pattern: /\s*→\s*/g, with: ' - ', label: '-' },
+    '➔': { pattern: /\s*➔\s*/g, with: ' - ', label: '-' },
+    '⇒': { pattern: /\s*⇒\s*/g, with: ' - ', label: '-' },
+    '✓': { pattern: /✓\s*/g, with: '', label: 'nothing' },
+    '✔': { pattern: /✔\s*/g, with: '', label: 'nothing' },
+    '≥': { pattern: /≥/g, with: '>=', label: '>=' },
+    '≤': { pattern: /≤/g, with: '<=', label: '<=' }
+  };
+  const quoteList = chars => {
+    const quoted = chars.slice(0, 5).map(c => `“${c}”`);
+    const tail = chars.length > 5 ? ` and ${chars.length - 5} more characters` : '';
+    return quoted.length === 1 ? quoted[0] + tail : quoted.slice(0, -1).join(', ') + (tail ? ', ' + quoted[quoted.length - 1] + tail : ' and ' + quoted[quoted.length - 1]);
+  };
+  const PDF_ENGINE = () => (typeof window !== 'undefined' && window.ApplyReadyPDF) || (typeof require === 'function' ? require('./pdf-engine.js') : null);
+
+  /* Every printed field holding characters the vector PDF cannot write, in reading order:
+     [{ chars, section, where ("Work experience, role 2"), field (the input's id) }]. */
+  function findUnsupportedText(data) {
+    const engine = PDF_ENGINE();
+    if (!engine || !engine.unsupportedCharacters) return [];
+    const vis = data.sectionVisibility || {};
+    const shown = key => vis[key] !== false;
+    const found = [];
+    const check = (value, section, where, field) => {
+      const chars = typeof value === 'string' ? engine.unsupportedCharacters(value) : [];
+      if (chars.length) found.push({ chars, section, where, field });
+    };
+    const each = (items, section, noun, fields) => (Array.isArray(items) ? items : []).forEach((item, i) => {
+      const where = `${noun} ${i + 1}`;
+      if (typeof item === 'string') { check(item, section, where, fields[0][1](item, i)); return; }
+      if (item && typeof item === 'object') fields.forEach(([key, field]) => check(item[key], section, where, field(item, i)));
+    });
+    const p = data.personal || {};
+    [['fullName', 'name'], ['targetTitle', 'headline'], ['email', 'email'], ['phone', 'phone'], ['location', 'location'], ['linkedin', 'LinkedIn'], ['github', 'GitHub'], ['website', 'website']]
+      .forEach(([key, label]) => check(p[key], 'personal', `Contact details, ${label}`, key));
+    for (const key of ['summary', 'experience', 'education', 'projects', 'skills']) if (shown(key)) check(data[key + 'Title'], key, `${SECTION_NAMES[key]}, heading`, key + 'TitleInput');
+    if (shown('summary')) check(data.summary, 'summary', SECTION_NAMES.summary, 'summaryText');
+    if (shown('experience')) each(data.experience, 'experience', 'Work experience, role', [['role', 'role'], ['company', 'comp'], ['duration', 'dur'], ['location', 'loc'], ['bulletsText', 'bul']].map(([key, f]) => [key, item => `exp-${f}-${item.id}`]));
+    if (shown('education')) each(data.education, 'education', 'Education, entry', [['degree', 'deg'], ['institution', 'inst'], ['duration', 'dur'], ['location', 'loc'], ['score', 'score']].map(([key, f]) => [key, item => `edu-${f}-${item.id}`]));
+    if (shown('projects')) each(data.projects, 'projects', 'Projects, project', [['name', 'name'], ['tech', 'tech'], ['link', 'link'], ['bulletsText', 'bul']].map(([key, f]) => [key, item => `proj-${f}-${item.id}`]));
+    if (shown('skills')) {
+      const skills = data.skills || {}, labels = data.skillLabels || {};
+      SKILL_KEYS.forEach((key, i) => {
+        if (!(typeof skills[key] === 'string' && skills[key].trim())) return;
+        const id = key[0].toUpperCase() + key.slice(1);
+        check(labels[key], 'skills', `Skills, row ${i + 1} label`, 'skillLabel' + id);
+        check(skills[key], 'skills', `Skills, row ${i + 1}`, 'skill' + id);
+      });
+    }
+    const at = prefix => (item, i) => `${prefix}-${i}`;
+    if (shown('certifications')) each(data.certifications, 'certifications', 'Certifications, item', [['name', at('cert-name')], ['title', at('cert-name')], ['issuer', at('cert-issuer')], ['year', at('cert-year')]]);
+    if (shown('achievements')) each(data.achievements, 'achievements', 'Achievements, item', [['title', at('ach-text')], ['text', at('ach-text')]]);
+    if (shown('volunteering')) each(data.volunteering, 'volunteering', 'Leadership and volunteering, entry', [['role', at('vol-role')], ['organization', at('vol-org')], ['duration', at('vol-dur')]]);
+    if (shown('languages')) each(data.languages, 'languages', 'Languages, item', [['name', at('lang-name')], ['proficiency', at('lang-prof')]]);
+    if (shown('publications')) each(data.publications, 'publications', 'Publications, item', [['title', at('pub-text')], ['citation', at('pub-text')]]);
+    if (shown('academic')) {
+      const academic = data.academic || {};
+      each(academic.teaching, 'academic', 'Teaching, entry', [['role', at('teach-role')], ['course', at('teach-role')], ['institution', at('teach-inst')], ['term', at('teach-term')]]);
+      each(academic.presentations, 'academic', 'Presentations, entry', [['title', at('pres-title')], ['event', at('pres-event')]]);
+      each(academic.grants, 'academic', 'Grants, entry', [['title', at('grant-title')], ['name', at('grant-title')], ['funder', at('grant-funder')], ['year', at('grant-year')]]);
+    }
+    if (shown('references') && data.referencesOnRequest !== true) each(data.references, 'references', 'References, referee', ['name', 'title', 'organization', 'contact'].map(key => [key, item => `ref-${key === 'organization' ? 'org' : key}-${item.id}`]));
+    (data.customSections || []).filter(s => s && s.visible !== false).forEach(s => {
+      const name = (typeof s.title === 'string' && s.title.trim()) || 'Custom section';
+      check(s.title, 'custom', name + ', heading', `cs-title-${s.id}`);
+      if (s.mode === 'text') check(s.text, 'custom', name, `cs-text-${s.id}`);
+      else each(s.entries, 'custom', name + ', entry', [['title', item => `ce-title-${item.id}`], ['subtitle', item => `ce-sub-${item.id}`], ['date', item => `ce-date-${item.id}`], ['bulletsText', item => `ce-bul-${item.id}`]]);
+    });
+    return found;
+  }
+
+  // Swap the offered stand-ins into every text of the resume (one undo step), then redraw.
+  function replaceUnsupported(chars) {
+    const rules = chars.map(c => REPLACEMENTS[c]).filter(Boolean);
+    if (!rules.length) return;
+    pushHistoryState();
+    let count = 0;
+    const walk = value => {
+      if (typeof value === 'string') return rules.reduce((text, rule) => text.replace(rule.pattern, () => { count++; return rule.with; }), value);
+      if (Array.isArray(value)) return value.map(walk);
+      if (value && typeof value === 'object') { Object.keys(value).forEach(key => { if (key !== 'id') value[key] = walk(value[key]); }); return value; }
+      return value;
+    };
+    walk(resumeData);
+    refreshWholeEditor();
+    notify(`Replaced ${count} ${count === 1 ? 'character' : 'characters'}. You can undo this in the Write step.`);
+  }
+
+  // The count on the Review tab follows every change, not only a visit to the Review step.
+  function updateReviewCount(issues) {
+    const tabCount = getEl('reviewTabCount');
+    if (!tabCount) return;
+    const errors = issues.filter(x => x.type === 'error').length;
+    const open = errors + issues.filter(x => x.type === 'warning').length;
+    tabCount.hidden = !open;
+    tabCount.textContent = open ? String(open) : '';
+    tabCount.className = `tab-count${errors ? ' tab-count--error' : ''}`;
+    tabCount.setAttribute('aria-label', open ? `${open} to check` : '');
+  }
+  function refreshReview() {
+    const pane = getEl('viewReview');
+    if (pane && pane.classList.contains('active')) runResumeReview();
+    else updateReviewCount(generateReviewReport(resumeData, pdfPageCount));
   }
 
   function runResumeReview() {
@@ -1532,15 +1847,7 @@
       pageEstPill.textContent = pdfPageCount ? `${pdfPageCount} PDF page${pdfPageCount > 1 ? 's' : ''}` : 'Browser PDF';
     }
 
-    const tabCount = getEl('reviewTabCount');
-    if (tabCount) {
-      const errors = issues.filter(x => x.type === 'error').length;
-      const open = errors + issues.filter(x => x.type === 'warning').length;
-      tabCount.hidden = !open;
-      tabCount.textContent = open ? String(open) : '';
-      tabCount.className = `tab-count${errors ? ' tab-count--error' : ''}`;
-      tabCount.setAttribute('aria-label', open ? `${open} to check` : '');
-    }
+    updateReviewCount(issues);
 
     renderKeywordMatch();
     checklist.innerHTML = '';
@@ -1561,7 +1868,7 @@
       { type: 'warning', title: 'Worth checking', icon: 'fa-circle-exclamation', label: 'Warning' },
       { type: 'info', title: 'Suggestions', icon: 'fa-circle-info', label: 'Suggestion' }
     ];
-    const WHERE = { personal: 'Contact details', summary: 'Professional summary', experience: 'Work experience', education: 'Education', skills: 'Skills', projects: 'Projects', academic: 'Academic and research' };
+    const WHERE = SECTION_NAMES;
     groups.forEach(group => {
       const groupIssues = issues.filter(x => (x.type === 'error' || x.type === 'warning') ? x.type === group.type : group.type === 'info');
       if (!groupIssues.length) return;
@@ -1577,10 +1884,17 @@
           <i aria-hidden="true" class="fa-solid ${group.icon}"></i>
           <div class="review-item__body">
             <p class="review-item__msg"><span class="sr-only">${group.label}: </span>${escapeHTML(iss.message)}</p>
-            <p class="review-item__where">In ${escapeHTML(WHERE[iss.section] || 'your resume')}</p>
+            <p class="review-item__where">In ${escapeHTML(iss.where || WHERE[iss.section] || 'your resume')}</p>
+            ${iss.replace ? `<button type="button" class="btn btn-sm review-replace-btn">${escapeHTML(iss.replace.map(c => `Replace ${c} with ${REPLACEMENTS[c].label}`).join(', '))}</button>` : ''}
           </div>
-          <button type="button" class="btn btn-sm review-jump-btn" data-target="${iss.targetField || iss.section}" aria-label="Go to ${escapeHTML(WHERE[iss.section] || 'the section')} to fix this">Fix</button>
+          <button type="button" class="btn btn-sm review-jump-btn" data-target="${iss.targetField || iss.section}" aria-label="Go to ${escapeHTML(iss.where || WHERE[iss.section] || 'the section')} to fix this">Fix</button>
         `;
+        const replaceBtn = item.querySelector('.review-replace-btn');
+        if (replaceBtn) replaceBtn.addEventListener('click', () => {
+          replaceUnsupported(iss.replace);
+          const heading = getEl('reviewHeading');
+          if (heading) { heading.tabIndex = -1; heading.focus(); }
+        });
 
         item.querySelector('.review-jump-btn').addEventListener('click', () => {
           // Switch to Content Tab (on a phone, to the editor as well)
@@ -1617,7 +1931,8 @@
   function withCurrentDesign(next, sectionVisibility) {
     next.template = resumeData.template;
     next.design = Object.assign({}, JSON.parse(JSON.stringify(resumeData.design)), { templateId: resumeData.template });
-    next.design.sectionOrder = SCHEMA.normalizeSectionOrder((TEMPLATES[resumeData.template] || {}).recommendedOrder || next.design.sectionOrder, next);
+    next.design.sectionOrder = recommendedOrderFor(resumeData.template, next);
+    next.design.orderCustom = false;
     next.sectionVisibility = Object.assign({}, sectionVisibility);
     return next;
   }
@@ -1631,10 +1946,15 @@
     runResumeReview();
   }
 
+  // "Priya_Raghavan_Business_Analyst_Resume.pdf": the name, then the headline up to its first
+  // separator, so versions tailored to different roles do not overwrite each other.
   function downloadName(suffix) {
-    const name = ((resumeData.personal && resumeData.personal.fullName) || '').trim().normalize('NFC')
-      .replace(/[^\p{L}\p{M}\p{N}_-]+/gu, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 60);
-    return `${name || 'Candidate'}_${suffix}`;
+    const part = (value, max) => String(value || '').trim().normalize('NFC')
+      .replace(/[^\p{L}\p{M}\p{N}_-]+/gu, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, max).replace(/_$/, '');
+    const personal = resumeData.personal || {};
+    const name = part(personal.fullName, 60);
+    const headline = part(String(personal.targetTitle || '').split(/\s[-–—]\s|[|•·,;:()/]/)[0], 40);
+    return [name || 'Candidate', headline, suffix].filter(Boolean).join('_');
   }
 
   // Job-description comparison: lists the advert's key terms found in, and
@@ -1717,6 +2037,17 @@
 
     // Fold or unfold an entry from its title row.
     const formPanel = getEl('formPanel');
+    // A text box focused from below scrolls only as far as its caret, which can leave its label and
+    // top under the sticky step bar; bring the whole field into view when it fits.
+    if (formPanel) formPanel.addEventListener('focusin', e => {
+      requestAnimationFrame(() => {
+        const steps = formPanel.querySelector('.rb-steps');
+        if (!steps || document.activeElement !== e.target || e.target === steps || steps.contains(e.target)) return;
+        const box = e.target.getBoundingClientRect();
+        const limit = steps.getBoundingClientRect().bottom + 8;
+        if (box.top < limit && box.bottom > 0 && box.height < window.innerHeight - limit) window.scrollBy(0, box.top - limit);
+      });
+    });
     if (formPanel) formPanel.addEventListener('click', e => {
       const toggle = e.target.closest('[data-entry-toggle]');
       if (toggle) setEntryOpen(toggle.closest('.entry'), toggle.getAttribute('aria-expanded') !== 'true');
@@ -2138,7 +2469,7 @@
       resumeData.experience[idx - 1] = temp;
       renderExperienceList();
       renderResumePreview();
-      restoreListFocus('experienceList', id, 'move-up-exp', 'btnAddExperience');
+      restoreListFocus('experienceList', id, 'move-up-exp', 'btnAddExperience', 'role');
       return;
     } else if (action === 'move-down-exp' && idx < resumeData.experience.length - 1) {
       const temp = resumeData.experience[idx];
@@ -2146,7 +2477,7 @@
       resumeData.experience[idx + 1] = temp;
       renderExperienceList();
       renderResumePreview();
-      restoreListFocus('experienceList', id, 'move-down-exp', 'btnAddExperience');
+      restoreListFocus('experienceList', id, 'move-down-exp', 'btnAddExperience', 'role');
       return;
     }
 
@@ -2198,7 +2529,7 @@
       resumeData.education[idx - 1] = temp;
       renderEducationList();
       renderResumePreview();
-      restoreListFocus('educationList', id, 'move-up-edu', 'btnAddEducation');
+      restoreListFocus('educationList', id, 'move-up-edu', 'btnAddEducation', 'education entry');
       return;
     } else if (action === 'move-down-edu' && idx < resumeData.education.length - 1) {
       const temp = resumeData.education[idx];
@@ -2206,7 +2537,7 @@
       resumeData.education[idx + 1] = temp;
       renderEducationList();
       renderResumePreview();
-      restoreListFocus('educationList', id, 'move-down-edu', 'btnAddEducation');
+      restoreListFocus('educationList', id, 'move-down-edu', 'btnAddEducation', 'education entry');
       return;
     }
 
@@ -2257,7 +2588,7 @@
       resumeData.projects[idx - 1] = temp;
       renderProjectsList();
       renderResumePreview();
-      restoreListFocus('projectsList', id, 'move-up-proj', 'btnAddProject');
+      restoreListFocus('projectsList', id, 'move-up-proj', 'btnAddProject', 'project');
       return;
     } else if (action === 'move-down-proj' && idx < resumeData.projects.length - 1) {
       const temp = resumeData.projects[idx];
@@ -2265,7 +2596,7 @@
       resumeData.projects[idx + 1] = temp;
       renderProjectsList();
       renderResumePreview();
-      restoreListFocus('projectsList', id, 'move-down-proj', 'btnAddProject');
+      restoreListFocus('projectsList', id, 'move-down-proj', 'btnAddProject', 'project');
       return;
     }
 
@@ -2431,26 +2762,49 @@
     document.fonts.ready.then(() => window.print());
   }
 
+  /* Every download needs the name. Without it, go to the field, mark it invalid and put the reason
+     under it (linked with aria-describedby), so it stays after the toast has gone. Typing clears it. */
+  function requireFullName() {
+    const input = getEl('fullName');
+    if (((resumeData.personal && resumeData.personal.fullName) || '').trim()) return true;
+    notify('Add your name in Contact details before downloading.', true);
+    const tabEdit = getEl('tabEdit');
+    if (tabEdit) tabEdit.click();
+    const tabContent = getEl('tabContent');
+    if (tabContent) tabContent.click();
+    openAccordion(getEl('sec-personal'));
+    if (!input) return false;
+    let error = getEl('fullNameError');
+    if (!error) {
+      error = document.createElement('p');
+      error.id = 'fullNameError';
+      error.className = 'field-error';
+      input.insertAdjacentElement('afterend', error);
+    }
+    if (!input.dataset.nameCheck) {
+      input.dataset.nameCheck = 'on';
+      input.addEventListener('input', () => {
+        const shown = getEl('fullNameError');
+        if (!shown || !input.value.trim()) return;
+        shown.remove();
+        input.removeAttribute('aria-invalid');
+        input.removeAttribute('aria-describedby');
+      });
+    }
+    error.textContent = 'Enter your full name before downloading. It goes at the top of the resume and in the file name.';
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', 'fullNameError');
+    setTimeout(() => { input.focus({ preventScroll: true }); input.scrollIntoView({ block: 'center', behavior: 'auto' }); }, 100);
+    return false;
+  }
+
   function exportToVectorPDF(event) {
     if (!window.ApplyReadyPDF) {
       notify('PDF export is unavailable. Reload or use Browser Print.', true);
       return;
     }
 
-    const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
-    if (!fullName) {
-      notify('Add your name in Contact details before downloading.', true);
-      getEl('tabEdit').click();
-      getEl('sec-personal').classList.add('open');
-      getEl('sec-personal').querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
-      const fnInp = getEl('fullName');
-      if (fnInp) {
-        const tabContent = getEl('tabContent');
-        if (tabContent) tabContent.click();
-        setTimeout(() => fnInp.focus(), 100);
-      }
-      return;
-    }
+    if (!requireFullName()) return;
 
     // Show progress on the button that was pressed (Download step or the Quick PDF button).
     const btn = (event && event.currentTarget && event.currentTarget.tagName === 'BUTTON') ? event.currentTarget : getEl('btnDownloadPDF');
@@ -2483,7 +2837,11 @@
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
       if (err.code === 'UNSUPPORTED_PDF_TEXT') {
-        notify('Use Save as PDF in the print dialog to preserve all your characters.');
+        const odd = findUnsupportedText(resumeData);
+        const chars = [...new Set(odd.flatMap(x => x.chars))];
+        notify(odd.length
+          ? `${quoteList(chars)} in ${odd[0].where} cannot go into this PDF, so the print dialog opens: choose Save as PDF there. ${chars.some(c => REPLACEMENTS[c]) ? 'The Review step can replace it.' : 'The Review step lists where it is.'}`
+          : 'Use Save as PDF in the print dialog to preserve all your characters.');
         printResume();
       } else notify('PDF could not be generated. Try Browser Print or Word.', true);
     } finally {
@@ -2497,21 +2855,25 @@
   /**
    * Export to Editable OOXML DOCX
    */
-  function exportToDOCX() {
-    if (!window.ApplyReadyDOCX) {
-      notify('Word export is unavailable. Reload or use PDF.', true);
-      return;
-    }
+  // The Word engine loads on the way to the first Word download (the Download step), not with the
+  // page. It is part of the offline cache like every other script.
+  let docxLoading = null;
+  function loadDocxEngine() {
+    if (window.ApplyReadyDOCX) return Promise.resolve(window.ApplyReadyDOCX);
+    if (!docxLoading) docxLoading = new Promise((resolve, reject) => {
+      const own = document.querySelector('script[src*="js/resume.js"]');
+      const query = own ? (own.getAttribute('src').split('?')[1] || '') : '';
+      const script = document.createElement('script');
+      script.src = 'js/docx-engine.js' + (query ? '?' + query : '');
+      script.onload = () => (window.ApplyReadyDOCX ? resolve(window.ApplyReadyDOCX) : reject(new Error('Word engine missing')));
+      script.onerror = () => { docxLoading = null; script.remove(); reject(new Error('Word engine did not load')); };
+      document.head.appendChild(script);
+    });
+    return docxLoading;
+  }
 
-    const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
-    if (!fullName) {
-      notify('Add your name in Contact details before downloading.', true);
-      getEl('tabEdit').click(); getEl('tabContent').click();
-      getEl('sec-personal').classList.add('open');
-      getEl('sec-personal').querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
-      getEl('fullName').focus();
-      return;
-    }
+  async function exportToDOCX() {
+    if (!requireFullName()) return;
 
     const btn = getEl('btnDownloadDOCX');
     const originalHtml = btn ? btn.innerHTML : '';
@@ -2521,7 +2883,12 @@
     }
 
     try {
-      const zip = window.ApplyReadyDOCX.generateResumeDOCX(resumeData, {
+      let engine;
+      try { engine = await loadDocxEngine(); } catch (e) {
+        notify('Word export could not start. Check your connection and reload, or download the PDF.', true);
+        return;
+      }
+      const zip = engine.generateResumeDOCX(resumeData, {
         pageSize: resumeData.design.pageSize || 'a4',
         fontFamily: resumeData.design.fontFamily || 'serif',
         template: resumeData.template || 'classic-professional',
@@ -2558,15 +2925,7 @@
       return;
     }
 
-    const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
-    if (!fullName) {
-      notify('Add your name in Contact details before downloading.', true);
-      getEl('tabEdit').click(); getEl('tabContent').click();
-      getEl('sec-personal').classList.add('open');
-      getEl('sec-personal').querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
-      getEl('fullName').focus();
-      return;
-    }
+    if (!requireFullName()) return;
 
     const textContent = window.ApplyReadyPDF.generateResumeText(resumeData);
     const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });

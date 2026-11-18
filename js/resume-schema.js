@@ -179,6 +179,8 @@
     for (const key of ACADEMIC_LISTS) result.academic[key] = list(acad[key], entries[key]);
     result.references = list(src.references, entries.references, 'name', MAX_REFERENCES);
     result.design.sectionOrder = normalizeSectionOrder(design.sectionOrder, result);
+    // Set once the person arranges the sections by hand; choosing a template then keeps their order.
+    if (typeof design.orderCustom === 'boolean') result.design.orderCustom = design.orderCustom;
     return result;
   }
 
