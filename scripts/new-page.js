@@ -9,17 +9,17 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const { socialBlock } = require('./lib/social');
 
 const ROOT = path.resolve(__dirname, '..');
 const SITE = 'https://applyready.in/';
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** Full HTML for a page. `main` is the inner HTML of <main>; `scripts` are paths relative to the root. */
-function pageHTML({ page, title, description, main = '', scripts = [], jsonld = null, bodyClass = '', ogTitle, robots, moduleScripts = [] }) {
+function pageHTML({ page, title, description, main = '', scripts = [], jsonld = null, bodyClass = '', robots, moduleScripts = [] }) {
   const depth = page.split('/').length - 1;
   const up = '../'.repeat(depth);
   const url = SITE + (page === 'index.html' ? '' : page.replace(/(^|\/)index\.html$/, '$1'));
-  const og = ogTitle || title;
   const ld = jsonld ? `\n  <script type="application/ld+json">\n${JSON.stringify(jsonld, null, 2).replace(/^/gm, '  ')}\n  </script>` : '';
   const scriptTags = [`js/components.js`, `js/site.js`, ...scripts].map(s => `  <script defer src="${up}${s}"></script>`).join('\n');
   const moduleTags = moduleScripts.map(s => `\n  <script type="module" src="${up}${s}"></script>`).join('');
@@ -35,20 +35,7 @@ function pageHTML({ page, title, description, main = '', scripts = [], jsonld = 
   <meta name="description" content="${esc(description)}">${robots ? `\n  <meta name="robots" content="${robots}">` : ''}
   <link rel="canonical" href="${url}">
 
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="ApplyReady">
-  <meta property="og:url" content="${url}">
-  <meta property="og:title" content="${esc(og)}">
-  <meta property="og:description" content="${esc(description)}">
-  <meta property="og:image" content="${SITE}assets/social-card.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="ApplyReady: free, private tools for job applications">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="${esc(og)}">
-  <meta name="twitter:description" content="${esc(description)}">
-  <meta name="twitter:image" content="${SITE}assets/social-card.png">
-
+${robots && /noindex/.test(robots) ? '' : socialBlock({ url, title: esc(title), description: esc(description) }) + '\n'}
   <link rel="icon" type="image/x-icon" href="${up}favicon/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="${up}favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="${up}favicon/favicon-16x16.png">

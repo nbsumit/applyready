@@ -8,23 +8,22 @@
   <meta name="applyready-tool" content="resize-kb">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Resize an Image to an Exact KB Limit: 10 KB, 100 KB or 200 KB | ApplyReady</title>
-  <meta name="description" content="Compress a photo, signature or declaration to under 10 KB, 100 KB or 200 KB at the pixel size your job portal or application form asks for, with measured results.">
+  <title>Resize an Image to 10, 100 or 200 KB | ApplyReady</title>
+  <meta name="description" content="Compress a photo, signature or declaration to under 10, 100 or 200 KB at the pixel size your form asks for. Free, in your browser; nothing is uploaded.">
   <link rel="canonical" href="https://applyready.in/resize-image-to-kb-limit.html">
 
-  <meta property="og:type" content="article">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ApplyReady">
   <meta property="og:url" content="https://applyready.in/resize-image-to-kb-limit.html">
-  <meta property="og:title" content="Resize an Image to an Exact KB Limit: 10 KB, 100 KB or 200 KB">
-  <meta property="og:description" content="Compress a photo, signature or declaration to under 10 KB, 100 KB or 200 KB at the pixel size your job portal or application form asks for, with measured results.">
+  <meta property="og:title" content="Resize an Image to 10, 100 or 200 KB">
+  <meta property="og:description" content="Compress a photo, signature or declaration to under 10, 100 or 200 KB at the pixel size your form asks for. Free, in your browser; nothing is uploaded.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-
-  <!-- Twitter Card -->
+  <meta property="og:image:alt" content="ApplyReady: free tools for job applications. Resume builder, photo and signature tools and PDF tools that run in your browser; nothing is uploaded.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://applyready.in/resize-image-to-kb-limit.html">
-  <meta name="twitter:title" content="Resize an Image to an Exact KB Limit: 10 KB, 100 KB or 200 KB">
-  <meta name="twitter:description" content="Compress a photo, signature or declaration to under 10 KB, 100 KB or 200 KB at the pixel size your job portal or application form asks for, with measured results.">
+  <meta name="twitter:title" content="Resize an Image to 10, 100 or 200 KB">
+  <meta name="twitter:description" content="Compress a photo, signature or declaration to under 10, 100 or 200 KB at the pixel size your form asks for. Free, in your browser; nothing is uploaded.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -46,75 +45,93 @@
   <link rel="stylesheet" href="css/app.css?v=20261118">
   <!-- shell:styles:end -->
 
-  <!-- FAQPage Schema -->
   <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Which forms use a 10 KB, 100 KB or 200 KB limit?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Typically, 10 KB is a minimum for signatures and photos or a maximum for a small signature scan; 100 KB is used for handwritten declarations, longer signatures and some photos; 200 KB is used for higher-resolution photos and ID images. Each portal sets its own figure, so check the form."
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "ApplyReady Resize image to a KB limit",
+        "url": "https://applyready.in/resize-image-to-kb-limit.html",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any modern browser",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://applyready.in/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Image tools",
+            "item": "https://applyready.in/tools.html#image"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Resize image to a KB limit",
+            "item": "https://applyready.in/resize-image-to-kb-limit.html"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Which forms use a 10 KB, 100 KB or 200 KB limit?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Typically, 10 KB is a minimum for signatures and photos or a maximum for a small signature scan; 100 KB is used for handwritten declarations, longer signatures and some photos; 200 KB is used for higher-resolution photos and ID images. Each portal sets its own figure, so check the form."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Should I lower the quality or the pixel size?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The pixel size, first. Set the size the form asks for; the tool then keeps the highest quality that fits. In our tests a 1200 × 1600 photo needed quality 0.73 to fit 100 KB, but an 800 × 1000 photo kept 0.89."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What if my file is smaller than the form's minimum?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Enter the minimum in Minimum (KB). The tool pads the JPEG with comment data to reach it without changing the picture."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is 100 KB the same as 100,000 bytes?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Not necessarily. With 1 KB counted as 1,024 bytes, 100 KB is 102,400 bytes. The result shows the exact byte count."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my file uploaded anywhere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Everything runs in your browser on your device."
+            }
+          }
+        ]
       }
-    },
-    {
-      "@type": "Question",
-      "name": "Should I lower the quality or the pixel size?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "The pixel size, first. Set the size the form asks for; the tool then keeps the highest quality that fits. In our tests a 1200 × 1600 photo needed quality 0.73 to fit 100 KB, but an 800 × 1000 photo kept 0.89."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What if my file is smaller than the form's minimum?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Enter the minimum in Minimum (KB). The tool pads the JPEG with comment data to reach it without changing the picture."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Is 100 KB the same as 100,000 bytes?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Not necessarily. With 1 KB counted as 1,024 bytes, 100 KB is 102,400 bytes. The result shows the exact byte count."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Is my file uploaded anywhere?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "No. Everything runs in your browser on your device."
-      }
-    }
-  ]
-}
-  </script>
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "@id": "https://applyready.in/resize-image-to-kb-limit.html#breadcrumb",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "https://applyready.in/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Resize to a KB limit",
-      "item": "https://applyready.in/resize-image-to-kb-limit.html"
-    }
-  ]
-}
+    ]
+  }
   </script>
 
 </head>
@@ -230,22 +247,21 @@
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
         <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Resize to a KB limit</li>
+          <li class="breadcrumb-item"><a href="tools.html#image">Image tools</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Resize image to a KB limit</li>
         </ol>
       </nav>
 
       <header class="page-head">
-        <h1 class="page-title">Resize an Image to an Exact KB Limit: 10 KB, 100 KB or 200 KB</h1>
+        <h1 class="page-title">Resize image to a KB limit</h1>
         <p class="page-lede">Choose the limit your form gives, add the file, and download a JPEG that is under the limit at the pixel size you set. Each limit below has its own section with typical uses and what we measured.</p>
       </header>
       <!-- tool:start -->
-      <section class="section tool-section" id="resize-tool" aria-labelledby="toolHeading">
-        <h2 class="section-title" id="toolHeading">Resize an image to a KB limit</h2>
-        <p class="section-lede">Choose the limit your form gives, add the image and download.</p>
-        <section class="ws ws--linear" id="resizerApp" data-preset="custom" data-require-choice data-state="empty" data-settings="closed" data-req="pending" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="Image resizer and compressor">
+    <section class="tool-section" id="resize-tool" aria-label="Image resizer">
+    <section class="ws ws--linear" id="resizerApp" data-preset="custom" data-require-choice data-state="empty" data-settings="closed" data-req="pending" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="Image resizer and compressor">
       <div class="ws-req" id="reqPanel" data-open="true">
         <div class="ws-req__bar">
-          <h3 class="ws-step" id="reqHeading"><span class="ws-step__n" aria-hidden="true">1</span><span class="ws-step__ask">What are you preparing?</span><span class="ws-step__done">Preparing</span></h3>
+          <h2 class="ws-step" id="reqHeading"><span class="ws-step__n" aria-hidden="true">1</span><span class="ws-step__ask">What are you preparing?</span><span class="ws-step__done">Preparing</span></h2>
           <p class="req-summary" aria-live="polite"><strong class="req-summary__name" id="reqSummaryName"></strong> <span class="req-summary__spec" id="reqSummarySpec"></span></p>
           <button type="button" class="btn btn-sm req-change" id="btnChangeReq" aria-expanded="true" aria-controls="reqGrid" data-label-change="Change" data-label-close="Close">Close</button>
         </div>
@@ -289,7 +305,7 @@
         </div>
 
         <div id="cropperPlaceholder" class="ws-empty">
-          <h3 class="ws-step"><span class="ws-step__n" aria-hidden="true">2</span><span>Add your photo or signature</span></h3>
+          <h2 class="ws-step"><span class="ws-step__n" aria-hidden="true">2</span><span>Add your photo or signature</span></h2>
           <div id="dropzone" class="dropzone" role="group" aria-label="Choose or drop an image">
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
             <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
@@ -300,7 +316,7 @@
         </div>
 
         <div id="cropperActiveArea" class="ws-crop hidden">
-          <h3 class="ws-step"><span class="ws-step__n" aria-hidden="true">3</span><span>Position it in the frame</span></h3>
+          <h2 class="ws-step"><span class="ws-step__n" aria-hidden="true">3</span><span>Position it in the frame</span></h2>
           <div class="cropper-container-wrapper" tabindex="0" role="group" aria-label="Image crop. Arrow keys move the crop selection; plus and minus zoom.">
             <img id="imageToCrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Image to crop">
           </div>
@@ -323,7 +339,7 @@
             <div class="verdict">
               <i class="fa-solid fa-check" aria-hidden="true"></i>
               <div>
-                <h3 class="ws-result__title">Ready to upload</h3>
+                <h2 class="ws-result__title">Ready to upload</h2>
                 <p class="ws-result__ok"><span id="resultStatus" class="meta-stat-val status-ok"></span></p>
               </div>
             </div>
@@ -363,7 +379,7 @@
         <button type="button" class="ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom"><span>Size, file limit and format<span class="ws-customize__hint">Set by the requirement. Change only if your form asks for something else.</span></span></button>
         <div class="ws-custom" id="wsCustom">
           <div id="customControls" class="ws-group">
-            <h4 class="ws-group__title">Size</h4>
+            <h3 class="ws-group__title">Size</h3>
             <div class="ws-dims">
               <div class="field">
                 <label class="field-label" id="customWidthLabel" for="customWidth">Width (px)</label>
@@ -400,7 +416,7 @@
           </div>
 
           <div class="ws-group">
-            <h4 class="ws-group__title">File size</h4>
+            <h3 class="ws-group__title">File size</h3>
             <div class="field-row">
               <div class="field">
                 <label class="field-label" for="customMinKB">Minimum (KB) <span class="optional">(optional)</span></label>
@@ -415,7 +431,7 @@
           </div>
 
           <div class="ws-group">
-            <h4 class="ws-group__title">Format and crop</h4>
+            <h3 class="ws-group__title">Format and crop</h3>
             <div class="field">
               <label for="formatSelect" class="field-label">File format</label>
               <select id="formatSelect" class="custom-select-source">
@@ -476,8 +492,8 @@
         <button type="button" id="btnProcess" class="btn btn-primary btn-lg" aria-describedby="processSummary" data-busy-label="Processing…" disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize and compress</button>
       </div>
     </section>
-      </section>
-      <!-- tool:end -->
+    </section>
+    <!-- tool:end -->
 
       <section class="section prose" aria-labelledby="kbIntroHeading">
         <h2 id="kbIntroHeading">How to use this page</h2>

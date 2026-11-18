@@ -1,11 +1,12 @@
 #!/usr/bin/env node
-/* Writes the shared shell (stylesheet links, header, footer, asset versions) into every HTML page.
+/* Writes the shared shell (stylesheet links, header, footer, social tags, asset versions) into every HTML page.
    Run `node scripts/sync-shell.js` after changing scripts/lib/shell.js.
    `node scripts/sync-shell.js --check` exits 1 if any page differs, which tests/content_tests.js relies on. */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
 const { ASSET_VERSION, headerHTML, footerHTML, stylesheetLinks, cspMeta } = require('./lib/shell');
+const { syncSocial } = require('./lib/social');
 
 const root = path.resolve(__dirname, '..');
 const check = process.argv.includes('--check');
@@ -33,6 +34,8 @@ const THEME_COLOR = '<meta name="theme-color" content="#ffffff" media="(prefers-
 
 function sync(page, html) {
   html = placeCspFirst(html);
+  // Social preview tags follow the page's own title, description and canonical URL.
+  html = syncSocial(html);
   html = html.replace(/<meta name="theme-color"[^>]*>(\s*<meta name="theme-color"[^>]*>)?/, THEME_COLOR);
   const parts = {
     styles: stylesheetLinks(page, { cropper: /cropper\.min\.(css|js)/.test(html), document: page === 'resume.html' }),

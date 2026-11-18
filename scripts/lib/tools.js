@@ -67,7 +67,7 @@ const TOOLS = [
   { id: 'resize-50kb', name: 'Resize image to 50 KB', path: 'resize-image-to-50kb.html', category: 'image', icon: 'crop-simple', presetOf: 'image-resizer', preset: '50 KB',
     summary: 'Photo under 50 KB',
     keywords: ['50kb', '50 kb', 'under 50kb', 'photo 50kb'] },
-  { id: 'resize-kb', name: 'Resize image to any KB', path: 'resize-image-to-kb-limit.html', category: 'image', icon: 'crop-simple', presetOf: 'image-resizer', preset: 'Any KB',
+  { id: 'resize-kb', name: 'Resize image to a KB limit', path: 'resize-image-to-kb-limit.html', category: 'image', icon: 'crop-simple', presetOf: 'image-resizer', preset: 'Any KB',
     summary: '10, 100, 200 KB or your own limit',
     keywords: ['10kb', '100kb', '200kb', 'kb limit', 'file size limit', 'under 100kb'] },
 

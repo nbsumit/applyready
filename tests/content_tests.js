@@ -235,6 +235,76 @@ for (const f of guides) {
   for (const [f, from] of inbound) ok(f === 'index.html' || from.size >= 3, `${f}: linked from the body of only ${from.size} other pages`);
 }
 
+// 6b. Search and social metadata: short titles and descriptions, the same brand everywhere, social
+//     tags that repeat the page's own title and description, and names that match the tool registry.
+{
+  const { TOOLS, CATEGORIES, liveTools } = require('../scripts/lib/tools.js');
+  const { CARD_ALT } = require('../scripts/lib/social.js');
+  const decode = t => t.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+  const textIn = t => decode(t.replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim();
+  const meta = (s, attr, name) => (s.match(new RegExp(`<meta ${attr}="${name}" content="([^"]*)">`)) || [])[1];
+  for (const f of pages) {
+    const s = read(f);
+    const title = (s.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
+    ok(!/ApplyReady\.in/.test(title), `${f}: title uses the brand "ApplyReady", not "ApplyReady.in" (${title})`);
+    // The home page leads with the brand; every other page ends with it.
+    ok(f === 'index.html' ? /^ApplyReady\b/.test(title) : / \| ApplyReady$/.test(title), `${f}: title ends with "| ApplyReady" (the home page starts with it) (${title})`);
+    if (!indexable.has(f)) {
+      ok(!/<meta (property="og:|name="twitter:)/.test(s), `${f}: noindex, redirect and utility pages carry no social tags`);
+      continue;
+    }
+    const desc = meta(s, 'name', 'description') || '';
+    ok(decode(title).length <= 65, `${f}: title is ${decode(title).length} characters; keep it to 65 so results show all of it (${title})`);
+    ok(decode(desc).length <= 160, `${f}: description is ${decode(desc).length} characters; keep it to 160 so results show all of it`);
+    const shared = title.replace(/ \| ApplyReady$/, '');
+    ok(meta(s, 'property', 'og:title') === shared && meta(s, 'name', 'twitter:title') === shared, `${f}: og:title and twitter:title repeat the page title`);
+    ok(meta(s, 'property', 'og:description') === desc && meta(s, 'name', 'twitter:description') === desc, `${f}: og:description and twitter:description repeat the meta description`);
+    ok(meta(s, 'property', 'og:url') === (s.match(/<link rel="canonical" href="([^"]*)"/) || [])[1], `${f}: og:url is the canonical URL`);
+    ok(meta(s, 'property', 'og:site_name') === 'ApplyReady' && decode(meta(s, 'property', 'og:image:alt') || '') === CARD_ALT, `${f}: og:site_name and the one accurate image description`);
+    ok(meta(s, 'property', 'og:type') === (/"@type":\s*"Article"/.test(s) ? 'article' : 'website'), `${f}: og:type is article for guides and website elsewhere`);
+  }
+
+  // Tool pages: Home / category / tool, the same in the visible breadcrumb and the structured data.
+  for (const t of liveTools()) {
+    const s = read(t.path);
+    const cat = CATEGORIES.find(c => c.id === t.category);
+    const crumbs = [...((s.match(/<ol class="breadcrumb-list">([\s\S]*?)<\/ol>/) || [])[1] || '').matchAll(/<li[^>]*>([\s\S]*?)<\/li>/g)].map(m => [textIn(m[1]), (m[1].match(/href="([^"]*)"/) || [])[1]]);
+    ok(JSON.stringify(crumbs) === JSON.stringify([['Home', '/'], [cat.name, `tools.html#${cat.id}`], [t.name, undefined]]), `${t.path}: breadcrumb is Home / ${cat.name} / ${t.name} (${JSON.stringify(crumbs)})`);
+    const graph = [...s.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].flatMap(m => { const j = JSON.parse(m[1]); return j['@graph'] || [j]; });
+    const list = graph.find(n => n['@type'] === 'BreadcrumbList');
+    ok(list && JSON.stringify(list.itemListElement.map(i => i.name)) === JSON.stringify(crumbs.map(c => c[0])), `${t.path}: structured breadcrumbs match the visible ones`);
+    ok(graph.some(n => n['@type'] === 'WebApplication' && String(n.name).toLowerCase() === `applyready ${t.name}`.toLowerCase()), `${t.path}: WebApplication structured data named after the tool`);
+    const h1 = textIn((s.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || '');
+    ok(h1 === t.name, `${t.path}: the heading is the tool's name "${t.name}" (says "${h1}"); keep search phrases for the title`);
+  }
+
+  // Cards and buttons call a tool by its registry name; cards on top-level pages call a guide by its title.
+  const h1Of = f => textIn((read(f).match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || '');
+  for (const f of pages) {
+    const s = read(f);
+    const dir = path.posix.dirname(f);
+    const target = href => { const t = href.startsWith('/') ? href.slice(1) : path.posix.normalize(path.posix.join(dir === '.' ? '' : dir, href)); return t.endsWith('/') || t === '.' ? t.replace(/\.$/, '') + 'index.html' : t; };
+    for (const m of s.matchAll(/<a href="([^"#]+)(?:#[^"]*)?" class="guide-card[^"]*">\s*<strong>([\s\S]*?)<\/strong>/g)) {
+      const t = target(m[1]);
+      const tool = TOOLS.find(x => x.path === t);
+      if (tool) ok(textIn(m[2]) === tool.name, `${f}: the card for ${t} should say "${tool.name}" (says "${textIn(m[2])}")`);
+      else if (dir === '.' && t.startsWith('guides/') && fs.existsSync(path.join(root, t))) ok(textIn(m[2]) === h1Of(t), `${f}: the card for ${t} should use the guide's title "${h1Of(t)}" (says "${textIn(m[2])}")`);
+    }
+    for (const m of s.matchAll(/<a href="([^"]+)"[^>]*>(?:\s*<i [^>]*><\/i>)?\s*Open the ([^<]+)<\/a>/g)) {
+      const tool = TOOLS.find(x => x.name.toLowerCase() === m[2].trim().toLowerCase());
+      if (tool) ok(target(m[1].split('#')[0]) === tool.path, `${f}: "Open the ${m[2].trim()}" goes to ${m[1]}, not ${tool.path}`);
+    }
+  }
+
+  // Credits: Font Awesome's CC BY 4.0 licence asks for attribution where the icons are used.
+  const about = read('about.html');
+  ok(/Font Awesome/.test(textOf(about)) && about.includes('https://creativecommons.org/licenses/by/4.0/') && /pdf\.js/.test(textOf(about)) && /pdf-lib/.test(textOf(about)), 'about.html credits Font Awesome (CC BY 4.0), pdf.js and pdf-lib');
+  ok(/^\/\*! Font Awesome Free [\d.]+ .*License - https:\/\/fontawesome\.com\/license\/free \(Icons: CC BY 4\.0/.test(read('css/vendor/icons.min.css')), 'icons.min.css keeps the upstream licence line');
+  for (const c of CATEGORIES) ok(about.includes(`href="tools.html#${c.id}"`), `about.html describes the ${c.name} category`);
+  const manifest = JSON.parse(read('favicon/site.webmanifest'));
+  ok(!/100%|ATS/.test(manifest.description) && manifest.theme_color === '#ffffff', 'the web app manifest has the current description and the light theme colour');
+}
+
 // 7. No leftover placeholder text on public pages
 for (const f of pages) {
   const t = textOf(read(f));

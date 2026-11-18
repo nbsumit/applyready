@@ -354,8 +354,8 @@ const PDF_SCRIPTS = ['js/lib/files.js', 'js/lib/file-kit.js', 'js/lib/pdf-kit.js
 const PAGES = [
   {
     page: 'merge-pdf.html', tool: 'merge', name: 'Merge PDF', script: 'js/merge-pdf.js', extraScripts: ['js/lib/image-ops.js'],
-    title: 'Merge PDF: Join PDFs and Photos into One File, in Order | ApplyReady',
-    description: 'Join several PDFs, and photos or scans, into one PDF in the order you choose. Every page keeps its size and orientation, and the result is checked before you download it. Runs in your browser; nothing is uploaded.',
+    title: 'Merge PDF: Join PDFs and Photos into One File | ApplyReady',
+    description: 'Join PDFs, photos and scans into one PDF in the order you choose. Free, in your browser; nothing is uploaded. Pages keep their size and the result is checked.',
     h1: 'Merge PDF',
     lede: 'Join several PDFs, and photos of documents, into one file in the order you choose. Drag to reorder, merge, and download one PDF. Your files stay on this device.',
     how: `      <p>Add the files, put them in order, and select <strong>Merge files</strong>. Each PDF is opened in your browser and its pages are copied, unchanged, into a new document: text stays selectable, and every page keeps its own size and orientation, so an A4 letter and a landscape certificate sit side by side correctly. A photo or scan becomes one A4 page, turned to suit the picture, and its metadata (camera details, the date taken and any GPS location) is left out of the PDF. Before the download appears, the new file is opened again and its page count is checked against the files you added.</p>
@@ -379,8 +379,8 @@ const PAGES = [
   },
   {
     page: 'split-pdf.html', tool: 'split', name: 'Split PDF', script: 'js/split-pdf.js', extraScripts: ['js/lib/zip.js'],
-    title: 'Split PDF: Extract Pages or Split into Separate Files | ApplyReady',
-    description: 'Take pages out of a PDF, split it by page ranges, into single pages or into equal parts. See every page as a thumbnail, download each file or a ZIP, with page counts checked. Runs in your browser; nothing is uploaded.',
+    title: 'Split PDF: Extract Pages or Split into Files | ApplyReady',
+    description: 'Take pages out of a PDF or split it by ranges, single pages or equal parts. Free, in your browser; nothing is uploaded. Download each file or a ZIP.',
     h1: 'Split PDF',
     lede: 'Take the pages you need out of a PDF, or split it into several files by range, by page or into equal parts. Download each file, or all of them as one ZIP. The PDF stays on this device.',
     how: `      <p>Add a PDF and choose how to split it. <strong>Extract pages</strong> puts the pages you choose into one new file, in the order you type them, so "5, 1-3" gives page 5 first. <strong>One PDF per range</strong> makes a file for each range. <strong>Every page</strong> makes one file per page, and <strong>Equal parts</strong> makes a new file every few pages. Select page thumbnails to fill in the page list, or type it; a mistake such as a page number past the end is explained under the field.</p>
@@ -406,7 +406,7 @@ const PAGES = [
   {
     page: 'organize-pdf.html', tool: 'organize', name: 'Organise PDF pages', script: 'js/organize-pdf.js',
     title: 'Organise PDF Pages: Reorder, Rotate and Delete Pages | ApplyReady',
-    description: 'Reorder, rotate and delete the pages of a PDF, and insert pages from another PDF, using page thumbnails. Drag or use the keyboard, then save a checked copy. Runs in your browser; nothing is uploaded.',
+    description: 'Reorder, rotate and delete PDF pages, or insert pages from another PDF, using thumbnails. Free, in your browser; nothing is uploaded.',
     h1: 'Organise PDF pages',
     lede: 'Put pages in the right order, turn sideways pages upright, remove pages you do not need and add pages from another PDF. Then save a new copy. Your file stays on this device.',
     how: `      <p>Every page is shown as a thumbnail. Drag a page by its handle to move it, or use the buttons under it: move earlier or later, rotate left or right, and delete. A deleted page stays in place, faded, until you save, so you can restore it. <strong>Insert pages from another PDF</strong> adds that file's pages at the end, ready to move. Nothing changes in your original file; <strong>Save PDF</strong> builds a new copy, opens it again and checks that it has the pages you kept.</p>
@@ -432,7 +432,7 @@ const PAGES = [
   {
     page: 'pdf-to-image.html', tool: 'image', name: 'PDF to images', script: 'js/pdf-to-image.js', extraScripts: ['js/lib/zip.js'],
     title: 'PDF to JPG or PNG: Save PDF Pages as Images | ApplyReady',
-    description: 'Save the pages of a PDF as JPG or PNG images at 72, 150, 200 or 300 DPI, with a size estimate before you start. Choose pages, download one image or a ZIP. Runs in your browser; nothing is uploaded.',
+    description: 'Save PDF pages as JPG or PNG images at 72 to 300 DPI, one page or all of them in a ZIP. Free, in your browser; nothing is uploaded.',
     h1: 'PDF to images',
     lede: 'Save PDF pages as JPG or PNG pictures, for a portal that only accepts images or for sharing a page. Choose the pages and the resolution, then download. Your file stays on this device.',
     how: `      <p>Each page is drawn by your browser at the resolution you choose and saved as an image. <strong>DPI</strong> is the number of pixels for each inch of paper: an A4 page at 150 DPI is 1240 × 1754 pixels, which reads well on a screen; 300 DPI is for printing. The estimate under the setting shows the image size and roughly how much space the images will take before you start. Images are named after the file and page, for example <em>certificate-page-01.jpg</em>, so they sort in order.</p>
@@ -457,8 +457,8 @@ const PAGES = [
   },
   {
     page: 'pdf-to-text.html', tool: 'text', name: 'Extract text from PDF', script: 'js/pdf-to-text.js',
-    title: 'Extract Text from PDF: Copy or Save the Words as TXT | ApplyReady',
-    description: 'Copy the text out of a PDF, or save it as a .txt file, page by page with line breaks kept. Pages that are scanned pictures are listed, because ApplyReady does not do OCR. Runs in your browser; nothing is uploaded.',
+    title: 'Extract Text from PDF: Copy or Save as TXT | ApplyReady',
+    description: 'Copy the text out of a PDF or save it as a .txt file, page by page. Free, in your browser; nothing is uploaded. Scanned pages are listed, as there is no OCR.',
     h1: 'Extract text from PDF',
     lede: 'Get the words out of a PDF to paste into a form, an email or a document. Copy them, or download a .txt file. Your file stays on this device.',
     how: `      <p>A PDF made from a word processor stores its text, and that text is read page by page as soon as you add the file. Lines are rebuilt from the position of each word on the page, so headings, lines and paragraphs come out separately; columns and tables are read from left to right and may need tidying. With <strong>Mark where each page starts</strong> on, each page begins with a line such as "Page 2".</p>
@@ -483,9 +483,9 @@ const PAGES = [
   },
   {
     page: 'add-page-numbers.html', tool: 'numbers', name: 'Add page numbers', script: 'js/add-page-numbers.js',
-    title: 'Add Page Numbers to a PDF: Position, Format and Start Number | ApplyReady',
-    description: 'Number the pages of a PDF: choose one of six positions, a format such as "Page 1 of 10", the first number, text size, margin and colour, and skip a cover page. See a preview, download a checked copy. Runs in your browser.',
-    h1: 'Add page numbers to a PDF',
+    title: 'Add Page Numbers to a PDF: Position and Format | ApplyReady',
+    description: 'Number the pages of a PDF, free in your browser with nothing uploaded. Pick a position and a format such as "Page 1 of 10", skip a cover page and preview it.',
+    h1: 'Add page numbers',
     lede: 'Number the pages of an application bundle, a report or a set of certificates so nothing gets out of order. Choose where and how, check the preview, then download. Your file stays on this device.',
     how: `      <p>Choose the position, the format and the first number. The preview shows the first numbered page exactly as it will come out, because it is made by the same code as the download. With <strong>No number on the first page</strong> on, the cover is left blank and numbering starts on page 2 with your first number, and "of 10" counts only the numbered pages. Numbers are placed by how each page is seen, so they stay upright at the bottom of a page that is stored turned sideways.</p>
       <p>Numbers are drawn on top of each page in the standard Helvetica font, which every PDF reader has. Everything else on the page is left as it was. Put the pages in order first with <a href="organize-pdf.html">Organise PDF pages</a> or <a href="merge-pdf.html">Merge PDF</a>; to stamp words such as "Self-attested" on every page, use <a href="watermark-pdf.html">Watermark PDF</a>.</p>
@@ -509,8 +509,8 @@ const PAGES = [
   },
   {
     page: 'watermark-pdf.html', tool: 'watermark', name: 'Watermark PDF', script: 'js/watermark-pdf.js',
-    title: 'Watermark PDF: Stamp "Copy" or "Self-attested" on Every Page | ApplyReady',
-    description: 'Stamp text such as "Copy", "Self-attested" or "For verification only" across every page of a PDF. Choose size, angle, colour, strength and position or repeat it, with a preview. Runs in your browser; nothing is uploaded.',
+    title: 'Watermark PDF: Stamp "Copy" on Every Page | ApplyReady',
+    description: 'Stamp text such as "Copy" or "For verification only" across every page of a PDF, with a preview. Free, in your browser; nothing is uploaded.',
     h1: 'Watermark PDF',
     lede: 'Mark every page of a document with words such as "Copy" or "For verification only", so a copy you share cannot be passed off as the original. Preview it, then download. Your file stays on this device.',
     how: `      <p>Type the text or pick a common one, then choose its size, angle, colour and strength. <strong>Centre</strong> puts one watermark in the middle of each page; <strong>Repeated across the page</strong> tiles it so it cannot be cropped away. The preview is the first page as it will come out. The watermark is drawn on top of the page, see-through, so the content underneath stays readable.</p>

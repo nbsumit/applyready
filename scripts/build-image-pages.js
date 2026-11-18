@@ -27,9 +27,9 @@ const PAGES = {
   'image-resizer.html': { preset: 'custom', requireChoice: true, sample: true, level: 2, choices: GENERAL },
   'passport-photo-resizer.html': { preset: 'passport', level: 2, choices: ['passport', 'avatar'] },
   'signature-resizer.html': { preset: 'signature', level: 2, choices: ['signature', 'thumb', 'declaration'] },
-  'resize-image-to-20kb.html': { preset: 'kb-20', maxKB: 20, choices: ['kb-20', 'passport', 'signature'], heading: 'Resize an image to 20 KB', lede: 'The limit is set to 20 KB. Choose what you are preparing, add the image and download.' },
-  'resize-image-to-50kb.html': { preset: 'kb-50', maxKB: 50, choices: ['kb-50', 'passport', 'signature'], heading: 'Resize an image to 50 KB', lede: 'The limit is set to 50 KB. Choose what you are preparing, add the image and download.' },
-  'resize-image-to-kb-limit.html': { preset: 'custom', requireChoice: true, choices: ['kb-10', 'kb-20', 'kb-50', 'kb-100', 'kb-200'], heading: 'Resize an image to a KB limit', lede: 'Choose the limit your form gives, add the image and download.' }
+  'resize-image-to-20kb.html': { preset: 'kb-20', maxKB: 20, choices: ['kb-20', 'passport', 'signature'], level: 2 },
+  'resize-image-to-50kb.html': { preset: 'kb-50', maxKB: 50, choices: ['kb-50', 'passport', 'signature'], level: 2 },
+  'resize-image-to-kb-limit.html': { preset: 'custom', requireChoice: true, choices: ['kb-10', 'kb-20', 'kb-50', 'kb-100', 'kb-200'], level: 2 }
 };
 
 function section(cfg) {

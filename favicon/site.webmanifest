@@ -1,7 +1,7 @@
 {
   "name": "ApplyReady",
   "short_name": "ApplyReady",
-  "description": "Fast, 100% private in-browser image resizer, signature cleaner, PDF tools, and ATS resume builder.",
+  "description": "Free, open-source tools for job applications: a resume builder, photo and signature resizers, and PDF tools. Everything runs in your browser; files are never uploaded.",
   "icons": [
     {
       "src": "/favicon/android-chrome-192x192.png",
@@ -14,7 +14,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#2563EB",
+  "theme_color": "#ffffff",
   "background_color": "#ffffff",
   "display": "standalone",
   "start_url": "/",

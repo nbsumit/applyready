@@ -131,7 +131,8 @@
     if (!matched) return 0;
     // A phrase people type often ("passport size photo") is worth more than scattered words.
     if (tokenSets.length > 1) {
-      if (f.nameText.includes(query)) total += 12;
+      if (f.nameText === query) total += 30; // the whole name, typed out, always finds that page first
+      else if (f.nameText.includes(query)) total += 12;
       else if (f.keys.some(k => k === query)) total += 10;
       else if (f.keys.some(k => k.includes(query) || (query.includes(k) && k.length >= 4))) total += 6;
     } else if (f.keys.some(k => k === query)) total += 10; // a single word that is a keyword, such as "cv"
