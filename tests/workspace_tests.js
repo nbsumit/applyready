@@ -68,6 +68,10 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
   const id = await PDFLib.PDFDocument.create();
   id.addPage([612, 792]).drawText('Identity card', { x: 60, y: 700, size: 22 });
   fs.writeFileSync(fx('noor-id.pdf'), await id.save());
+  const locked = await PDFLib.PDFDocument.create();
+  locked.addPage([595.28, 841.89]).drawText('Protected certificate', { x: 60, y: 760, size: 22 });
+  await locked.encrypt({ userPassword: 'open sesame', ownerPassword: 'owner', permissions: {} });
+  fs.writeFileSync(fx('tara-locked.pdf'), await locked.save());
   fs.writeFileSync(fx('notes.txt'), 'This is a plain text file, not a picture.\n');
   fs.writeFileSync(fx('broken.pdf'), fs.readFileSync(fx('noor-marks.pdf')).subarray(0, 300));
 }
@@ -347,6 +351,90 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     // A new session numbers from 1 again
     await page.click('#wkStartBtn');
     ok(await page.locator('[role="tab"][aria-selected="true"] .wk-tab__name').innerText() === 'Applicant 1', 'a new session starts at Applicant 1');
+    ok(errors.length === 0, `no page errors: ${errors.join(' | ')}`);
+    await context.close();
+  }
+
+  /* ================================================================== passwords, ZIP as a task, workers, focus */
+  {
+    const context = await newContext();
+    const page = await context.newPage();
+    watch(page);
+    await page.goto(origin + '/workspace.html');
+    const prose = await page.$$eval('.prose a[href$=".html"]', l => l.map(a => [a.getAttribute('href'), a.target, a.rel, a.textContent]));
+    ok(prose.length >= 4 && prose.every(([, target, rel, text]) => target === '_blank' && /noopener/.test(rel) && /opens in a new tab/.test(text)), `links to other tools in the text open in a new tab, so the session is kept (${prose.map(x => x[0])})`);
+    await page.click('#wkStartBtn');
+    await page.fill('#wkName', 'Tara Singh');
+    await page.setInputFiles('#wkDropInput', [fx('ishaan-photo.jpg'), fx('tara-locked.pdf')]);
+    await page.waitForFunction(() => document.querySelectorAll('#wkFiles .file-row__thumb img').length === 1 && /password protected/.test(document.getElementById('wkFiles').innerText));
+
+    // Focus returns to an action button once its file is no longer busy
+    await row(page, 'ishaan-photo.jpg').locator('[data-act="run:photo"]').focus();
+    await page.keyboard.press('Enter');
+    await waitState(page, s => s.applicants[0].results === 1 && s.applicants[0].running === 0);
+    await page.waitForTimeout(100);
+    ok(await page.evaluate(() => document.activeElement.dataset.act) === 'run:photo', 'focus returns to Passport photo when the task is done');
+    const toast = await page.locator('#taskNotification').innerText();
+    ok(/^Passport photo ready to download: 350 × 450 px/.test(toast) && !/ishaan|Tara/i.test(toast), `a visible message says the result is ready, without names (${toast})`);
+    const notDownloaded = await page.evaluate(() => {
+      const probe = document.createElement('span'); probe.style.color = 'var(--c-success)'; document.body.appendChild(probe);
+      const success = getComputedStyle(probe).color; probe.remove();
+      return [getComputedStyle(document.querySelector('.wk-result__status[data-downloaded="false"]')).color, success];
+    });
+    ok(notDownloaded[0] !== notDownloaded[1], `“Not downloaded” is not shown in the success colour (${notDownloaded})`);
+
+    // A protected PDF's password is asked before the task starts, while its applicant is on screen
+    await row(page, 'ishaan-photo.jpg').locator('[data-act="select"]').check();
+    await row(page, 'tara-locked.pdf').locator('[data-act="select"]').check();
+    await page.click('#wkCombine');
+    await page.waitForSelector('.pdf-password');
+    ok((await state(page)).applicants[0].running === 0, 'the password is asked before the combine task starts');
+    await page.fill('.pdf-password input[type="password"]', 'open sesame');
+    await page.click('.pdf-password [data-act="ok"]');
+    await waitState(page, s => s.applicants[0].results === 2 && s.applicants[0].running === 0);
+    const combined = await download(page, () => resultRow(page, 'ishaan-photo-combined.pdf').locator('[data-act="download"]').click());
+    ok(pdfPages(combined.file) === 2 && /Protected certificate/.test(run('pdftotext', [combined.file, '-'])) && !/Encrypted:\s+yes/.test(run('pdfinfo', [combined.file])), 'the combined PDF holds the protected page, without a password');
+
+    // The ZIP is a task: it shows progress, can be cancelled, and finishing the applicant stops it
+    await page.evaluate(() => {
+      const make = window.ApplyReadyZip.createZip;
+      window.ApplyReadyZip.createZip = async (entries, opts) => {
+        for (let i = 0; i < entries.length; i++) {
+          await new Promise(r => setTimeout(r, 400));
+          if (opts.signal && opts.signal.aborted) throw new DOMException('ZIP cancelled', 'AbortError');
+          opts.onProgress(i + 1, entries.length);
+        }
+        return make(entries, opts);
+      };
+    });
+    const downloads = [];
+    page.on('download', d => downloads.push(d.suggestedFilename()));
+    await page.click('#wkZip');
+    await page.waitForSelector('#wkJobs .wk-job');
+    ok(/Preparing the ZIP/.test(await page.locator('#wkJobs .wk-job__text').innerText()) && await page.locator('#wkZip').isDisabled(), 'the ZIP shows its progress and the button waits');
+    await page.locator('#wkJobs [data-act="cancel"]').click();
+    await waitState(page, s => s.applicants[0].running === 0, null, 10000);
+    await page.waitForTimeout(1200);
+    ok(downloads.length === 0 && /1 of 2 results downloaded/.test(await page.locator("#wkTally").innerText()), 'a cancelled ZIP downloads nothing and marks nothing downloaded');
+    await page.click('#wkZip');
+    await page.waitForSelector('#wkJobs .wk-job');
+    await page.click('#wkFinish');
+    ok(/1 running task will be stopped/.test(await page.locator('.dialog--confirm').innerText()), 'finishing during the ZIP says the task will be stopped');
+    await page.click('.dialog--confirm [data-act="ok"]');
+    await page.waitForTimeout(1500);
+    ok(downloads.length === 0, 'no ZIP is saved for an applicant finished while it was being made');
+    ok(page.workers().every(w => !/image-worker/.test(w.url())), 'image workers are closed once the finished applicant’s work is gone');
+    ok(await page.evaluate(() => document.activeElement.id) === 'wkNoneNew', 'after the last applicant, focus is on Add next applicant');
+    ok(!/Tara|ishaan|tara-locked/.test(await pageDump(page)), 'nothing of the finished applicant is left in the page');
+
+    // Two applicants with the same name are pointed out
+    await page.click('#wkNoneNew');
+    await page.fill('#wkName', 'Ravi');
+    await page.click('#wkNew');
+    await page.fill('#wkName', 'ravi ');
+    ok(/same name/.test(await page.locator('#wkNameHint').innerText()), 'a second applicant with the same name gets a warning');
+    await page.fill('#wkName', 'Ravi K');
+    ok(!/same name/.test(await page.locator('#wkNameHint').innerText()), 'the warning goes once the names differ');
     ok(errors.length === 0, `no page errors: ${errors.join(' | ')}`);
     await context.close();
   }

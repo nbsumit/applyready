@@ -7,7 +7,8 @@
      - pictures: ApplyReadyImagePool (Web Workers) running ApplyReadyImageOps with the session presets
      - PDFs: ApplyReadyPdf (merge, images as pages, compress by redrawing pages), ApplyReadyPdfUI for
        password-protected files
-     - downloads: object URLs owned by the applicant, and ApplyReadyFileKit.downloadZip for the ZIP
+     - downloads: object URLs owned by the applicant; the ZIP (ApplyReadyZip) runs as a job of the
+       applicant, so it can be cancelled and is stopped when the applicant is finished
 
    Privacy rules this file keeps:
      - Memory only. Nothing about applicants, files, names or results is written to any storage.
@@ -198,7 +199,7 @@
 
   function statusText(a) {
     const c = a.counts();
-    return `${plural(c.files, 'file')} · ${STATUS[a.status]}`;
+    return c.files ? `${plural(c.files, 'file')} · ${STATUS[a.status]}` : STATUS[a.status];
   }
 
   function renderNav() {
@@ -237,6 +238,15 @@
     if (hadFocus && active) { const t = $(`wkTab-${active.id}`); if (t) t.focus({ preventScroll: true }); }
   }
 
+  /** The hint under the name, with a warning when another applicant in the session has the same name. */
+  function renderNameHint(a) {
+    const same = a.name.trim() && session.applicants.some(x => x !== a && x.label.toLowerCase() === a.label.toLowerCase());
+    el.nameHint.textContent = same
+      ? 'Another applicant in this session has the same name, so their ZIP files would be named alike. Add an initial or a number to tell them apart.'
+      : `Shown in the list and in the ZIP name. Leave it empty to keep “Applicant ${a.number}”.`;
+    el.nameHint.classList.toggle('is-warning', !!same);
+  }
+
   function clearPanel() {
     [el.files, el.results, el.jobs, el.errorList].forEach(list => { list.textContent = ''; });
     delete el.errorList.dataset.sig;
@@ -256,7 +266,8 @@
     el.panel.hidden = !a;
     el.none.hidden = !!a || !inSession;
     if (!a) { renderedFor = null; clearPanel(); return; }
-    if (renderedFor !== a.id) {
+    const fresh = renderedFor !== a.id;
+    if (fresh) {
       // Another applicant: nothing on screen may carry over, so start from an empty panel.
       clearPanel();
       renderedFor = a.id;
@@ -265,8 +276,8 @@
     const c = a.counts();
     el.panel.setAttribute('aria-labelledby', `wkTab-${a.id}`);
     el.panel.removeAttribute('aria-label');
-    if (doc.activeElement !== el.name) el.name.value = a.name;
-    el.nameHint.textContent = `Shown in the list and in the ZIP name. Leave it empty to keep “Applicant ${a.number}”.`;
+    if (fresh || doc.activeElement !== el.name) el.name.value = a.name;
+    renderNameHint(a);
 
     // Completion
     let tally;
@@ -344,14 +355,26 @@
     list.hidden = !items.length;
     if (focusKey && !list.contains(doc.activeElement)) {
       let target = list.querySelector(`[data-key="${CSS.escape(focusKey)}"]`);
-      // A control that became disabled (its file is busy) hands focus to the next usable one in its row.
+      // A control that became disabled (its file is busy) hands focus to the next usable one in its row,
+      // and gets it back when it is usable again, unless focus has moved on in the meantime.
       if ((!target || target.disabled) && focusRowId) {
         const rowNow = Array.from(list.children).find(li => li.dataset.id === focusRowId);
         target = rowNow ? Array.from(rowNow.querySelectorAll('[data-key]')).find(x => !x.disabled) : null;
+        if (target) giveBack.set(list, { key: returnKey(list, focusKey), holder: target.dataset.key });
       }
       if (target && !target.disabled) target.focus({ preventScroll: true });
     }
+    const back = giveBack.get(list);
+    if (back) {
+      const now = doc.activeElement;
+      const owner = list.querySelector(`[data-key="${CSS.escape(back.key)}"]`);
+      if (!now || !list.contains(now) || now.dataset.key !== back.holder || !owner) giveBack.delete(list);
+      else if (!owner.disabled) { giveBack.delete(list); owner.focus({ preventScroll: true }); }
+    }
   }
+  const giveBack = new Map();
+  // The control focus should return to: the original one, even after focus was handed on twice.
+  const returnKey = (list, key) => { const back = giveBack.get(list); return back && back.holder === key ? back.key : key; };
 
   const node = (tag, cls, text) => { const n = doc.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
   const icon = name => { const i = doc.createElement('i'); i.className = `fa-solid fa-${name}`; i.setAttribute('aria-hidden', 'true'); return i; };
@@ -595,11 +618,16 @@
   });
 
   /* ------------------------------------------------------------------ running jobs */
-  function finishResult(a, job, result, message) {
+  // What a result is, for the message shown when it is ready. File names stay out of toasts and
+  // announcements, so nothing of an applicant lingers in the page's live regions.
+  const RESULT_WHAT = { photo: 'Passport photo', signature: 'Signature', compress: 'Compressed picture', jpeg: 'JPEG copy', pdf: 'PDF', combine: 'Combined PDF', merge: 'Merged PDF' };
+
+  function finishResult(a, job, result) {
     if (!a.endJob(job)) return null;
     const r = a.addResult(result);
-    if (r && a === session.active) announce(message || `Ready to download: ${r.name}, ${resultFacts(r)}.`);
-    else if (r) announce('A task for another applicant has finished.');
+    // A visible message as well as an announcement: on a phone the results list is often below the screen.
+    if (r && a === session.active) notify(`${RESULT_WHAT[r.action] || 'Result'} ready to download${r.warning ? ', with a warning' : ''}: ${resultFacts(r)}.`);
+    else if (r) notify('A task for another applicant has finished.');
     return r;
   }
 
@@ -652,9 +680,13 @@
     } catch (e) { failJob(a, job, e, f, label); }
   }
 
-  /** Open a PDF of this applicant with pdf-lib and/or pdf.js, asking for its password once if needed. */
-  async function openDoc(f, bytes, needs) {
+  /**
+   * Open a PDF of applicant `a` with pdf-lib and/or pdf.js, asking for its password once if needed.
+   * The password dialog names the file, so it is only ever shown while that applicant is on screen.
+   */
+  async function openDoc(a, f, bytes, needs) {
     if (f.encrypted && f.password === undefined) {
+      if (session.active !== a) throw new Pdf.PdfError('password', `${f.name} needs its password. Open this applicant and run the task again.`);
       const opened = await PdfUI.openPdf(f.file, needs);
       f.password = opened.password;
       if (needs.js && !opened.jsDoc) throw opened.previewError || new Pdf.PdfError('damaged', `${f.name} could not be drawn. It may be damaged.`);
@@ -667,10 +699,10 @@
   }
 
   /** Redraw a PDF's pages to fit `limit` bytes; null when it would not get smaller than `bytes`. */
-  async function fitPdf(jsDoc, limit, job, a, from, span, original) {
+  async function fitPdf(jsDoc, limit, job, a, from, span, original, prefix) {
     const res = await Pdf.compressRendered(jsDoc, {
       targetBytes: limit, dpi: 150, signal: job.signal,
-      onProgress: (d, n, pass) => a.progress(job, from + (d / n) * span, `${pass ? 'Trying smaller: ' : ''}compressing page ${d} of ${n}…`)
+      onProgress: (d, n, pass) => a.progress(job, from + (d / n) * span, `${prefix}${pass ? ', trying smaller' : ''}, page ${d} of ${n}…`)
     });
     Pdf.throwIfAborted(job.signal);
     const sizes = res.sizes.map(x => ({ width: x.view[2] - x.view[0], height: x.view[3] - x.view[1] }));
@@ -696,8 +728,8 @@
         finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: check.pageCount, bytes: bytes.length, limit }, notes: [`Already under ${s.pdfKB} KB, so the original is kept unchanged.`] });
         return;
       }
-      jsDoc = (await openDoc(f, bytes, { lib: false, js: true })).jsDoc;
-      const fitted = await fitPdf(jsDoc, limit, job, a, 0.05, 0.85, f.encrypted ? null : bytes);
+      jsDoc = (await openDoc(a, f, bytes, { lib: false, js: true })).jsDoc;
+      const fitted = await fitPdf(jsDoc, limit, job, a, 0.05, 0.85, f.encrypted ? null : bytes, `${ACTION_VERB.pdf}: ${f.name}`);
       a.progress(job, 0.95, 'Checking the finished file…');
       if (!fitted) {
         finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: f.pages, bytes: bytes.length, limit }, warning: `Compressing would not make this PDF smaller, so the original is kept. It is over ${s.pdfKB} KB: try a higher limit or fewer pages.` });
@@ -713,6 +745,29 @@
     finally { if (jsDoc) Pdf.closeJs(jsDoc); }
   }
 
+  /**
+   * Ask now, while this applicant is on screen, for the password of every protected PDF in `files`,
+   * so that a task reading several files never opens a password dialog after the operator has
+   * moved on to someone else. False when a password was not given.
+   */
+  async function askPasswords(a, files, label) {
+    for (const f of files) {
+      if (f.kind !== 'pdf' || !f.encrypted || f.password !== undefined) continue;
+      if (session.active !== a || !alive(a, f)) return false;
+      try {
+        const opened = await PdfUI.openPdf(f.file, { lib: true, js: false });
+        if (!alive(a, f)) return false;
+        f.password = opened.password;
+      } catch (e) {
+        if (!alive(a, f)) return false;
+        f.actionError = `${label} did not work: ${e && e.message ? e.message : 'the PDF could not be opened.'}`;
+        schedule();
+        return false;
+      }
+    }
+    return true;
+  }
+
   async function runCombine(a, picked) {
     const files = picked.filter(f => alive(a, f));
     if (!files.length) return;
@@ -722,6 +777,9 @@
     if (!s) return;
     const limit = Math.floor(s.pdfKB * 1024);
     const label = images ? (files.length === 1 ? 'Make a PDF' : 'Combine into one PDF') : 'Merge PDFs';
+    if (files.some(f => a.busyFile(f.id))) return;
+    if (!(await askPasswords(a, files, label))) return;
+    if (a.finished || files.some(f => !alive(a, f) || a.busyFile(f.id))) return;
     const job = a.startJob({ label: `${label}: ${plural(files.length, 'file')}`, fileIds: files.map(f => f.id), action: images ? 'combine' : 'merge', text: `${label}: reading ${plural(files.length, 'file')}…` });
     files.forEach(f => { f.selected = false; f.actionError = ''; });
     let jsDoc = null;
@@ -735,7 +793,7 @@
         if (f.kind === 'image') { parts.push({ image: await Pdf.prepareImage(f.file, f.info) }); pages += 1; }
         else {
           const bytes = await Pdf.readBytes(f.file);
-          const { libDoc } = await openDoc(f, bytes, { lib: true, js: false });
+          const { libDoc } = await openDoc(a, f, bytes, { lib: true, js: false });
           parts.push({ doc: libDoc });
           pages += libDoc.getPageCount();
         }
@@ -748,7 +806,7 @@
       if (images && bytes.length > limit) {
         a.progress(job, 0.55, `${label}: making it fit ${s.pdfKB} KB…`);
         jsDoc = await Pdf.openJs(bytes, { name: 'The combined PDF' });
-        const fitted = await fitPdf(jsDoc, limit, job, a, 0.55, 0.4, bytes);
+        const fitted = await fitPdf(jsDoc, limit, job, a, 0.55, 0.4, bytes, `${label}: making it fit ${s.pdfKB} KB`);
         if (fitted) { bytes = fitted.bytes; notes.push('Pages were redrawn as pictures to fit the limit.'); }
       }
       a.progress(job, 0.97, 'Checking the finished file…');
@@ -777,7 +835,7 @@
     try {
       const bytes = new Uint8Array(await r.blob.arrayBuffer());
       jsDoc = await Pdf.openJs(bytes, { name: r.name });
-      const fitted = await fitPdf(jsDoc, limit, job, a, 0.05, 0.9, bytes);
+      const fitted = await fitPdf(jsDoc, limit, job, a, 0.05, 0.9, bytes, `Compressing ${r.name}`);
       if (!fitted) throw new Pdf.PdfError('verify', 'Compressing would not make this PDF any smaller.');
       finishResult(a, job, {
         blob: new Blob([fitted.bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stemOf(r.name)}-${s.pdfKB}kb.pdf`, sourceIds: r.sourceIds,
@@ -801,28 +859,37 @@
     link.remove();
   }
 
+  // The ZIP is a job of the applicant like any other: it shows its progress with a Cancel button,
+  // and finishing the applicant stops it, so a ZIP is never saved for someone already finished.
   el.zip.addEventListener('click', async () => {
     const a = session.active;
     if (!a || a.zipping || !a.results.length) return;
-    const s = settings();
-    const name = Model.zipName(s.zip, a);
+    const name = Model.zipName(settings().zip, a);
     const included = a.results.slice();
+    const entries = included.map(r => ({ name: r.name, data: r.blob }));
+    const job = a.startJob({ label: 'ZIP', action: 'zip', text: `Preparing the ZIP: 0 of ${plural(entries.length, 'file')}…` });
     a.zipping = true;
     schedule();
-    const saved = await Kit.downloadZip(included.map(r => ({ name: r.name, data: r.blob })), name, {
-      save: (blob, zipName) => {
-        if (a.finished) return false;
-        const url = a.url(blob);
-        saveURL(url, zipName);
-        // The browser has the file once the download starts; the link is released soon after,
-        // and at once if the applicant is finished first.
-        setTimeout(() => a.releaseURL(url), 60000);
-        return true;
-      }
-    });
-    a.zipping = false;
-    if (saved && !a.finished) a.markDownloaded(included.map(r => r.id));
-    schedule();
+    try {
+      const zip = await window.ApplyReadyZip.createZip(entries, {
+        signal: job.signal,
+        onProgress: (done, total) => a.progress(job, done / total, `Preparing the ZIP: ${done} of ${plural(total, 'file')}…`)
+      });
+      a.zipping = false;
+      if (!a.endJob(job)) { if (a === session.active) announce('ZIP cancelled.'); return; }
+      const url = a.url(zip);
+      saveURL(url, name);
+      // The browser has the file once the download starts; the link is released soon after,
+      // and at once if the applicant is finished first.
+      setTimeout(() => a.releaseURL(url), 60000);
+      a.markDownloaded(included.map(r => r.id));
+      if (a === session.active) notify(`ZIP file with ${plural(entries.length, 'file')} downloaded.`);
+    } catch (e) {
+      a.zipping = false;
+      if (!a.endJob(job)) return;
+      if (e && e.name === 'AbortError') { if (a === session.active) announce('ZIP cancelled.'); return; }
+      a.addError(`The ZIP file could not be made: ${e && e.message ? e.message : 'something went wrong.'}`);
+    }
   });
 
   /* ------------------------------------------------------------------ events */
@@ -904,6 +971,7 @@
     if (!a) return;
     a.name = el.name.value.slice(0, 60);
     renderNav();
+    renderNameHint(a);
     el.zipLabel.textContent = a.zipping ? 'Preparing ZIP…' : `Download all for ${a.label} (ZIP)`;
   });
 
@@ -960,13 +1028,16 @@
     if (ask && !(await UI().confirm(ask))) return;
     if (a.finished) return;
     session.finish(a.id);
+    // Image workers that worked for this applicant are closed when no one else has a task running;
+    // the next task starts fresh ones.
+    if (pool && !session.applicants.some(x => x.jobs.length)) { pool.destroy(); pool = null; }
     render();
     const next = session.active;
     const message = 'Applicant finished. Their files and results were removed from this tab.';
     notify(message);
     announce(message);
     if (next) { const t = $(`wkTab-${next.id}`); if (t && t.offsetParent) t.focus(); else el.name.focus(); }
-    else el.noneTitle.focus();
+    else el.noneNew.focus();
   });
 
   el.endBtn.addEventListener('click', async () => {

@@ -234,7 +234,9 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
   640 px, New applicant, End session) and the `.wk-panel` (name field and completion tally with Finish, then
   `.wk-grid`: files with a `.wk-selbar` for combining and `.wk-file` rows whose one-click actions sit on a
   second line, and work in progress (`.wk-job`) and results (`.wk-result`) in a second column from 1000 px).
-  Finish becomes the primary action only when every result is downloaded; until then the ZIP is.
+  Finish becomes the primary action only when every result is downloaded; until then the ZIP is. A finished
+  task shows a toast with what was made and its measured facts, never a file or applicant name; a name used by
+  another applicant in the session turns the name hint into a warning (`.field-hint.is-warning`).
 - **Signature cleaner**: `.compare-pair` shows the original and the cleaned result side by side from
   640 px (stacked on phones); the cleaned pane is outlined in ink.
 - **PDF tools** (section 19): one-PDF tools use `.ws--pdf` (the drop zone hides once a file is open), a

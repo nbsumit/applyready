@@ -12,8 +12,7 @@
                   context: () => value, read when files arrive and passed back after checking,
                   so a tool can deliver them where they were dropped (applicant workspaces) }
    ApplyReadyFileKit.thumbnail(file, size) -> Promise<objectURL|null>   small JPEG preview
-   ApplyReadyFileKit.downloadZip(entries, name, { button, signal, save })  ZIP with progress;
-                  save(blob, name) replaces the default download (the caller owns the object URL)
+   ApplyReadyFileKit.downloadZip(entries, name, { button, signal })      ZIP with progress
    ApplyReadyFileKit.guardUnload(() => boolean)                          warn before losing results
    ApplyReadyFileKit.announce(message)                                   polite screen-reader update
 
@@ -127,8 +126,7 @@
         signal: opts.signal,
         onProgress: (done, total) => { if (opts.button) opts.button.textContent = `Preparing ZIP… ${done} of ${total}`; }
       });
-      if (typeof opts.save === 'function') { if (opts.save(zip, name) === false) return false; }
-      else Files().download(zip, name);
+      Files().download(zip, name);
       announce(`ZIP file with ${entries.length} file${entries.length === 1 ? '' : 's'} downloaded.`);
       return true;
     } catch (e) {
