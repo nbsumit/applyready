@@ -88,6 +88,27 @@
     table.parentElement.dataset.stack = 'true';
   });
 
+  /* --------------------------------------------------------- Guide charts */
+  // On a phone a chart keeps a readable text size and scrolls sideways inside its frame (css: .shot).
+  // A frame that scrolls takes keyboard focus, named by the chart's title, so it can be scrolled with
+  // the arrow keys in every browser; one that fits is left out of the Tab order.
+  const charts = Array.from(doc.querySelectorAll('.shot')).filter(f => f.querySelector(':scope > svg'));
+  if (charts.length) {
+    const fitCharts = () => charts.forEach(frame => {
+      if (frame.scrollWidth > frame.clientWidth + 1) {
+        const title = frame.querySelector(':scope > svg > title[id]');
+        frame.tabIndex = 0;
+        if (title) frame.setAttribute('aria-labelledby', title.id);
+      } else {
+        frame.removeAttribute('tabindex');
+        frame.removeAttribute('aria-labelledby');
+      }
+    });
+    fitCharts();
+    let chartTimer = null;
+    window.addEventListener('resize', () => { clearTimeout(chartTimer); chartTimer = setTimeout(fitCharts, 150); });
+  }
+
   /* ----------------------------------------------------------- Navigation */
   const header = doc.getElementById('siteHeader');
   const navToggle = doc.getElementById('navMenuToggle');
