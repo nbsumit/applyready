@@ -258,7 +258,7 @@
 
   /* Finish saves that the browser cut short (see stashUnsaved). A copy whose resume was not saved
      since it was made is written back; one whose resume changed elsewhere in the meantime is kept as
-     a separate resume, so neither version is lost. Returns the ids of the resumes written. */
+     a separate resume, so neither version is lost. Returns { id, updatedAt } of each resume written. */
   async function recoverUnsaved() {
     let keys = [];
     try { keys = Object.keys(localStorage).filter(key => key.startsWith(UNSAVED_PREFIX)); } catch (e) { return []; }
@@ -285,14 +285,14 @@
           if (same) { /* the save did complete */ }
           else if (existing && (existing.updatedAt || 0) <= (stash.baseUpdatedAt || 0)) {
             await STORE.put('resumes', Object.assign({}, existing, { data, updatedAt: now, schemaVersion: SCHEMA.CURRENT_VERSION }));
-            written.push(stash.id);
+            written.push({ id: stash.id, updatedAt: now });
           } else if (!existing && !stash.baseUpdatedAt) {
             await STORE.put('resumes', LIB.createRecord(data, { id: stash.id, name: stash.name, createdAt: stash.createdAt, updatedAt: now }));
-            written.push(stash.id);
+            written.push({ id: stash.id, updatedAt: now });
           } else if (existing) {
             const rec = LIB.createRecord(data, { name: `${LIB.cleanName(stash.name) || LIB.suggestName(data)} (unsaved changes)`, updatedAt: now });
             await STORE.put('resumes', rec);
-            written.push(rec.id);
+            written.push({ id: rec.id, updatedAt: now });
           }
           // A resume deleted after the copy was made stays deleted.
         }
@@ -1062,7 +1062,11 @@
     state.persistent = !!status.persistent;
     state.savingOn = (await getMeta('resumeSaving')) !== 'off';
     syncSwitches();
-    if (state.persistent && state.savingOn) { await migrateLegacyDraft(); await recoverUnsaved(); }
+    if (state.persistent && state.savingOn) {
+      await migrateLegacyDraft();
+      // Other open tabs (and My resumes there) hear about a save finished here.
+      (await recoverUnsaved()).forEach(saved => post(Object.assign({ type: 'saved' }, saved)));
+    }
     await loadList();
 
     const params = new URLSearchParams(location.search);
