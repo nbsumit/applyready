@@ -602,15 +602,18 @@ const EXPECTED = {
   await page.locator('#fileInput').setInputFiles({ name: 'form.jpg', mimeType: 'image/jpeg', buffer: buf(made.jpeg) });
   await ready('form.jpg');
   if (await page.locator('.ws-customize').getAttribute('aria-expanded') !== 'true') await page.locator('.ws-customize').click();
-  yes(await page.locator('#btnLockAspect').getAttribute('aria-pressed') === 'false', 'the aspect ratio lock starts off');
+  yes(await page.locator('#btnLockAspect').getAttribute('aria-pressed') === 'true', 'the aspect ratio lock starts on');
   const typeInto = async (id, text) => { await page.locator('#' + id).click({ clickCount: 3 }); await page.keyboard.type(text); };
-  await typeInto('customWidth', '300'); await typeInto('customHeight', '200');
-  yes(await val('customWidth') === '300' && await val('customHeight') === '200' && /^300 × 200 px/.test(await page.locator('#reqSummarySpec').textContent()), 'typing 300 then 200 keeps both numbers');
+  await typeInto('customWidth', '300');
+  yes(await val('customHeight') === '300', `typing only the width fills in the height at the locked ratio (${await val('customHeight')})`);
+  await typeInto('customHeight', '200');
+  yes(await val('customWidth') === '300' && await val('customHeight') === '200' && /^300 × 200 px/.test(await page.locator('#reqSummarySpec').textContent()), 'with the lock on, typing 300 then 200 keeps both numbers (the second never changes the first)');
   await runProc('typed:result');
   yes(rec['typed:result'].w === 300 && rec['typed:result'].h === 200, `the file is 300 × 200 px (${rec['typed:result'].w} × ${rec['typed:result'].h})`);
   await again();
   await page.locator('#btnLockAspect').click();
-  yes(await page.locator('#btnLockAspect').getAttribute('aria-pressed') === 'true', 'the lock can be turned on');
+  yes(await page.locator('#btnLockAspect').getAttribute('aria-pressed') === 'false', 'the lock can be turned off');
+  await page.locator('#btnLockAspect').click();
   await typeInto('customWidth', '600');
   yes(await val('customHeight') === '400', `with the lock on, the height follows the 3:2 shape (${await val('customHeight')})`);
   // In centimetres the lock works with decimals, and changing the unit keeps the size.

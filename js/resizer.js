@@ -191,12 +191,18 @@
   const btnTryExample = getEl('btnTryExample');
   const workspaceStatus = getEl('workspaceStatus');
 
-  // Aspect ratio lock. Off at the start: a form gives both sides (300 × 200 px), and with the lock on
-  // typing the second number would change the first. When it is turned on, the ratio is the one
-  // the two fields show at that moment.
+  // Aspect ratio lock. Typing one side fills in the other at the locked ratio, but only until the
+  // person types that other side too: a form gives both sides (300 × 200 px), and the second number
+  // typed must never change the first. The ratio and this record are reset whenever the fields are
+  // filled by the tool (a preset, a unit change, the original size, turning the lock on).
   const btnLockAspect = getEl('btnLockAspect');
   let isAspectLocked = Boolean(btnLockAspect && btnLockAspect.getAttribute('aria-pressed') === 'true');
   let lockedRatio = 1.0;
+  let typed = { width: false, height: false };
+  function lockTo(width, height) {
+    if (width > 0 && height > 0) lockedRatio = width / height;
+    typed = { width: false, height: false };
+  }
   // The unit the width and height fields are in now, so a change of unit converts from it.
   let fieldUnit = 'px';
 
@@ -279,7 +285,7 @@
         if (urlHeight && customHeightInput) customHeightInput.value = urlHeight;
         markCustom();
         const w = Number(customWidthInput ? customWidthInput.value : 0), h = Number(customHeightInput ? customHeightInput.value : 0);
-        if (w > 0 && h > 0) lockedRatio = w / h;
+        lockTo(w, h);
         updatePresetUI();
       }
       setRequirementOpen(!requirementChosen, false);
@@ -363,7 +369,7 @@
     }
     // Custom retains the displayed dimensions, including the previous preset's ratio.
     const width = Number(customWidthInput ? customWidthInput.value : 0), height = Number(customHeightInput ? customHeightInput.value : 0);
-    if (width > 0 && height > 0) lockedRatio = width / height;
+    lockTo(width, height);
     updatePresetUI();
   }
 
@@ -424,7 +430,7 @@
     }
     if (customWidthInput) customWidthInput.value = width;
     if (customHeightInput) customHeightInput.value = height;
-    lockedRatio = width / height;
+    lockTo(width, height);
     markCustom();
     if (addDateCheckbox) addDateCheckbox.checked = false;
     if (dateInputGroup) dateInputGroup.style.display = 'none';
@@ -967,25 +973,27 @@
       if (isAspectLocked) {
         const w = customWidthInput ? (parseFloat(customWidthInput.value) || 350) : 350;
         const h = customHeightInput ? (parseFloat(customHeightInput.value) || 350) : 350;
-        if (w > 0 && h > 0) lockedRatio = w / h;
+        lockTo(w, h);
       }
     });
 
     on(customWidthInput, 'input', () => {
       markCustom();
-      if (isAspectLocked && lockedRatio > 0 && customWidthInput && doc && doc.activeElement === customWidthInput) {
+      if (isAspectLocked && !typed.height && lockedRatio > 0 && customWidthInput && doc && doc.activeElement === customWidthInput) {
         const height = scaleLockedDimension(customWidthInput.value, lockedRatio, 'width', unitSelect ? unitSelect.value : 'px');
         if (height !== null && customHeightInput) customHeightInput.value = height;
       }
+      if (doc && doc.activeElement === customWidthInput) typed.width = true;
       updatePresetUI();
     });
 
     on(customHeightInput, 'input', () => {
       markCustom();
-      if (isAspectLocked && lockedRatio > 0 && customHeightInput && doc && doc.activeElement === customHeightInput) {
+      if (isAspectLocked && !typed.width && lockedRatio > 0 && customHeightInput && doc && doc.activeElement === customHeightInput) {
         const width = scaleLockedDimension(customHeightInput.value, lockedRatio, 'height', unitSelect ? unitSelect.value : 'px');
         if (width !== null && customWidthInput) customWidthInput.value = width;
       }
+      if (doc && doc.activeElement === customHeightInput) typed.height = true;
       updatePresetUI();
     });
 
@@ -1020,7 +1028,7 @@
       fieldUnit = unit;
       markCustom();
       const w = Number(customWidthInput ? customWidthInput.value : 0), h = Number(customHeightInput ? customHeightInput.value : 0);
-      if (w > 0 && h > 0) lockedRatio = w / h;
+      lockTo(w, h);
       updatePresetUI();
     });
 
