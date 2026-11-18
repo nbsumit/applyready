@@ -171,9 +171,9 @@
       els.resultTitle.textContent = outputs.length === 1 ? 'Your PDF is ready' : `${outputs.length} PDFs are ready`;
       els.resultText.textContent = 'Each file was opened again and its pages counted after saving.';
       els.zip.classList.toggle('hidden', outputs.length < 2);
-      tool.showResult();
-      Kit.announce(`${UI.plural(outputs.length, 'file')} ready to download.`);
       const first = outputs.length > 1 ? els.zip : els.outputs.querySelector('a');
+      tool.showResult(first);
+      Kit.announce(`${UI.plural(outputs.length, 'file')} ready to download.`);
       if (first) first.focus({ preventScroll: true });
       return true;
     });

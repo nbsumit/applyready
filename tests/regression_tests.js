@@ -257,6 +257,37 @@ check('Links written as host:port keep their link; unsafe schemes are still refu
   const rels = new TextDecoder().decode(docx.generateResumeDOCX(d).files.find(f => f.name === 'word/_rels/document.xml.rels').data);
   assert(rels.includes('Target="https://www.example.com:8080/work"'), 'Word file links the host:port website');
 });
+check('Icon classes in scripts are written whole, so the icon subset includes every icon a page can show', () => {
+  // scripts/build-icons.py finds icons by their "fa-name" class in the source. A class built from a
+  // fragment ("fa-" + name) is invisible to it, which once left the Organise PDF Restore button blank.
+  const fs = require('node:fs'), path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const css = fs.readFileSync(path.join(root, 'css/vendor/icons.min.css'), 'utf8');
+  const has = name => new RegExp(`\\.fa-${name}:before`).test(css);
+  // These take icon names from the tool registry, which is checked below.
+  const registryDriven = new Set(['search.js', 'your-data.js', 'home.js']);
+  const dirs = ['js', 'js/lib', 'js/workers'];
+  for (const dir of dirs) {
+    for (const file of fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.js'))) {
+      if (registryDriven.has(file) && dir === 'js') continue;
+      const src = fs.readFileSync(path.join(root, dir, file), 'utf8');
+      assert(!/fa-\$\{/.test(src), `${dir}/${file} builds an icon class from a fragment; write the whole class name`);
+    }
+  }
+  const { TOOLS, CATEGORIES } = require('../scripts/lib/tools.js');
+  for (const t of TOOLS.concat(CATEGORIES)) if (t.icon) assert(has(t.icon), `registry icon fa-${t.icon} (${t.id}) is in the icon subset`);
+  assert(has('trash-can-arrow-up') && has('trash-can'), 'both Organise PDF delete and restore icons are in the subset');
+});
+check('Scrolling from script respects reduced motion (the CSS rule cannot stop a smooth scroll asked for in script)', () => {
+  const fs = require('node:fs'), path = require('node:path');
+  const root = path.join(__dirname, '..');
+  for (const dir of ['js', 'js/lib']) {
+    for (const file of fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.js'))) {
+      const src = fs.readFileSync(path.join(root, dir, file), 'utf8');
+      assert(!/behavior:\s*['"]smooth['"]/.test(src), `${dir}/${file} asks for a smooth scroll without checking prefers-reduced-motion`);
+    }
+  }
+});
 (async () => {
   const { ensureMinKB } = require('../js/resizer');
   // A tiny JFIF JPEG header: SOI, APP0 (16 bytes), then the rest of an image.

@@ -162,7 +162,7 @@
       const lowered = outputs.filter(o => o.capped).length;
       els.resultText.textContent = `${ext.toUpperCase()} at ${plan.dpi} DPI, each opened again to check its size.${lowered ? ` ${UI.plural(lowered, 'large page')} ${lowered === 1 ? 'was' : 'were'} drawn at a lower resolution to stay within what browsers can draw.` : ''}`;
       els.zip.innerHTML = outputs.length === 1 ? '<i class="fa-solid fa-download" aria-hidden="true"></i> Download image' : '<i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download all as ZIP';
-      tool.showResult();
+      tool.showResult(els.zip);
       Kit.announce(`${UI.plural(outputs.length, 'image')} ready to download.`);
       els.zip.focus({ preventScroll: true });
       return true;

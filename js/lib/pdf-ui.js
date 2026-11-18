@@ -451,7 +451,8 @@
     }
 
     function hideResult() { if (result && !result.classList.contains('hidden')) { result.classList.add('hidden'); if (o.onStale) o.onStale(); } }
-    function showResult() { if (result) { result.classList.remove('hidden'); if (root.ApplyReadyUI && root.ApplyReadyUI.reveal) root.ApplyReadyUI.reveal(result); } }
+    // `target` is the control that gets focus next (usually Download); it is brought into view too.
+    function showResult(target) { if (result) { result.classList.remove('hidden'); if (root.ApplyReadyUI && root.ApplyReadyUI.reveal) root.ApplyReadyUI.reveal(result, target); } }
 
     async function release() {
       if (state && state.jsDoc) K.closeJs(state.jsDoc);

@@ -179,8 +179,9 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
           <p class="field-hint" id="compressNote"></p>
           <div class="ws-result__actions">
             <a id="btnDownloadCompressedPdf" class="btn btn-primary btn-lg" href="#" download="Compressed_Document.pdf"><i class="fa-solid fa-download" aria-hidden="true"></i> Download compressed PDF</a>
-            <a href="merge-pdf.html" class="btn btn-lg"><i class="fa-solid fa-object-group" aria-hidden="true"></i> Merge with other PDFs</a>
+            <a href="merge-pdf.html" class="btn btn-lg" aria-describedby="compressMergeHint"><i class="fa-solid fa-object-group" aria-hidden="true"></i> Open Merge PDF</a>
           </div>
+          <p class="field-hint" id="compressMergeHint">To join this file with others, download it first, then add the downloaded file in Merge PDF.</p>
         </div>
       </div>
       <div class="ws-rail">

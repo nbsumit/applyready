@@ -172,12 +172,54 @@
     notifyTimer = setTimeout(() => node.classList.remove('is-visible'), error ? 9000 : 4500);
   }
 
-  // Bring a result into view when it is below the fold (phones). No-op when already visible.
-  function reveal(el) {
+  // How much of the top and bottom of the screen sticky bars cover beside `el`: the site header and
+  // the tool's action bar (sticky on phones). A bar counts whether or not it is stuck right now,
+  // because scrolling can make it stick.
+  function coveredEdges(el) {
+    const box = el.getBoundingClientRect();
+    const ws = el.closest && el.closest('.ws');
+    const bars = [header].concat(ws ? Array.from(ws.querySelectorAll('.ws-action')) : []);
+    let top = 0, bottom = 0;
+    bars.forEach(bar => {
+      if (!bar) return;
+      const cs = getComputedStyle(bar);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || !/^(sticky|fixed)$/.test(cs.position)) return;
+      const r = bar.getBoundingClientRect();
+      if (!r.height || r.right <= box.left || r.left >= box.right) return;
+      if (cs.top === 'auto' && cs.bottom !== 'auto') bottom = Math.max(bottom, r.height + (parseFloat(cs.bottom) || 0));
+      else top = Math.max(top, r.height + (parseFloat(cs.top) || 0));
+    });
+    return { top, bottom };
+  }
+
+  /**
+   * Bring a finished result into view, clear of the sticky header and action bar. `target` is the
+   * control that will get focus (usually Download): it must end up fully visible, which matters
+   * most on phones. Nothing moves when the result's top and the target are already in the clear
+   * band, unless opts.align asks for the result to start at the top of it.
+   */
+  function reveal(el, target, opts) {
     if (!el || typeof el.getBoundingClientRect !== 'function') return;
+    // Measured in the next frame: showing a result changes the workspace state (js/components.js),
+    // which hides and shows other parts above it, so measuring now would aim at the old layout.
+    const run = () => revealNow(el, target, opts || {});
+    if (window.requestAnimationFrame) requestAnimationFrame(run); else setTimeout(run, 0);
+  }
+  function revealNow(el, target, o) {
+    if (!el.isConnected) return;
+    const gap = 12;
+    const edges = coveredEdges(el);
+    const lo = edges.top + gap, hi = window.innerHeight - edges.bottom - gap;
     const r = el.getBoundingClientRect();
-    if (r.top >= 0 && r.top < window.innerHeight * 0.6) return;
-    el.scrollIntoView({ block: 'start', behavior: reduceMotion() ? 'auto' : 'smooth' });
+    const t = target && typeof target.getBoundingClientRect === 'function' && target.getClientRects().length ? target.getBoundingClientRect() : null;
+    const headVisible = r.top >= edges.top && r.top < lo + (hi - lo) * 0.6;
+    let delta = o.align || !headVisible ? r.top - lo : 0;
+    if (t) {
+      if (t.bottom - delta > hi) delta = t.bottom - hi;   // the target wins over the heading
+      if (t.top - delta < lo) delta = t.top - lo;
+    }
+    if (Math.abs(delta) < 2) return;
+    window.scrollBy({ top: delta, behavior: reduceMotion() ? 'auto' : 'smooth' });
   }
 
   /* ----------------------------------------------------- Confirm dialog */
