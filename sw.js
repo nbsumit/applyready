@@ -1,7 +1,7 @@
 /* ApplyReady service worker: offline support, without downloading the whole site uninvited.
 
    What it keeps, in the cache CACHE_NAME:
-   - /offline.html, fetched when the service worker is installed (about 12 KB), shown for a page
+   - /offline.html, fetched when the service worker is installed (about 17 KB), shown for a page
      that was never opened while online.
    - The pages and files this browser opens, as they are fetched. The first page loads before the
      service worker starts, so js/site.js sends the list of what it loaded and the service worker
