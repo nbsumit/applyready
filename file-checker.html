@@ -335,13 +335,14 @@
       <h3>Removing photo metadata</h3>
       <p><em>Remove metadata</em> works on JPEG and PNG files. It deletes the sections that hold EXIF data (camera, dates, GPS location, serial numbers, embedded previews), XMP, IPTC, comments and PNG text, and any extra data stored after the end of the picture, such as the video part of a motion photo. The picture data itself is copied byte for byte, so quality does not change. The colour profile is kept so colours look the same, and if the photo relies on an orientation setting to appear upright, that one setting is kept. The cleaned copy is read back and its pixels are compared with the original before you can download it.</p>
       <p>PDF and Office files are read-only here. Their details can be stored in several places, including older copies left by incremental saves, so removing some of them would look private without being private. Export a fresh PDF from the original document instead, or use the privacy option in the program that made it. To build a new PDF from plain text, use <a href="text-to-pdf.html">text to PDF</a>.</p>
-      <h3 id="word-to-pdf">Turning a Word file into a PDF</h3>
-      <p>ApplyReady does not convert Word files. A faithful copy needs the program that laid the document out; a conversion in the browser would quietly lose tables, headers and fonts. The program you wrote it in makes the PDF in a few clicks:</p>
+      <h3 id="word-to-pdf">Turning a Word, Excel or PowerPoint file into a PDF</h3>
+      <p>ApplyReady does not convert Word, Excel or PowerPoint files. A faithful copy needs the program that laid the document out; a conversion in the browser would quietly lose tables, headers and fonts. The program you wrote it in makes the PDF in a few clicks:</p>
       <ul>
         <li><strong>Microsoft Word:</strong> File, then Save As (or Save a Copy), and choose PDF as the file type.</li>
         <li><strong>Google Docs:</strong> File, then Download, then PDF Document (.pdf).</li>
         <li><strong>LibreOffice Writer:</strong> File, then Export As, then Export as PDF.</li>
       </ul>
+      <p>Spreadsheets and slides work the same way: Excel and PowerPoint as in Word, Google Sheets and Slides as in Google Docs, and LibreOffice Calc and Impress as in Writer.</p>
       <p>Then add the PDF here to check its page count, page size and file size against the form. If it is over the limit, <a href="compress-pdf.html">Compress PDF</a> makes it smaller, and <a href="merge-pdf.html">Merge PDF</a> joins it with other documents.</p>
       <h3>Limits</h3>
       <p>Photos up to 50 MB and PDFs up to 100 MB are read in full; larger files show only their type and size, to keep the browser responsive. Metadata in HEIC photos is detected but not read, and HEIC files cannot be cleaned here. Everything happens on this device: see <a href="your-data.html">your data</a> for what ApplyReady stores, which for this page is nothing. For the reasons portals give when they refuse a file, see <a href="guides/fix-common-photo-upload-errors.html">common upload errors and their fixes</a>, and for DPI and centimetres, <a href="guides/pixels-cm-inches-dpi-explained.html">pixels, centimetres and DPI</a>.</p>

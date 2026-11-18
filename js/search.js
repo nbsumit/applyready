@@ -140,6 +140,9 @@
     // (one of three words) better than "Passport photo print sheet" (one of four).
     const named = f.name.filter(w => tokenSets.some(set => set.some(t => w === t || (SYN.get(t) || []).includes(w)))).length;
     total += 2 * named / Math.max(f.name.length, 1);
+    // One broad word ("photo", "pdf") is most often a search for an everyday tool, so the most used
+    // tools whose names say it come first: Image resizer before Passport photo resizer.
+    if (tokenSets.length === 1 && named && item.kind === 'tool' && item.popular) total += 6 / item.popular;
     // Tools first, then guides: someone typing "cv" wants the builder before an article about CVs.
     if (item.kind === 'tool') total *= item.directory === false ? 0.75 : 1.3;
     else if (item.kind === 'guide') total *= 0.75;

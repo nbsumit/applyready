@@ -46,6 +46,9 @@ for (const q of ['word to pdf', 'docx to pdf', 'doc to pdf', 'convert word to pd
   ok(search(q)[0] === 'page:word-to-pdf', `search: "${q}" explains how to export from Word first (${search(q)})`);
   ok(!search(q).includes('resume'), `search: "${q}" does not suggest the resume builder converts Word files`);
 }
+// A conversion nothing here does still gets the nearest honest answer, not an empty list.
+for (const q of ['pdf to word', 'pdf to docx', 'convert pdf to word']) ok(search(q)[0] === 'pdf-to-text', `search: "${q}" offers Extract text from PDF (${search(q)})`);
+for (const q of ['excel to pdf', 'xlsx to pdf', 'powerpoint to pdf', 'ppt to pdf']) ok(search(q)[0] === 'page:word-to-pdf', `search: "${q}" explains how to export a PDF (${search(q)})`);
 ok(search('pdf to jpg').join() === 'pdf-to-image', `search: "pdf to jpg" offers PDF to images only, not Image to PDF or File checker (${search('pdf to jpg')})`);
 ok(search('jpg to pdf')[0] === 'image-to-pdf' && !search('jpg to pdf').includes('pdf-to-image'), `search: "jpg to pdf" offers Image to PDF (${search('jpg to pdf')})`);
 ok(search('png to jpg')[0] === 'convert-image', 'search: "png to jpg" offers the image converter');
@@ -59,7 +62,8 @@ for (const [q, id] of [['mrege pdf', 'merge-pdf'], ['resise image', 'image-resiz
 ok(search('merg')[0] === 'merge-pdf', 'search: a word still being typed matches as a prefix');
 
 // Broad words put the everyday tool near the top, and closer names first.
-ok(rank('photo', 'image-resizer') >= 0 && rank('photo', 'image-resizer') < 3, `search: "photo" lists the image resizer in the top three (${search('photo')})`);
+ok(search('photo')[0] === 'image-resizer' && search('image')[0] === 'image-resizer', `search: "photo" and "image" list the image resizer first (${search('photo')})`);
+ok(search('pdf')[0] === 'merge-pdf', `search: "pdf" lists the most used PDF tool first (${search('pdf')})`);
 ok(rank('photo', 'passport-photo') < rank('photo', 'passport-print'), 'search: "photo" ranks the passport photo resizer above the print sheet');
 ok(search('photo size')[0] === 'image-resizer' && rank('photo size', 'passport-photo') < rank('photo size', 'passport-print'), `search: "photo size" ranks the resizers first (${search('photo size')})`);
 ok(search('cv')[0] === 'resume' && search('resume')[0] === 'resume', 'search: "cv" and "resume" open the resume builder first');
