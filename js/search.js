@@ -12,11 +12,13 @@
 
   /* ------------------------------------------------------------ Matching */
   // Words that mean the same thing to someone looking for a tool. Each group is expanded both ways.
+  // Only true synonyms belong here: "add" is not "merge" (it pulled "Add page numbers" into every
+  // merge search).
   const SYNONYMS = [
     ['photo', 'image', 'picture', 'pic', 'photograph', 'jpg', 'jpeg', 'png', 'img'],
     ['compress', 'reduce', 'shrink', 'smaller', 'decrease', 'minimise', 'minimize', 'optimise', 'optimize', 'kb', 'mb'],
     ['resize', 'size', 'dimension', 'dimensions', 'pixel', 'pixels', 'scale', 'crop'],
-    ['merge', 'combine', 'join', 'attach', 'add'],
+    ['merge', 'combine', 'join', 'attach'],
     ['split', 'separate', 'extract', 'cut', 'divide'],
     ['resume', 'cv', 'biodata', 'curriculum'],
     ['signature', 'sign', 'autograph'],
@@ -24,27 +26,35 @@
     ['organise', 'organize', 'reorder', 'arrange', 'rotate', 'sort'],
     ['batch', 'bulk', 'multiple', 'many', 'all', 'mass'],
     ['cafe', 'cyber', 'operator', 'shop', 'centre', 'center'],
-    ['text', 'txt', 'words']
+    ['text', 'txt', 'words'],
+    ['word', 'doc', 'docx']
   ];
   const SYN = new Map();
   SYNONYMS.forEach(group => group.forEach(w => SYN.set(w, group)));
   const STOP = new Set(['a', 'an', 'the', 'my', 'for', 'of', 'in', 'on', 'and', 'or', 'how', 'do', 'i', 'can', 'into', 'online', 'free', 'tool', 'tools', 'with', 'from', 'me', 'please', 'want', 'need', 'to']);
+  // File formats. "word to pdf" or "pdf to jpg" asks for one direction, so only an item that names
+  // that conversion matches; "pdf to jpg" must not offer Image to PDF, the opposite job.
+  const FORMATS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'gif', 'image', 'images', 'photo', 'photos', 'picture', 'pictures', 'pic', 'img', 'scan', 'scans', 'word', 'doc', 'docx', 'txt', 'text', 'excel', 'xls', 'xlsx', 'ppt', 'pptx', 'powerpoint', 'html', 'zip']);
 
   const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .replace(/(\d+)\s*(kb|mb|px|cm)\b/g, '$1$2').replace(/[^a-z0-9.\s]/g, ' ').replace(/\s+/g, ' ').trim();
   const words = s => norm(s).split(' ').filter(Boolean);
 
+  // One typing mistake: a letter added, missing, changed, or two neighbours swapped ("mrege").
   function editDistanceAtMost1(a, b) {
     if (a === b) return true;
     const la = a.length, lb = b.length;
     if (Math.abs(la - lb) > 1) return false;
-    let i = 0, j = 0, edits = 0;
-    while (i < la && j < lb) {
-      if (a[i] === b[j]) { i++; j++; continue; }
-      if (++edits > 1) return false;
-      if (la > lb) i++; else if (lb > la) j++; else { i++; j++; }
+    if (la === lb) {
+      let i = 0;
+      while (i < la && a[i] === b[i]) i++;
+      if (a.slice(i + 1) === b.slice(i + 1)) return true; // one letter changed
+      return i + 1 < la && a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2); // swapped
     }
-    return edits + (la - i) + (lb - j) <= 1;
+    const [s, l] = la < lb ? [a, b] : [b, a];
+    let i = 0;
+    while (i < s.length && s[i] === l[i]) i++;
+    return s.slice(i) === l.slice(i + 1); // one letter added or missing
   }
 
   // Prepared search fields per item, weighted: name > keywords > category > summary.
@@ -61,6 +71,24 @@
     return item._f;
   }
 
+  // Every word the index knows (names, keywords, categories, synonyms), for correcting typos.
+  let vocab = null;
+  function vocabulary(items) {
+    if (vocab && vocab.items === items) return vocab.words;
+    const set = new Set(SYN.keys());
+    items.forEach(item => { const f = prepare(item); [...f.name, ...f.keyWords, ...f.cat].forEach(w => set.add(w)); });
+    vocab = { items, words: set };
+    return set;
+  }
+  // A word nobody uses ("mrege", "resise") is read as the known words one typing mistake away.
+  // Words still being typed ("merg") are left alone: they match as prefixes.
+  function correct(token, known) {
+    if (token.length < 4 || known.has(token) || /\d/.test(token)) return [token];
+    for (const w of known) if (w.length > token.length && w.startsWith(token)) return [token];
+    const near = [...known].filter(w => w.length >= 4 && editDistanceAtMost1(w, token));
+    return near.length ? near : [token];
+  }
+
   function tokenScore(f, token) {
     const variants = SYN.get(token) || [token];
     let best = 0;
@@ -73,40 +101,70 @@
       if (f.cat.includes(v)) best = Math.max(best, 3 * exact);
       if (f.summary.includes(v)) best = Math.max(best, 2 * exact);
     }
-    // Typing mistakes: one letter off in a word of four letters or more.
-    if (!best && token.length >= 4) {
-      if (f.name.some(w => w.length >= 4 && editDistanceAtMost1(w, token))) best = 5;
-      else if (f.keyWords.some(w => w.length >= 4 && editDistanceAtMost1(w, token))) best = 3;
-    }
     return best;
   }
 
-  function score(item, query, tokens) {
+  // "word to pdf" -> ['word', 'pdf'] when both sides are file formats; null otherwise.
+  function conversion(q) {
+    const m = q.match(/(?:^|\s)([a-z]+) to ([a-z]+)(?:\s|$)/);
+    return m && FORMATS.has(m[1]) && FORMATS.has(m[2]) && m[1] !== m[2] ? [m[1], m[2]] : null;
+  }
+  const forms = w => { const base = w.replace(/s$/, ''); return new Set([w, base, ...(SYN.get(w) || []), ...(SYN.get(base) || [])]); };
+  function converts(f, from, to) {
+    const a = forms(from), b = forms(to);
+    return [f.nameText, ...f.keys].some(text => {
+      const t = text.split(' ');
+      for (let i = 0; i + 2 < t.length; i++) if (t[i + 1] === 'to' && (a.has(t[i]) || a.has(t[i].replace(/s$/, ''))) && (b.has(t[i + 2]) || b.has(t[i + 2].replace(/s$/, '')))) return true;
+      return false;
+    });
+  }
+
+  function score(item, query, tokenSets, convert) {
     const f = prepare(item);
+    if (convert && !converts(f, convert[0], convert[1])) return 0;
     let total = 0, matched = 0;
-    for (const t of tokens) { const s = tokenScore(f, t); if (s) matched++; total += s; }
+    for (const set of tokenSets) {
+      let s = 0;
+      set.forEach((t, i) => { s = Math.max(s, tokenScore(f, t) * (i === 0 && set.length === 1 ? 1 : 0.9)); });
+      if (s) matched++;
+      total += s;
+    }
     if (!matched) return 0;
     // A phrase people type often ("passport size photo") is worth more than scattered words.
-    if (f.nameText.includes(query)) total += 12;
-    else if (f.keys.some(k => k === query)) total += 10;
-    else if (f.keys.some(k => k.includes(query) || (query.includes(k) && k.length >= 4))) total += 6;
-    if (matched < tokens.length) total *= matched / tokens.length * 0.6; // not every word matched
+    if (tokenSets.length > 1) {
+      if (f.nameText.includes(query)) total += 12;
+      else if (f.keys.some(k => k === query)) total += 10;
+      else if (f.keys.some(k => k.includes(query) || (query.includes(k) && k.length >= 4))) total += 6;
+    } else if (f.keys.some(k => k === query)) total += 10; // a single word that is a keyword, such as "cv"
+    if (matched < tokenSets.length) total *= matched / tokenSets.length * 0.6; // not every word matched
+    // The closer the name is to what was typed, the better: "photo" fits "Passport photo resizer"
+    // (one of three words) better than "Passport photo print sheet" (one of four).
+    const named = f.name.filter(w => tokenSets.some(set => set.some(t => w === t || (SYN.get(t) || []).includes(w)))).length;
+    total += 2 * named / Math.max(f.name.length, 1);
     // Tools first, then guides: someone typing "cv" wants the builder before an article about CVs.
     if (item.kind === 'tool') total *= item.directory === false ? 0.75 : 1.3;
     else if (item.kind === 'guide') total *= 0.75;
     return total;
   }
 
+  // Ties go to the tool people use most (the home page "most used" order), then to the name.
+  const popularity = item => (item.kind === 'tool' && item.popular ? item.popular : 99);
+
   function search(query, limit) {
     const index = root.APPLYREADY_TOOL_INDEX;
     if (!index) return [];
-    const q = norm(query);
-    if (!q) return [];
-    const tokens = words(q).filter(w => !STOP.has(w));
+    const typed = norm(query);
+    if (!typed) return [];
+    const tokens = words(typed).filter(w => !STOP.has(w));
     if (!tokens.length) return [];
-    const ranked = index.items.map(item => ({ item, s: score(item, q, tokens) }))
+    const known = vocabulary(index.items);
+    const tokenSets = tokens.map(t => correct(t, known));
+    // The phrase as it was meant: "mrege pdf" reads as "merge pdf" when the correction is certain.
+    const q = words(typed).map(w => { if (STOP.has(w)) return w; const c = correct(w, known); return c.length === 1 ? c[0] : w; }).join(' ');
+    const convert = conversion(q);
+    const ranked = index.items.map(item => ({ item, s: score(item, q, tokenSets, convert) }))
       .filter(r => r.s >= 2)
-      .sort((a, b) => b.s - a.s || a.item.name.localeCompare(b.item.name));
+      .sort((a, b) => b.s - a.s || popularity(a.item) - popularity(b.item) || a.item.name.localeCompare(b.item.name));
     // Drop the long tail: results far weaker than the best match are noise, not alternatives.
     const top = ranked.length ? ranked[0].s : 0;
     return ranked.filter(r => r.s >= top * 0.3).slice(0, limit || 8).map(r => r.item);
@@ -170,13 +228,13 @@
       if (opts.inline && !q) { items = []; heading = ''; }
       label.textContent = heading;
       label.hidden = !heading;
+      // An option holds plain content, never a link: a listbox option cannot contain another
+      // control. Enter or a click opens the result (go below).
       list.innerHTML = items.map((item, i) => `
-        <li role="option" id="${id}-opt${i}" aria-selected="false" data-index="${i}">
-          <a class="search-result" href="${esc(hrefFor(item.path))}" tabindex="-1">
-            <i class="fa-solid fa-${esc(item.icon || 'arrow-right')} search-result__icon" aria-hidden="true"></i>
-            <span class="search-result__text"><span class="search-result__name">${esc(item.name)}</span><span class="search-result__desc">${esc(item.summary || '')}</span></span>
-            <span class="search-result__kind">${item.kind === 'tool' ? esc(item.categoryName || 'Tool') : item.kind === 'guide' ? 'Guide' : 'Page'}</span>
-          </a>
+        <li class="search-result" role="option" id="${id}-opt${i}" aria-selected="false" data-index="${i}">
+          <i class="fa-solid fa-${esc(item.icon || 'arrow-right')} search-result__icon" aria-hidden="true"></i>
+          <span class="search-result__text"><span class="search-result__name">${esc(item.name)}</span><span class="search-result__desc">${esc(item.summary || '')}</span></span>
+          <span class="search-result__kind">${item.kind === 'tool' ? esc(item.categoryName || 'Tool') : item.kind === 'guide' ? 'Guide' : 'Page'}</span>
         </li>`).join('');
       empty.hidden = !(q && !items.length);
       if (q && !items.length) {
@@ -207,13 +265,22 @@
       else if (e.key === 'Home' && e.ctrlKey) { e.preventDefault(); if (items.length) setActive(0); }
       else if (e.key === 'Enter') {
         const target = items[active >= 0 ? active : 0];
-        if (target) { e.preventDefault(); location.href = hrefFor(target.path); }
+        if (target) { e.preventDefault(); go(target); }
       } else if (e.key === 'Escape') {
         if (opts.inline) { if (input.value) { input.value = ''; render(); } else panel.hidden = true; }
         else if (opts.onClose) { e.preventDefault(); opts.onClose(); }
       }
     });
+    // Ctrl or Cmd click and a middle click open the result in a new tab, as a link would.
+    function go(item, newTab) {
+      if (newTab) window.open(hrefFor(item.path), '_blank', 'noopener');
+      else location.href = hrefFor(item.path);
+    }
+    const optionAt = e => { const li = e.target.closest('[role="option"]'); return li ? items[Number(li.dataset.index)] : null; };
     list.addEventListener('mousemove', e => { const li = e.target.closest('[role="option"]'); if (li) setActive(Number(li.dataset.index)); });
+    list.addEventListener('click', e => { const item = optionAt(e); if (item) go(item, e.ctrlKey || e.metaKey || e.shiftKey); });
+    list.addEventListener('auxclick', e => { const item = e.button === 1 && optionAt(e); if (item) { e.preventDefault(); go(item, true); } });
+    list.addEventListener('mousedown', e => { if (e.button === 1 && optionAt(e)) e.preventDefault(); }); // no autoscroll on middle click
     const close = host.querySelector('[data-close]');
     if (close && opts.onClose) close.addEventListener('click', opts.onClose);
     if (opts.inline) {
@@ -248,11 +315,11 @@
     };
     const cb = createCombobox(box, { onClose: close });
     backdrop.addEventListener('mousedown', e => { if (e.target === backdrop) close(); });
-    // Keep focus inside: the only focusable things are the field, results links and Close.
+    // Keep focus inside: the field, Close and the "browse all tools" link (results are options of the field).
     box.addEventListener('keydown', e => {
       if (e.key === 'Escape') { e.preventDefault(); close(); return; }
       if (e.key !== 'Tab') return;
-      const focusables = Array.from(box.querySelectorAll('input, button'));
+      const focusables = Array.from(box.querySelectorAll('input, button, a[href]'));
       const i = focusables.indexOf(document.activeElement);
       e.preventDefault();
       focusables[(i + (e.shiftKey ? -1 : 1) + focusables.length) % focusables.length].focus();

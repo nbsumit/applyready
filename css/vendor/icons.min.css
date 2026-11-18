@@ -69,6 +69,7 @@
 .fa-image:before{content:"\f03e"}
 .fa-circle-half-stroke:before{content:"\f042"}
 .fa-circle-check:before{content:"\f058"}
+.fa-circle-question:before{content:"\f059"}
 .fa-circle-info:before{content:"\f05a"}
 .fa-ban:before{content:"\f05e"}
 .fa-arrow-left:before{content:"\f060"}
@@ -80,6 +81,7 @@
 .fa-circle-exclamation:before{content:"\f06a"}
 .fa-eye:before{content:"\f06e"}
 .fa-triangle-exclamation:before{content:"\f071"}
+.fa-comment:before{content:"\f075"}
 .fa-chevron-down:before{content:"\f078"}
 .fa-folder-open:before{content:"\f07c"}
 .fa-arrows-up-down:before{content:"\f07d"}
@@ -92,13 +94,16 @@
 .fa-floppy-disk:before{content:"\f0c7"}
 .fa-bars:before{content:"\f0c9"}
 .fa-list-ol:before{content:"\f0cb"}
+.fa-envelope:before{content:"\f0e0"}
 .fa-arrow-rotate-back:before,.fa-arrow-rotate-left:before{content:"\f0e2"}
 .fa-bolt:before{content:"\f0e7"}
 .fa-spinner:before{content:"\f110"}
+.fa-code-branch:before{content:"\f126"}
 .fa-eraser:before{content:"\f12d"}
 .fa-file:before{content:"\f15b"}
 .fa-file-lines:before{content:"\f15c"}
 .fa-building:before{content:"\f1ad"}
+.fa-database:before{content:"\f1c0"}
 .fa-file-pdf:before{content:"\f1c1"}
 .fa-file-word:before{content:"\f1c2"}
 .fa-file-image:before{content:"\f1c5"}
@@ -108,6 +113,7 @@
 .fa-wifi:before{content:"\f1eb"}
 .fa-user-plus:before{content:"\f234"}
 .fa-object-group:before{content:"\f247"}
+.fa-scale-balanced:before{content:"\f24e"}
 .fa-hourglass-half:before{content:"\f252"}
 .fa-circle-pause:before{content:"\f28b"}
 .fa-id-badge:before{content:"\f2c1"}

@@ -50,36 +50,47 @@ function toolFor(page) {
   return t ? t.id : null;
 }
 
-// Header menu columns: what people come for, grouped so no column is long.
+// Header menu columns, read left to right in the same category order as the home page and the
+// directory (CATEGORIES). Each category lists the same tools as there (toolsIn).
 const MENU_COLUMNS = [
-  ['resume', 'document'],
-  ['image'],
+  ['resume', 'image'],
   ['pdf'],
-  ['batch', 'cafe']
+  ['document', 'batch', 'cafe']
 ];
 
-function menuGroup(cat, page, rel) {
-  // A tool shows once in the menu: under its own category, unless that category is not in the menu.
-  const tools = toolsIn(cat.id).filter(t => t.directory !== false && (t.category === cat.id || !MENU_COLUMNS.flat().includes(t.category)));
+// On a desktop each category is a heading over its tools. In the phone menu sheet each category is
+// a button that shows or hides its tools, so the sheet starts as one short list; the category of
+// the page being viewed starts open.
+function menuGroup(cat, page, rel, openCat) {
+  const tools = toolsIn(cat.id);
   if (!tools.length) return '';
   const cur = p => (isCurrent(p, page) ? ' aria-current="page"' : '');
-  return `                <p class="menu__title"><a href="${rel('tools.html')}#${cat.id}">${esc(cat.name)}</a></p>
-                <ul class="menu__list">
-${tools.map(t => `                  <li><a class="menu__item" href="${rel(t.path)}"${cur(t.path)}><i class="fa-solid fa-${t.icon} menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">${esc(t.name)}</span><span class="menu__desc">${esc(t.summary)}</span></span></a></li>`).join('\n')}
-                </ul>`;
+  const open = cat.id === openCat;
+  return `                <div class="menu__cat"${open ? ' data-open' : ''}>
+                  <p class="menu__title"><a href="${rel('tools.html')}#${cat.id}">${esc(cat.name)}</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="${open}" aria-controls="menuList-${cat.id}">${esc(cat.name)} <span class="menu__count">${tools.length}<span class="sr-only"> ${tools.length === 1 ? 'tool' : 'tools'}</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-${cat.id}">
+${tools.map(t => `                    <li><a class="menu__item" href="${rel(t.path)}"${cur(t.path)}><i class="fa-solid fa-${t.icon} menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">${esc(t.name)}</span><span class="menu__desc">${esc(t.summary)}</span></span></a></li>`).join('\n')}
+                  </ul>
+                </div>`;
 }
 
 function headerHTML(page) {
   const prefix = prefixFor(page);
   const rel = p => href(p, prefix);
   const cur = p => (isCurrent(p, page) ? ' aria-current="page"' : '');
+  // The page's own category starts open in the phone menu (a preset page opens its parent's).
+  const own = TOOLS.find(t => t.path === page && t.live !== false);
+  const openCat = own ? (own.presetOf ? TOOLS.find(t => t.id === own.presetOf) : own).category : null;
   const columnList = MENU_COLUMNS.map(ids => {
-    const groups = ids.map(id => menuGroup(CATEGORIES.find(c => c.id === id), page, rel)).filter(Boolean);
+    const groups = ids.map(id => menuGroup(CATEGORIES.find(c => c.id === id), page, rel, openCat)).filter(Boolean);
     return groups.length ? `              <div class="menu__group">\n${groups.join('\n')}\n              </div>` : '';
   }).filter(Boolean);
   const columns = columnList.join('\n');
   const toolsPage = exists('tools.html') ? `\n              <div class="menu__foot"><a class="menu__all" href="${rel('tools.html')}">All tools <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><span class="menu__hint">Press <kbd>/</kbd> to search</span></div>` : '';
   const guidesCur = page.startsWith('guides/') ? ' aria-current="page"' : '';
+  // DOM order is the order on screen at every width. In the phone sheet: search, the categories,
+  // All tools, Guides (the Resume builder link is hidden there: the Resume category holds it).
   return `  <a class="skip-link" href="#mainContent">Skip to content</a>
   <header class="site-header" id="siteHeader">
     <div class="site-header__inner">
@@ -89,6 +100,7 @@ function headerHTML(page) {
       </a>
       <nav class="site-nav" id="siteNav" aria-label="Main">
         <ul class="site-nav__list">
+          <li class="site-nav__search"><button type="button" class="site-nav__search-btn" id="navSearch"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search tools</button></li>
           <li class="site-nav__item">
             <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
             <div class="menu" id="toolsMenu" hidden>
@@ -97,7 +109,7 @@ ${columns}
               </div>${toolsPage}
             </div>
           </li>
-          <li><a class="site-nav__link" href="${rel('resume.html')}"${cur('resume.html')}>Resume builder</a></li>
+          <li class="site-nav__resume"><a class="site-nav__link" href="${rel('resume.html')}"${cur('resume.html')}>Resume builder</a></li>
           <li><a class="site-nav__link" href="${rel('guides/')}"${guidesCur}>Guides</a></li>
         </ul>
       </nav>
@@ -113,21 +125,26 @@ ${columns}
 function footerHTML(page) {
   const prefix = prefixFor(page);
   const rel = p => href(p, prefix);
-  const toolLinks = ids => ids.flatMap(id => toolsIn(id)).filter((t, i, all) => t.directory !== false && all.findIndex(x => x.id === t.id) === i).map(t => [t.name, t.path]);
+  // A site index: each tool once, under its own category (the menu and directory show the
+  // categories in full).
+  const toolLinks = ids => ids.flatMap(id => toolsIn(id).filter(t => t.category === id)).map(t => [t.name, t.path]);
   const columns = [
     { title: 'Resume and images', links: toolLinks(['resume', 'image']) },
     { title: 'PDF and documents', links: toolLinks(['pdf', 'document']) },
     { title: 'Batch and help', links: [...toolLinks(['batch', 'cafe']), ...HELP_LINKS].filter(([, p]) => exists(p)) },
     { title: 'ApplyReady', links: PROJECT_LINKS.filter(([, p]) => exists(p)) }
   ];
-  const cols = columns.map(c => `      <div class="site-footer__col">
-        <h2 class="site-footer__title">${esc(c.title)}</h2>
-        <ul class="site-footer__list">
+  // One hidden heading for the footer; the column titles are labels, not headings, so every page's
+  // outline ends with "Site links" instead of four generic headings.
+  const cols = columns.map((c, i) => `      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks${i + 1}">${esc(c.title)}</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks${i + 1}">
 ${c.links.map(([label, p]) => `          <li><a href="${rel(p)}">${esc(label)}</a></li>`).join('\n')}
         </ul>
       </div>`).join('\n');
   return `  <footer class="site-footer">
     <div class="site-footer__inner">
+      <h2 class="sr-only">Site links</h2>
       <div class="site-footer__brand">
         <a class="brand" href="${rel('')}"><img class="brand__mark" src="${prefix}favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
         <p>${esc(TAGLINE)}</p>
