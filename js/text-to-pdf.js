@@ -50,11 +50,8 @@
   const fontCache = new Map();
   async function fontsFor(name) {
     if (!fontCache.has(name)) {
-      fontCache.set(name, (async () => {
-        const doc = await PDFLib.PDFDocument.create();
-        const pair = { helvetica: ['Helvetica', 'HelveticaBold'], times: ['TimesRoman', 'TimesRomanBold'], courier: ['Courier', 'CourierBold'] }[name] || ['Helvetica', 'HelveticaBold'];
-        return { regular: await doc.embedFont(PDFLib.StandardFonts[pair[0]]), bold: await doc.embedFont(PDFLib.StandardFonts[pair[1]]) };
-      })());
+      // One throwaway document per font: the live page count measures with these, so typing does not create a PDF each time.
+      fontCache.set(name, PDFLib.PDFDocument.create().then(doc => TP.loadFonts(doc, PDFLib, name)));
     }
     return fontCache.get(name);
   }
@@ -309,6 +306,10 @@
       const check = await PDFLib.PDFDocument.load(out.bytes);
       const pages = check.getPageCount();
       if (pages !== out.pageCount) throw new Error(`The finished PDF has ${pages} pages instead of ${out.pageCount}, so it is not offered. Try again.`);
+      if (els.text.value !== text || JSON.stringify(options()) !== JSON.stringify(o)) {
+        showError('The text or settings changed while the PDF was being made, so it was not offered. Select Create PDF again.');
+        return;
+      }
       const blob = new Blob([out.bytes], { type: 'application/pdf' });
       const base = o.title.trim() || (fileName ? Files.stem(fileName) : 'text');
       result = { blob, name: Files.withExtension(base.slice(0, 80), 'pdf'), pages };

@@ -91,7 +91,7 @@
 
   /** Sizes the way upload forms state them: bytes, KB of 1,024 bytes, MB of 1,048,576 bytes. */
   function sizes(n) {
-    return { bytes: n, kb: n / KB, mb: n / MB, text: `${group(n)} bytes`, kbText: `${group((n / KB).toFixed(1))} KB`, mbText: `${(n / MB).toFixed(n < 10 * MB ? 2 : 1)} MB` };
+    return { bytes: n, kb: n / KB, mb: n / MB, text: `${group(n)} bytes`, kbText: `${group((n / KB).toFixed(1))} KB`, mbText: `${(n / MB).toFixed(n < 0.1 * MB ? 3 : n < 10 * MB ? 2 : 1)} MB` };
   }
 
   /* ------------------------------------------------------------------ TIFF / EXIF */
@@ -493,7 +493,7 @@
           try { doc = await PDFLib.PDFDocument.load(b, { ignoreEncryption: true, updateMetadata: false }); } catch (e3) { doc = null; }
         }
       }
-      if (!doc) { out.damaged = true; out.reason = out.needsPassword ? 'This PDF needs a password to open.' : 'This PDF could not be read. It may be damaged or incomplete.'; return out; }
+      if (!doc) { out.damaged = true; out.reason = out.needsPassword ? 'This PDF needs a password to open.' : out.truncated ? 'This PDF is incomplete: its end is missing, so it could not be read. Download or export it again.' : 'This PDF could not be read. It may be damaged or incomplete.'; return out; }
     }
     try {
       const pages = doc.getPages();
@@ -516,7 +516,7 @@
       out.sizeGroups = Array.from(groups.values()).map(g => ({ widthMm: g.widthMm, heightMm: g.heightMm, widthIn: g.widthIn, heightIn: g.heightIn, paper: g.paper, pages: g.pages, orientations: Array.from(g.orientations) }));
       out.mixedSizes = out.sizeGroups.length > 1;
       out.mixedOrientation = new Set(out.pageSizes.map(p => p.orientation).filter(o => o !== 'square')).size > 1;
-    } catch (e) { out.damaged = true; out.reason = 'The pages of this PDF could not be read.'; }
+    } catch (e) { out.damaged = true; out.reason = out.truncated ? 'This PDF is incomplete: its end is missing, so its pages could not be read. Download or export it again.' : 'The pages of this PDF could not be read. It may be damaged; most portals will reject it.'; }
     if (!out.needsPassword) {
       const safe = f => { try { return f(); } catch (e) { return undefined; } };
       const m = {

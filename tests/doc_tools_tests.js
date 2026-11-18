@@ -383,21 +383,22 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     ok(lib.resumes.length === 2 && lib.resumes.every(r => Schema.validate({ data: r.data }) && r.name && r.createdAt && r.updatedAt) && lib.resumes.some(r => r.data.personal.fullName === 'Second Person'), 'export: valid resumes only, each passes the schema');
     ok(/damaged record was not included/.test(await page.locator('#ydDoneText').innerText()), 'export: the damaged record is explained');
     const raw = await download(page, () => page.locator('[data-id="r_broken3"] [data-act="raw"]').click());
-    ok(JSON.parse(fs.readFileSync(raw.file, 'utf8')).id === 'r_broken3', 'damaged record can be downloaded raw');
+    const rawBody = JSON.parse(fs.readFileSync(raw.file, 'utf8'));
+    ok(rawBody.kind === 'damaged-resume-record' && rawBody.record.id === 'r_broken3' && rawBody.reason, 'damaged record can be downloaded raw, in the resume builder\'s envelope');
 
     // Import: good, then bad files
     await page.setInputFiles('#ydImportInput', backup.file);
     await page.waitForFunction(() => /Added 2 resumes/.test(document.getElementById('ydImportResult').textContent));
     ok(await page.locator('#ydResumeCount').innerText() === '5 resumes, 1 damaged', 'import adds every resume as new');
     const ids = await page.evaluate(async () => (await window.ApplyReadyStore.getAll('resumes')).map(r => r.id));
-    ok(new Set(ids).size === 5 && ids.filter(i => /^r_[a-z0-9]{12}$/.test(i)).length === 2, 'imported resumes get new ids');
+    ok(new Set(ids).size === 5 && ids.filter(i => /^r_[a-z0-9]{6,38}$/.test(i) && !['r_analyst01', 'r_ops02', 'r_broken3'].includes(i)).length === 2, 'imported resumes get new ids');
     const single = { app: 'ApplyReady', version: 2, exportedAt: new Date().toISOString(), data };
     const bad = [
-      ['notjson.json', 'this is { not json', /not readable JSON/],
-      ['other.json', JSON.stringify({ app: 'OtherApp', data }), /not made by ApplyReady/],
+      ['notjson.json', 'this is { not json', /not valid JSON/],
+      ['other.json', JSON.stringify({ app: 'OtherApp', data }), /different app, not ApplyReady/],
       ['newer.json', JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 9, resumes: [] }), /newer version/],
       ['newer-single.json', JSON.stringify({ app: 'ApplyReady', version: 7, data }), /newer version/],
-      ['broken.json', JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 1, resumes: [{ name: 'x', data: { personal: 5 } }] }), /could be read, so nothing was imported/]
+      ['broken.json', JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 1, resumes: [{ name: 'x', data: { personal: 5 } }] }), /None of the resumes in this file could be read/]
     ];
     for (const [name, body, re] of bad) {
       await page.setInputFiles('#ydImportInput', { name, mimeType: 'application/json', buffer: Buffer.from(body) });
@@ -427,6 +428,37 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await page.click('.dialog [data-act="ok"]');
     await page.waitForFunction(() => document.getElementById('ydResumeCount').textContent === 'None');
     ok(await page.evaluate(async () => (await window.ApplyReadyStore.getAll('resumes')).length === 0 && !(await window.ApplyReadyStore.get('meta', 'lastResumeId'))), 'delete all resumes empties the store and forgets the last resume');
+
+    // Works with the real resume builder: what it saves is listed (not damaged), and deleting here
+    // stops an open builder tab from saving the deleted resume again.
+    const builder = await context.newPage();
+    watch(builder);
+    await builder.goto(origin + '/resume.html');
+    await builder.fill('#fullName', 'Builder Person');
+    await builder.waitForFunction(() => /^Saved on this device/.test(document.getElementById('saveStatusText').textContent), null, { timeout: 8000 });
+    await page.reload();
+    // The builder also moved the unreadable old-format draft seeded above into the library, as a damaged entry.
+    await page.waitForFunction(() => document.getElementById('ydResumeCount').textContent === '2 resumes, 1 damaged');
+    ok(/Builder Person/.test(await page.locator('#ydResumeList .file-row:not([data-status="error"])').innerText()), 'a resume saved by the resume builder is listed as readable');
+    ok(/earlier version/.test(await page.locator('#ydResumeList [data-status="error"]').innerText()), 'the old draft the builder could not read is listed as damaged, not opened');
+    await page.click('#ydDeleteResumes');
+    await page.click('.dialog [data-act="ok"]');
+    await page.waitForFunction(() => document.getElementById('ydResumeCount').textContent === 'None');
+    await builder.waitForFunction(() => /deleted in another tab/.test(document.body.innerText), null, { timeout: 5000 });
+    await builder.fill('#fullName', 'Builder Person typing on');
+    await builder.waitForTimeout(1500);
+    ok(await page.evaluate(async () => (await window.ApplyReadyStore.getAll('resumes')).length === 0), 'the open builder tab is told and does not save the deleted resume again');
+    await builder.close();
+
+    // Saving switched off in the builder (a shared computer): the page says so and import stores nothing.
+    await page.evaluate(() => window.ApplyReadyStore.put('meta', { key: 'resumeSaving', value: 'off' }));
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById('ydResumeCount').textContent === 'None');
+    ok(await page.locator('#ydSavingOff').isVisible(), 'saving switched off in the builder is shown');
+    await page.setInputFiles('#ydImportInput', backup.file);
+    await page.waitForFunction(() => !document.getElementById('ydResumeError').hidden);
+    ok(/turned off/.test(await page.locator('#ydResumeError').innerText()) && await page.evaluate(async () => (await window.ApplyReadyStore.getAll('resumes')).length === 0), 'import respects saving switched off');
+    await page.evaluate(() => window.ApplyReadyStore.remove('meta', 'resumeSaving'));
 
     // Delete everything, with the offline copy and service worker in place
     await page.evaluate(async ({ data }) => { await window.ApplyReadyStore.put('resumes', { id: 'r_again', name: 'Again', createdAt: 1, updatedAt: 2, schemaVersion: 3, data }); localStorage.setItem('applyready_theme', 'light'); localStorage.setItem('applyready_recent_tools', '["resume"]'); }, { data });

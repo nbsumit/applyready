@@ -1484,6 +1484,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 }
 @media print {
   .resume-page .breadcrumb-nav, .resume-page .tool-privacy, .rb-notice, .rl-backdrop { display: none !important; }
+}
 
 /* ================================================================== 19. DOCUMENT TOOLS AND YOUR DATA */
 /* File checker (file-checker.html, js/file-checker.js), Text to PDF (text-to-pdf.html, js/text-to-pdf.js)

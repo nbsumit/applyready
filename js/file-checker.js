@@ -271,15 +271,15 @@
     const err = res.cleanError ? `<div class="notice notice--error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i><div class="notice__body">${esc(res.cleanError)}</div></div>` : '';
     if (r.canStrip) {
       return `<div class="fc-clean">${err}
-        <button type="button" class="btn" data-action="clean"><i class="fa-solid fa-eraser" aria-hidden="true"></i> Remove metadata</button>
+        <button type="button" class="btn" data-action="clean"${res.cleaning ? ' disabled aria-busy="true"' : ''}><i class="fa-solid fa-eraser" aria-hidden="true"></i> ${res.cleaning ? 'Removing metadata…' : 'Remove metadata'}</button>
         <p class="field-hint">Makes a copy without EXIF, GPS location, comments and other hidden details. The picture is not compressed again, so quality stays the same.</p>
       </div>`;
     }
     if ((r.pdf || (r.office && r.office.key !== 'zip')) && r.metadata.length) {
-      return `<p class="field-hint fc-clean">PDF and Office files are only inspected here, not changed. To remove these details, export a fresh copy from the program that made the file; <a href="#howHeading">see how</a>.</p>`;
+      return `<div class="fc-clean"><p class="field-hint">PDF and Office files are only inspected here, not changed. To remove these details, export a fresh copy from the program that made the file; <a href="#howHeading">see how</a>.</p></div>`;
     }
     if (r.real.kind === 'image' && r.metadata.length && !r.canStrip && !r.damaged) {
-      return `<p class="field-hint fc-clean">Metadata can be removed from JPEG and PNG files here. To remove it from this ${esc(r.real.label)}, save it as JPEG with the <a href="image-resizer.html">image resizer</a>; saving a new file leaves the metadata behind.</p>`;
+      return `<div class="fc-clean"><p class="field-hint">Metadata can be removed from JPEG and PNG files here. To remove it from this ${esc(r.real.label)}, save it as JPEG with the <a href="image-resizer.html">image resizer</a>; saving a new file leaves the metadata behind.</p></div>`;
     }
     return err;
   }
@@ -487,6 +487,8 @@
   async function clean(item, btn) {
     const res = item.result;
     const r = res.report;
+    if (res.cleaning) return;
+    res.cleaning = true; // a re-render (requirement change) keeps the button busy, see cleanHTML
     Kit.setButtonBusy(btn, true, 'Removing metadata…');
     res.cleanError = '';
     try {
@@ -506,6 +508,7 @@
         if (/differ/.test(e.message)) throw e;
         throw new Error('This browser could not open the cleaned copy to compare it, so it is not offered.');
       }
+      if (!nodes.has(item.id)) return; // removed from the list while it was being cleaned
       const ext = r.key === 'png' ? 'png' : 'jpg';
       res.cleaned = { blob, size: blob.size, removed: out.removed, orientation: out.orientation, check, pixels, name: Files.withExtension(`${Files.stem(item.name)}-clean`, ext), downloaded: false };
       renderItem(item);
@@ -514,11 +517,14 @@
       const dl = nodes.get(item.id).querySelector('[data-action="download"]');
       if (dl) dl.focus();
     } catch (e) {
+      if (!nodes.has(item.id)) return;
       res.cleanError = (e && e.message) || 'The metadata could not be removed. Your original file is unchanged.';
       renderItem(item);
       const again = nodes.get(item.id).querySelector('[data-action="clean"]');
       if (again) again.focus();
       Kit.announce(res.cleanError);
+    } finally {
+      res.cleaning = false;
     }
   }
 

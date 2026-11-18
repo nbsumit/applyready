@@ -11,6 +11,7 @@
    ApplyReadyTextPdf.replaceCommon(text) -> { text, count }
    ApplyReadyTextPdf.wrap(text, widthOf, maxWidth, tabSize) -> lines
    ApplyReadyTextPdf.plan(text, options, PDFLib) -> Promise<{ pageCount, lines, ... }>
+   ApplyReadyTextPdf.loadFonts(doc, PDFLib, fontName) -> Promise<{ regular, bold }>  for layout() without a new PDF each time
    ApplyReadyTextPdf.build(PDFLib, text, options, { onProgress, signal }) -> Promise<{ bytes, pageCount }> */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -277,5 +278,5 @@
     return { bytes, pageCount: L.pages.length, lines: L.lines.length };
   }
 
-  return { normalize, findUnsupported, replaceCommon, removeUnsupported, expandTabs, wrap, layout, plan, build, measurer, isSupported, words, DEFAULTS, PAGE };
+  return { normalize, findUnsupported, replaceCommon, removeUnsupported, expandTabs, wrap, layout, plan, build, loadFonts, measurer, isSupported, words, DEFAULTS, PAGE };
 });

@@ -1,24 +1,20 @@
 /* Your data (your-data.html): everything ApplyReady keeps in this browser, following the storage
    contract in docs/ARCHITECTURE.md section 3, with ways to back it up and delete it.
 
-   Reads and writes IndexedDB only through js/lib/store.js; resume data goes through
-   js/resume-schema.js (validate, migrate) before it is exported or imported. Nothing is sent anywhere. */
+   Reads and writes IndexedDB only through js/lib/store.js; records and backups go through
+   js/resume-library.js (and so js/resume-schema.js), the same code the resume builder uses. Nothing is sent anywhere. */
 (function () {
   'use strict';
   const $ = id => document.getElementById(id);
-  const Store = window.ApplyReadyStore, Schema = window.ApplyReadySchema, Files = window.ApplyReadyFiles;
-  if (!$('ydResumeList') || !Store || !Schema || !Files) return;
+  const Store = window.ApplyReadyStore, Lib = window.ApplyReadyResumeLibrary, Files = window.ApplyReadyFiles;
+  if (!$('ydResumeList') || !Store || !Lib || !Files) return;
   const ui = () => window.ApplyReadyUI || {};
   const announce = msg => { if (window.ApplyReadyFileKit) window.ApplyReadyFileKit.announce(msg); };
   const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + 's')}`;
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const fmtDate = ms => { const d = new Date(ms); return isNaN(d) || !ms ? 'unknown' : `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
-  const MAX_IMPORT = 5 * 1024 * 1024;
-  const LIBRARY_VERSION = 1;   // newest resume-library backup version this page understands
-  const SINGLE_VERSION = 2;    // newest single-resume backup version
   const KEY = { theme: 'applyready_theme', recent: 'applyready_recent_tools', recentOff: 'applyready_recent_off' };
-  const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
 
   const ls = {
     get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -46,26 +42,37 @@
   }
 
   /* ---------------------------------------------------------------- saved resumes */
-  function displayName(rec) {
-    if (rec && typeof rec.name === 'string' && rec.name.trim()) return rec.name.trim().slice(0, 120);
-    const n = rec && rec.data && rec.data.personal && rec.data.personal.fullName;
-    return typeof n === 'string' && n.trim() ? n.trim().slice(0, 120) : 'Untitled resume';
-  }
-  function classify(rec) {
-    let ok = false;
-    try { ok = !!rec && typeof rec.id === 'string' && ID_RE.test(rec.id) && Schema.validate({ data: rec.data }); } catch (e) { ok = false; }
-    return { rec, ok, id: rec && rec.id, name: displayName(rec), updatedAt: Number(rec && rec.updatedAt) || 0 };
+  // Record checks, backup formats and import parsing are the resume library's (js/resume-library.js),
+  // so this page and the resume builder always read and write the same files.
+  function sortRecords(all) {
+    const { records: good, damaged } = Lib.sortOut(all || []);
+    return good.map(rec => ({ ok: true, id: rec.id, name: rec.name, updatedAt: rec.updatedAt, rec }))
+      .concat(damaged.map(d => ({ ok: false, id: d.raw && typeof d.raw.id === 'string' ? d.raw.id : '', name: d.name, updatedAt: d.updatedAt, reason: d.reason, raw: d.raw })));
   }
 
+  // Tell open resume builder tabs what changed here, so a tab showing a deleted resume stops saving
+  // it again, and an open My resumes list refreshes (BroadcastChannel "applyready-resumes").
+  let channel = null;
+  try { if (typeof BroadcastChannel === 'function') channel = new BroadcastChannel('applyready-resumes'); } catch (e) { channel = null; }
+  const tabId = 'your-data-' + Math.random().toString(36).slice(2);
+  function post(message) {
+    if (!channel) return;
+    try { channel.postMessage(Object.assign({ from: tabId }, message)); } catch (e) { /* closed channel */ }
+  }
+  function postDeleted(list) { list.forEach(r => { if (r.id) post({ type: 'deleted', id: r.id }); }); }
+
+  let savingOff = false;
   async function loadResumes() {
     panelNotice('ydResumeError', '');
-    if (wiped) { records = []; renderResumes(); return; }
+    if (wiped) { records = []; savingOff = false; renderResumes(); return; }
     try {
-      const all = await Store.getAll('resumes');
-      records = (all || []).map(classify).sort((a, b) => b.updatedAt - a.updatedAt);
+      records = sortRecords(await Store.getAll('resumes'));
+      let row = null;
+      try { row = await Store.get('meta', 'resumeSaving'); } catch (e) { row = null; }
+      savingOff = !!row && row.value === 'off';
     } catch (e) {
       records = [];
-      panelNotice('ydResumeError', `Saved resumes could not be read from this browser\u2019s storage. ${e && e.message ? e.message : ''}`.trim(), true);
+      panelNotice('ydResumeError', 'Saved resumes could not be read from this browser’s storage. Close other ApplyReady tabs and reload this page.', true);
     }
     renderResumes();
   }
@@ -76,16 +83,17 @@
     const damaged = records.filter(r => !r.ok).length;
     $('ydResumeCount').textContent = n ? plural(n, 'resume') + (damaged ? `, ${damaged} damaged` : '') : 'None';
     $('ydResumeEmpty').hidden = n > 0;
+    $('ydSavingOff').hidden = !savingOff;
     list.hidden = n === 0;
-    list.innerHTML = records.map(r => r.ok ? `
-      <li class="file-row" data-id="${esc(r.id)}">
+    list.innerHTML = records.map((r, i) => r.ok ? `
+      <li class="file-row" data-index="${i}" data-id="${esc(r.id)}">
         <span class="file-row__thumb" aria-hidden="true"><i class="fa-solid fa-file-lines"></i></span>
         <div class="file-row__text"><span class="file-row__name">${esc(r.name)}</span><span class="file-row__meta">Last edited ${esc(fmtDate(r.updatedAt))}</span></div>
         <div class="file-row__actions"><a class="btn btn-sm" href="resume.html?id=${encodeURIComponent(r.id)}" aria-label="Open ${esc(r.name)} in the resume builder">Open</a></div>
       </li>` : `
-      <li class="file-row" data-status="error" data-id="${esc(r.id)}">
+      <li class="file-row" data-status="error" data-index="${i}" data-id="${esc(r.id)}">
         <span class="file-row__thumb" aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span>
-        <div class="file-row__text"><span class="file-row__name">${esc(r.name)}</span><span class="file-row__error">Damaged: this record cannot be opened safely.</span></div>
+        <div class="file-row__text"><span class="file-row__name">${esc(r.name)}</span><span class="file-row__error">Damaged: ${esc(r.reason)} It cannot be opened.</span></div>
         <div class="file-row__actions">
           <button type="button" class="btn btn-sm" data-act="raw" aria-label="Download a raw copy of ${esc(r.name)}">Download raw copy</button>
           <button type="button" class="btn btn-sm btn-danger-ghost" data-act="delete" aria-label="Delete ${esc(r.name)}">Delete</button>
@@ -99,107 +107,82 @@
   $('ydResumeList').addEventListener('click', async e => {
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
-    const id = btn.closest('[data-id]').dataset.id;
-    const r = records.find(x => String(x.id) === id);
-    if (!r) return;
+    const r = records[Number(btn.closest('[data-index]').dataset.index)];
+    if (!r || r.ok) return;
     if (btn.dataset.act === 'raw') {
-      Files.download(new Blob([JSON.stringify(r.rec, null, 2)], { type: 'application/json' }), `damaged-resume-${String(r.id).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || 'record'}.json`);
-      announce('Raw copy downloaded.');
+      // The same envelope the resume builder uses for a damaged entry.
+      const body = { app: 'ApplyReady', kind: 'damaged-resume-record', exportedAt: new Date().toISOString(), reason: r.reason, record: r.raw };
+      Files.download(new Blob([JSON.stringify(body, null, 2)], { type: 'application/json' }), Lib.fileName(r.name, 'damaged_resume_raw.json'));
+      announce('Raw copy downloaded. It cannot be imported as a resume, but its text can be copied from the file.');
     } else {
-      const okay = ui().confirm ? await ui().confirm({ title: 'Delete this damaged resume?', message: `\u201C${r.name}\u201D will be removed from this browser. Download a raw copy first if you want to try to recover it.`, confirmLabel: 'Delete', danger: true }) : true;
+      const okay = ui().confirm ? await ui().confirm({ title: 'Delete this damaged resume?', message: `“${r.name}” will be removed from this browser. Download a raw copy first if you want to try to recover it.`, confirmLabel: 'Delete', danger: true }) : true;
       if (!okay) return;
-      try { await Store.remove('resumes', r.rec.id); await loadResumes(); done(`Deleted \u201C${r.name}\u201D.`); }
+      if (!r.id) { panelNotice('ydResumeError', 'This damaged entry has no usable identifier, so it can only be removed with Delete all resumes.', true); return; }
+      try { await Store.remove('resumes', r.id); postDeleted([r]); await loadResumes(); done(`Deleted “${r.name}”.`); }
       catch (err) { panelNotice('ydResumeError', 'That resume could not be deleted. Close other ApplyReady tabs and try again.', true); }
     }
   });
 
-  function backupName() {
-    const d = new Date();
-    return `applyready-resumes-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.json`;
-  }
-
   $('ydExport').addEventListener('click', () => {
-    const good = records.filter(r => r.ok);
+    const good = records.filter(r => r.ok).map(r => r.rec);
     if (!good.length) return;
-    const backup = {
-      app: 'ApplyReady', kind: 'resume-library', version: LIBRARY_VERSION, exportedAt: new Date().toISOString(),
-      resumes: good.map(r => ({ name: r.name, createdAt: Number(r.rec.createdAt) || 0, updatedAt: Number(r.rec.updatedAt) || 0, data: Schema.migrate(r.rec.data) }))
-    };
-    Files.download(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }), backupName());
+    Files.download(new Blob([JSON.stringify(Lib.libraryBackup(good), null, 2)], { type: 'application/json' }), Lib.fileName('ApplyReady', `resumes_backup_${new Date().toISOString().slice(0, 10)}.json`));
     const skipped = records.length - good.length;
     done(`Backup of ${plural(good.length, 'resume')} downloaded.${skipped ? ` ${plural(skipped, 'damaged record')} ${skipped === 1 ? 'was' : 'were'} not included; use Download raw copy for ${skipped === 1 ? 'it' : 'them'}.` : ''} Keep the file somewhere safe.`);
   });
 
-  function newId() {
-    const a = new Uint8Array(12);
-    try { crypto.getRandomValues(a); } catch (e) { for (let i = 0; i < a.length; i++) a[i] = Math.floor(Math.random() * 256); }
-    return 'r_' + Array.from(a, b => (b % 36).toString(36)).join('');
-  }
-  const validTime = (t, now) => (Number.isFinite(t) && t > 0 && t <= now + 864e5 ? t : now);
-
-  /** Turn a backup file's text into resume records, or throw an Error with a plain message. */
-  function parseBackup(text) {
-    let obj;
-    try { obj = JSON.parse(text); } catch (e) { throw new Error('This file is not a valid backup: it is not readable JSON. Choose a .json file that ApplyReady downloaded.'); }
-    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('This file is not an ApplyReady backup.');
-    if (obj.app !== 'ApplyReady') throw new Error('This file was not made by ApplyReady, so it was not imported.');
-    let entries;
-    if (obj.kind === 'resume-library') {
-      if (typeof obj.version !== 'number') throw new Error('This backup has no version number, so it cannot be read safely.');
-      if (obj.version > LIBRARY_VERSION) throw new Error('This backup was made by a newer version of ApplyReady. Reload this page to get the latest version, then try again.');
-      if (!Array.isArray(obj.resumes)) throw new Error('This backup is damaged: its list of resumes is missing.');
-      entries = obj.resumes.slice(0, 1000).map(r => (r && typeof r === 'object' ? r : {}));
-    } else if (obj.kind === undefined && 'data' in obj) {
-      if (typeof obj.version === 'number' && obj.version > SINGLE_VERSION) throw new Error('This backup was made by a newer version of ApplyReady. Reload this page to get the latest version, then try again.');
-      entries = [{ data: obj.data }];
-    } else throw new Error('This ApplyReady file is not a resume backup.');
-    const now = Date.now();
-    const out = [];
-    let skipped = 0;
-    for (const e of entries) {
-      let valid = false;
-      try { valid = Schema.validate({ data: e.data }); } catch (err) { valid = false; }
-      if (!valid) { skipped++; continue; }
-      const data = Schema.migrate(e.data);
-      const name = typeof e.name === 'string' && e.name.trim() ? e.name.trim().slice(0, 120) : (data.personal && data.personal.fullName ? data.personal.fullName.slice(0, 120) : 'Imported resume');
-      const createdAt = validTime(Number(e.createdAt), now);
-      out.push({ id: newId(), name, createdAt, updatedAt: Math.max(createdAt, validTime(Number(e.updatedAt), now)), schemaVersion: data.schemaVersion || data.version || 2, data });
-    }
-    return { records: out, skipped, total: entries.length };
-  }
-
+  let importing = false;
   async function importFile(file) {
     panelNotice('ydResumeError', '');
     panelNotice('ydImportResult', '');
-    if (!file) return;
+    if (!file || importing) return;
     if (file.size === 0) { panelNotice('ydResumeError', `${file.name} is empty (0 bytes), so there is nothing to import.`, true); return; }
-    if (file.size > MAX_IMPORT) { panelNotice('ydResumeError', `${file.name} is ${Files.formatBytes(file.size)}. Backups up to 5 MB can be imported; this is too large to be an ApplyReady backup.`, true); return; }
-    if (wiped) wiped = false; // importing after a full delete starts a fresh database on purpose
-    let parsed;
-    try { parsed = parseBackup(await file.text()); }
-    catch (e) { panelNotice('ydResumeError', e.message, true); return; }
-    if (!parsed.records.length) {
-      panelNotice('ydResumeError', parsed.total ? `None of the ${plural(parsed.total, 'resume')} in this backup could be read, so nothing was imported.` : 'This backup has no resumes in it.', true);
-      return;
+    if (file.size > Lib.MAX_IMPORT_BYTES) { panelNotice('ydResumeError', `${file.name} is ${Files.formatBytes(file.size)}. Backups up to 5 MB can be imported; this is too large to be an ApplyReady backup.`, true); return; }
+    if (savingOff) { panelNotice('ydResumeError', 'Saving resumes on this device is turned off in the resume builder, so nothing was imported. To read a backup without storing it, import it in the resume builder; to store it here, turn saving on there first.', true); return; }
+    importing = true;
+    const btn = $('ydImport');
+    btn.disabled = true;
+    try {
+      let parsed;
+      try { parsed = Lib.parseBackup(await file.text(), file.size); }
+      catch (e) { panelNotice('ydResumeError', e instanceof Lib.ImportError ? e.message : 'This backup could not be imported. Your saved resumes are unchanged.', true); return; }
+      if (wiped) wiped = false; // importing after a full delete starts a fresh database on purpose
+      // Each resume becomes a new entry with a new id and keeps its edit dates (never later than now),
+      // exactly as an import in the resume builder does.
+      const now = Date.now();
+      const created = parsed.resumes.map((item, i) => Lib.createRecord(item.data, {
+        name: item.name, createdAt: Math.min(item.createdAt || now, now) || undefined, updatedAt: Math.min(item.updatedAt || now - i, now) || undefined
+      }));
+      let added = 0;
+      try { for (const rec of created) { await Store.put('resumes', rec); added++; post({ type: 'saved', id: rec.id, updatedAt: rec.updatedAt }); } }
+      catch (e) { panelNotice('ydResumeError', `Only ${plural(added, 'resume was', 'resumes were')} saved: this browser refused to store more. Its storage for this site may be full.`, true); }
+      await loadResumes();
+      if (added) {
+        let msg = `Added ${plural(added, 'resume')} from ${file.name} as new entries; nothing was overwritten.`;
+        if (parsed.skipped) msg += ` ${plural(parsed.skipped, 'resume')} could not be read and ${parsed.skipped === 1 ? 'was' : 'were'} skipped.`;
+        if (parsed.overLimit) msg += ` One import holds at most ${Lib.MAX_IMPORT_RESUMES} resumes, so the last ${parsed.overLimit} in the file ${parsed.overLimit === 1 ? 'was' : 'were'} not imported.`;
+        panelNotice('ydImportResult', msg);
+      }
+      await renderStorage();
+    } finally {
+      importing = false;
+      btn.disabled = false;
     }
-    let added = 0;
-    try { for (const rec of parsed.records) { await Store.put('resumes', rec); added++; } }
-    catch (e) { panelNotice('ydResumeError', `Only ${plural(added, 'resume was', 'resumes were')} saved: this browser refused to store more. ${e && e.message ? e.message : ''}`.trim(), true); }
-    await loadResumes();
-    if (added) panelNotice('ydImportResult', `Added ${plural(added, 'resume')} from ${file.name} as new entries; nothing was overwritten.${parsed.skipped ? ` ${plural(parsed.skipped, 'resume')} could not be read and ${parsed.skipped === 1 ? 'was' : 'were'} skipped.` : ''}`);
-    await renderStorage();
   }
   $('ydImport').addEventListener('click', () => { const input = $('ydImportInput'); input.value = ''; input.click(); });
   $('ydImportInput').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; importFile(f); });
 
   $('ydDeleteResumes').addEventListener('click', async () => {
+    await loadResumes(); // count what is stored now, not when the page opened
     const n = records.length;
     if (!n) return;
     const okay = ui().confirm ? await ui().confirm({ title: `Delete ${plural(n, 'saved resume')}?`, message: `Every saved resume will be removed from this browser. This cannot be undone. Download a backup first if you might need ${n === 1 ? 'it' : 'them'} again.`, confirmLabel: 'Delete all resumes', danger: true }) : true;
     if (!okay) return;
+    const gone = records.slice();
     try {
       await Store.clear('resumes');
       try { await Store.remove('meta', 'lastResumeId'); } catch (e) { /* optional record */ }
+      postDeleted(gone);
       await loadResumes();
       await renderStorage();
       done(`Deleted ${plural(n, 'saved resume')}.`);
@@ -335,6 +318,7 @@
 
   /* ---------------------------------------------------------------- delete everything */
   $('ydDeleteAll').addEventListener('click', async () => {
+    await loadResumes(); // count what is stored now, not when the page opened
     const keys = ls.keys();
     const n = records.length;
     const parts = [plural(n, 'saved resume')];
@@ -345,7 +329,9 @@
     if (!okay) return;
     const removed = [];
     const problems = [];
-    // 1. The IndexedDB database (saved resumes and app records)
+    // 1. The IndexedDB database (saved resumes and app records). Open resume builder tabs are told
+    //    first, so they stop autosaving (and so recreating) what is being deleted.
+    postDeleted(records);
     const destroyed = await Store.destroy();
     wiped = true;
     if (destroyed) removed.push(`${plural(n, 'saved resume')} and the resume database`);
