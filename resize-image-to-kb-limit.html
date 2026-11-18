@@ -348,6 +348,10 @@
               <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust again</button>
             </div>
           </div>
+          <div id="resultWarning" class="notice notice--warning hidden">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            <span class="notice__body" id="resultWarningText"></span>
+          </div>
           <div class="ws-result__body">
             <div class="ws-result__view">
               <div class="segmented" role="group" aria-label="Compare with the original">
@@ -385,7 +389,7 @@
                 <label class="field-label" id="customWidthLabel" for="customWidth">Width (px)</label>
                 <input type="number" id="customWidth" class="input" aria-describedby="dimError" value="350" min="20" max="8000" step="1" inputmode="numeric">
               </div>
-              <button type="button" id="btnLockAspect" class="btn btn-icon btn-lock active" title="Aspect ratio locked" aria-label="Keep aspect ratio" aria-pressed="true"><i class="fa-solid fa-lock" aria-hidden="true"></i></button>
+              <button type="button" id="btnLockAspect" class="btn btn-icon btn-lock" title="Aspect ratio unlocked" aria-label="Keep aspect ratio" aria-pressed="false"><i class="fa-solid fa-lock-open" aria-hidden="true"></i></button>
               <div class="field">
                 <label class="field-label" id="customHeightLabel" for="customHeight">Height (px)</label>
                 <input type="number" id="customHeight" class="input" aria-describedby="dimError" value="350" min="20" max="8000" step="1" inputmode="numeric">
@@ -687,6 +691,7 @@
   <script src="js/vendor/cropper.min.js"></script>
   <script src="js/presets.js?v=20261118"></script>
   <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/resizer.js?v=20261118"></script>
 </body>
 </html>

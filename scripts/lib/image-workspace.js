@@ -37,7 +37,7 @@ const L = {
     toolbar: 'Crop tools', rotateL: 'Rotate left 90 degrees', rotateR: 'Rotate right 90 degrees', zoomOut: 'Zoom out', zoomIn: 'Zoom in', reset: 'Reset crop', resetShort: 'Reset',
     cropHint: 'Drag the image to position it inside the frame. Arrow keys move it; + and − zoom.',
     customize: 'Size, file limit and format', customizeHint: 'Set by the requirement. Change only if your form asks for something else.',
-    size: 'Size', width: 'Width (px)', height: 'Height (px)', lock: 'Keep aspect ratio', lockOn: 'Aspect ratio locked', unit: 'Unit', dpi: 'Print DPI',
+    size: 'Size', width: 'Width (px)', height: 'Height (px)', lock: 'Keep aspect ratio', lockOff: 'Aspect ratio unlocked', unit: 'Unit', dpi: 'Print DPI',
     unitPx: 'Pixels (px)', unitCm: 'Centimetres (cm)', unitIn: 'Inches (in)',
     limit: 'File size', minKB: 'Minimum (KB)', maxKB: 'Maximum (KB)', optional: 'optional', original: 'Use original size',
     originalHint: 'Keeps the whole image at its own dimensions. Available once an image is added.',
@@ -185,6 +185,10 @@ ${options}
               <button type="button" id="btnCropAgain" class="btn btn-lg">${esc(t.again)}</button>
             </div>
           </div>
+          <div id="resultWarning" class="notice notice--warning hidden">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            <span class="notice__body" id="resultWarningText"></span>
+          </div>
           <div class="ws-result__body">
             <div class="ws-result__view">
               <div class="segmented" role="group" aria-label="${esc(t.compare)}">
@@ -222,7 +226,7 @@ ${options}
                 <label class="field-label" id="customWidthLabel" for="customWidth">${esc(t.width)}</label>
                 <input type="number" id="customWidth" class="input" aria-describedby="dimError" value="${first.width}" min="20" max="8000" step="1" inputmode="numeric">
               </div>
-              <button type="button" id="btnLockAspect" class="btn btn-icon btn-lock active" title="${esc(t.lockOn)}" aria-label="${esc(t.lock)}" aria-pressed="true"><i class="fa-solid fa-lock" aria-hidden="true"></i></button>
+              <button type="button" id="btnLockAspect" class="btn btn-icon btn-lock" title="${esc(t.lockOff)}" aria-label="${esc(t.lock)}" aria-pressed="false"><i class="fa-solid fa-lock-open" aria-hidden="true"></i></button>
               <div class="field">
                 <label class="field-label" id="customHeightLabel" for="customHeight">${esc(t.height)}</label>
                 <input type="number" id="customHeight" class="input" aria-describedby="dimError" value="${first.height}" min="20" max="8000" step="1" inputmode="numeric">

@@ -326,7 +326,7 @@
           </div>
           <div class="field">
             <label for="photoCountSelect" class="field-label">Copies</label>
-            <select id="photoCountSelect">
+            <select id="photoCountSelect" aria-describedby="photoCountSelectHint">
               <option value="auto" selected>As many as fit</option>
               <option value="4">4 photos</option>
               <option value="6">6 photos</option>
@@ -334,6 +334,7 @@
               <option value="12">12 photos</option>
               <option value="16">16 photos</option>
             </select>
+            <p class="field-hint" id="photoCountSelectHint" aria-live="polite">How many fit depends on the paper and photo size.</p>
           </div>
           <div class="field">
             <label for="gapSelect" class="field-label">Space between photos</label>
@@ -559,6 +560,7 @@
   <script src="js/components.js?v=20261118" defer></script>
   <script src="js/site.js?v=20261118"></script>
   <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/passport-photo-print.js?v=20261118"></script>
 </body>
 </html>
