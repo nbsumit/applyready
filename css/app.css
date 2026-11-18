@@ -1630,6 +1630,13 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
    while running, a verdict with the ZIP download when finished, and rows with result facts. */
 .ws--batch[data-state='empty'] #btnBatchStart { display: none; }
 .ws--batch .ws-stage { gap: var(--s-3); }
+/* The file list has its own area (.batch-files, after the rail in the markup): under the stage beside
+   the rail on desktops, and after the settings on narrower screens (below), so hundreds of rows never
+   push the settings out of reach. Empty, the workspace keeps the plain stage and rail. */
+.batch-files { grid-area: files; min-width: 0; padding: 0 var(--s-5) var(--s-5); background: var(--c-surface-2); border-bottom-left-radius: var(--r-md); }
+.ws--batch[data-state='empty'] .batch-files { display: none; }
+.ws--batch:not([data-state='empty']) { grid-template-rows: auto auto 1fr; grid-template-areas: 'head head' 'stage rail' 'files rail'; }
+.ws--batch:not([data-state='empty']) .ws-stage { padding-bottom: var(--s-3); border-bottom-left-radius: 0; }
 .batch-panel { padding: var(--s-4) var(--s-5); background: var(--c-surface); border: var(--bw) solid var(--c-line); border-radius: var(--r-md); }
 .batch-progress__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-3); flex-wrap: wrap; }
 .batch-progress__text { flex: 1 1 200px; font-size: var(--fs-md); font-weight: var(--fw-medium); color: var(--c-text); font-variant-numeric: tabular-nums; }
@@ -1655,7 +1662,14 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
 @media (min-width: 1000px) {
   .ws--batch[data-state='empty'] .dropzone { align-content: start; padding-top: var(--s-8); }
 }
+@media (max-width: 999px) {
+  .ws--batch:not([data-state='empty']) { grid-template-rows: auto; grid-template-areas: 'head' 'stage' 'side' 'files' 'action'; }
+  .ws--batch:not([data-state='empty']) .ws-stage { padding-bottom: var(--s-4); border-radius: 0; }
+  .batch-files { padding: var(--s-4); border-top: var(--bw) solid var(--c-line); border-radius: 0; }
+}
 @media (max-width: 639px) {
+  /* The compact drop zone is hidden on phones; with no message, progress or result the stage would be an empty strip. */
+  .ws--batch:not([data-state='empty']) .ws-stage:not(:has(> :not([hidden]):not(.hidden):not(.dropzone))) { display: none; }
   .batch-panel { padding: var(--s-3) var(--s-4); }
   .batch-progress__head .btn { width: 100%; }
 }
