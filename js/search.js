@@ -124,8 +124,7 @@
     if (convert && !converts(f, convert[0], convert[1])) return 0;
     let total = 0, matched = 0;
     for (const set of tokenSets) {
-      let s = 0;
-      set.forEach((t, i) => { s = Math.max(s, tokenScore(f, t) * (i === 0 && set.length === 1 ? 1 : 0.9)); });
+      const s = Math.max(...set.map(t => tokenScore(f, t))); // a corrected word may have several readings
       if (s) matched++;
       total += s;
     }
