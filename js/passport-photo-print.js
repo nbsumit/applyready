@@ -132,16 +132,18 @@
 
   async function handleFile(file) {
     if (!file) return;
+    // Taken before the content check, so a Remove pressed while it runs still wins.
+    const token = ++loadToken;
     // Identify the file by its content, not its name or the type the browser reports.
     if (window.ApplyReadyFiles) {
       const check = await window.ApplyReadyFiles.validate(file, ['image'], 50 * 1024 * 1024);
+      if (token !== loadToken) return;
       if (!check.ok) { notifyError(check.error); return; }
     } else if (!file.type.startsWith('image/')) {
       notifyError('That file is not a JPG or PNG photo. Choose a passport photo and try again.');
       return;
     }
 
-    const token = ++loadToken;
     loadedFile = file;
     const reader = new FileReader();
     reader.onerror = () => { loadedFile = null; notifyError('That file could not be read. Choose it again, or save a copy to your device first.'); };
@@ -354,7 +356,8 @@
     const paperPtH = (paperSpec.h * MM_TO_INCH) * 72;
 
     const jpegBlob = await new Promise(res => sheetCanvas.toBlob(res, 'image/jpeg', 0.95));
-    if (gen !== renderGen || !loadedImage) return;   // removed or changed while encoding
+    if (!loadedImage) return;                                         // removed while encoding
+    if (gen !== renderGen) { generatePrintPdf(currentPaper); return; }  // settings changed: build the new sheet
     if (!jpegBlob) { notifyError('The PDF could not be created. The device may be low on memory; choose fewer copies or a smaller paper size.'); return; }
     const jpegBuffer = await jpegBlob.arrayBuffer();
     const jpegBytes = new Uint8Array(jpegBuffer);

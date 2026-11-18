@@ -360,18 +360,75 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     await page.setInputFiles('#batchDropInput', [fix('photo_04.jpg'), fix('photo_00.jpg'), fix('photo_as_png.png'), fix('huge_60mp.png')]);
     await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 4);
     ok(await page.locator('#batchError').isHidden(), 'a clean add clears the old message');
+    await page.waitForFunction(() => /Compress 4 images/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 }).catch(() => {});
     ok(/Compress 4 images/.test(await page.locator('#btnBatchStart').textContent()), 'compressor wording');
     await page.click('#btnBatchStart');
     await waitIdle(page);
     const items = await page.evaluate(() => window.ApplyReadyBatchImage.items.map(i => ({ name: i.name, status: i.status, error: i.error, r: i.result && { w: i.result.width, h: i.result.height, b: i.result.bytes, mime: i.result.mime, notes: i.result.notes } })));
     const by = n => items.find(i => i.name === n);
-    ok(by('photo_04.jpg').r.w === 3000 && by('photo_04.jpg').r.b <= 102400, `JPEG compressed under 100 KB at its own size (${JSON.stringify(by('photo_04.jpg').r)})`);
+    // Allow smaller dimensions is on: quality is never taken below 50%; the photo gets fewer pixels
+    // instead, and as many as fit (the size search stops within 5% of the largest that fits).
+    const q04 = by('photo_04.jpg').r;
+    const lowered = (q04.notes.join(' ').match(/Quality was lowered to (\d+)%/) || [])[1];
+    ok(q04.b <= 102400 && (!lowered || Number(lowered) >= 50) && Math.abs(q04.w / q04.h - 1.5) < 0.01, `JPEG under 100 KB, quality at least 50%, proportions kept (${JSON.stringify(q04)})`);
+    ok(q04.w === 3000 || (q04.w >= 1200 && q04.notes.some(n => /pixel size was reduced/.test(n))), `pixel size reduced only as far as needed (${q04.w} px)`);
     ok(by('photo_04.jpg').r.notes.some(n => /Quality was lowered to \d+%/.test(n)) || by('photo_04.jpg').r.notes.some(n => /pixel size was reduced/.test(n)), 'notes say what was changed');
     ok(by('photo_as_png.png').r.mime === 'image/png' && by('photo_as_png.png').r.b <= 102400 && by('photo_as_png.png').r.w < 2400 && by('photo_as_png.png').r.notes.some(n => /pixel size was reduced/.test(n)), 'PNG kept as PNG: pixel size reduced and said so');
     ok(by('huge_60mp.png').status === 'error' && /60 megapixels/.test(by('huge_60mp.png').error), `60 MP image refused before decoding: ${by('huge_60mp.png').error}`);
+    ok(by('photo_as_png.png').r.notes.some(n => /saving as JPEG keeps many more pixels/.test(n)), 'a PNG that had to shrink suggests JPEG');
     const zip = await saveDownload(page, () => page.click('#btnBatchZip'), 'compressed.zip');
     ok(zip.suggested === 'compressed-images.zip' && /No errors detected/.test(sh('unzip', ['-t', zip.file])), 'compressor ZIP name and integrity');
+    // With the switch off the pixel size never changes; quality goes as low as needed.
+    await setValue(page, 'bAllowShrink', false);
+    await page.waitForFunction(() => /Process again/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 }).catch(() => {});
+    await page.click('#btnBatchStart');
+    await waitIdle(page);
+    const fixed = await page.evaluate(() => { const i = window.ApplyReadyBatchImage.items.find(x => x.name === 'photo_04.jpg'); return { w: i.result.width, h: i.result.height, b: i.result.bytes, notes: i.result.notes }; });
+    ok(fixed.w === 3000 && fixed.h === 2000 && fixed.b <= 102400 && fixed.notes.some(n => /Quality was lowered/.test(n)), `switch off: full size kept under 100 KB (${JSON.stringify(fixed)})`);
+    const fixedFile = await saveDownload(page, () => page.locator('#batchList .file-row').first().locator('[data-action="download"]').click(), 'fixed-size.jpg');
+    const idf = identify(fixedFile.file);
+    ok(idf.w === 3000 && idf.h === 2000 && fs.statSync(fixedFile.file).size <= 102400, `identify confirms the full-size download (${idf.w} × ${idf.h}, ${fs.statSync(fixedFile.file).size} bytes)`);
     await axe(page, 'compressor results');
+    await context.close();
+  }
+
+  /* ---------- 3c2. Keyboard and one-file use: focus never falls to the page body, one result
+     downloads as the file itself, the next step sits in the sticky bar */
+  {
+    const { context, page } = await open('compress-image.html', { viewport: { width: 1366, height: 768 } });
+    const focusId = () => page.evaluate(() => (document.activeElement && document.activeElement.id) || document.activeElement.tagName);
+    const browse = page.locator('#batchDrop [data-browse]');
+    const box = await browse.boundingBox();
+    ok(box && box.y + box.height <= 768, `empty state: the choose button is visible without scrolling (y ${box && Math.round(box.y)})`);
+    await browse.focus();
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.keyboard.press('Enter')]);
+    await chooser.setFiles([fix('photo_05.jpg')]);
+    await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'btnBatchStart', null, { timeout: 3000 }).catch(() => {});
+    ok(await focusId() === 'btnBatchStart', 'after choosing files by keyboard, focus moves to the start button (the hidden choose button would drop it)');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');   // a second press while running does nothing
+    await waitIdle(page);
+    await page.waitForFunction(() => /Download the image/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 }).catch(() => {});
+    ok(await focusId() === 'btnBatchStart' && /Download the image/.test(await page.locator('#btnBatchStart').textContent()), 'focus stays on the sticky button, which now offers the download');
+    ok((await page.evaluate(() => window.ApplyReadyBatchImage.items[0].attempts)) === 1, 'pressing Start twice runs the image once');
+    ok(/Download the image/.test(await page.locator('#btnBatchZip').textContent()), 'one result: no ZIP in the result panel either');
+    const one = await saveDownload(page, () => page.keyboard.press('Enter'), 'one-result.jpg');
+    const idOne = identify(one.file);
+    ok(one.suggested === 'photo_05.jpg' && fs.statSync(one.file).size <= 102400 && idOne.w > 0, `one result downloads as the image itself (${one.suggested}, ${idOne.w} × ${idOne.h})`);
+    await page.waitForTimeout(200);
+    ok(!(await page.locator('#btnBatchStart').isVisible()) && await focusId() === 'batchVerdictTitle', 'after the download the button goes and focus moves to the result');
+    // Cancel by keyboard: the Cancel button disappears, focus goes to the result.
+    const more = [];
+    for (let i = 6; i < 18; i++) more.push(fix(`photo_${String(i).padStart(2, '0')}.jpg`));
+    await page.setInputFiles('#batchDropInput', more);
+    await page.waitForFunction(() => /Compress 12 images/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 });
+    await page.click('#btnBatchStart');
+    await page.waitForSelector('#batchProgress:not(.hidden)');
+    await page.focus('#btnBatchCancel');
+    await page.keyboard.press('Enter');
+    await waitIdle(page);
+    await page.waitForTimeout(200);
+    ok(await focusId() === 'batchVerdictTitle', `after Cancel, focus moves to the result (${await focusId()})`);
     await context.close();
   }
 

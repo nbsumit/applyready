@@ -25,7 +25,7 @@ const optionsFor = keys => ['custom', ...keys].map(v => [v, v === 'custom' ? 'Cu
    level: heading level of the workspace's own step titles. */
 const PAGES = {
   'image-resizer.html': { preset: 'custom', requireChoice: true, sample: true, level: 2, choices: GENERAL },
-  'passport-photo-resizer.html': { preset: 'passport', sample: true, level: 2, choices: ['passport', 'avatar'] },
+  'passport-photo-resizer.html': { preset: 'passport', level: 2, choices: ['passport', 'avatar'] },
   'signature-resizer.html': { preset: 'signature', level: 2, choices: ['signature', 'thumb', 'declaration'] },
   'resize-image-to-20kb.html': { preset: 'kb-20', maxKB: 20, choices: ['kb-20', 'passport', 'signature'], heading: 'Resize an image to 20 KB', lede: 'The limit is set to 20 KB. Choose what you are preparing, add the image and download.' },
   'resize-image-to-50kb.html': { preset: 'kb-50', maxKB: 50, choices: ['kb-50', 'passport', 'signature'], heading: 'Resize an image to 50 KB', lede: 'The limit is set to 50 KB. Choose what you are preparing, add the image and download.' },

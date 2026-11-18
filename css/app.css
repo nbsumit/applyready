@@ -1451,6 +1451,11 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .input--colour::-moz-color-swatch { border: 0; border-radius: var(--r-xs); }
 .batch-more { border-top: var(--bw) solid var(--c-line); }
 .batch-more .disclosure__body { gap: var(--s-5); }
+/* Beside the long settings rail the empty drop zone stretches to the rail's height; keep its button
+   near the top so it is visible without scrolling. */
+@media (min-width: 1000px) {
+  .ws--batch[data-state='empty'] .dropzone { align-content: start; padding-top: var(--s-8); }
+}
 @media (max-width: 639px) {
   .batch-panel { padding: var(--s-3) var(--s-4); }
   .batch-progress__head .btn { width: 100%; }

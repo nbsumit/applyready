@@ -248,7 +248,7 @@
           <div class="ws-result__head">
             <div class="verdict" id="batchVerdict">
               <i class="fa-solid fa-check" id="batchVerdictIcon" aria-hidden="true"></i>
-              <div><h2 class="ws-result__title" id="batchVerdictTitle"></h2><p class="ws-result__ok" id="batchVerdictText"></p></div>
+              <div><h2 class="ws-result__title" id="batchVerdictTitle" tabindex="-1"></h2><p class="ws-result__ok" id="batchVerdictText"></p></div>
             </div>
           </div>
           <div class="ws-result__actions">
@@ -312,7 +312,8 @@
             <input type="range" id="bQuality" min="40" max="100" step="1" value="85" aria-describedby="bQualityHint">
             <p class="field-hint" id="bQualityHint">The highest quality to use for JPEG and WebP. With a maximum, it is lowered only as far as needed.</p>
           </div>
-          <label class="switch" for="bAllowShrink"><span>Allow smaller dimensions to meet the limit</span><input type="checkbox" id="bAllowShrink" role="switch" checked></label>
+          <label class="switch" for="bAllowShrink"><span>Allow smaller dimensions to meet the limit</span><input type="checkbox" id="bAllowShrink" role="switch" aria-describedby="bAllowShrinkHint" checked></label>
+          <p class="field-hint" id="bAllowShrinkHint">On: quality stays at 50% or more, and an image that still does not fit is made smaller. Off: the pixel size never changes.</p>
         </div>
         <div class="ws-section" data-section="format">
           <h2 class="ws-section__title">Format</h2>
@@ -374,7 +375,7 @@
         <li><strong>Exact size, add padding</strong> gives exactly the width and height without cutting anything off, and fills the space around the image with the background colour. It suits signatures, whose shapes vary.</li>
         <li><strong>Scale by a percentage</strong> makes every image the same fraction of its original size.</li>
       </ul>
-      <p>When a file limit is set, the quality is lowered only as far as each image needs. If an image still does not fit and <em>Allow smaller dimensions</em> is on, its pixel size is reduced, and its row says so. For passport photos and signatures the exact pixel size matters, so those presets keep it fixed and report a failure instead.</p>
+      <p>When a file limit is set, the quality is lowered only as far as each image needs. If an image still does not fit at 50% quality and <em>Allow smaller dimensions</em> is on, its pixel size is reduced instead, and its row says so. For passport photos and signatures the exact pixel size matters, so those presets keep it fixed and report a failure instead.</p>
       <h3>Limits, honestly</h3>
       <ul>
         <li>Up to 500 images at a time, each up to 50 MB and 50 megapixels. A large batch on a phone works, but takes longer; the page warns you when the files add up to more than 300 MB.</li>

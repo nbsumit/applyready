@@ -3,7 +3,8 @@
    APIs available in both: createImageBitmap, OffscreenCanvas (or a <canvas> on the main thread),
    Blob. Nothing leaves the device.
 
-   process(blob, options, signal, onProgress) -> { blob, width, height, mime, bytes, quality, notes[], verified }
+   process(blob, options, signal, onProgress) -> { blob, width, height, mime, bytes, quality, reduced, notes[], verified }
+     reduced: true when the pixel size was made smaller than planned to meet maxBytes
 
    options:
      resize:   'none' | 'fit' | 'fill' | 'pad' | 'exact' | 'scale'
@@ -17,7 +18,8 @@
      quality:  0.05-1 (lossy formats): the highest quality to use
      maxBytes: target upper limit; quality is searched and, if allowShrink, the image is scaled down
      minBytes: JPEG only; the file is padded with a comment segment to reach it
-     allowShrink: when maxBytes cannot be met at the lowest quality, reduce the pixel size
+     allowShrink: when maxBytes cannot be met at 50% quality, reduce the pixel size instead of
+                lowering quality further (without it, quality goes down to 5%)
      background: #rrggbb for transparent areas and padding when the output has no alpha
      verify:   (default true) decode the finished file and check its pixel size, type and bytes
 
@@ -35,6 +37,9 @@
   const MAX_PIXELS = 50e6;         // decoded source, about 50 megapixels
   const HEADER_BYTES = 512 * 1024; // enough to pass a large EXIF block and reach the JPEG frame header
   const LOSSY = new Set(['image/jpeg', 'image/webp']);
+  // With allowShrink on, quality is not lowered below this: a 12 MP photo squeezed to 100 KB at
+  // 5% quality is a blocky mess, while the same photo at fewer pixels and 50% quality looks fine.
+  const SHRINK_QUALITY_FLOOR = 0.5;
 
   const clampInt = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(Number(v) || 0)));
   // A dimension the person left empty is 0 ("not set"), never 1 px.
@@ -246,61 +251,94 @@
 
   const kb = n => `${Math.round(n / 1024)} KB`;
 
-  /** Encode, meeting maxBytes by searching quality (lossy) and optionally shrinking. */
+  /** The same layout at a fraction k of the pixel size (at least 16 px a side). */
+  function scaledPlan(p, k) {
+    const w = Math.max(16, Math.round(p.width * k)), h = Math.max(16, Math.round(p.height * k));
+    const sx = w / p.width, sy = h / p.height;
+    return { width: w, height: h, src: p.src, dst: { dx: Math.round(p.dst.dx * sx), dy: Math.round(p.dst.dy * sy), dw: Math.max(1, Math.round(p.dst.dw * sx)), dh: Math.max(1, Math.round(p.dst.dh * sy)) } };
+  }
+
+  /**
+   * Encode, meeting maxBytes. Lossy formats: the highest quality under the limit is searched
+   * (down to 5%, or to SHRINK_QUALITY_FLOOR when allowShrink is on). If that is not enough and
+   * allowShrink is on, the largest pixel size that fits at the floor quality is found by bisection,
+   * then the quality is raised again as far as the limit allows at that size.
+   */
   async function encodeToTarget(source, p, opts, notes, signal, progress) {
     const mime = opts.mime;
     const lossy = LOSSY.has(mime);
     const quality = Math.max(0.05, Math.min(1, Number(opts.quality) || 0.9));
-    let current = p;
-    for (let shrinkStep = 0; shrinkStep < 12; shrinkStep++) {
-      if (signal && signal.aborted) throw cancelled();
-      const canvas = render(source, current, opts);
-      let blob;
-      try { blob = await canvasToBlob(canvas, mime, lossy ? quality : undefined); }
-      catch (e) { release(canvas); throw e; }
-      progress(0.5 + Math.min(shrinkStep, 4) * 0.08);
-      if (blob.type && blob.type !== mime) {
-        release(canvas);
-        throw new Error(`This browser cannot save ${mime.replace('image/', '').toUpperCase()} files. Choose JPEG or PNG.`);
-      }
-      if (!opts.maxBytes || blob.size <= opts.maxBytes) { release(canvas); return { blob, plan: current, quality: lossy ? quality : null }; }
-      if (lossy) {
-        // Binary search for the highest quality under the limit.
-        let lo = 0.05, hi = quality, best = null;
-        const floor = await canvasToBlob(canvas, mime, lo);
-        if (floor.size <= opts.maxBytes) {
-          best = { blob: floor, q: lo };
-          for (let i = 0; i < 7; i++) {
-            if (signal && signal.aborted) { release(canvas); throw cancelled(); }
-            const mid = (lo + hi) / 2;
-            const candidate = await canvasToBlob(canvas, mime, mid);
-            if (candidate.size <= opts.maxBytes) { best = { blob: candidate, q: mid }; lo = mid; } else { hi = mid; }
-            progress(0.55 + i * 0.05);
-          }
-        }
-        release(canvas);
-        if (best) {
-          const pct = Math.round(best.q * 100);
-          if (best.q < 0.4) notes.push(`Quality was lowered to ${pct}% to fit under ${kb(opts.maxBytes)}; check that the picture is still clear.`);
-          else notes.push(`Quality was lowered to ${pct}% to fit under ${kb(opts.maxBytes)}.`);
-          return { blob: best.blob, plan: current, quality: best.q };
-        }
-        blob = floor;
-      } else {
-        release(canvas);
-      }
-      if (!opts.allowShrink) {
-        throw new Error(`This image does not fit under ${kb(opts.maxBytes)} at ${current.width} × ${current.height} px${lossy ? ' even at the lowest quality' : ''}. Turn on "Allow smaller dimensions"${lossy ? '' : ', choose JPEG'} or raise the limit.`);
-      }
-      // Shrink proportionally to the overshoot, at least 10% per step.
-      const ratio = Math.min(0.9, Math.sqrt(opts.maxBytes / blob.size) * 0.95);
-      const w = Math.max(16, Math.round(current.width * ratio)), h = Math.max(16, Math.round(current.height * ratio));
-      if (w === current.width && h === current.height) break;
-      const sx = w / current.width, sy = h / current.height;
-      current = { width: w, height: h, src: current.src, dst: { dx: Math.round(current.dst.dx * sx), dy: Math.round(current.dst.dy * sy), dw: Math.max(1, Math.round(current.dst.dw * sx)), dh: Math.max(1, Math.round(current.dst.dh * sy)) } };
-      if (shrinkStep === 0) notes.push(`The pixel size was reduced to meet the ${kb(opts.maxBytes)} limit.`);
+    const floorQ = lossy ? (opts.allowShrink ? Math.min(quality, SHRINK_QUALITY_FLOOR) : 0.05) : undefined;
+    const limit = opts.maxBytes;
+    const check = () => { if (signal && signal.aborted) throw cancelled(); };
+
+    async function encode(plan, q) {
+      check();
+      const canvas = render(source, plan, opts);
+      try { return await canvasToBlob(canvas, mime, q); } finally { release(canvas); }
     }
-    throw new Error(`Could not get this image under ${kb(opts.maxBytes)}. Raise the limit or choose a smaller size.`);
+    // Highest quality in [lo, hi] under the limit on one canvas; lo is known to fit.
+    async function raiseQuality(plan, lo, loBlob, hi) {
+      const canvas = render(source, plan, opts);
+      let best = { blob: loBlob, q: lo };
+      try {
+        for (let i = 0; i < 7 && hi - lo > 0.01; i++) {
+          check();
+          const mid = (lo + hi) / 2;
+          const candidate = await canvasToBlob(canvas, mime, mid);
+          if (candidate.size <= limit) { best = { blob: candidate, q: mid }; lo = mid; } else hi = mid;
+          progress(0.7 + i * 0.03);
+        }
+      } finally { release(canvas); }
+      return best;
+    }
+    const qualityNote = q => {
+      if (q >= quality - 0.005) return;
+      const pct = Math.round(q * 100);
+      notes.push(q < 0.4 ? `Quality was lowered to ${pct}% to fit under ${kb(limit)}; check that the picture is still clear.` : `Quality was lowered to ${pct}% to fit under ${kb(limit)}.`);
+    };
+
+    const first = await encode(p, lossy ? quality : undefined);
+    progress(0.5);
+    if (first.type && first.type !== mime) throw new Error(`This browser cannot save ${mime.replace('image/', '').toUpperCase()} files. Choose JPEG or PNG.`);
+    if (!limit || first.size <= limit) return { blob: first, plan: p, quality: lossy ? quality : null };
+
+    // 1. Lower the quality at the planned size.
+    let floorBlob = first;
+    if (lossy && floorQ < quality) {
+      floorBlob = await encode(p, floorQ);
+      progress(0.55);
+      if (floorBlob.size <= limit) {
+        const best = await raiseQuality(p, floorQ, floorBlob, quality);
+        qualityNote(best.q);
+        return { blob: best.blob, plan: p, quality: best.q };
+      }
+    }
+    if (!opts.allowShrink) {
+      throw new Error(`This image does not fit under ${kb(limit)} at ${p.width} × ${p.height} px${lossy ? ' even at the lowest quality' : ''}. Turn on "Allow smaller dimensions"${lossy ? '' : ', choose JPEG'} or raise the limit.`);
+    }
+
+    // 2. Find the largest pixel size that fits at the floor quality: estimate from the overshoot
+    //    (bytes grow roughly with the pixel count), then bisect between a size that fits and one
+    //    that does not until they are within 5% of each other.
+    let fitK = 0, fitBlob = null, overK = 1, k = Math.min(0.9, Math.sqrt(limit / floorBlob.size) * 0.95);
+    for (let step = 0; step < 10; step++) {
+      const plan = scaledPlan(p, k);
+      const blob = await encode(plan, floorQ);
+      progress(0.58 + Math.min(step, 4) * 0.03);
+      if (blob.size <= limit) { fitK = k; fitBlob = blob; } else overK = k;
+      if (fitK && overK / fitK < 1.05) break;
+      if (!fitK && (plan.width === 16 || plan.height === 16)) break;
+      k = fitK ? Math.sqrt(fitK * overK) : k * Math.min(0.9, Math.sqrt(limit / blob.size) * 0.95);
+    }
+    if (!fitK) throw new Error(`Could not get this image under ${kb(limit)}. Raise the limit or choose a smaller size.`);
+    const plan = scaledPlan(p, fitK);
+    notes.push(`The pixel size was reduced to meet the ${kb(limit)} limit.`);
+    // 3. At that size, raise the quality again as far as the limit allows.
+    if (!lossy) return { blob: fitBlob, plan, quality: null };
+    const best = await raiseQuality(plan, floorQ, fitBlob, quality);
+    qualityNote(best.q);
+    return { blob: best.blob, plan, quality: best.q };
   }
 
   function outputMime(format, inputMime) {
@@ -362,7 +400,7 @@
       let verified = false;
       if (opts.verify !== false) verified = await verify(out, { mime, width: res.plan.width, height: res.plan.height, maxBytes: opts.maxBytes });
       progress(1);
-      return { blob: out, width: res.plan.width, height: res.plan.height, mime, bytes: out.size, quality: res.quality, sourceWidth: srcW, sourceHeight: srcH, notes, verified };
+      return { blob: out, width: res.plan.width, height: res.plan.height, mime, bytes: out.size, quality: res.quality, sourceWidth: srcW, sourceHeight: srcH, reduced: res.plan !== p, notes, verified };
     } finally {
       if (source && typeof source.close === 'function') source.close();
     }

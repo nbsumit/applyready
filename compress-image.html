@@ -97,7 +97,7 @@
             "name": "Will compressing change the pixel size?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Not unless it has to. The quality is lowered first. Only if the file still does not fit at the lowest quality, and Allow smaller dimensions is on, is the pixel size reduced, and the row tells you. Turn the switch off if the pixel size must not change."
+              "text": "Only when it has to. The quality is lowered first, but not below 50% while Allow smaller dimensions is on: if the file still does not fit, the pixel size is reduced instead, and the row tells you. Turn the switch off if the pixel size must not change; the quality can then go much lower."
             }
           },
           {
@@ -240,7 +240,7 @@
           <div class="ws-result__head">
             <div class="verdict" id="batchVerdict">
               <i class="fa-solid fa-check" id="batchVerdictIcon" aria-hidden="true"></i>
-              <div><h2 class="ws-result__title" id="batchVerdictTitle"></h2><p class="ws-result__ok" id="batchVerdictText"></p></div>
+              <div><h2 class="ws-result__title" id="batchVerdictTitle" tabindex="-1"></h2><p class="ws-result__ok" id="batchVerdictText"></p></div>
             </div>
           </div>
           <div class="ws-result__actions">
@@ -274,7 +274,8 @@
             <input type="range" id="bQuality" min="40" max="100" step="1" value="85" aria-describedby="bQualityHint">
             <p class="field-hint" id="bQualityHint">The highest quality to use for JPEG and WebP. With a maximum, it is lowered only as far as needed.</p>
           </div>
-          <label class="switch" for="bAllowShrink"><span>Allow smaller dimensions to meet the limit</span><input type="checkbox" id="bAllowShrink" role="switch" checked></label>
+          <label class="switch" for="bAllowShrink"><span>Allow smaller dimensions to meet the limit</span><input type="checkbox" id="bAllowShrink" role="switch" aria-describedby="bAllowShrinkHint" checked></label>
+          <p class="field-hint" id="bAllowShrinkHint">On: quality stays at 50% or more, and an image that still does not fit is made smaller. Off: the pixel size never changes.</p>
         </div>
         <div class="ws-section" data-section="format">
           <h2 class="ws-section__title">Format</h2>
@@ -352,7 +353,7 @@
     <!-- tool:end -->
     <section class="section prose" aria-labelledby="howHeading">
       <h2 id="howHeading">How compression works here</h2>
-      <p>JPEG and WebP files have a quality setting: lower quality means fewer bytes and, eventually, visible blur and blocks. With a <strong>maximum</strong> set, the compressor tries each image at the quality you chose and, if the file is too large, searches for the highest quality that fits under the limit. The pixel size stays the same. Only when an image cannot fit even at the lowest quality, and <em>Allow smaller dimensions</em> is on, is its pixel size reduced; its row then says so. Leave the maximum empty to compress every image at one quality level instead.</p>
+      <p>JPEG and WebP files have a quality setting: lower quality means fewer bytes and, eventually, visible blur and blocks. With a <strong>maximum</strong> set, the compressor tries each image at the quality you chose and, if the file is too large, searches for the highest quality that fits under the limit. The pixel size stays the same when it can. With <em>Allow smaller dimensions</em> on, quality is not taken below 50%: an image that still does not fit gets fewer pixels instead, because a smaller photo at decent quality looks far better than a full-size one full of blocks. Its row then says so. With the switch off, the pixel size never changes and quality can go as low as 5%. Leave the maximum empty to compress every image at one quality level instead.</p>
       <p>Every result is opened again and checked before it is listed as done, so the size shown is the real size of the file you download, in KB and in exact bytes. Portals count 1 KB as 1,024 bytes, and so does this page.</p>
       <h3>PNG files</h3>
       <p>PNG is lossless: it has no quality setting, so the only ways to make a PNG much smaller are fewer pixels or a different format. A photo saved as PNG usually shrinks to a fraction of its size as JPEG. Choose JPEG under <em>Format</em> for photos; keep PNG for screenshots and graphics with sharp edges or transparency. Converting is covered in more detail on the <a href="convert-image.html">image converter</a> page.</p>
@@ -376,7 +377,7 @@
         </details>
         <details class="faq-item">
           <summary class="faq-question"><span>Will compressing change the pixel size?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
-          <div class="faq-answer"><p>Not unless it has to. The quality is lowered first. Only if the file still does not fit at the lowest quality, and Allow smaller dimensions is on, is the pixel size reduced, and the row tells you. Turn the switch off if the pixel size must not change.</p></div>
+          <div class="faq-answer"><p>Only when it has to. The quality is lowered first, but not below 50% while Allow smaller dimensions is on: if the file still does not fit, the pixel size is reduced instead, and the row tells you. Turn the switch off if the pixel size must not change; the quality can then go much lower.</p></div>
         </details>
         <details class="faq-item">
           <summary class="faq-question"><span>Why is my PNG still large?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>

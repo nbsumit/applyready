@@ -138,16 +138,18 @@
 
   async function handleFile(file) {
     if (!file) return;
+    // Taken before the content check, so a Remove pressed while it runs still wins.
+    const token = ++loadToken;
     // Identify the file by its content, not its name or the type the browser reports.
     if (window.ApplyReadyFiles) {
       const check = await window.ApplyReadyFiles.validate(file, ['image'], 50 * 1024 * 1024);
+      if (token !== loadToken) return;
       if (!check.ok) { notifyError(check.error); return; }
     } else if (!file.type.startsWith('image/')) {
       notifyError('That file is not a JPG, PNG or WebP image. Choose a photo of your signature.');
       return;
     }
 
-    const token = ++loadToken;
     originalFile = file;
     const reader = new FileReader();
     reader.onerror = () => { originalFile = null; notifyError('That file could not be read. Choose it again, or save a copy to your device first.'); };

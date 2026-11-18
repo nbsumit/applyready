@@ -114,7 +114,8 @@ ${I}    <div class="range-head"><label for="bQuality" class="field-label">Qualit
 ${I}    <input type="range" id="bQuality" min="40" max="100" step="1" value="${esc(d.quality)}" aria-describedby="bQualityHint">
 ${I}    <p class="field-hint" id="bQualityHint">The highest quality to use for JPEG and WebP. With a maximum, it is lowered only as far as needed.</p>
 ${I}  </div>
-${I}  <label class="switch" for="bAllowShrink"><span>Allow smaller dimensions to meet the limit</span><input type="checkbox" id="bAllowShrink" role="switch"${d.allowShrink ? ' checked' : ''}></label>
+${I}  <label class="switch" for="bAllowShrink"><span>Allow smaller dimensions to meet the limit</span><input type="checkbox" id="bAllowShrink" role="switch" aria-describedby="bAllowShrinkHint"${d.allowShrink ? ' checked' : ''}></label>
+${I}  <p class="field-hint" id="bAllowShrinkHint">On: quality stays at 50% or more, and an image that still does not fit is made smaller. Off: the pixel size never changes.</p>
 ${I}</div>`;
   }
   if (id === 'format') {
@@ -193,7 +194,7 @@ function renderBatchWorkspace(mode) {
           <div class="ws-result__head">
             <div class="verdict" id="batchVerdict">
               <i class="fa-solid fa-check" id="batchVerdictIcon" aria-hidden="true"></i>
-              <div><h2 class="ws-result__title" id="batchVerdictTitle"></h2><p class="ws-result__ok" id="batchVerdictText"></p></div>
+              <div><h2 class="ws-result__title" id="batchVerdictTitle" tabindex="-1"></h2><p class="ws-result__ok" id="batchVerdictText"></p></div>
             </div>
           </div>
           <div class="ws-result__actions">

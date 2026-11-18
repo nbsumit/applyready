@@ -263,8 +263,13 @@
     if (!result.verified) throw new Error('The finished file could not be checked. Try again.');
     if (opts.maxBytes && result.bytes > opts.maxBytes) throw new Error(`The finished file is ${fmt(result.bytes)}, over the limit.`);
     const notes = (result.notes || []).slice();
+    if (result.mime === 'image/png' && result.reduced) {
+      notes.push('PNG cannot lower its quality, only its pixel size. If transparency is not needed, saving as JPEG keeps many more pixels under the same limit.');
+    }
     if (result.bytes >= item.size && settings.resize === 'none' && settings.format === 'keep') {
-      notes.push(`The result is not smaller than the original (${fmt(item.size)}): the original was already well compressed. Keep the original, or set a lower quality or a maximum.`);
+      notes.push(opts.maxBytes && item.size <= opts.maxBytes
+        ? `The original (${fmt(item.size)}) was already under the limit and is smaller than this copy. You can upload the original instead.`
+        : `The result is not smaller than the original (${fmt(item.size)}): the original was already well compressed. Keep the original, or set a lower quality.`);
     }
     return { blob: result.blob, mime: result.mime, width: result.width, height: result.height, bytes: result.bytes, notes, key };
   }
@@ -521,14 +526,26 @@
     Kit.announce(`Downloaded ${name}.`);
   }
 
+  // One result is downloaded as it is: a ZIP around a single photo is only an extra step.
+  let zipping = false;
   async function downloadAll() {
+    if (zipping) return;
     const names = outputNames();
     const done = queue.items.filter(i => i.status === 'done' && i.result);
     if (!done.length) return;
+    if (done.length === 1) { downloadOne(done[0]); refresh(); return; }
     const entries = done.map(i => ({ name: names.get(i.id), data: i.result.blob }));
-    const ok = await Kit.downloadZip(entries, app.dataset.zip || 'images.zip', { button: el.zip });
-    if (ok) done.forEach(i => { i.meta.downloaded = true; });
+    zipping = true;
     refresh();
+    try {
+      const ok = await Kit.downloadZip(entries, app.dataset.zip || 'images.zip', { button: el.zip });
+      if (ok) done.forEach(i => { i.meta.downloaded = true; });
+    } finally {
+      zipping = false;
+      // The busy ZIP button was disabled, which drops focus; give it back.
+      if (document.activeElement === document.body && !el.zip.classList.contains('hidden')) el.zip.focus();
+      refresh();
+    }
   }
 
   function undownloaded() { return queue.items.filter(i => i.status === 'done' && i.result && !i.meta.downloaded).length; }
@@ -606,6 +623,7 @@
   }
 
   function render() {
+    const focused = document.activeElement;
     const { s, errors } = renderSettings();
     const valid = !Object.keys(errors).length;
     currentKey = valid ? keyOf(s) : null;
@@ -677,7 +695,7 @@
       el.verdictText.textContent = facts.join(' ');
       show(el.zip, done.length > 0);
       if (!el.zip.getAttribute('aria-busy')) el.zip.disabled = !done.length;
-      if (!el.zip.getAttribute('aria-busy')) el.zip.innerHTML = `<i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download ${done.length === 1 ? 'it' : `all ${done.length}`} as ZIP`;
+      if (!el.zip.getAttribute('aria-busy')) el.zip.innerHTML = done.length === 1 ? '<i class="fa-solid fa-download" aria-hidden="true"></i> Download the image' : `<i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download all ${done.length} as ZIP`;
       show(el.retry, failed > 0);
       el.retry.innerHTML = `<i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Retry ${plural(failed, 'failed image', 'failed and cancelled images')}`;
     }
@@ -688,21 +706,44 @@
 
     // The one primary action
     const queued = summary.queued;
-    let label, enabled = false, note = describe(s), invalid = false;
+    const toDownload = undownloaded();
+    let label, enabled = false, note = describe(s), invalid = false, intent = '';
     if (!valid) { label = `${VERB} images`; note = Object.values(errors)[0]; invalid = true; }
-    else if (running) label = 'Working…';
-    else if (queued) { label = `${VERB} ${plural(queued, 'image')}`; enabled = true; }
-    else if (stale.length) { label = 'Process again'; enabled = true; }
-    else if (total) { label = 'All images processed'; note = `${describe(s)}. Change a setting or add images to process more.`; }
+    else if (running) label = `Working… ${summary.done + failed} of ${total}`;
+    else if (queued) { label = `${VERB} ${plural(queued, 'image')}`; enabled = true; intent = 'start'; }
+    else if (stale.length) { label = 'Process again'; enabled = true; intent = 'again'; }
+    else if (toDownload && done.length) {
+      // The next step is the download; on a phone the result panel is far above this bar.
+      label = zipping ? 'Preparing ZIP…' : done.length === 1 ? 'Download the image' : `Download all ${done.length} as ZIP`;
+      enabled = true; intent = 'download';   // stays enabled while zipping so focus is not lost; the handler ignores repeats
+      note = `${describe(s)}. ${plural(done.length, 'image')} ${DONE_WORD}.`;
+    } else if (total) { label = 'All images processed'; note = `${describe(s)}. Change a setting or add images to process more.`; }
     else label = `${VERB} images`;
     el.startLabel.textContent = label;
-    el.start.disabled = !enabled;
+    // While running the button only shows progress. aria-disabled, not disabled: a disabled button
+    // loses keyboard focus, and the person who pressed Start should stay where they are.
+    el.start.disabled = !enabled && !running;
+    if (!enabled && running) el.start.setAttribute('aria-disabled', 'true'); else el.start.removeAttribute('aria-disabled');
+    el.start.querySelector('i').className = intent === 'download' ? (done.length === 1 ? 'fa-solid fa-download' : 'fa-solid fa-file-zipper') : 'fa-solid fa-bolt';
     // Nothing left to do: no greyed-out button in the sticky bar, only the line that says why.
-    show(el.start, !(valid && !running && total && !queued && !stale.length));
-    el.start.dataset.intent = queued ? 'start' : stale.length ? 'again' : '';
+    show(el.start, !(valid && !running && total && !intent));
+    el.start.dataset.intent = intent;
     el.summary.textContent = note;
     el.summary.classList.toggle('is-invalid', invalid);
     el.clear.disabled = total === 0;
+
+    // A control that just disappeared must not drop keyboard focus onto the page body: Cancel once
+    // the run stops, the start button once nothing is left, or "Choose images", which the compact
+    // drop zone hides once there are files. Checked in a microtask, after js/components.js has
+    // updated the workspace state that hides the drop zone button.
+    if (focused && focused !== document.body && app.contains(focused)) {
+      Promise.resolve().then(() => {
+        if (focused.getClientRects().length || (document.activeElement !== focused && document.activeElement !== document.body)) return;
+        const visible = node => node && node.getClientRects().length;
+        const target = [el.verdictTitle, el.start, el.add, el.drop && el.drop.querySelector('[data-browse]')].find(visible);
+        if (target) target.focus();
+      });
+    }
   }
 
   /* ------------------------------------------------------------------ wiring */
@@ -719,7 +760,13 @@
     refresh();
   });
 
-  el.start.addEventListener('click', () => { if (el.start.dataset.intent === 'again') processAgain(); else start(); });
+  el.start.addEventListener('click', () => {
+    if (el.start.getAttribute('aria-disabled') === 'true') return;
+    const intent = el.start.dataset.intent;
+    if (intent === 'again') processAgain();
+    else if (intent === 'download') downloadAll();
+    else start();
+  });
   el.cancel.addEventListener('click', cancel);
   el.retry.addEventListener('click', retryFailed);
   el.rerun.addEventListener('click', processAgain);
