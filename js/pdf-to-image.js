@@ -73,7 +73,7 @@
     setFieldError(list.error && (showErrors || els.ranges.value.trim()) ? list.error : '');
     if (grid) grid.setSelected(list.pages && els.ranges.value.trim() ? new Set(list.pages) : new Set());
     const dpi = Number(els.dpi.value);
-    let w = Math.round(firstSize.width / 72 * dpi), h = Math.round(firstSize.height / 72 * dpi);
+    let w = Math.floor(firstSize.width / 72 * dpi), h = Math.floor(firstSize.height / 72 * dpi);
     let capped = false;
     if (w * h > K.LIMITS.canvasPixels) { const s = Math.sqrt(K.LIMITS.canvasPixels / (w * h)); w = Math.floor(w * s); h = Math.floor(h * s); capped = true; }
     if (list.error) { els.run.disabled = true; els.summary.textContent = 'Fix the page list first.'; els.estimate.textContent = ''; return null; }

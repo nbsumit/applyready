@@ -170,12 +170,16 @@
     return it;
   }
 
+  // Files refused by the drop zone are reported together with problems found while opening the rest.
+  let rejected = [];
   function addFiles(files, infos) {
-    error.hide();
+    const earlier = rejected;
+    rejected = [];
+    if (!earlier.length) error.hide();
     invalidate();
     // One file at a time, in the order chosen: password dialogs never overlap and memory stays low.
     adding = adding.then(async () => {
-      const problems = [];
+      const problems = earlier.slice();
       let added = 0;
       for (let i = 0; i < files.length; i++) {
         try { await addOne(files[i], infos[i]); added++; render(); }
@@ -197,7 +201,7 @@
     maxFiles: K.LIMITS.maxFiles,
     limitBytes: K.LIMITS.fileBytes,
     onFiles: addFiles,
-    onReject: messages => error.show(messages)
+    onReject: messages => { rejected = messages; error.show(messages); setTimeout(() => { rejected = []; }, 0); }
   });
   els.add.addEventListener('click', () => dz.open());
   els.clear.addEventListener('click', async () => {

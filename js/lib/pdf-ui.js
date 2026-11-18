@@ -35,7 +35,7 @@
       const backdrop = doc.createElement('div');
       backdrop.className = 'dialog-backdrop';
       backdrop.innerHTML = `
-        <form class="dialog pdf-password" role="dialog" aria-modal="true" aria-labelledby="${uid}-t" aria-describedby="${uid}-d" novalidate>
+        <div class="dialog pdf-password" role="dialog" aria-modal="true" aria-labelledby="${uid}-t" aria-describedby="${uid}-d"><form class="pdf-password__form" novalidate>
           <div class="dialog__head"><h2 class="dialog__title" id="${uid}-t">This PDF needs a password</h2></div>
           <div class="dialog__body">
             <p id="${uid}-d"><span data-name></span> is protected. Type its password to open it.</p>
@@ -51,7 +51,7 @@
             <button type="button" class="btn" data-act="cancel">Cancel</button>
             <button type="submit" class="btn btn-primary" data-act="ok">Open PDF</button>
           </div>
-        </form>`;
+        </form></div>`;
       backdrop.querySelector('[data-name]').textContent = o.name;
       const form = backdrop.querySelector('form');
       const input = backdrop.querySelector('input[type="password"]');

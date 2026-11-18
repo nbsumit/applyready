@@ -1,572 +1,201 @@
-/**
- * ApplyReady.in - PDF Compressor Engine
- * 100% Client-Side In-Browser Tool
- * Compresses document PDFs and document scans to target KB limits
- * (100 KB, 200 KB, 300 KB, 500 KB) for application portals.
- * Zero server uploads.
- */
+/* Compress PDF: the interface. Every page is redrawn by pdf.js at the chosen resolution and saved
+   as a JPEG whose quality is searched to fit the page's share of the limit
+   (ApplyReadyPdf.compressRendered). The new PDF keeps the page count, order, page sizes and
+   rotation, and is reopened and checked before it is offered. A photo of a document becomes a
+   one-page A4 PDF. A file already under the limit, or one that would not get smaller, is kept as it
+   is. Nothing leaves the browser.
 
+   This replaces an older approach that looked for JPEG images inside the file's bytes, which could
+   silently drop pages that held text. */
 (function () {
   'use strict';
-  // Errors use the site's notification instead of a blocking browser dialog.
-  const notifyError = message => (window.ApplyReadyUI && window.ApplyReadyUI.notify) ? window.ApplyReadyUI.notify(message, true) : window.alert(message);
+  const doc = document;
+  const app = doc.getElementById('compressApp');
+  if (!app) return;
+  const K = window.ApplyReadyPdf, UI = window.ApplyReadyPdfUI, Files = window.ApplyReadyFiles, Kit = window.ApplyReadyFileKit;
+  const notify = (m, e) => { if (window.ApplyReadyUI && window.ApplyReadyUI.notify) window.ApplyReadyUI.notify(m, e); };
+  const $ = id => doc.getElementById(id);
+  const els = {
+    zone: $('compressDropzone'), fileBox: $('compressFileInfoBox'), fileText: $('compressFileInfoText'),
+    replace: $('btnCompressReplace'), remove: $('btnCompressRemove'), loading: $('compressLoading'),
+    target: $('targetKbInput'), targetError: $('targetKbError'), presets: app.querySelectorAll('.preset-kb-btn'),
+    dpi: $('compressDpi'), grey: $('compressGrey'), start: $('btnStartCompress'),
+    result: $('compressResultArea'), status: $('compressStatus'), note: $('compressNote'), download: $('btnDownloadCompressedPdf'),
+    orig: $('statOrigSize'), comp: $('statCompSize'), reduction: $('statReduction'), pages: $('statCompPages'), dpiStat: $('statCompDpi')
+  };
+  const errorBox = UI.errorBox($('compressError'));
+  const error = { show(m) { errorBox.show(m); notify(Array.isArray(m) ? m.join(' ') : m, true); }, hide() { errorBox.hide(); } };
+  const urls = UI.urls();
+  let current = null; // { file, kind, info, bytes, pageCount, password, encrypted, jsDoc }
+  let output = null;
+  let opening = 0;
 
-  const doc = typeof document !== 'undefined' ? document : null;
-  if (!doc) return;
-
-  // Larger files are rare for upload portals and would hold several copies in memory at once.
-  const MAX_FILE_BYTES = 50 * 1024 * 1024;
-  // A problem with the file itself, explained to the person as it is.
-  class FileProblem extends Error {}
-
-  const dropzone = doc.getElementById('compressDropzone');
-  const fileInput = doc.getElementById('compressFileInput');
-  const btnBrowse = doc.getElementById('btnCompressBrowse');
-  const fileInfoBox = doc.getElementById('compressFileInfoBox');
-  const fileInfoText = doc.getElementById('compressFileInfoText');
-  const btnRemoveFile = doc.getElementById('btnCompressRemove');
-  const btnReplaceFile = doc.getElementById('btnCompressReplace');
-
-  const targetKbInput = doc.getElementById('targetKbInput');
-  const targetKbButtons = doc.querySelectorAll('.preset-kb-btn');
-  const btnStartCompress = doc.getElementById('btnStartCompress');
-
-  const progressBox = doc.getElementById('compressProgressBox');
-  const progressBar = doc.getElementById('compressProgressBar');
-  const progressText = doc.getElementById('compressProgressText');
-
-  const resultArea = doc.getElementById('compressResultArea');
-  const statOriginal = doc.getElementById('statOrigSize');
-  const statCompressed = doc.getElementById('statCompSize');
-  const statReduction = doc.getElementById('statReduction');
-  const statPages = doc.getElementById('statCompPages');
-  const btnDownload = doc.getElementById('btnDownloadCompressedPdf');
-
-  let currentFile = null;
-  let compressedBlobUrl = null;
-  let isCompressing = false;
-
-  function init() {
-    if (!dropzone || !fileInput) return;
-
-    btnBrowse.addEventListener('click', (e) => {
-      e.stopPropagation();
-      fileInput.click();
-    });
-
-    dropzone.addEventListener('click', () => fileInput.click());
-
-    dropzone.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        fileInput.click();
-      }
-    });
-
-    ['dragenter', 'dragover'].forEach(evt => {
-      dropzone.addEventListener(evt, (e) => {
-        e.preventDefault();
-        dropzone.classList.add('dragover');
-      });
-    });
-
-    ['dragleave', 'drop'].forEach(evt => {
-      dropzone.addEventListener(evt, (e) => {
-        e.preventDefault();
-        dropzone.classList.remove('dragover');
-      });
-    });
-
-    dropzone.addEventListener('drop', (e) => {
-      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-        handleFile(e.dataTransfer.files[0]);
-      }
-    });
-
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files && fileInput.files.length) {
-        handleFile(fileInput.files[0]);
-      }
-    });
-
-    if (btnRemoveFile) btnRemoveFile.addEventListener('click', resetAll);
-    if (btnReplaceFile) btnReplaceFile.addEventListener('click', () => fileInput.click());
-
-    // Target KB preset buttons
-    targetKbButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        targetKbButtons.forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-pressed', 'false');
-        });
-        btn.classList.add('active');
-        btn.setAttribute('aria-pressed', 'true');
-        if (targetKbInput) targetKbInput.value = btn.dataset.kb;
-      });
-    });
-
-    if (targetKbInput) {
-      targetKbInput.addEventListener('input', () => {
-        targetKbButtons.forEach(b => {
-          const match = b.dataset.kb === targetKbInput.value;
-          b.classList.toggle('active', match);
-          b.setAttribute('aria-pressed', String(match));
-        });
-      });
-    }
-
-    if (btnStartCompress) {
-      btnStartCompress.addEventListener('click', compressDocument);
-    }
+  const sup = K.support();
+  if (!sup.ok) {
+    error.show(`This browser cannot compress PDFs (it lacks ${sup.missing.join(', ')}). Update it, or use a recent Chrome, Edge, Firefox or Safari.`);
+    els.zone.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    return;
   }
 
-  function handleFile(file) {
-    if (!file) return;
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    const isImg = file.type.startsWith('image/');
+  // Progress box keeps its historical ids; the shared runner reads its classes.
+  const box = $('compressProgressBox');
+  $('compressCancel').setAttribute('data-cancel', '');
+  const runner = UI.runner(box, { error, button: els.start, busyLabel: 'Compressing…', onState: busy => { els.replace.disabled = busy; els.remove.disabled = busy; } });
 
-    if (!isPdf && !isImg) {
-      notifyError('That file is not a PDF, JPG or PNG. Choose a PDF or a photo of the document.');
-      return;
-    }
+  const fmtKB = bytes => (bytes / 1024).toFixed(1);
 
-    if (file.size > MAX_FILE_BYTES) {
-      notifyError(`That file is ${(file.size / 1048576).toFixed(1)} MB. Choose a file under 50 MB.`);
-      return;
-    }
-
-    currentFile = file;
-    if (fileInfoBox) fileInfoBox.classList.remove('hidden');
-    if (fileInfoText) fileInfoText.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-    if (dropzone) dropzone.classList.add('hidden');
-    if (btnStartCompress) btnStartCompress.disabled = false;
-    if (resultArea) resultArea.classList.add('hidden');
+  function dropResult() {
+    if (output) { urls.revoke(output); output = null; }
+    els.result.classList.add('hidden');
   }
 
-  async function compressDocument() {
-    if (!currentFile || isCompressing) return;
-    isCompressing = true;
-    btnStartCompress.disabled = true;
+  async function release() {
+    if (current && current.jsDoc) K.closeJs(current.jsDoc);
+    current = null;
+  }
 
-    if (progressBox) progressBox.classList.remove('hidden');
-    if (resultArea) resultArea.classList.add('hidden');
-    updateProgress(15, 'Reading document…');
+  async function clear() {
+    opening++;
+    await release();
+    dropResult();
+    error.hide();
+    els.fileBox.classList.add('hidden');
+    els.loading.classList.add('hidden');
+    els.start.disabled = true;
+    const b = $('btnCompressBrowse'); if (b) b.focus();
+  }
 
-    const objectUrls = [];
+  async function take(files, infos) {
+    const file = files[0], info = infos[0];
+    const ticket = ++opening;
+    error.hide();
+    dropResult();
+    els.loading.classList.remove('hidden');
     try {
-      const targetKB = parseInt(targetKbInput ? targetKbInput.value : '200', 10) || 200;
-      lastTargetKB = targetKB;
-      const isPdf = currentFile.type === 'application/pdf' || currentFile.name.toLowerCase().endsWith('.pdf');
-
-      let pages = [];
-
-      // A PDF that already fits is returned as it is: re-encoding its pages can only lose detail,
-      // and can even make the file larger.
-      if (isPdf && currentFile.size <= targetKB * 1024) {
-        updateProgress(100, 'Complete!');
-        displayResult(currentFile, null, 'fits');
-        return;
-      }
-
-      if (isPdf) {
-        updateProgress(30, 'Extracting document pages…');
-        const buffer = await currentFile.arrayBuffer();
-        pages = await extractPagesFromPdf(buffer, objectUrls);
-
-        if (!pages.length) {
-          throw new FileProblem('This tool compresses scanned documents and image-based PDFs. This PDF has selectable text or drawings and no page images to compress. If it is already under the portal limit, upload it as it is.');
-        }
-        // Each page image becomes one output page, so a PDF with text pages, or with more than one
-        // image on a page, would come back with pages missing. Refuse rather than drop content.
-        const pageCount = countPdfPages(buffer);
-        if (pageCount && pageCount !== pages.length) {
-          throw new FileProblem(`This PDF has ${pageCount} ${pageCount === 1 ? 'page' : 'pages'} but ${pages.length} scanned ${pages.length === 1 ? 'image' : 'images'}, so compressing it here would lose content. This tool works on PDFs where every page is one scanned image. Scan the pages again as photos and combine them with the image to PDF tool.`);
-        }
+      let next;
+      if (info.kind === 'image') {
+        next = { file, kind: 'image', info, pageCount: 1 };
       } else {
-        updateProgress(30, 'Processing document image…');
-        const url = URL.createObjectURL(currentFile);
-        objectUrls.push(url);
-        const img = new Image();
-        await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new FileProblem('That image could not be opened. Check that it is a JPG or PNG that opens on your device.')); img.src = url; });
-        pages.push({
-          width: img.naturalWidth,
-          height: img.naturalHeight,
-          imgElement: img
-        });
+        if (!sup.render) throw new K.PdfError('unsupported', 'This browser cannot draw PDF pages, which the compressor needs. Update it, or use a recent Chrome, Edge, Firefox or Safari.');
+        const opened = await UI.openPdf(file, { lib: true, js: true });
+        if (!opened.jsDoc) throw opened.previewError || new K.PdfError('damaged', `${file.name} could not be drawn. It may be damaged.`);
+        if (opened.pageCount > K.LIMITS.compressPages) { K.closeJs(opened.jsDoc); throw new K.PdfError('toolarge', `${file.name} has ${opened.pageCount} pages. The compressor redraws every page, so it works on up to ${K.LIMITS.compressPages} pages at a time. Split the PDF first, compress each part, then merge them.`); }
+        next = Object.assign({ file, kind: 'pdf', info }, opened);
       }
-
-      updateProgress(55, `Compressing ${pages.length} ${pages.length === 1 ? 'page' : 'pages'} to under ${targetKB} KB…`);
-
-      // Allocate target budget per page
-      // PDF envelope overhead ~1.5 KB
-      const targetTotalBytes = targetKB * 1024;
-      const budgetPerImage = Math.max(8192, Math.floor((targetTotalBytes - 2048) / pages.length));
-
-      const processedPages = [];
-      for (let i = 0; i < pages.length; i++) {
-        const p = pages[i];
-        updateProgress(55 + Math.round((i / pages.length) * 35), `Compressing page ${i + 1} of ${pages.length}…`);
-
-        const compressedJpeg = await compressPageImage(p, budgetPerImage);
-        processedPages.push(compressedJpeg);
-      }
-
-      updateProgress(95, 'Assembling optimized PDF…');
-      const pdfBytes = assemblePdfDocument(processedPages);
-      const outputBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-
-      updateProgress(100, 'Done!');
-      // Never hand back a PDF that is larger than the one the person started with.
-      if (isPdf && outputBlob.size >= currentFile.size) displayResult(currentFile, pages.length, 'larger');
-      else displayResult(outputBlob, pages.length);
-
-    } catch (err) {
-      if (err instanceof FileProblem) notifyError(err.message);
-      else notifyError('Compression did not finish. ' + String(err && err.message || err).replace(/\.$/, '') + '. Check that the file opens on your device, then try again.');
+      if (ticket !== opening) { if (next.jsDoc) K.closeJs(next.jsDoc); return; }
+      await release();
+      current = next;
+      els.fileText.textContent = `${file.name} (${fmtKB(file.size)} KB${next.kind === 'pdf' ? `, ${UI.plural(next.pageCount, 'page')}` : ', photo'}${next.encrypted ? ', password protected' : ''})`;
+      els.fileBox.classList.remove('hidden');
+      validateTarget();
+      Kit.announce(`${file.name} is ready to compress.`);
+    } catch (e) {
+      if (ticket !== opening) return;
+      const message = e && e.name === 'PdfError' ? e.message : `${file.name} could not be opened. Check that it opens on your device, then choose it again.`;
+      error.show(e && e.code === 'cancelled' ? `${message} Choose the file again when you have the password.` : /hoose|try/i.test(message) ? message : `${message} Choose another file.`);
+      if (!current) els.fileBox.classList.add('hidden');
     } finally {
-      objectUrls.forEach(u => URL.revokeObjectURL(u));
-      isCompressing = false;
-      btnStartCompress.disabled = false;
-      if (progressBox) progressBox.classList.add('hidden');
+      if (ticket === opening) els.loading.classList.add('hidden');
     }
   }
 
-  function updateProgress(percent, msg) {
-    if (progressBar) progressBar.style.width = `${percent}%`;
-    if (progressText) progressText.textContent = msg;
+  const dz = Kit.dropzone(els.zone, {
+    accept: ['pdf', 'image'],
+    limitBytes: K.LIMITS.fileBytes,
+    onFiles: take,
+    onReject: messages => error.show(messages.map(m => /hoose|try/i.test(m) ? m : `${m} Choose a PDF or a photo of the document.`))
+  });
+  els.replace.addEventListener('click', () => dz.open());
+  els.remove.addEventListener('click', clear);
+
+  function targetKB() { return Number(els.target.value); }
+  function validateTarget() {
+    const kb = targetKB();
+    const bad = !Number.isFinite(kb) || kb < 20 || kb > 10000;
+    els.targetError.textContent = bad ? 'Type a limit from 20 to 10000 KB.' : '';
+    els.targetError.hidden = !bad;
+    if (bad) { els.target.setAttribute('aria-invalid', 'true'); els.target.setAttribute('aria-describedby', 'targetKbError targetKbHint'); }
+    else { els.target.removeAttribute('aria-invalid'); els.target.setAttribute('aria-describedby', 'targetKbHint'); }
+    els.start.disabled = bad || !current;
+    return !bad;
   }
 
-  /**
-   * Read the page boxes of a PDF whose page dictionaries are stored uncompressed
-   * (scanner output, print-to-PDF, this site's image to PDF tool). Returns one
-   * [width, height] in points per /MediaBox found, in file order, or [] when the
-   * page dictionaries are inside compressed object streams and cannot be read here.
-   */
-  function readMediaBoxes(bytes) {
-    const text = new TextDecoder('latin1').decode(bytes);
-    const boxes = [];
-    const re = /\/MediaBox\s*\[\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s*\]/g;
-    let m;
-    while ((m = re.exec(text))) {
-      const w = Math.abs(parseFloat(m[3]) - parseFloat(m[1]));
-      const h = Math.abs(parseFloat(m[4]) - parseFloat(m[2]));
-      if (w > 1 && h > 1 && w < 20000 && h < 20000) boxes.push([w, h]);
-    }
-    return boxes;
-  }
+  els.presets.forEach(btn => btn.addEventListener('click', () => {
+    els.presets.forEach(b => { b.classList.toggle('active', b === btn); b.setAttribute('aria-pressed', String(b === btn)); });
+    els.target.value = btn.dataset.kb;
+    dropResult();
+    validateTarget();
+  }));
+  els.target.addEventListener('input', () => {
+    els.presets.forEach(b => { const m = b.dataset.kb === els.target.value; b.classList.toggle('active', m); b.setAttribute('aria-pressed', String(m)); });
+    dropResult();
+    validateTarget();
+  });
+  [els.dpi, els.grey].forEach(el => el.addEventListener('change', dropResult));
 
-  /**
-   * Count the page objects (/Type /Page, not /Pages) in a PDF whose page dictionaries are
-   * stored uncompressed. Returns 0 when none can be read (they sit in compressed object streams).
-   */
-  function countPdfPages(bytes) {
-    const text = new TextDecoder('latin1').decode(bytes);
-    return (text.match(/\/Type\s*\/Page(?![a-zA-Z])/g) || []).length;
-  }
-
-  /**
-   * Find the end of the JPEG that starts at `start`. Walks the marker segments
-   * up to the start of scan, then looks for the end-of-image marker in the
-   * entropy-coded data, where FF D9 cannot occur except as that marker. Searching
-   * for FF D9 from the start instead stops at the EXIF thumbnail many camera
-   * JPEGs carry, which yields an unreadable file and silently drops the page.
-   * Returns -1 when the bytes are not a well-formed JPEG.
-   */
-  function jpegEnd(bytes, start) {
-    const len = bytes.length;
-    let pos = start + 2;
-    while (pos + 4 <= len) {
-      if (bytes[pos] !== 0xFF) return -1;
-      const marker = bytes[pos + 1];
-      if (marker === 0xFF) { pos++; continue; }                // fill byte
-      if (marker === 0xD8 || (marker >= 0xD0 && marker <= 0xD7) || marker === 0x01) { pos += 2; continue; }
-      if (marker === 0xD9) return pos + 2;                     // empty image
-      const segLen = (bytes[pos + 2] << 8) | bytes[pos + 3];
-      if (segLen < 2) return -1;
-      if (marker === 0xDA) {                                   // start of scan: entropy-coded data follows
-        pos += 2 + segLen;
-        for (let j = pos; j < len - 1; j++) {
-          if (bytes[j] === 0xFF && bytes[j + 1] === 0xD9) return j + 2;
-        }
-        return -1;
-      }
-      pos += 2 + segLen;
-    }
-    return -1;
-  }
-
-  /**
-   * Parse PDF binary for embedded JPEG streams (/DCTDecode). Each one becomes a page.
-   * When the file's page boxes can be read and there is one image per page, the
-   * original page size is kept and the image is placed on it as the source placed it
-   * (fitted and centred); otherwise the page takes the image's own size.
-   */
-  async function extractPagesFromPdf(arrayBuffer, objectUrls) {
-    const bytes = new Uint8Array(arrayBuffer);
-    const pages = [];
-    const len = bytes.length;
-
-    let pos = 0;
-    while (pos < len - 4) {
-      if (bytes[pos] === 0xFF && bytes[pos + 1] === 0xD8 && bytes[pos + 2] === 0xFF) {
-        const start = pos;
-        const end = jpegEnd(bytes, start);
-        if (end !== -1 && (end - start) > 5000) {
-          const jpegSlice = bytes.subarray(start, end);
-          const blob = new Blob([jpegSlice], { type: 'image/jpeg' });
-          const url = URL.createObjectURL(blob);
-          objectUrls.push(url);
-          const img = new Image();
-          img.src = url;
-          try {
-            await new Promise((res, rej) => {
-              img.onload = () => res();
-              img.onerror = () => rej();
-            });
-            pages.push({
-              width: img.naturalWidth,
-              height: img.naturalHeight,
-              imgElement: img
-            });
-          } catch (e) {}
-          pos = end;
-          continue;
-        }
-      }
-      pos++;
-    }
-
-    const boxes = readMediaBoxes(bytes);
-    if (boxes.length === pages.length) {
-      pages.forEach((p, i) => { p.pageWidthPt = boxes[i][0]; p.pageHeightPt = boxes[i][1]; });
-    }
-
-    return pages;
-  }
-
-  /**
-   * Compress a single page image to fit within target bytes
-   */
-  async function compressPageImage(page, maxBytes) {
-    let scale = 1.0;
-    // Downscale if very high resolution
-    const maxDim = Math.max(page.width, page.height);
-    if (maxDim > 1600) scale = 1600 / maxDim;
-
-    const w = Math.round(page.width * scale);
-    const h = Math.round(page.height * scale);
-
-    const canvas = doc.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, w, h);
-    ctx.drawImage(page.imgElement, 0, 0, w, h);
-
-    const encode = q => new Promise(res => canvas.toBlob(res, 'image/jpeg', q));
-
-    let qLow = 0.15, qHigh = 0.90;
-    let bestBlob = await encode(qLow);
-
-    // If lowest quality exceeds maxBytes, downsample further
-    if (bestBlob.size > maxBytes && (w > 800 || h > 800)) {
-      canvas.width = Math.round(w * 0.7);
-      canvas.height = Math.round(h * 0.7);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(page.imgElement, 0, 0, canvas.width, canvas.height);
-      bestBlob = await encode(0.40);
-    } else {
-      // Binary search for highest visual quality under budget
-      for (let step = 0; step < 5; step++) {
-        const mid = (qLow + qHigh) / 2;
-        const candidate = await encode(mid);
-        if (candidate.size <= maxBytes) {
-          bestBlob = candidate;
-          qLow = mid;
-        } else {
-          qHigh = mid;
-        }
-      }
-    }
-
-    const jpegBuf = await bestBlob.arrayBuffer();
-    const jpegBytes = new Uint8Array(jpegBuf);
-
-    // Keep the original page size when it is known (so an A4 scan stays A4, with its
-    // orientation and margins); otherwise the page takes the image's size in PDF points
-    // (0.75 pt/px, the standard 96 DPI). The image is fitted to the page and centred.
-    let pw, ph, drawW, drawH;
-    if (page.pageWidthPt && page.pageHeightPt) {
-      pw = Number(page.pageWidthPt.toFixed(2));
-      ph = Number(page.pageHeightPt.toFixed(2));
-      const fit = Math.min(pw / page.width, ph / page.height);
-      drawW = Number((page.width * fit).toFixed(2));
-      drawH = Number((page.height * fit).toFixed(2));
-    } else {
-      pw = drawW = Number((page.width * 0.75).toFixed(2));
-      ph = drawH = Number((page.height * 0.75).toFixed(2));
-    }
-
-    return {
-      pageWidth: pw,
-      pageHeight: ph,
-      drawW,
-      drawH,
-      posX: Number(((pw - drawW) / 2).toFixed(2)),
-      posY: Number(((ph - drawH) / 2).toFixed(2)),
-      imgWidthPx: canvas.width,
-      imgHeightPx: canvas.height,
-      jpegBytes
-    };
-  }
-
-  function assemblePdfDocument(pages) {
-    const chunks = [];
-    const offsets = [];
-    let currentOffset = 0;
-
-    function writeStr(s) {
-      const b = new TextEncoder().encode(s);
-      chunks.push(b);
-      currentOffset += b.length;
-    }
-
-    function writeBytes(b) {
-      chunks.push(b);
-      currentOffset += b.length;
-    }
-
-    function recordObj(num) {
-      offsets[num] = currentOffset;
-      writeStr(`${num} 0 obj\n`);
-    }
-
-    writeStr('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
-    recordObj(1);
-    writeStr('<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
-
-    const numPages = pages.length;
-    const pageObjNums = [];
-    for (let i = 0; i < numPages; i++) pageObjNums.push(3 + (i * 3));
-
-    recordObj(2);
-    writeStr(`<< /Type /Pages /Kids [${pageObjNums.map(n => `${n} 0 R`).join(' ')}] /Count ${numPages} >>\nendobj\n`);
-
-    for (let i = 0; i < numPages; i++) {
-      const p = pages[i];
-      const pageNum = pageObjNums[i];
-      const contentNum = pageNum + 1;
-      const imgNum = pageNum + 2;
-
-      recordObj(pageNum);
-      writeStr(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${p.pageWidth.toFixed(2)} ${p.pageHeight.toFixed(2)}] /Contents ${contentNum} 0 R /Resources << /XObject << /Im1 ${imgNum} 0 R >> >> >>\nendobj\n`);
-
-      const streamStr = `q ${p.drawW.toFixed(2)} 0 0 ${p.drawH.toFixed(2)} ${p.posX.toFixed(2)} ${p.posY.toFixed(2)} cm /Im1 Do Q\n`;
-      const streamBytes = new TextEncoder().encode(streamStr);
-
-      recordObj(contentNum);
-      writeStr(`<< /Length ${streamBytes.length} >>\nstream\n`);
-      writeBytes(streamBytes);
-      writeStr('endstream\nendobj\n');
-
-      recordObj(imgNum);
-      writeStr(`<< /Type /XObject /Subtype /Image /Width ${p.imgWidthPx} /Height ${p.imgHeightPx} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.jpegBytes.length} >>\nstream\n`);
-      writeBytes(p.jpegBytes);
-      writeStr('\nendstream\nendobj\n');
-    }
-
-    const totalObjs = 2 + (numPages * 3);
-    const xrefOffset = currentOffset;
-    writeStr(`xref\n0 ${totalObjs + 1}\n0000000000 65535 f \n`);
-    for (let i = 1; i <= totalObjs; i++) {
-      const off = String(offsets[i] || 0).padStart(10, '0');
-      writeStr(`${off} 00000 n \n`);
-    }
-
-    writeStr(`trailer\n<< /Size ${totalObjs + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`);
-
-    const totalLength = chunks.reduce((acc, c) => acc + c.length, 0);
-    const out = new Uint8Array(totalLength);
-    let cur = 0;
-    for (const c of chunks) {
-      out.set(c, cur);
-      cur += c.length;
-    }
-    return out;
-  }
-
-  let lastTargetKB = 0;
-
-  // Say plainly whether the file meets the limit the user asked for.
-  function showTargetStatus(compBytes, compKb, kept) {
-    const statusEl = doc.getElementById('compressStatus');
-    const met = !lastTargetKB || compBytes <= lastTargetKB * 1024;
-    if (statCompressed) statCompressed.className = 'meta-stat-val ' + (met ? 'status-ok' : 'status-warning');
-    if (!statusEl) return;
-    statusEl.className = 'result-status' + (met ? '' : ' is-warning');
-    statusEl.textContent = '';
+  function show(res) {
+    const { bytes, kept, fits, pageCount, minDpi, target, original } = res;
+    dropResult();
+    output = urls.make(UI.pdfBlob(bytes));
+    UI.setDownload(els.download, output, kept ? current.file.name : `${UI.stem(current.file.name)}-compressed.pdf`);
+    const met = bytes.length <= target;
+    els.status.className = 'result-status' + (met ? '' : ' is-warning');
+    els.status.textContent = '';
     const icon = doc.createElement('i');
-    icon.className = met ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation';
+    icon.className = met ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
     icon.setAttribute('aria-hidden', 'true');
     const text = doc.createElement('span');
-    if (kept === 'fits') text.textContent = `Already under ${lastTargetKB} KB, so your original file is kept unchanged. Upload it as it is.`;
+    const kb = target / 1024;
+    if (kept === 'fits') text.textContent = `Already under ${kb} KB, so your original file is kept unchanged. Upload it as it is.`;
     else if (kept === 'larger') text.textContent = met
-      ? `Compressing would not make this file smaller, so your original is kept. It is under ${lastTargetKB} KB and ready to upload.`
-      : `This file could not get under ${lastTargetKB} KB, and compressing would not make it smaller, so your original (${compKb} KB) is kept. Try a higher limit, or upload fewer pages.`;
-    else text.textContent = met
-      ? `Under ${lastTargetKB} KB. Ready to upload.`
-      : `This file could not get under ${lastTargetKB} KB. The smallest readable version is ${compKb} KB. Try a higher limit, or upload fewer pages.`;
-    statusEl.append(icon, text);
+      ? `Already as small as it gets: compressing would not make this file smaller, so your original (${fmtKB(bytes.length)} KB) is kept. It is under ${kb} KB.`
+      : `This file could not get under ${kb} KB, and compressing would not make it smaller, so your original (${fmtKB(bytes.length)} KB) is kept. Try a higher limit, or upload fewer pages.`;
+    else text.textContent = met ? `Under ${kb} KB. Ready to upload.` : `This file could not get under ${kb} KB. The smallest readable version is ${fmtKB(bytes.length)} KB. Try a higher limit, or upload fewer pages.`;
+    els.status.append(icon, text);
+    els.orig.textContent = `${fmtKB(original)} KB`;
+    els.comp.textContent = `${fmtKB(bytes.length)} KB`;
+    els.reduction.textContent = kept ? 'None' : original > bytes.length ? `${Math.round((1 - bytes.length / original) * 100)}%` : 'None';
+    els.pages.textContent = String(pageCount);
+    els.dpiStat.textContent = kept ? 'Unchanged' : `${minDpi} DPI${minDpi < Number(els.dpi.value) ? ' (lowered to fit)' : ''}`;
+    els.note.textContent = kept ? '' : `Every page is now an image, so its text cannot be selected or searched. Zoom in on the download to check that numbers, dates and stamps are easy to read.`;
+    els.result.classList.remove('hidden');
+    if (window.ApplyReadyUI && window.ApplyReadyUI.reveal) window.ApplyReadyUI.reveal(els.result);
+    Kit.announce(text.textContent);
+    els.download.focus({ preventScroll: true });
   }
 
-  // kept: 'fits' (the original was already under the limit) or 'larger' (compressing did not help).
-  function displayResult(blob, pagesCount, kept) {
-    if (compressedBlobUrl) URL.revokeObjectURL(compressedBlobUrl);
-    compressedBlobUrl = URL.createObjectURL(blob);
+  els.start.addEventListener('click', () => {
+    if (!current || !validateTarget()) return;
+    const target = Math.floor(targetKB() * 1024);
+    const state = current;
+    const dpi = Number(els.dpi.value);
+    const grey = els.grey.checked;
+    runner.run(async (signal, progress) => {
+      const original = state.file.size;
+      if (state.kind === 'pdf' && original <= target) {
+        progress(1, 'Already under the limit.');
+        return show({ bytes: state.bytes, kept: 'fits', fits: true, pageCount: state.pageCount, target, original });
+      }
+      let res;
+      if (state.kind === 'image') {
+        progress(0.2, 'Compressing the photo…');
+        res = await K.compressImage(state.file, { targetBytes: target, dpi, grey, signal });
+      } else {
+        res = await K.compressRendered(state.jsDoc, {
+          targetBytes: target, dpi, grey, signal,
+          onProgress: (d, n, pass) => progress((d / n) * 0.9, `${pass ? 'Trying smaller: ' : ''}Compressing page ${d} of ${n}…`)
+        });
+      }
+      K.throwIfAborted(signal);
+      progress(0.95, 'Checking the compressed file…');
+      const sizes = res.sizes ? res.sizes.map(s => ({ width: s.view[2] - s.view[0], height: s.view[3] - s.view[1] })) : null;
+      await K.verify(res.bytes, { pages: state.pageCount, sizes });
+      if (state.kind === 'pdf' && res.bytes.length >= original) {
+        return show({ bytes: state.bytes, kept: 'larger', fits: original <= target, pageCount: state.pageCount, target, original });
+      }
+      return show({ bytes: res.bytes, kept: null, fits: res.fits, pageCount: res.pageCount, minDpi: res.minDpi, target, original });
+    });
+  });
 
-    const origBytes = currentFile.size;
-    const compBytes = blob.size;
-    const origKb = (origBytes / 1024).toFixed(1);
-    const compKb = (compBytes / 1024).toFixed(1);
-
-    const reductionPercent = Math.max(0, Math.round(((origBytes - compBytes) / origBytes) * 100));
-
-    if (statOriginal) statOriginal.textContent = `${origKb} KB`;
-    if (statCompressed) statCompressed.textContent = `${compKb} KB`;
-    if (statReduction) statReduction.textContent = kept ? 'Unchanged' : `${reductionPercent}% smaller`;
-    if (statPages) statPages.textContent = pagesCount ? `${pagesCount} ${pagesCount === 1 ? 'Page' : 'Pages'}` : 'Not changed';
-    showTargetStatus(compBytes, compKb, kept);
-
-    if (btnDownload) {
-      btnDownload.href = compressedBlobUrl;
-      const baseName = currentFile.name.replace(/\.[^/.]+$/, '');
-      btnDownload.download = kept ? currentFile.name : `${baseName}_Compressed_${compKb}KB.pdf`;
-    }
-
-    if (resultArea) {
-      resultArea.classList.remove('hidden');
-      resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }
-
-  function resetAll() {
-    currentFile = null;
-    if (compressedBlobUrl) {
-      URL.revokeObjectURL(compressedBlobUrl);
-      compressedBlobUrl = null;
-    }
-    if (fileInput) fileInput.value = '';
-    if (fileInfoBox) fileInfoBox.classList.add('hidden');
-    if (resultArea) resultArea.classList.add('hidden');
-    if (dropzone) dropzone.classList.remove('hidden');
-    if (btnStartCompress) btnStartCompress.disabled = true;
-  }
-
-  if (doc.readyState === 'loading') {
-    doc.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  Kit.guardUnload(() => runner.busy);
 })();

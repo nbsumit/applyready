@@ -9,7 +9,7 @@
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Compress PDF to 100 KB, 200 KB, 300 KB, 500 KB Online | ApplyReady</title>
-  <meta name="description" content="Bring a scanned PDF under a portal size limit such as 100, 200 or 500 KB. Runs in your browser, keeps the original if it already fits, and shows the result in exact bytes.">
+  <meta name="description" content="Bring a scanned PDF under a portal size limit such as 100, 200 or 500 KB. Runs in your browser, keeps every page in order, keeps the original if it already fits, and checks the result before you download it.">
   <link rel="canonical" href="https://applyready.in/compress-pdf.html">
 
   <meta property="og:type" content="website">
@@ -45,105 +45,114 @@
   <link rel="stylesheet" href="css/app.css?v=20261118">
   <!-- shell:styles:end -->
 
-  <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "ApplyReady PDF Compressor",
-    "url": "https://applyready.in/compress-pdf.html",
-    "description": "Free in-browser PDF compressor. Reduce scanned certificates and document PDFs to under 100 KB, 200 KB, 300 KB or 500 KB for job portals and application forms, without uploading the file.",
-    "applicationCategory": "UtilitiesApplication",
-    "operatingSystem": "All",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "INR"
-    }
-  }
-  </script>
-
-  <!-- BreadcrumbList Schema -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
+    "@graph": [
       {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://applyready.in/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Image Tools",
-        "item": "https://applyready.in/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 3,
-        "name": "Compress PDF",
-        "item": "https://applyready.in/compress-pdf.html"
-      }
-    ]
-  }
-  </script>
-
-  <!-- FAQPage Schema -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Why do job portals limit PDF sizes?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Smaller files upload faster on slow connections, take less storage, and open quickly for the person reviewing applications. The limit is set by each portal, so check the number printed next to the upload slot."
+        "@type": "WebApplication",
+        "name": "ApplyReady Compress PDF",
+        "url": "https://applyready.in/compress-pdf.html",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any modern browser",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
         }
       },
       {
-        "@type": "Question",
-        "name": "Does this tool upload my certificates to a server?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "No. ApplyReady reads and recompresses the PDF inside your web browser. Your certificates, marks and personal details never leave your device."
-        }
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://applyready.in/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "PDF tools",
+            "item": "https://applyready.in/tools.html#pdf"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Compress PDF",
+            "item": "https://applyready.in/compress-pdf.html"
+          }
+        ]
       },
       {
-        "@type": "Question",
-        "name": "How does the tool keep text on the compressed PDF readable?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "It works on PDFs whose pages are images, such as scans and phone photos. Each page image is limited to 1,600 pixels on its longer side and re-encoded at the highest quality that fits that page's share of your limit. Always zoom in on the smallest text before you upload."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Can I convert photos of certificates directly to a compressed PDF?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. You can upload photo scans (JPG or PNG) directly. The compressor puts them into a PDF and aims for your chosen limit. If the limit cannot be met at a readable quality, it tells you the smallest size it reached."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What if my PDF is already under the limit?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "The tool keeps your original file unchanged and says so. Compressing a file that already fits would only lose detail."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What should I do if my PDF file is still too large?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Remove pages the form does not ask for, rebuild the PDF from the original page images at a lower quality in Image to PDF, or split the document across the upload slots the portal provides."
-        }
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Why do job portals limit PDF sizes?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Smaller files upload faster on slow connections, take less storage, and open quickly for the person reviewing applications. The limit is set by each portal, so check the number printed next to the upload slot."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will the text in my PDF stay selectable?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. To reach a size limit, every page is redrawn as an image and saved as a JPEG. The pages look the same, but their text can no longer be selected, copied or searched. This suits scanned documents and photos of documents best; a PDF exported from a word processor is usually small enough already."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does the tool keep the pages readable?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Each page is drawn at the resolution you choose, 150 DPI by default, and saved at the highest JPEG quality that fits that page's share of your limit. Only when the lowest quality is still too large is the resolution lowered, down to 50 DPI, and the result says so. Always zoom in on the smallest text before you upload."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does compressing change the number or size of pages?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The compressed PDF has the same number of pages, in the same order, with the same page sizes and orientation. The tool opens the new file again and checks this before it offers the download."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I compress a photo of a certificate directly?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Choose a JPG, PNG or WebP photo and it becomes a one-page A4 PDF under your limit. If the limit cannot be met at a readable quality, the tool tells you the smallest size it reached."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What if my PDF is already under the limit?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The tool keeps your original file unchanged and says so. Compressing a file that already fits would only lose detail. It also keeps the original when compressing would make the file larger, which can happen with PDFs that are mostly text."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What should I do if my PDF file is still too large?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Remove pages the form does not ask for, turn on Black and white, choose a lower resolution, or split the document across the upload slots the portal provides."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does this tool upload my certificates to a server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. ApplyReady reads and recompresses the PDF inside your web browser. Your certificates, marks and personal details never leave your device."
+            }
+          }
+        ]
       }
     ]
   }
@@ -221,14 +230,14 @@
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
         <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
-          <li class="breadcrumb-item"><a href="/">Image tools</a></li>
+          <li class="breadcrumb-item"><a href="tools.html#pdf">PDF tools</a></li>
           <li class="breadcrumb-item active" aria-current="page">Compress PDF</li>
         </ol>
       </nav>
 
       <header class="page-head">
         <h1 class="page-title">Compress PDF to 100 KB, 200 KB, 300 KB, 500 KB Online</h1>
-        <p class="page-lede">Bring a scanned certificate, mark sheet, experience letter or ID proof under a job portal's size limit. Set the limit, compress, and check the result in exact bytes. The file stays in your browser.</p>
+        <p class="page-lede">Bring a scanned certificate, mark sheet, experience letter or ID proof under a job portal's size limit. Set the limit, compress, and compare the size before and after. Every page is kept, and the file stays in your browser.</p>
       </header>
 
       <!-- PDF Compressor Grid -->
@@ -245,24 +254,29 @@
         </div>
       </div>
       <div class="ws-stage">
+        <div class="notice notice--error" id="compressError" role="alert" hidden><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"></div></div>
         <div id="compressDropzone" class="dropzone" role="group" aria-label="Upload a PDF to compress">
-          <input type="file" id="compressFileInput" accept="application/pdf,image/jpeg,image/png" class="hidden" tabindex="-1" aria-hidden="true">
+          <input type="file" id="compressFileInput" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp" class="hidden" tabindex="-1" aria-hidden="true">
           <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
           <h2 class="dropzone__title">Add the PDF to make smaller</h2>
-          <p class="dropzone__text">A certificate, mark sheet or scanned document. Photos of a document work too.</p>
+          <p class="dropzone__text">A scanned certificate, mark sheet or ID proof. A photo of a document works too.</p>
           <button type="button" id="btnCompressBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose file</button>
-          <p class="dropzone__hint">PDF, JPG or PNG. Compressed on this device, never uploaded.</p>
+          <p class="dropzone__hint">PDF up to 100 MB and 300 pages, or a JPG, PNG or WebP photo. Compressed on this device, never uploaded.</p>
         </div>
+        <div id="compressLoading" class="pdf-loading hidden" role="status"><span class="pdf-spinner" aria-hidden="true"></span> Opening the file…</div>
         <div class="ws-note">
           <div class="ws-note__body">
-            <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
-            <p class="ws-note__title">Ready to compress</p>
-            <p>Check the maximum file size on the right, then press Compress PDF.</p>
+            <i class="fa-solid fa-file-image" aria-hidden="true"></i>
+            <p class="ws-note__title">Pages become pictures</p>
+            <p>To reach a size limit, every page is redrawn as an image. Text in the result can no longer be selected or searched, so this suits scans and photos of documents best. Set the limit on the right, then press Compress PDF.</p>
           </div>
         </div>
-        <div id="compressProgressBox" class="ws-progress hidden" role="status">
-          <div class="progress"><span id="compressProgressBar" class="progress-bar" style="width: 0%;"></span></div>
-          <p id="compressProgressText" class="progress-text">Processing document…</p>
+        <div id="compressProgressBox" class="ws-progress pdf-progress hidden">
+          <div class="pdf-progress__row">
+            <p id="compressProgressText" class="progress-text">Processing document…</p>
+            <button type="button" class="btn btn-sm" id="compressCancel">Cancel</button>
+          </div>
+          <div class="progress" role="progressbar" aria-labelledby="compressProgressText" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="compressProgressBar" class="progress-bar" style="width:0%"></span></div>
         </div>
         <div id="compressResultArea" class="ws-result hidden">
           <p id="compressStatus" class="result-status" role="status"></p>
@@ -270,11 +284,12 @@
             <dl class="size-compare__item"><dt class="size-compare__label">Before</dt><dd id="statOrigSize">--</dd></dl>
             <span class="size-compare__arrow" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
             <dl class="size-compare__item"><dt class="size-compare__label">After</dt><dd id="statCompSize">--</dd></dl>
-            <dl class="size-compare__foot"><div><dt>Reduction</dt><dd id="statReduction">--</dd></div><div><dt>Pages</dt><dd id="statCompPages">--</dd></div></dl>
+            <dl class="size-compare__foot"><div><dt>Reduction</dt><dd id="statReduction">--</dd></div><div><dt>Pages</dt><dd id="statCompPages">--</dd></div><div><dt>Resolution</dt><dd id="statCompDpi">--</dd></div></dl>
           </div>
+          <p class="field-hint" id="compressNote"></p>
           <div class="ws-result__actions">
             <a id="btnDownloadCompressedPdf" class="btn btn-primary btn-lg" href="#" download="Compressed_Document.pdf"><i class="fa-solid fa-download" aria-hidden="true"></i> Download compressed PDF</a>
-            <a href="image-to-pdf.html" class="btn btn-lg"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Combine images into a PDF</a>
+            <a href="merge-pdf.html" class="btn btn-lg"><i class="fa-solid fa-object-group" aria-hidden="true"></i> Merge with other PDFs</a>
           </div>
         </div>
       </div>
@@ -285,17 +300,33 @@
           <div class="target-grid" role="group" aria-labelledby="targetKbLabel">
             <button type="button" class="chip preset-kb-btn" data-kb="100" aria-pressed="false">100 KB <span class="chip-sub">strict portals</span></button>
             <button type="button" class="chip preset-kb-btn active" data-kb="200" aria-pressed="true">200 KB <span class="chip-sub">most common</span></button>
-            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">Larger documents</span></button>
+            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">a few pages</span></button>
             <button type="button" class="chip preset-kb-btn" data-kb="500" aria-pressed="false">500 KB <span class="chip-sub">larger scans</span></button>
           </div>
           <div class="field">
             <label for="targetKbInput" class="field-label">Or type the limit from your form</label>
             <div class="input-unit">
-              <input type="number" id="targetKbInput" class="input" value="200" min="20" max="10000" step="10" inputmode="numeric">
+              <input type="number" id="targetKbInput" class="input" value="200" min="20" max="10000" step="10" inputmode="numeric" aria-describedby="targetKbHint">
               <span class="input-unit__text" aria-hidden="true">KB</span>
             </div>
-            <p class="field-hint">Image quality is lowered only as far as needed to fit. Text stays sharp where it can.</p>
+            <p class="field-hint" id="targetKbHint">From 20 to 10000 KB. Quality is lowered only as far as the limit needs.</p>
+            <p class="field-error" id="targetKbError" hidden></p>
           </div>
+        </div>
+        <div class="ws-section">
+          <h2 class="ws-section__title">Pages</h2>
+          <div class="field">
+            <label for="compressDpi" class="field-label">Resolution</label>
+            <select id="compressDpi">
+              <option value="200">200 DPI, sharpest</option>
+              <option value="150" selected>150 DPI, balanced (recommended)</option>
+              <option value="110">110 DPI, smaller</option>
+              <option value="72">72 DPI, smallest</option>
+            </select>
+            <p class="field-hint">The starting sharpness of each page. If the limit is tight, it is lowered further, down to 50 DPI.</p>
+          </div>
+          <label class="switch" for="compressGrey"><span>Black and white (greyscale)</span><input type="checkbox" id="compressGrey" role="switch"></label>
+          <p class="field-hint">Greyscale makes files smaller. Leave it off if a document has coloured stamps or photos.</p>
         </div>
       </div>
       <div class="ws-action">
@@ -323,58 +354,53 @@
           <li><strong>Check the result before you upload.</strong> Open the download and zoom in on registration numbers, dates, signatures and stamps. If any of them is hard to read, the person checking your application will find it hard too, so try a higher target or rescan the page.</li>
           <li><strong>Keep your original.</strong> Compression is meant for the upload copy. Store the untouched scan in a safe place for later applications and for document checks after an offer.</li>
         </ol>
+        <h3>How it works, and what changes</h3>
+        <p>Each page is drawn by your browser at the resolution you choose and saved as a JPEG, at the highest quality that fits that page's share of your limit. The new PDF has the same number of pages, in the same order, with the same page sizes and orientation, and it is opened again and checked before you can download it. Because every page becomes a picture, text in the result can no longer be selected or searched: this is the right trade for scans and phone photos, which are pictures already, and a poor one for a PDF exported from a word processor, which is usually small enough as it is. Files over 100 MB or 300 pages are refused with a message, and the work can be cancelled at any time.</p>
+        <p>To bring several documents in under one limit, put them together with <a href="merge-pdf.html">Merge PDF</a> first, then compress the result. To drop pages the portal does not ask for, use <a href="organize-pdf.html">Organise PDF pages</a>, or send each section to its own upload slot with <a href="split-pdf.html">Split PDF</a>.</p>
         <h3>Why a PDF can stay large</h3>
         <p>A PDF made from photos or scans is mostly picture data, and picture data can be reduced. Very large pages, many pages, or photographs taken at the full resolution of a modern phone camera are the usual causes of large files. If a file is still above the limit at the lowest target you can use, split the document into the sections the portal asks for, or retake the photos with the page filling the frame so that no pixels are wasted on the desk around it. <a href="guides/compress-pdf-for-upload-portals.html">Getting a scanned PDF under a portal's limit</a> explains the order of changes in more detail.</p>
         <h3>What happens to your file</h3>
         <p>The document is read, compressed and rebuilt inside your browser tab. Nothing is sent to a server, so a mark sheet or ID proof never leaves your device. Closing the tab clears it.</p>
       </section>
 
-      <!-- Frequently Asked Questions (FAQ) Section -->
-
-      <section class="faq-section">
-        <h2>Frequently Asked Questions</h2>
-
-        <details class="faq-item">
-          <summary class="faq-question">Why do job portals limit PDF sizes?</summary>
-          <div class="faq-answer">
-            <p>Smaller files upload faster on slow connections, take less storage, and open quickly for the person reviewing applications. The limit is set by each portal, so check the number printed next to the upload slot.</p>
-          </div>
-        </details>
-
-        <details class="faq-item">
-          <summary class="faq-question">Does this tool upload my certificates to a server?</summary>
-          <div class="faq-answer">
-            <p>No. ApplyReady reads and recompresses the PDF inside your web browser. Your certificates, marks and personal details never leave your device.</p>
-          </div>
-        </details>
-
-        <details class="faq-item">
-          <summary class="faq-question">How does the tool keep text on the compressed PDF readable?</summary>
-          <div class="faq-answer">
-            <p>It works on PDFs whose pages are images, such as scans and phone photos. Each page image is limited to 1,600 pixels on its longer side and re-encoded at the highest quality that fits that page's share of your limit. Always zoom in on the smallest text before you upload.</p>
-          </div>
-        </details>
-
-        <details class="faq-item">
-          <summary class="faq-question">Can I convert photos of certificates directly to a compressed PDF?</summary>
-          <div class="faq-answer">
-            <p>Yes. You can upload photo scans (JPG or PNG) directly. The compressor puts them into a PDF and aims for your chosen limit. If the limit cannot be met at a readable quality, it tells you the smallest size it reached.</p>
-          </div>
-        </details>
-
-        <details class="faq-item">
-          <summary class="faq-question">What if my PDF is already under the limit?</summary>
-          <div class="faq-answer">
-            <p>The tool keeps your original file unchanged and says so. Compressing a file that already fits would only lose detail.</p>
-          </div>
-        </details>
-
-        <details class="faq-item">
-          <summary class="faq-question">What should I do if my PDF file is still too large?</summary>
-          <div class="faq-answer">
-            <p>Remove pages the form does not ask for, rebuild the PDF from the original page images at a lower quality in Image to PDF, or split the document across the upload slots the portal provides.</p>
-          </div>
-        </details>
+      <section class="faq-section" aria-labelledby="faqHeading">
+        <div class="faq-header">
+          <h2 id="faqHeading" class="faq-title">Questions</h2>
+        </div>
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary class="faq-question"><span>Why do job portals limit PDF sizes?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+            <div class="faq-answer"><p>Smaller files upload faster on slow connections, take less storage, and open quickly for the person reviewing applications. The limit is set by each portal, so check the number printed next to the upload slot.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question"><span>Will the text in my PDF stay selectable?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+            <div class="faq-answer"><p>No. To reach a size limit, every page is redrawn as an image and saved as a JPEG. The pages look the same, but their text can no longer be selected, copied or searched. This suits scanned documents and photos of documents best; a PDF exported from a word processor is usually small enough already.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question"><span>How does the tool keep the pages readable?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+            <div class="faq-answer"><p>Each page is drawn at the resolution you choose, 150 DPI by default, and saved at the highest JPEG quality that fits that page's share of your limit. Only when the lowest quality is still too large is the resolution lowered, down to 50 DPI, and the result says so. Always zoom in on the smallest text before you upload.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question"><span>Does compressing change the number or size of pages?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+            <div class="faq-answer"><p>No. The compressed PDF has the same number of pages, in the same order, with the same page sizes and orientation. The tool opens the new file again and checks this before it offers the download.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question"><span>Can I compress a photo of a certificate directly?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+            <div class="faq-answer"><p>Yes. Choose a JPG, PNG or WebP photo and it becomes a one-page A4 PDF under your limit. If the limit cannot be met at a readable quality, the tool tells you the smallest size it reached.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question"><span>What if my PDF is already under the limit?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+            <div class="faq-answer"><p>The tool keeps your original file unchanged and says so. Compressing a file that already fits would only lose detail. It also keeps the original when compressing would make the file larger, which can happen with PDFs that are mostly text.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question"><span>What should I do if my PDF file is still too large?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+            <div class="faq-answer"><p>Remove pages the form does not ask for, turn on Black and white, choose a lower resolution, or split the document across the upload slots the portal provides.</p></div>
+          </details>
+          <details class="faq-item">
+            <summary class="faq-question"><span>Does this tool upload my certificates to a server?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+            <div class="faq-answer"><p>No. ApplyReady reads and recompresses the PDF inside your web browser. Your certificates, marks and personal details never leave your device.</p></div>
+          </details>
+        </div>
       </section>
 
       <section class="related-guides-section" aria-labelledby="guidesHeading">
@@ -470,6 +496,10 @@
 
   <script src="js/components.js?v=20261118" defer></script>
   <script src="js/site.js?v=20261118"></script>
+  <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/file-kit.js?v=20261118"></script>
+  <script src="js/lib/pdf-kit.js?v=20261118"></script>
+  <script src="js/lib/pdf-ui.js?v=20261118"></script>
   <script src="js/compress-pdf.js?v=20261118"></script>
 </body>
 </html>
