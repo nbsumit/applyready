@@ -1,7 +1,7 @@
 /* The 404 page: sends old addresses of pages that moved to their new page, explains pages that
-   were removed and where their content went, and searches the tools for the words in a mistyped
+   were removed and where their content went, and offers the pages whose words match a mistyped
    address. GitHub Pages serves 404.html for every missing path, so this one map covers them all.
-   Runs after js/search.js (both deferred), so the inline search box already exists. */
+   Runs after js/search.js (both deferred), so window.ApplyReadySearch already exists. */
 (function () {
   'use strict';
   const path = decodeURIComponent(location.pathname).replace(/^\/+/, '').toLowerCase();
@@ -48,11 +48,11 @@
   const title = document.getElementById('notFoundTitle');
   const text = document.getElementById('notFoundText');
   const box = document.getElementById('notFoundMoved');
-  const removed = REMOVED.find(r => r.match.test(path));
-  if (removed && title && text && box) {
-    title.textContent = removed.title;
-    text.textContent = removed.text;
-    box.replaceChildren(...removed.links.map(([href, label, icon], i) => {
+  if (!title || !text || !box) return;
+
+  // Put links in the page flow, above the search box and the general buttons, so nothing covers them.
+  function showLinks(links) {
+    box.replaceChildren(...links.map(([href, label, icon], i) => {
       const a = document.createElement('a');
       a.href = href;
       a.className = i === 0 ? 'btn btn-primary btn-lg' : 'btn btn-lg';
@@ -66,16 +66,28 @@
     // The general buttons stay below; the first of them is no longer the main action.
     const primary = box.parentElement.querySelector('.actions:not(#notFoundMoved) .btn-primary');
     if (primary) primary.classList.remove('btn-primary');
+  }
+
+  const removed = REMOVED.find(r => r.match.test(path));
+  if (removed) {
+    title.textContent = removed.title;
+    text.textContent = removed.text;
+    showLinks(removed.links);
     return;
   }
 
-  // A mistyped or old address often still names the task ("merge-pdfs.html"): search for those words.
-  const words = (path.split('/').pop() || '').replace(/\.html?$/, '').replace(/[-_.+]+/g, ' ').replace(/\b(index|page|html)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  // A mistyped or old address often still names the task ("merge-pdfs.html"). Offer the pages that
+  // match every word of it as plain links. A loose match (one letter off, or only some of the words)
+  // is not offered: a wrong guess sends people somewhere unrelated, and the search box is there.
+  const STOP = new Set(['a', 'an', 'the', 'my', 'for', 'of', 'in', 'on', 'and', 'or', 'how', 'to', 'do', 'i', 'me', 'us', 'with', 'from', 'into', 'online', 'free', 'tool', 'tools', 'page', 'pages', 'index', 'html', 'htm', 'www', 'new', 'old']);
+  const tokens = (path.split('/').pop() || '').replace(/\.html?$/, '').split(/[^a-z0-9]+/).filter(t => t && !STOP.has(t));
   const search = window.ApplyReadySearch;
-  if (!words || !search || !search.search(words, 1).length) return;
-  if (search.mountInline) search.mountInline();
-  const input = document.querySelector('[data-search-inline] input');
-  if (!input) return;
-  input.value = words;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
+  if (!tokens.length || tokens.join('').length < 2 || !search) return;
+  const wordsOf = item => [item.name, item.path.replace(/\.html$/, ''), ...(item.keywords || [])].join(' ').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  // "pdfs" matches "pdf", "merg" matches "merge"; short fragments and typos do not count.
+  const covers = (words, t) => words.some(w => w === t || (t.length >= 4 && w.startsWith(t)) || (w.length >= 3 && t.startsWith(w) && t.length - w.length <= 2));
+  const matches = search.search(tokens.join(' '), 8).filter(item => { const w = wordsOf(item); return tokens.every(t => covers(w, t)); }).slice(0, 3);
+  if (!matches.length) return;
+  text.textContent = `This address does not lead anywhere, but its words match the ${matches.length === 1 ? 'page' : 'pages'} below. You can also search for what you need, or start from one of the general pages.`;
+  showLinks(matches.map(item => ['/' + item.path, item.name, 'fa-' + (item.icon || 'arrow-right')]));
 })();

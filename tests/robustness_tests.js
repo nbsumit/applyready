@@ -150,10 +150,46 @@ function mixedPdf(jpeg) {
   await page.goto(origin + '/ssc-photo-signature-size.html');
   const removed = await page.evaluate(() => ({ h1: document.querySelector('h1').textContent, links: [...document.querySelectorAll('#notFoundMoved a')].map(a => a.getAttribute('href')), shown: !document.getElementById('notFoundMoved').hidden }));
   ok(removed.h1 === 'This page was removed' && removed.shown && removed.links.includes('/passport-photo-resizer.html') && removed.links.includes('/signature-resizer.html'), `a removed page explains itself and links its replacements (${JSON.stringify(removed)})`);
-  await page.goto(origin + '/merge-pdfs.html');
-  await page.waitForFunction(() => document.querySelector('[data-search-inline] .search-result'), null, { timeout: 10000 });
-  const guess = await page.evaluate(() => ({ q: document.querySelector('[data-search-inline] input').value, first: document.querySelector('[data-search-inline] .search-result').getAttribute('href'), h1: document.querySelector('h1').textContent }));
-  ok(guess.h1 === 'Page not found' && guess.q === 'merge pdfs' && guess.first === '/merge-pdf.html', `a mistyped address searches for its words (${JSON.stringify(guess)})`);
+  // A mistyped address offers the pages that match all of its words as plain links in the page,
+  // never as an open dropdown that would sit over the buttons; a loose match offers nothing.
+  const offered = async p => {
+    await page.goto(origin + p);
+    await page.waitForLoadState('load');
+    return page.evaluate(() => ({
+      h1: document.querySelector('h1').textContent,
+      links: document.getElementById('notFoundMoved').hidden ? [] : [...document.querySelectorAll('#notFoundMoved a')].map(a => a.getAttribute('href')),
+      q: document.querySelector('[data-search-inline] input').value,
+      dropdown: [...document.querySelectorAll('[data-search-inline] .search-result')].some(r => r.offsetParent)
+    }));
+  };
+  const merge = await offered('/merge-pdfs.html');
+  ok(merge.h1 === 'Page not found' && merge.links[0] === '/merge-pdf.html' && !merge.q && !merge.dropdown, `a mistyped address links the page it names, with no dropdown open (${JSON.stringify(merge)})`);
+  const contactUs = await offered('/contact-us.html');
+  ok(contactUs.links.length === 1 && contactUs.links[0] === '/contact.html' && !contactUs.dropdown, `/contact-us.html links the contact page (${JSON.stringify(contactUs)})`);
+  for (const p of ['/guides/nope/deep.html', '/resize-image-to-30kb.html', '/no/such/page.html']) {
+    const r = await offered(p);
+    ok(r.h1 === 'Page not found' && !r.links.length && !r.dropdown, `${p}: a loose match is not offered as a guess (${JSON.stringify(r)})`);
+  }
+  // Every button, clicked with the mouse where a person would click it, opens its own page.
+  for (const width of [1280, 360]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const p of ['/merge-pdfs.html', '/guides/nope/deep.html', '/contact-us.html']) {
+      await page.goto(origin + p);
+      await page.waitForLoadState('load');
+      const hrefs = await page.evaluate(() => [...document.querySelectorAll('.status-page .actions a')].map(a => a.getAttribute('href')));
+      for (const [i, href] of hrefs.entries()) {
+        if (i) { await page.goto(origin + p); await page.waitForLoadState('load'); }
+        const btn = page.locator('.status-page .actions a').nth(i);
+        await btn.scrollIntoViewIfNeeded();
+        const box = await btn.boundingBox();
+        const atPoint = await page.evaluate(([x, y]) => { const el = document.elementFromPoint(x, y); const a = el && el.closest('a'); return a ? a.getAttribute('href') : String(el && el.className); }, [box.x + box.width / 2, box.y + box.height / 2]);
+        ok(atPoint === href, `${p} at ${width}px: nothing covers the "${href}" button (found ${atPoint})`);
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        await page.waitForURL(u => new URL(u).pathname === href, { timeout: 10000 });
+      }
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
   for (const p of ['/no/such/page.html', '/offline.html']) {
     await page.goto(origin + p);
     const buttons = await page.evaluate(() => [...document.querySelectorAll('.status-page .actions a')].map(a => [a.textContent.trim(), a.getAttribute('href')]));
