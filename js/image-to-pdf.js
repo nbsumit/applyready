@@ -478,7 +478,7 @@
 
       if (resultArea) {
         resultArea.classList.remove('hidden');
-        resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        resultArea.scrollIntoView({ behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'), block: 'nearest' });
       }
 
     } catch (e) {

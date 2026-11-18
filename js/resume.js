@@ -1602,7 +1602,7 @@
               setEntryOpen(target.closest('.entry'), true);
               if (!iss.targetField) section.querySelector('.accordion-header').focus();
               else target.focus();
-              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              target.scrollIntoView({ behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'), block: 'center' });
             }
           }, 100);
         });
@@ -1731,7 +1731,7 @@
       getEl('tabDownload').focus({ preventScroll: true });
     });
     const openExport = getEl('btnOpenExport');
-    if (openExport) openExport.addEventListener('click', () => { getEl('tabEdit').click(); getEl('tabReview').click(); getEl('formPanel').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+    if (openExport) openExport.addEventListener('click', () => { getEl('tabEdit').click(); getEl('tabReview').click(); getEl('formPanel').scrollIntoView({ block: 'start', behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth') }); });
 
     // Quick PDF button
     const btnQuickPDF = getEl('btnQuickPDF');
@@ -1941,7 +1941,7 @@
         const secEl = getEl('sec-' + val);
         if (secEl) {
           secEl.classList.add('open');
-          secEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          secEl.scrollIntoView({ behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'), block: 'center' });
         }
       });
     }

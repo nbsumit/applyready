@@ -30,8 +30,8 @@
     const box = $('ydDone');
     $('ydDoneText').textContent = message;
     box.hidden = false;
+    // Moving focus here reads the message; announcing it as well would read it twice.
     box.focus();
-    announce(message);
   }
   function panelNotice(id, message, isError) {
     const box = $(id);
