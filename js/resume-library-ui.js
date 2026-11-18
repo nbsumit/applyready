@@ -776,7 +776,9 @@
     doc.addEventListener('visibilitychange', () => { if (doc.visibilityState === 'hidden') flush(); });
     window.addEventListener('pagehide', () => { flush(); });
     window.addEventListener('beforeunload', e => {
-      if (!state.loaded || state.editor.isEmpty() || !hasUnsaved()) return;
+      if (!state.loaded || state.editor.isEmpty()) return;
+      // Without lasting storage everything on screen is lost on close, saved in memory or not.
+      if (state.persistent && !hasUnsaved()) return;
       if (state.savingOn && state.persistent && !state.conflict && state.phase !== 'error') { flush(); return; }
       e.preventDefault();
       e.returnValue = '';
@@ -814,11 +816,12 @@
     const params = new URLSearchParams(location.search);
     const wanted = params.get('id');
     let target = null;
+    let linkProblem = '';
     if (wanted) {
       target = LIB.ID_PATTERN.test(wanted) ? findRecord(wanted) : null;
       if (!target) {
         const damaged = state.damaged.some(d => d.raw && d.raw.id === wanted);
-        state.notFound = damaged
+        linkProblem = damaged
           ? 'The resume in this link is damaged and cannot be opened. Open My resumes to export its raw data or delete it.'
           : 'The resume in this link is not saved in this browser. Saved resumes stay in the browser and on the device where they were made.';
       }
@@ -839,6 +842,7 @@
     } else {
       useResume(newRecordFor(state.editor.blank(), LIB.DEFAULT_NAME), { stored: false, unsavedBaseline: true });
     }
+    state.notFound = linkProblem;
     state.loaded = true;
     if (layout) layout.removeAttribute('aria-busy');
     scheduleSave();

@@ -1466,6 +1466,11 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .home-continue .tool-grid + .tool-grid { margin-top: var(--s-3); }
 .cs-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-2) var(--s-4); padding-top: var(--s-3); border-top: var(--bw) solid var(--c-line); }
 
+/* Below 1000px the bottom bar carries Download, but My resumes stays one tap away in the head. */
+@media (max-width: 999px) {
+  .rb-head__actions { display: flex; }
+  .rb-head__actions #btnOpenExport { display: none; }
+}
 @media (max-width: 639px) {
   .rl-row { grid-template-columns: 28px minmax(0, 1fr); }
   .rl-row__actions { grid-column: 1 / -1; justify-content: flex-start; }
