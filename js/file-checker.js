@@ -61,7 +61,12 @@
     let error = bad.length ? 'Enter numbers of 0 or more.' : '';
     if (!error && fields.minKB.value && fields.maxKB.value && fields.minKB.value > fields.maxKB.value) { error = 'The minimum size is larger than the maximum.'; bad.push('minKB', 'maxKB'); }
     if (!error && ((fields.width.value && !Number.isInteger(fields.width.value)) || (fields.height.value && !Number.isInteger(fields.height.value)))) { error = 'Pixel sizes are whole numbers.'; bad.push('width', 'height'); }
-    ['minKB', 'maxKB', 'width', 'height', 'maxPages'].forEach(k => els[k].setAttribute('aria-invalid', String(bad.includes(k))));
+    // A field marked invalid points to the message, so a screen reader can find it again from the field.
+    ['minKB', 'maxKB', 'width', 'height', 'maxPages'].forEach(k => {
+      els[k].setAttribute('aria-invalid', String(bad.includes(k)));
+      if (bad.includes(k)) els[k].setAttribute('aria-describedby', 'fcReqError');
+      else els[k].removeAttribute('aria-describedby');
+    });
     els.reqError.textContent = error;
     els.reqError.hidden = !error;
     const req = { formats, minKB: fields.minKB.value || 0, maxKB: fields.maxKB.value || 0, width: fields.width.value || 0, height: fields.height.value || 0, pixelMode, maxPages: fields.maxPages.value || 0 };
@@ -108,8 +113,20 @@
     }
     if (ctx.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
     const report = await Inspect.inspect(file, { name: file.name, type: file.type, PDFLib });
+    if (file.originalName) {
+      // The drop zone removed hidden direction characters from the name (see Kit.dropzone).
+      report.warnings.unshift({ level: 'warning', text: `The file’s name contains hidden characters that reverse the direction of text, which can make it show a false extension. Without them the name is “${file.name}”${report.extension ? `, so it really ends in .${report.extension}` : ''}. Rename the file before you upload it, and be careful with files you did not make yourself.` });
+    }
     let thumb = null;
-    if (report.real.kind === 'image' && report.deep && report.image) {
+    const maxPixels = (window.ApplyReadyImageOps && window.ApplyReadyImageOps.MAX_PIXELS) || 50e6;
+    if (report.real.kind === 'image' && report.deep && report.image && report.image.width * report.image.height > maxPixels) {
+      // A small file can declare a huge picture. Decoding it, even for a preview, can take gigabytes
+      // of memory and close the tab, so it is not opened at all.
+      const img = report.image;
+      report.tooLarge = true;
+      report.canStrip = false;
+      report.warnings.unshift({ level: 'warning', text: `This image is ${Math.round(img.width * img.height / 1e6)} megapixels (${group(img.width)} × ${group(img.height)} px), too large to open safely in a browser, so it was not previewed or tested. Many phones and upload forms cannot open a picture this large; make it smaller before you upload it.` });
+    } else if (report.real.kind === 'image' && report.deep && report.image) {
       // Decoding a small preview is also the test that the browser can open the picture at all.
       thumb = await Kit.thumbnail(file, 96);
       report.decodes = !!thumb;
@@ -194,6 +211,7 @@
       row('Text in the file', texts),
       img.comments && img.comments.length ? row('Comment', img.comments.join('; ')) : '',
       r.real.kind === 'image' ? row('Other metadata', r.metadata.filter(m => !/^EXIF/.test(m)).join(', ') || 'None') : '',
+      r.tooLarge ? row('Opens in this browser', 'Not tested', 'Too large to open safely', 'fc-warn') : '',
       r.decodes != null ? row('Opens in this browser', r.decodes ? 'Yes' : 'No', r.decodes ? '' : 'The file may be damaged', r.decodes ? '' : 'fc-risk') : ''
     ]);
   }
@@ -277,6 +295,9 @@
     }
     if ((r.pdf || (r.office && r.office.key !== 'zip')) && r.metadata.length) {
       return `<div class="fc-clean"><p class="field-hint">PDF and Office files are only inspected here, not changed. To remove these details, export a fresh copy from the program that made the file; <a href="#howHeading">see how</a>.</p></div>`;
+    }
+    if (r.tooLarge && r.metadata.length) {
+      return `<div class="fc-clean"><p class="field-hint">This image is too large to check safely in a browser, so its metadata is not removed here. Make it smaller on your phone or computer first, then check it again.</p></div>`;
     }
     if (r.real.kind === 'image' && r.metadata.length && !r.canStrip && !r.damaged) {
       return `<div class="fc-clean"><p class="field-hint">Metadata can be removed from JPEG and PNG files here. To remove it from this ${esc(r.real.label)}, save it as JPEG with the <a href="image-resizer.html">image resizer</a>; saving a new file leaves the metadata behind.</p></div>`;
