@@ -429,10 +429,12 @@
   /**
    * The intake every one-PDF tool shares: drop zone, checks, password, loading, file bar,
    * replace and remove. The tool supplies onOpen(state) and onClear().
+   * maxPages defaults to K.LIMITS.pages, so a small file that claims a huge page count is refused
+   * before a tool tries to copy or change every page.
    */
   function singleTool(ws, options) {
-    const o = Object.assign({ needs: { lib: true, js: true }, maxPages: 0 }, options);
     const K = Pdf();
+    const o = Object.assign({ needs: { lib: true, js: true }, maxPages: K.LIMITS.pages }, options);
     const error = errorBox(ws.querySelector('[data-pdf-error]'));
     const zone = ws.querySelector('.dropzone');
     const fileBar = ws.querySelector('[data-pdf-file]');

@@ -25,6 +25,9 @@
     fileBytes: 100 * MB,      // one PDF
     totalBytes: 500 * MB,     // all files in one job (merge)
     maxFiles: 50,             // files in one merge
+    // Pages in one job that copies or changes pages (merge, split, page numbers, watermark). A small
+    // crafted file can claim hundreds of thousands of pages, and copying them would freeze the tab.
+    pages: 2000,
     renderPages: 500,         // pages drawn in one job (PDF to image)
     compressPages: 300,       // pages rasterised by the compressor
     textPages: 3000,          // pages read for text
@@ -369,9 +372,15 @@
   }
 
   /* ------------------------------------------------------------------ Structure operations */
-  /** A new document from parts [{ doc, indexes? }] in order. Page sizes, rotation and content are kept. */
+  const tooManyPages = n => `That is ${n} pages. Up to ${LIMITS.pages} pages can be put together at a time; do it in smaller parts.`;
+  /**
+   * A new document from parts [{ doc, indexes? } | { image }] in order. Page sizes, rotation and
+   * content are kept. Throws PdfError toolarge over LIMITS.pages in all.
+   */
   async function merge(parts, onProgress, signal) {
     const P = await lib();
+    const total = parts.reduce((n, part) => n + (part.doc ? (part.indexes ? part.indexes.length : part.doc.getPageCount()) : 1), 0);
+    if (total > LIMITS.pages) throw new PdfError('toolarge', tooManyPages(total));
     const out = await P.PDFDocument.create();
     for (let i = 0; i < parts.length; i++) {
       throwIfAborted(signal);
@@ -392,6 +401,7 @@
   /** A new document with the given pages of one document (0-based, any order, repeats allowed). */
   async function extract(doc, indexes) {
     const P = await lib();
+    if (indexes.length > LIMITS.pages) throw new PdfError('toolarge', tooManyPages(indexes.length));
     const out = await P.PDFDocument.create();
     const pages = await out.copyPages(doc, indexes);
     pages.forEach(p => out.addPage(p));
@@ -580,6 +590,65 @@
   }
 
   /**
+   * A copy of a JPEG without its metadata, for embedding in a PDF: pdf-lib embeds a JPEG file
+   * byte for byte, so EXIF (camera, serial number, GPS location, date taken), XMP, IPTC, comments,
+   * embedded thumbnails and other application segments would otherwise travel inside the PDF.
+   * The image data is copied unchanged, so there is no loss of quality. The JFIF header, the colour
+   * profile (APP2 ICC_PROFILE) and the Adobe colour marker (APP14) are kept, because decoders need
+   * them for the right colours; anything after the end of the image is dropped. The same rules as
+   * ApplyReadyInspect.stripMetadata (js/lib/inspect.js), which the File checker uses.
+   * Returns null when the file is not a well-formed JPEG.
+   */
+  function jpegWithoutMetadata(bytes) {
+    const b = bytes;
+    if (!b || b[0] !== 0xFF || b[1] !== 0xD8) return null;
+    const ascii = (at, s) => { for (let k = 0; k < s.length; k++) if (b[at + k] !== s.charCodeAt(k)) return false; return true; };
+    const parts = [b.subarray(0, 2)];
+    let p = 2, guard = 0, total = 2;
+    const keep = (from, to) => { parts.push(b.subarray(from, to)); total += to - from; };
+    while (p < b.length) {
+      if (++guard > 100000 || b[p] !== 0xFF) return null;
+      const m = b[p + 1];
+      if (m === undefined) return null;
+      if (m === 0xFF) { p++; continue; }
+      if (m === 0xD9) {
+        keep(p, p + 2);
+        const out = new Uint8Array(total);
+        let at = 0;
+        for (const part of parts) { out.set(part, at); at += part.length; }
+        return out;
+      }
+      if ((m >= 0xD0 && m <= 0xD7) || m === 0x01) { keep(p, p + 2); p += 2; continue; }
+      if (p + 4 > b.length) return null;
+      const len = (b[p + 2] << 8) | b[p + 3];
+      if (len < 2 || p + 2 + len > b.length) return null;
+      const end = p + 2 + len, data = p + 4;
+      const app = m >= 0xE0 && m <= 0xEF;
+      const wanted = m === 0xE0 ? !ascii(data, 'JFXX\0')
+        : m === 0xE2 ? ascii(data, 'ICC_PROFILE\0')
+          : m === 0xEE ? ascii(data, 'Adobe')
+            : !app && m !== 0xFE;
+      if (wanted) keep(p, end);
+      p = end;
+      if (m === 0xDA) {
+        // Entropy-coded data runs to the next marker that is not a stuffed byte (FF00) or a restart.
+        let j = p;
+        for (;;) {
+          j = b.indexOf(0xFF, j);
+          if (j < 0 || j + 1 >= b.length) return null;
+          const n = b[j + 1];
+          if (n === 0x00 || (n >= 0xD0 && n <= 0xD7)) { j += 2; continue; }
+          if (n === 0xFF) { j += 1; continue; }
+          break;
+        }
+        keep(p, j);
+        p = j;
+      }
+    }
+    return null;
+  }
+
+  /**
    * Add an image as an A4 page (portrait or landscape to suit the image), fitted and centred.
    * image: { bytes, type: 'jpg' | 'png' }.
    */
@@ -595,15 +664,25 @@
   }
 
   /**
-   * Turn a picked image file into bytes a PDF can hold. JPEGs that need no turning and PNGs are
-   * kept exactly as they are; other images (WebP, GIF, BMP, turned phone photos) are drawn upright
-   * and saved as high-quality JPEG. Browser only.
+   * Turn a picked image file into bytes a PDF can hold, without the photo's metadata. JPEGs that
+   * need no turning keep their image data exactly, minus metadata (jpegWithoutMetadata). PNGs are
+   * decoded by pdf-lib, which stores only the pixels, so their text chunks never reach the PDF.
+   * Other images (WebP, GIF, BMP, turned phone photos) are drawn upright and saved as high-quality
+   * JPEG, which carries no metadata either. Browser only.
    */
   async function prepareImage(file, info) {
     const bytes = await readBytes(file);
     const kind = info && info.ext;
+    // A small file can declare a huge picture; decoding it would take gigabytes of memory.
+    const Ops = root.ApplyReadyImageOps;
+    const header = Ops ? Ops.readHeader(bytes.subarray(0, 512 * 1024)) : null;
+    if (header && header.width * header.height > Ops.MAX_PIXELS) throw new PdfError('toolarge', `${file.name} is ${Math.round(header.width * header.height / 1e6)} megapixels (${header.width} × ${header.height} px), more than the ${Ops.MAX_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`);
     if (kind === 'png') return { bytes, type: 'png' };
-    if (kind === 'jpg' && jpegOrientation(bytes) === 1) return { bytes, type: 'jpg' };
+    if (kind === 'jpg' && jpegOrientation(bytes) === 1) {
+      const clean = jpegWithoutMetadata(bytes);
+      if (clean) return { bytes: clean, type: 'jpg' };
+      // Not a well-formed JPEG: redraw it below, which also leaves the metadata behind.
+    }
     let bitmap;
     try { bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
     catch (e) { throw new PdfError('damaged', `${file.name} could not be read as an image. Open it on your device to check it, or choose another file.`); }
@@ -878,7 +957,7 @@
     support, lib, pdfjs, asset,
     readBytes, hasHeader, precheck, inspect, openLib, openJs, closeJs, save, verify,
     pageFacts, paperName, parseRanges, formatRanges, winAnsiProblems, pageNumberLabel,
-    merge, extract, assemble, addPageNumbers, addWatermark, addImagePage, prepareImage, jpegOrientation,
+    merge, extract, assemble, addPageNumbers, addWatermark, addImagePage, prepareImage, jpegOrientation, jpegWithoutMetadata,
     renderPage, thumbnail, jsPageSize, releaseCanvas, canvasBlob, joinTextItems, pageText,
     compressRendered, compressImage,
     throwIfAborted, isAbort, abortError, tick, pad, norm

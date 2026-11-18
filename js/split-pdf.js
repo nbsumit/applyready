@@ -23,6 +23,7 @@
 
   const tool = UI.singleTool(app, {
     needs: { lib: true, js: true },
+    tooManyPages: n => `This PDF has ${n} pages. Split works on up to ${K.LIMITS.pages} pages at a time in a browser.`,
     onOpen(state) {
       selected = new Set();
       els.ranges.value = '';

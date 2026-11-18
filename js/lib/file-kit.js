@@ -11,16 +11,39 @@
                   validate: false to accept any file unchecked (infos are then null),
                   context: () => value, read when files arrive and passed back after checking,
                   so a tool can deliver them where they were dropped (applicant workspaces) }
-   ApplyReadyFileKit.thumbnail(file, size) -> Promise<objectURL|null>   small JPEG preview
+   ApplyReadyFileKit.thumbnail(file, size) -> Promise<objectURL|null>   small JPEG preview; null when
+                  the browser cannot decode it or the image is too large to decode safely
+   ApplyReadyFileKit.tooManyPixels(file) -> Promise<message|''>          refuses images over 50 MP
    ApplyReadyFileKit.downloadZip(entries, name, { button, signal })      ZIP with progress
    ApplyReadyFileKit.guardUnload(() => boolean)                          warn before losing results
    ApplyReadyFileKit.announce(message)                                   polite screen-reader update
 
-   Depends on js/lib/files.js and, for ZIP, js/lib/zip.js. Nothing is uploaded. */
+   Depends on js/lib/files.js, on js/lib/image-ops.js for the pixel-size check (pages that show
+   image previews load it; tests/content_tests.js checks), and, for ZIP, js/lib/zip.js.
+   Nothing is uploaded. */
 (function (root) {
   'use strict';
   const Files = () => root.ApplyReadyFiles;
   const ui = () => root.ApplyReadyUI || {};
+
+  /**
+   * A name with hidden direction characters (U+202E and others) can display a false extension:
+   * "invoice<U+202E>fdp.exe" shows as "invoiceexe.pdf". Tools get such a file under its name without
+   * them, so every list, message and download shows the name as it really is. The new File shares
+   * the original's data (nothing is copied); originalName keeps the name as it was given.
+   */
+  function revealName(file) {
+    const F = Files();
+    const name = file && file.name;
+    if (!name || !F || !F.withoutHiddenDirection || typeof File !== 'function') return file;
+    const visible = F.withoutHiddenDirection(name);
+    if (visible === name) return file;
+    try {
+      const renamed = new File([file], visible || 'file', { type: file.type, lastModified: file.lastModified });
+      renamed.originalName = name;
+      return renamed;
+    } catch (e) { return file; }
+  }
 
   function dropzone(container, options) {
     const opts = Object.assign({ accept: ['image'], multiple: false, maxFiles: 500, paste: true }, options || {});
@@ -31,7 +54,7 @@
     if (opts.multiple) input.multiple = true;
 
     async function take(fileList) {
-      let files = Array.from(fileList || []).filter(f => f && typeof f.size === 'number');
+      let files = Array.from(fileList || []).filter(f => f && typeof f.size === 'number').map(revealName);
       if (!files.length) return;
       const context = typeof opts.context === 'function' ? opts.context() : undefined;
       if (!opts.multiple) files = files.slice(0, 1);
@@ -81,10 +104,37 @@
     return { open, take, reset: () => { input.value = ''; } };
   }
 
-  /** A small JPEG preview (object URL) for a list row. Null when the browser cannot decode it. */
+  /**
+   * The pixel size an image declares in its header, read from its first bytes without decoding it
+   * ({ width, height } or null when it cannot be read).
+   */
+  async function imageHeader(file) {
+    const Ops = root.ApplyReadyImageOps;
+    if (!Ops || !file || !file.slice) return null;
+    try { return Ops.readHeader(new Uint8Array(await file.slice(0, 512 * 1024).arrayBuffer())); }
+    catch (e) { return null; }
+  }
+
+  /**
+   * A message when an image declares more pixels than the tools decode safely (the same 50 MP limit
+   * as the image tools), otherwise ''. A small file can declare a huge size, and decoding it, even
+   * for a preview, can take gigabytes of memory and close the tab on a phone.
+   */
+  async function tooManyPixels(file) {
+    const Ops = root.ApplyReadyImageOps;
+    const h = await imageHeader(file);
+    if (!h || !Ops || h.width * h.height <= Ops.MAX_PIXELS) return '';
+    return `${file.name || 'This image'} is ${Math.round(h.width * h.height / 1e6)} megapixels (${h.width} × ${h.height} px), more than the ${Ops.MAX_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`;
+  }
+
+  /**
+   * A small JPEG preview (object URL) for a list row. Null when the browser cannot decode it, and
+   * when the image is too large to decode safely (see tooManyPixels): it is not decoded at all then.
+   */
   async function thumbnail(file, size) {
     const max = size || 160;
     try {
+      if (await tooManyPixels(file)) return null;
       let bitmap;
       try { bitmap = await createImageBitmap(file, { resizeWidth: max, resizeQuality: 'low', imageOrientation: 'from-image' }); }
       catch (e) { bitmap = await createImageBitmap(file); }
@@ -159,5 +209,5 @@
     setTimeout(() => { liveNode.textContent = message; }, 40);
   }
 
-  root.ApplyReadyFileKit = { dropzone, thumbnail, downloadZip, guardUnload, announce, setButtonBusy };
+  root.ApplyReadyFileKit = { dropzone, thumbnail, tooManyPixels, downloadZip, guardUnload, announce, setButtonBusy };
 })(typeof window !== 'undefined' ? window : this);
