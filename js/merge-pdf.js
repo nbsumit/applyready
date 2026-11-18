@@ -158,7 +158,7 @@
   async function addOne(file, info) {
     if (items.length >= K.LIMITS.maxFiles) throw new K.PdfError('toolarge', `Only ${K.LIMITS.maxFiles} files can be merged at a time. Merge these, then merge the result with the rest.`);
     if (totalBytes() + file.size > K.LIMITS.totalBytes) throw new K.PdfError('toolarge', `${file.name} would bring the total over ${Files.formatBytes(K.LIMITS.totalBytes)}. Merge these files first, then merge the result with the rest.`);
-    if (totalPages() >= K.LIMITS.pages) throw new K.PdfError('toolarge', `The list already has ${K.LIMITS.pages} pages, the most that can be merged at a time. Merge these files first, then merge the result with the rest.`);
+    if (totalPages() >= K.LIMITS.pages) throw new K.PdfError('toolarge', `The list already has ${K.grouped(totalPages())} pages, the most that can be merged into one file in a browser. Remove a file from the list to make room.`);
     if (info.kind === 'image') {
       const tooLarge = await Kit.tooManyPixels(file);
       if (tooLarge) throw new K.PdfError('unsupported', tooLarge);
@@ -167,7 +167,8 @@
       return it;
     }
     const opened = await UI.openPdf(file, { lib: true, js: false });
-    if (totalPages() + opened.pageCount > K.LIMITS.pages) throw new K.PdfError('toolarge', `${file.name} has ${opened.pageCount} pages, which would bring the total over ${K.LIMITS.pages}. Up to ${K.LIMITS.pages} pages can be merged at a time; split the file first, or merge these files and then merge the result with the rest.`);
+    if (opened.pageCount > K.LIMITS.pages) throw new K.PdfError('toolarge', `${file.name} has ${K.grouped(opened.pageCount)} pages. Up to ${K.grouped(K.LIMITS.pages)} pages can be merged into one file in a browser, so it cannot be added.`);
+    if (totalPages() + opened.pageCount > K.LIMITS.pages) throw new K.PdfError('toolarge', `${file.name} has ${K.grouped(opened.pageCount)} pages, which would bring the total to ${K.grouped(totalPages() + opened.pageCount)}. Up to ${K.grouped(K.LIMITS.pages)} pages can be merged into one file in a browser; remove a file from the list to make room.`);
     const first = opened.libDoc.getPage(0);
     const facts = K.pageFacts(first);
     const it = { id: ++seq, file, kind: 'pdf', info, pages: opened.pageCount, size: file.size, password: opened.password, encrypted: opened.encrypted, paper: opened.pageCount === 1 ? K.paperName(facts.width, facts.height) : `starts ${K.paperName(facts.width, facts.height)}` };

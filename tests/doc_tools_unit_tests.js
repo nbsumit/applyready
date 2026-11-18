@@ -323,12 +323,18 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     const started = Date.now();
     let refused = null;
     try { await Kit.merge([{ doc: small }, { doc: bombDoc }]); } catch (e) { refused = e; }
-    ok(refused && refused.code === 'toolarge' && /200001 pages\. Up to 2000 pages/.test(refused.message) && Date.now() - started < 2000, `merge refuses more than ${Kit.LIMITS.pages} pages at once, quickly (${refused && refused.message}, ${Date.now() - started} ms)`);
+    ok(refused && refused.code === 'toolarge' && /2,00,001 pages\. Up to 2,000 pages/.test(refused.message) && Date.now() - started < 2000, `merge refuses more than ${Kit.LIMITS.pages} pages at once, quickly (${refused && refused.message}, ${Date.now() - started} ms)`);
     let extractRefused = null;
     try { await Kit.extract(bombDoc, Array.from({ length: Kit.LIMITS.pages + 1 }, () => 0)); } catch (e) { extractRefused = e; }
     ok(extractRefused && extractRefused.code === 'toolarge', 'extract refuses more than the page limit');
     const fine = await Kit.merge([{ doc: small }, { doc: small }]);
     ok(fine.getPageCount() === 2, 'merging within the limit still works');
+    // Page-limit advice: Split PDF is suggested only for a file it can open itself.
+    ok(Kit.grouped(2000) === '2,000' && Kit.grouped(200000) === '2,00,000', `page counts are grouped like the rest of the site (${Kit.grouped(2000)}, ${Kit.grouped(200000)})`);
+    ok(/with Split PDF first, then compress each part/.test(Kit.splitFirst(400, 'compress each part')), 'a file Split PDF can open is sent to Split PDF');
+    const tooLong = Kit.splitFirst(Kit.LIMITS.pages + 1, 'use this tool on each part');
+    ok(!/with Split PDF first/.test(tooLong) && /Split PDF also works on up to 2,000 pages/.test(tooLong) && /desktop PDF program/.test(tooLong), `a file Split PDF would refuse is not sent there (${tooLong})`);
+    ok(/with Split PDF first/.test(Kit.compressAdvice(500)) && !/with Split PDF first/.test(Kit.compressAdvice(200000)), 'the compressor only suggests splitting when splitting can help');
   }
 
   console.log(`\u2713 document tools unit tests: ${checks} checks passed`);

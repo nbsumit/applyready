@@ -23,7 +23,7 @@
 
   const tool = UI.singleTool(app, {
     needs: { lib: true, js: true },
-    tooManyPages: n => `This PDF has ${n} pages. Split works on up to ${K.LIMITS.pages} pages at a time in a browser.`,
+    tooManyPages: n => `This PDF has ${K.grouped(n)} pages. Split works on up to ${K.grouped(K.LIMITS.pages)} pages at a time in a browser, so it cannot open a file this long; use a desktop PDF program for it.`,
     onOpen(state) {
       selected = new Set();
       els.ranges.value = '';
@@ -115,7 +115,7 @@
     els.run.disabled = tooMany;
     els.summary.classList.toggle('is-invalid', tooMany);
     els.summary.textContent = tooMany
-      ? `That would make ${p.files.length} files; the limit is ${K.LIMITS.outputs}. Choose larger parts.`
+      ? `That would make ${K.grouped(p.files.length)} files; the limit is ${K.grouped(K.LIMITS.outputs)}. Choose larger parts.`
       : p.files.length === 1 ? `Creates 1 PDF with ${UI.plural(pages, 'page')}.` : `Creates ${p.files.length} PDFs, ${UI.plural(pages, 'page')} in all.`;
     // Selected thumbnails follow the typed list.
     if (grid && (mode === 'extract' || mode === 'ranges')) { selected = new Set(p.files.flatMap(f => f.indexes)); grid.setSelected(selected); }
@@ -147,7 +147,7 @@
   els.run.addEventListener('click', () => {
     const p = validate(true);
     if (p.error) { tool.error.show(p.error); return; }
-    if (p.files.length > K.LIMITS.outputs) { tool.error.show(`That would make ${p.files.length} files. The limit is ${K.LIMITS.outputs} at a time; choose larger parts or fewer pages.`); return; }
+    if (p.files.length > K.LIMITS.outputs) { tool.error.show(`That would make ${K.grouped(p.files.length)} files. The limit is ${K.grouped(K.LIMITS.outputs)} at a time; choose larger parts or fewer pages.`); return; }
     const state = tool.state;
     clearOutputs();
     runner.run(async (signal, progress) => {

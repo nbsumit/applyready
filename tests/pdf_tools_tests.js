@@ -323,7 +323,7 @@ const server = http.createServer((req, res) => {
     await page.setInputFiles('#mergeDropInput', bombFile);
     await page.waitForFunction(() => !document.getElementById('mergeError').hidden, null, { timeout: 30000 });
     const msg = await errorText(page, '#mergeError');
-    ok(/pagebomb\.pdf has 200000 pages/.test(msg) && /Up to 2000 pages can be merged at a time/.test(msg), `merge: a file claiming 200000 pages is refused (${msg})`);
+    ok(/pagebomb\.pdf has 2,00,000 pages/.test(msg) && /Up to 2,000 pages can be merged into one file in a browser, so it cannot be added/.test(msg) && !/split/i.test(msg), `merge: a file claiming 200000 pages is refused, without sending it to Split PDF (${msg})`);
     ok(await page.locator('.merge-row').count() === 2 && Date.now() - started < 20000, `merge: nothing added, refused in ${Date.now() - started} ms`);
     const t = Date.now();
     await page.evaluate(() => 1);
@@ -336,11 +336,13 @@ const server = http.createServer((req, res) => {
     await context.close();
 
     // Tools that open one PDF refuse the same file instead of trying to number or split 200,000 pages.
-    for (const [file, input, re] of [['split-pdf.html', '#splitDropInput', /Split works on up to 2000 pages/], ['add-page-numbers.html', '#pnDropInput', /up to 2000 pages at a time/]]) {
+    // Split PDF refuses it too, so none of them may send the person there.
+    for (const [file, input, re] of [['split-pdf.html', '#splitDropInput', /has 2,00,000 pages\. Split works on up to 2,000 pages[\s\S]*desktop PDF program/], ['add-page-numbers.html', '#pnDropInput', /has 2,00,000 pages\. This tool works on up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages[\s\S]*desktop PDF program/], ['watermark-pdf.html', '#wmDropInput', /up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages/]]) {
       const tool = await open(file);
       await tool.page.setInputFiles(input, bombFile);
       await tool.page.waitForFunction(() => { const e = document.querySelector('[data-pdf-error]'); return e && !e.hidden && !e.classList.contains('hidden') && /pages/.test(e.textContent); }, null, { timeout: 30000 });
-      ok(re.test(await tool.page.locator('[data-pdf-error]').innerText()), `${file}: a file claiming 200000 pages is refused`);
+      const toolMsg = await tool.page.locator('[data-pdf-error]').innerText();
+      ok(re.test(toolMsg) && !/split (it|the PDF) (into|first)|with Split PDF first/i.test(toolMsg), `${file}: a file claiming 200000 pages is refused, without a dead-end suggestion (${toolMsg})`);
       await tool.context.close();
     }
     console.log('✓ Merge: photo metadata removed; page-tree bombs and 400-megapixel pictures refused at intake');

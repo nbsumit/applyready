@@ -21,7 +21,7 @@
   const tool = UI.singleTool(app, {
     needs: { lib: false, js: true },
     maxPages: K.LIMITS.textPages,
-    tooManyPages: n => `This PDF has ${n} pages. Text can be read from up to ${K.LIMITS.textPages} pages at a time; split it into parts first.`,
+    tooManyPages: n => `This PDF has ${K.grouped(n)} pages. Text can be read from up to ${K.grouped(K.LIMITS.textPages)} pages at a time. ${K.splitFirst(n, 'read each part')}`,
     onOpen() { els.ranges.value = ''; setError(''); clear(); update(); setTimeout(start, 0); },
     onClear() { clear(); els.ranges.value = ''; setError(''); update(); },
     onStale: () => {}

@@ -494,7 +494,7 @@
       try {
         const next = await openPdf(file, o.needs);
         if (ticket !== opening) { if (next.jsDoc) K.closeJs(next.jsDoc); return; }
-        if (o.maxPages && next.pageCount > o.maxPages) throw new K.PdfError('toolarge', o.tooManyPages ? o.tooManyPages(next.pageCount) : `${file.name} has ${next.pageCount} pages. This tool works on up to ${o.maxPages} pages at a time; split the PDF first.`);
+        if (o.maxPages && next.pageCount > o.maxPages) throw new K.PdfError('toolarge', o.tooManyPages ? o.tooManyPages(next.pageCount) : `${file.name} has ${K.grouped(next.pageCount)} pages. This tool works on up to ${K.grouped(o.maxPages)} pages at a time. ${K.splitFirst(next.pageCount, 'use this tool on each part')}`);
         await release();
         state = Object.assign(next, { file });
         if (nameEl) nameEl.textContent = `${file.name} (${state.pageCount} page${state.pageCount === 1 ? '' : 's'}, ${Files().formatBytes(file.size)}${state.encrypted ? ', password protected' : ''})`;

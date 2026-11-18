@@ -37,6 +37,20 @@
     canvasPixels: 16000000
   };
 
+  // Numbers in messages are grouped the way the rest of the site writes them (2,000 pages).
+  const grouped = n => Number(n).toLocaleString('en-IN');
+  /**
+   * What to tell someone whose PDF has more pages than a tool takes. Splitting it first helps only
+   * when Split PDF can open the file; past LIMITS.pages it cannot either, so say that plainly instead
+   * of sending them to a tool that refuses the same file. then: what to do with each part.
+   */
+  function splitFirst(pages, then) {
+    if (pages <= LIMITS.pages) return `Split it into smaller parts with Split PDF first${then ? `, then ${then}` : ''}.`;
+    return `Split PDF also works on up to ${grouped(LIMITS.pages)} pages, so a file this long cannot be handled in a browser; use a desktop PDF program for it.`;
+  }
+  /** Why the compressor refuses a long PDF, and what to do instead. */
+  const compressAdvice = pages => `The compressor redraws every page, so it works on up to ${grouped(LIMITS.compressPages)} pages at a time. ${splitFirst(pages, 'compress each part and merge the parts again')}`;
+
   /* ------------------------------------------------------------------ Errors */
   // code: damaged | encrypted | password | empty | notpdf | toolarge | unsupported | verify | cancelled | font
   class PdfError extends Error {
@@ -372,7 +386,7 @@
   }
 
   /* ------------------------------------------------------------------ Structure operations */
-  const tooManyPages = n => `That is ${n} pages. Up to ${LIMITS.pages} pages can be put together at a time; do it in smaller parts.`;
+  const tooManyPages = n => `That is ${grouped(n)} pages. Up to ${grouped(LIMITS.pages)} pages can be put together at a time in a browser; use fewer pages.`;
   /**
    * A new document from parts [{ doc, indexes? } | { image }] in order. Page sizes, rotation and
    * content are kept. Throws PdfError toolarge over LIMITS.pages in all.
@@ -879,7 +893,7 @@
     const o = Object.assign({ dpi: 150, grey: false }, options);
     const P = await lib();
     const count = jsDoc.numPages;
-    if (count > LIMITS.compressPages) throw new PdfError('toolarge', `This PDF has ${count} pages. The compressor redraws every page, so it works on up to ${LIMITS.compressPages} pages at a time. Split the PDF first, compress each part, then merge them.`);
+    if (count > LIMITS.compressPages) throw new PdfError('toolarge', `This PDF has ${grouped(count)} pages. ${compressAdvice(count)}`);
     const sizes = [];
     for (let i = 0; i < count; i++) sizes.push(await jsPageSize(jsDoc, i));
     const areas = sizes.map(s => (s.view[2] - s.view[0]) * (s.view[3] - s.view[1]));
@@ -953,7 +967,7 @@
   const pad = (n, total) => String(n).padStart(Math.max(2, String(total).length), '0');
 
   return {
-    LIMITS, PdfError, MB,
+    LIMITS, PdfError, MB, grouped, splitFirst, compressAdvice,
     support, lib, pdfjs, asset,
     readBytes, hasHeader, precheck, inspect, openLib, openJs, closeJs, save, verify,
     pageFacts, paperName, parseRanges, formatRanges, winAnsiProblems, pageNumberLabel,
