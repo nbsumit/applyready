@@ -15,6 +15,8 @@ const ACCEPT = {
 /**
  * A drop zone: icon, title, a primary "Choose" button, the hint with formats and limits, and the
  * privacy line. opts: { id, title, button, hint, accept: 'image'|'pdf'|..., multiple, icon }
+ * The "Drag it here, or" line is hidden on touch screens, which cannot drag files in, and its "or"
+ * is hidden when the compact drop zone hides the button (css/app.css, drop zone section).
  */
 function dropzone(opts) {
   const o = Object.assign({ icon: 'arrow-up-from-bracket', button: 'Choose files', multiple: false }, opts);
@@ -23,7 +25,7 @@ function dropzone(opts) {
           <input type="file" id="${esc(o.id)}Input" accept="${esc(accept)}"${o.multiple ? ' multiple' : ''} class="hidden" tabindex="-1" aria-hidden="true">
           <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-${esc(o.icon)}"></i></span>
           <p class="dropzone__title" id="${esc(o.id)}Title">${esc(o.title)}</p>
-          <p class="dropzone__text">Drag ${o.multiple ? 'them' : 'it'} here, or</p>
+          <p class="dropzone__text dropzone__drag">Drag ${o.multiple ? 'them' : 'it'} here<span class="dropzone__or">, or</span></p>
           <button type="button" class="btn btn-primary btn-lg" data-browse><i class="fa-solid fa-plus" aria-hidden="true"></i> ${esc(o.button)}</button>
           <p class="dropzone__hint">${esc(o.hint)} Processed on your device, never uploaded.</p>
         </div>`;

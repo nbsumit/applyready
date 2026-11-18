@@ -212,6 +212,7 @@ const server = http.createServer((req, res) => {
     ok(await page.locator('#batchError').isVisible() && /2 files were not added/.test(errText), `rejections listed: ${errText}`);
     ok(/iphone\.heic is an HEIC photo/.test(errText) && /Most Compatible/.test(errText), 'HEIC refused with the iPhone tip');
     ok(/notes\.jpg is a plain text file/.test(errText), 'a text file named .jpg refused by content');
+    ok(/needs an image \(JPEG, PNG, WebP, GIF, BMP or AVIF\)/.test(errText), 'the refusal names every accepted image type, as the drop zone does');
     ok(await page.locator('#batchError').getAttribute('role') === 'alert', 'rejections are announced as an alert');
     ok(/48/.test(await page.locator('#batchCounts').textContent()), 'counts show 48 images');
     await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row__thumb img').length >= 3, null, { timeout: 15000 });
@@ -327,11 +328,17 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
   /* ---------- 3b. Batch processor: phone width, signature preset, axe on results, unload guard */
   {
     const { context, page } = await open('batch-image.html', { viewport: { width: 320, height: 720 }, hasTouch: true, isMobile: true });
+    ok(!(await page.locator('#batchDrop .dropzone__drag').isVisible()) && await page.locator('#batchDrop [data-browse]').isVisible(), 'touch screen: no "Drag them here" line, only the Choose button');
     await setValue(page, 'bPreset', 'signature');
     await page.setInputFiles('#batchDropInput', [fix('signature.jpg'), fix('transparent.png'), fix('portrait.jpg')]);
     await page.click('#btnBatchStart');
     await waitIdle(page);
     ok((await summary(page)).done === 3, 'signature preset: all done');
+    await page.waitForTimeout(800);
+    const zipLabels = await page.evaluate(() => Array.from(document.querySelectorAll('button')).filter(b => b.getClientRects().length && /Download all 3 as ZIP/.test(b.textContent)).length);
+    ok(zipLabels === 1, `one "Download all 3 as ZIP" button on screen, not two (${zipLabels})`);
+    const zipSpot = await page.evaluate(() => { const r = document.getElementById('btnBatchZip').getBoundingClientRect(); const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return { top: r.top, bottom: r.bottom, hit: hit && hit.closest('#btnBatchZip') !== null, vh: innerHeight }; });
+    ok(zipSpot.hit && zipSpot.top >= 56 && zipSpot.bottom <= zipSpot.vh, `the ZIP button is in view and nothing covers it (${JSON.stringify(zipSpot)})`);
     const dims = await page.evaluate(() => window.ApplyReadyBatchImage.items.map(i => [i.result.width, i.result.height, i.result.bytes]));
     ok(dims.every(([w, h, b]) => w === 300 && h === 100 && b <= 30 * 1024), `signatures padded to 300 × 100 under 30 KB (${JSON.stringify(dims)})`);
     ok(await noOverflow(page), 'no sideways scrolling at 320 px with results');
@@ -406,17 +413,21 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'btnBatchStart', null, { timeout: 3000 }).catch(() => {});
     ok(await focusId() === 'btnBatchStart', 'after choosing files by keyboard, focus moves to the start button (the hidden choose button would drop it)');
     await page.keyboard.press('Enter');
-    await page.keyboard.press('Enter');   // a second press while running does nothing
+    await page.keyboard.press('Enter');   // a quick second press neither starts again nor cancels
     await waitIdle(page);
-    await page.waitForFunction(() => /Download the image/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 }).catch(() => {});
-    ok(await focusId() === 'btnBatchStart' && /Download the image/.test(await page.locator('#btnBatchStart').textContent()), 'focus stays on the sticky button, which now offers the download');
+    await page.waitForTimeout(300);
+    ok((await summary(page)).done === 1 && (await summary(page)).cancelled === 0, 'a quick second Enter does not cancel the run');
+    ok(await focusId() === 'batchVerdictTitle', `when the run ends, focus moves to the result (${await focusId()})`);
+    ok(!(await page.locator('#btnBatchStart').isVisible()) && /download it from the result/.test(await page.locator('#batchSettingsSummary').textContent()), 'the sticky bar does not repeat the download; it says where it is');
     ok((await page.evaluate(() => window.ApplyReadyBatchImage.items[0].attempts)) === 1, 'pressing Start twice runs the image once');
     ok(/Download the image/.test(await page.locator('#btnBatchZip').textContent()), 'one result: no ZIP in the result panel either');
+    await page.keyboard.press('Tab');
+    ok(await focusId() === 'btnBatchZip', 'the download is the next stop after the result heading');
     const one = await saveDownload(page, () => page.keyboard.press('Enter'), 'one-result.jpg');
     const idOne = identify(one.file);
     ok(one.suggested === 'photo_05.jpg' && fs.statSync(one.file).size <= 102400 && idOne.w > 0, `one result downloads as the image itself (${one.suggested}, ${idOne.w} × ${idOne.h})`);
     await page.waitForTimeout(200);
-    ok(!(await page.locator('#btnBatchStart').isVisible()) && await focusId() === 'batchVerdictTitle', 'after the download the button goes and focus moves to the result');
+    ok(await focusId() === 'btnBatchZip', 'after the download focus stays on the download button');
     // Cancel by keyboard: the Cancel button disappears, focus goes to the result.
     const more = [];
     for (let i = 6; i < 18; i++) more.push(fix(`photo_${String(i).padStart(2, '0')}.jpg`));
@@ -429,6 +440,51 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     await waitIdle(page);
     await page.waitForTimeout(200);
     ok(await focusId() === 'batchVerdictTitle', `after Cancel, focus moves to the result (${await focusId()})`);
+    await context.close();
+  }
+
+  /* ---------- 3c3. Keyboard: starting moves focus to Cancel, which then stops the run; a quick
+     second Enter meant for Start is ignored. Names, hints and text spacing. */
+  {
+    const { context, page } = await open('batch-image.html');
+    const focusId = () => page.evaluate(() => (document.activeElement && document.activeElement.id) || document.activeElement.tagName);
+    const many = [];
+    for (let i = 0; i < 40; i++) many.push(fix(`photo_${String(i).padStart(2, '0')}.jpg`));
+    await page.setInputFiles('#batchDropInput', many);
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 40);
+    ok(await page.locator('#batchDrop .dropzone__text').innerText() === 'Drag them here', 'the compact drop zone hides its button, so its line does not end in "or"');
+    await setValue(page, 'bPreset', 'passport');
+    await page.focus('#btnBatchStart');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'btnBatchCancel', null, { timeout: 5000 }).catch(() => {});
+    ok(await focusId() === 'btnBatchCancel', `starting by keyboard moves focus to Cancel (${await focusId()})`);
+    await page.keyboard.press('Enter');   // the same person pressing Enter twice
+    await page.waitForTimeout(150);
+    ok(await page.locator('#batchProgress').isVisible() && (await summary(page)).cancelled === 0, 'an immediate second Enter does not cancel');
+    await page.waitForTimeout(500);
+    await page.keyboard.press('Enter');
+    await waitIdle(page);
+    await page.waitForTimeout(300);
+    const after = await summary(page);
+    ok(after.cancelled > 0 && after.done < 40, `a deliberate Enter on Cancel stops the run (${after.done} done, ${after.cancelled} cancelled)`);
+    ok(await focusId() === 'batchVerdictTitle', `after Cancel, focus moves to the result (${await focusId()})`);
+    // Select hints are read with the custom select buttons.
+    const described = await page.evaluate(() => ['bPreset', 'bResize', 'bFormat', 'bNaming'].map(id => { const b = document.getElementById(id + '-button'); const d = b && b.getAttribute('aria-describedby'); return d && document.getElementById(d) ? 'ok' : id; }));
+    ok(described.every(x => x === 'ok'), `select buttons are described by their hints (${described})`);
+    // The ZIP takes the name typed for this batch.
+    await page.click('#btnBatchRetry');
+    await waitIdle(page);
+    await page.evaluate(() => { document.getElementById('batchMore').open = true; });
+    await page.fill('#bZipName', 'BCA 2026 roll.zip');
+    const named = await saveDownload(page, () => page.click('#btnBatchZip'), 'named.zip');
+    ok(named.suggested === 'BCA 2026 roll.zip', `the ZIP uses the typed name (${named.suggested})`);
+    await page.fill('#bZipName', '');
+    const plain = await saveDownload(page, () => page.click('#btnBatchZip'), 'plain.zip');
+    ok(plain.suggested === 'applyready-images.zip', `an empty ZIP name uses the page's default (${plain.suggested})`);
+    // WCAG 1.4.12: with larger text spacing the chosen value of a select wraps instead of being cut off.
+    await page.addStyleTag({ content: '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }' });
+    const clipped = await page.evaluate(() => Array.from(document.querySelectorAll('.select-value')).filter(v => v.getClientRects().length && v.scrollWidth > v.clientWidth + 1).map(v => v.textContent));
+    ok(clipped.length === 0, `no select value is cut off with text spacing (${clipped})`);
     await context.close();
   }
 
