@@ -456,7 +456,7 @@ const PAGES = [
     page: 'add-page-numbers.html', tool: 'numbers', name: 'Add page numbers', script: 'js/add-page-numbers.js',
     title: 'Add Page Numbers to a PDF: Position and Format | ApplyReady',
     description: 'Number the pages of a PDF, free in your browser with nothing uploaded. Pick a position and a format such as "Page 1 of 10", skip a cover page and preview it.',
-    h1: 'Add page numbers to a PDF',
+    h1: 'Add page numbers',
     lede: 'Number the pages of an application bundle, a report or a set of certificates so nothing gets out of order. Choose where and how, check the preview, then download. Your file stays on this device.',
     how: `      <p>Choose the position, the format and the first number. The preview shows the first numbered page exactly as it will come out, because it is made by the same code as the download. With <strong>No number on the first page</strong> on, the cover is left blank and numbering starts on page 2 with your first number, and "of 10" counts only the numbered pages. Numbers are placed by how each page is seen, so they stay upright at the bottom of a page that is stored turned sideways.</p>
       <p>Numbers are drawn on top of each page in the standard Helvetica font, which every PDF reader has. Everything else on the page is left as it was. Put the pages in order first with <a href="organize-pdf.html">Organise PDF pages</a> or <a href="merge-pdf.html">Merge PDF</a>; to stamp words such as "Self-attested" on every page, use <a href="watermark-pdf.html">Watermark PDF</a>.</p>

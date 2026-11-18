@@ -228,7 +228,8 @@ for (const f of guides) {
     const s = read(f);
     const title = (s.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '';
     ok(!/ApplyReady\.in/.test(title), `${f}: title uses the brand "ApplyReady", not "ApplyReady.in" (${title})`);
-    ok(/ \| ApplyReady$/.test(title) || /\bApplyReady\b/.test(title.replace(/ \|.*$/, '')), `${f}: title names the brand, normally as "| ApplyReady" at the end (${title})`);
+    // The home page leads with the brand; every other page ends with it.
+    ok(f === 'index.html' ? /^ApplyReady\b/.test(title) : / \| ApplyReady$/.test(title), `${f}: title ends with "| ApplyReady" (the home page starts with it) (${title})`);
     if (!indexable.has(f)) {
       ok(!/<meta (property="og:|name="twitter:)/.test(s), `${f}: noindex, redirect and utility pages carry no social tags`);
       continue;
@@ -254,6 +255,8 @@ for (const f of guides) {
     const list = graph.find(n => n['@type'] === 'BreadcrumbList');
     ok(list && JSON.stringify(list.itemListElement.map(i => i.name)) === JSON.stringify(crumbs.map(c => c[0])), `${t.path}: structured breadcrumbs match the visible ones`);
     ok(graph.some(n => n['@type'] === 'WebApplication' && String(n.name).toLowerCase() === `applyready ${t.name}`.toLowerCase()), `${t.path}: WebApplication structured data named after the tool`);
+    const h1 = textIn((s.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || '');
+    ok(h1 === t.name, `${t.path}: the heading is the tool's name "${t.name}" (says "${h1}"); keep search phrases for the title`);
   }
 
   // Cards and buttons call a tool by its registry name; cards on top-level pages call a guide by its title.
@@ -262,7 +265,7 @@ for (const f of guides) {
     const s = read(f);
     const dir = path.posix.dirname(f);
     const target = href => { const t = href.startsWith('/') ? href.slice(1) : path.posix.normalize(path.posix.join(dir === '.' ? '' : dir, href)); return t.endsWith('/') || t === '.' ? t.replace(/\.$/, '') + 'index.html' : t; };
-    for (const m of s.matchAll(/<a href="([^"#]+)" class="guide-card[^"]*">\s*<strong>([\s\S]*?)<\/strong>/g)) {
+    for (const m of s.matchAll(/<a href="([^"#]+)(?:#[^"]*)?" class="guide-card[^"]*">\s*<strong>([\s\S]*?)<\/strong>/g)) {
       const t = target(m[1]);
       const tool = TOOLS.find(x => x.path === t);
       if (tool) ok(textIn(m[2]) === tool.name, `${f}: the card for ${t} should say "${tool.name}" (says "${textIn(m[2])}")`);

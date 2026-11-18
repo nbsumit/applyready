@@ -43,7 +43,7 @@ that a contributor can disagree with them on the merits.
 | Category | Tools |
 |---|---|
 | Resume | Resume builder with saved resumes (`resume.html`) |
-| Image | Image resizer (`image-resizer.html`), Passport photo resizer, Signature resizer, Image compressor, Image converter, Signature cleaner, Passport photo print sheet, Resize to 20 KB / 50 KB / any KB |
+| Image | Image resizer (`image-resizer.html`), Passport photo resizer, Signature resizer, Image compressor, Image converter, Signature cleaner, Passport photo print sheet, Resize to 20 KB / 50 KB / a KB limit |
 | PDF | Merge PDF, Split PDF, Organize pages (reorder, rotate, delete), Image to PDF, Compress PDF, PDF to images, Extract text, Add page numbers, Watermark PDF |
 | Document | Text to PDF, File checker (type, size, dimensions, metadata; remove photo metadata) |
 | Batch processing | Batch image processor (resize, compress, convert many photos and signatures, ZIP); multi-file modes of the PDF tools |
