@@ -40,7 +40,13 @@
   const btnDownloadJpg = doc.getElementById('btnDownloadPrintJpg');
   const btnDownloadPdf = doc.getElementById('btnDownloadPrintPdf');
   let jpgPending = false, jpgWanted = false;
-  if (btnDownloadJpg) btnDownloadJpg.addEventListener('click', e => { if (jpgPending) { e.preventDefault(); jpgWanted = true; } });
+  // Each render gets a number; an encode that finishes after a newer render, or after Remove,
+  // is thrown away so it can never put an earlier photo back behind the download button.
+  let renderGen = 0;
+  if (btnDownloadJpg) btnDownloadJpg.addEventListener('click', e => {
+    if (!loadedImage) { e.preventDefault(); return; }
+    if (jpgPending) { e.preventDefault(); jpgWanted = true; }
+  });
 
   // Photo size dimensions in mm: { w, h }
   const PHOTO_SIZES = {
@@ -62,6 +68,8 @@
 
   let loadedImage = null;
   let loadedFile = null;
+  let currentPaper = null;
+  let loadToken = 0;
   let jpgBlobUrl = null;
   let pdfBlobUrl = null;
 
@@ -103,12 +111,17 @@
     });
 
     fileInput.addEventListener('change', () => {
-      if (fileInput.files && fileInput.files.length) {
-        handleFile(fileInput.files[0]);
-      }
+      const file = fileInput.files && fileInput.files[0];
+      // Cleared at once, so choosing the same file again (after Remove or Replace) still works.
+      fileInput.value = '';
+      if (file) handleFile(file);
     });
 
     if (btnRemoveFile) btnRemoveFile.addEventListener('click', resetAll);
+    if (btnDownloadPdf) btnDownloadPdf.addEventListener('click', e => {
+      e.preventDefault();
+      if (loadedImage && currentPaper) generatePrintPdf(currentPaper);
+    });
     if (btnReplaceFile) btnReplaceFile.addEventListener('click', () => fileInput.click());
 
     // Controls change listeners
@@ -117,8 +130,16 @@
     });
   }
 
-  function handleFile(file) {
-    if (!file || !file.type.startsWith('image/')) {
+  async function handleFile(file) {
+    if (!file) return;
+    // Taken before the content check, so a Remove pressed while it runs still wins.
+    const token = ++loadToken;
+    // Identify the file by its content, not its name or the type the browser reports.
+    if (window.ApplyReadyFiles) {
+      const check = await window.ApplyReadyFiles.validate(file, ['image'], 50 * 1024 * 1024);
+      if (token !== loadToken) return;
+      if (!check.ok) { notifyError(check.error); return; }
+    } else if (!file.type.startsWith('image/')) {
       notifyError('That file is not a JPG or PNG photo. Choose a passport photo and try again.');
       return;
     }
@@ -129,6 +150,7 @@
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
+        if (token !== loadToken) return;   // removed or replaced while it was loading
         loadedImage = img;
         if (fileInfoBox) fileInfoBox.classList.remove('hidden');
         if (fileInfoText) fileInfoText.textContent = `${file.name} (${img.naturalWidth} × ${img.naturalHeight} px)`;
@@ -162,6 +184,7 @@
     sheetCanvas.width = canvasW;
     sheetCanvas.height = canvasH;
     const ctx = sheetCanvas.getContext('2d');
+    currentPaper = paperSpec;
 
     // Fill white paper background
     ctx.fillStyle = '#ffffff';
@@ -300,9 +323,17 @@
     // 1. High-Res JPEG blob. Encoding takes a moment; a click that lands before it is ready
     //    downloads the new sheet as soon as it exists, never the previous one.
     jpgPending = true;
+    const gen = ++renderGen;
     sheetCanvas.toBlob(async rawBlob => {
-      if (!rawBlob) return;
+      if (gen !== renderGen || !loadedImage) return;   // a newer sheet, or the photo was removed
+      if (!rawBlob) {
+        jpgPending = false;
+        jpgWanted = false;
+        notifyError('The sheet could not be saved as JPEG. The device may be low on memory; choose fewer copies or a smaller paper size.');
+        return;
+      }
       const blob = await withJfifDensity(rawBlob, DPI);
+      if (gen !== renderGen || !loadedImage) return;
       if (jpgBlobUrl) URL.revokeObjectURL(jpgBlobUrl);
       jpgBlobUrl = URL.createObjectURL(blob);
 
@@ -314,22 +345,20 @@
       if (jpgWanted && btnDownloadJpg) { jpgWanted = false; btnDownloadJpg.click(); }
     }, 'image/jpeg', 0.95);
 
-    // 2. High-Res Printable PDF (Points: 72 pt per inch)
-    if (btnDownloadPdf) {
-      btnDownloadPdf.onclick = (e) => {
-        e.preventDefault();
-        generatePrintPdf(paperSpec);
-      };
-    }
+    // 2. The PDF is built on demand from the sheet on screen (click handler in init).
   }
 
   async function generatePrintPdf(paperSpec) {
-    if (!sheetCanvas) return;
+    if (!sheetCanvas || !loadedImage) return;
+    const gen = renderGen;
 
     const paperPtW = (paperSpec.w * MM_TO_INCH) * 72;
     const paperPtH = (paperSpec.h * MM_TO_INCH) * 72;
 
     const jpegBlob = await new Promise(res => sheetCanvas.toBlob(res, 'image/jpeg', 0.95));
+    if (!loadedImage) return;                                         // removed while encoding
+    if (gen !== renderGen) { generatePrintPdf(currentPaper); return; }  // settings changed: build the new sheet
+    if (!jpegBlob) { notifyError('The PDF could not be created. The device may be low on memory; choose fewer copies or a smaller paper size.'); return; }
     const jpegBuffer = await jpegBlob.arrayBuffer();
     const jpegBytes = new Uint8Array(jpegBuffer);
 
@@ -407,10 +436,23 @@
     doc.body.removeChild(a);
   }
 
+  // Remove leaves nothing of the photo behind: on a shared computer the next person must not be
+  // able to see, download or print it.
   function resetAll() {
     loadedImage = null;
     loadedFile = null;
+    currentPaper = null;
+    renderGen++;
+    loadToken++;
     jpgWanted = false;
+    jpgPending = false;
+    if (sheetCanvas) {
+      const ctx = sheetCanvas.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, sheetCanvas.width, sheetCanvas.height);
+      sheetCanvas.width = 0;
+      sheetCanvas.height = 0;
+    }
+    if (btnDownloadJpg) { btnDownloadJpg.setAttribute('href', '#'); btnDownloadJpg.setAttribute('download', 'Passport_Photos_300DPI.jpg'); }
     if (jpgBlobUrl) {
       URL.revokeObjectURL(jpgBlobUrl);
       jpgBlobUrl = null;

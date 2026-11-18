@@ -14,7 +14,7 @@ requirement and I will get the file right", not as a list of features.
 
 | File | Owns |
 |---|---|
-| `css/app.css` | The whole interface, in numbered sections: 0 tokens, 1 base, 2 layout, 3 header (Tools menu, search), 4 footer, 5 buttons and fields, 6 choice controls, 7 tabs and disclosure, 8 feedback, 9 dialogs and toasts, 10 reading content, 11 page patterns (home, directory, guide lists, FAQ), 12 tool workspace, 13 tool specifics, 14 resume builder, 15 responsive, 16 print and motion, 17 file lists and batches, then one section per newer tool (18 resume library and saving, 19 PDF tools). |
+| `css/app.css` | The whole interface, in numbered sections: 0 tokens, 1 base, 2 layout, 3 header (Tools menu, search), 4 footer, 5 buttons and fields, 6 choice controls, 7 tabs and disclosure, 8 feedback, 9 dialogs and toasts, 10 reading content, 11 page patterns (home, directory, guide lists, FAQ), 12 tool workspace, 13 tool specifics, 14 resume builder, 15 responsive, 16 print and motion, 17 file lists and batches, then one section per newer tool (18 resume library and saving, 19 PDF tools, 20 batch images). |
 | `css/document.css` | The resume paper, its templates and its print layout (resume.html only). It is the output format, not interface, and `tests/content_tests.js` pins its hash. Do not edit it for interface work. |
 | `css/vendor/icons.min.css`, `css/vendor/cropper.min.css` | Icon subset (only the classes listed in it exist) and the cropper, restyled in `app.css`. |
 | `js/site.js` | Theme, header menu and phone sheet, on-screen keyboard state, phone layout of reference tables, `ApplyReadyUI.notify` (toast), `ApplyReadyUI.reveal`, `ApplyReadyUI.confirm` (dialog). |
@@ -187,6 +187,13 @@ with counts and actions, a `.batch-progress` bar, and a `.file-list` of `.file-r
 name and facts, `.file-status` in words with an icon, actions). `data-status` on a row is `queued`,
 `processing`, `done`, `error` or `cancelled`. PDF page thumbnails use `.page-grid` of `.page-tile`.
 Downloads of several results are offered individually and as one ZIP.
+
+The batch image pages (section 18, `scripts/lib/batch-workspace.js`) add a `.batch-panel` for progress
+(count, bar with `role="progressbar"`, time left, Cancel) and for the finished verdict (Download all as
+ZIP, Retry failed), a warning notice when changed settings make finished results stale ("Process
+again"), and rows with a result line (`.file-row__result`) and notes (`.file-row__notes`). Settings that
+matter less for a page sit under one "More settings" disclosure, which opens by itself when a value
+inside it needs fixing.
 
 ### Requirement (image resizer)
 Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, never inside a rail.

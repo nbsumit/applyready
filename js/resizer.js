@@ -125,6 +125,7 @@
   let currentFile = null;
   let sourceImage = null;
   let sourceDimensions = { width: 0, height: 0, sizeBytes: 0 };
+  let validationTicket = 0;
   let processedBlobUrl = null;
   let currentOpId = 0;
   let configRevision = 0;
@@ -351,9 +352,23 @@
     }
   }
 
+  /* The picture as it is shown: EXIF orientation (which Cropper applies as a rotation) and any
+     turn the person made, so a photo taken sideways on a phone keeps its real shape. */
+  function orientedSize() {
+    if (cropper && cropperReady) {
+      const img = cropper.getImageData();
+      const rotate = (cropper.getData().rotate || 0) % 180;
+      if (img && img.naturalWidth && img.naturalHeight) {
+        const quarter = Math.abs(rotate) === 90;
+        return { width: Math.round(quarter ? img.naturalHeight : img.naturalWidth), height: Math.round(quarter ? img.naturalWidth : img.naturalHeight) };
+      }
+    }
+    return { width: sourceDimensions.width, height: sourceDimensions.height };
+  }
+
   function useOriginalSize() {
     if (!cropperReady || !cropper) return;
-    const { width, height } = sourceDimensions;
+    const { width, height } = orientedSize();
     const maxVal = customMaxKBInput ? customMaxKBInput.value : 50;
     const validation = validateDimensionSpecs(width, height, maxVal);
     if (validation.dimErrorMsg) {
@@ -368,9 +383,14 @@
     if (dateInputGroup) dateInputGroup.style.display = 'none';
     if (aspectRatioSelect) aspectRatioSelect.value = 'original';
     if (processErrorBox) processErrorBox.classList.add('hidden');
+    // Keep the rotation and flips (from EXIF or the rotate buttons); only zoom and crop are reset.
+    const before = cropper.getData();
     updatePresetUI();
     cropper.reset();
-    cropper.setData({ x: 0, y: 0, width, height, rotate: 0, scaleX: 1, scaleY: 1 });
+    cropper.rotateTo(before.rotate || 0);
+    cropper.scale(before.scaleX || 1, before.scaleY || 1);
+    updateCropperRatio();
+    cropper.setData({ x: 0, y: 0, width, height });
     if (window.ApplyReadyUI) window.ApplyReadyUI.notify('Full image selected at its original dimensions. Set your file limit, then resize & compress.');
   }
 
@@ -737,9 +757,9 @@
       return;
     }
 
-    if (ratioType === 'original' && sourceDimensions.width > 0 && sourceDimensions.height > 0) {
-      cropper.setAspectRatio(sourceDimensions.width / sourceDimensions.height);
-      return;
+    if (ratioType === 'original') {
+      const size = orientedSize();
+      if (size.width > 0 && size.height > 0) { cropper.setAspectRatio(size.width / size.height); return; }
     }
 
     if (ratioType === '1:1') {
@@ -1095,9 +1115,20 @@
   /**
    * Handle image selection and decode verification
    */
-  function handleFileSelect(file) {
+  async function handleFileSelect(file) {
     if (!file) return;
     hideErrors();
+
+    // Identify the file by its first bytes, not its name or the type the browser reports.
+    if (window.ApplyReadyFiles && file.size > 0) {
+      const ticket = ++validationTicket;
+      const check = await window.ApplyReadyFiles.validate(file, ['image'], 50 * 1024 * 1024);
+      if (ticket !== validationTicket) return;   // a newer file was chosen meanwhile
+      if (!check.ok) { showProcessError(check.error); return; }
+      if (check.info && check.info.mime && !file.type) {
+        try { file = new File([file], file.name || `image.${check.info.ext}`, { type: check.info.mime }); } catch (e) { /* keep the original */ }
+      }
+    }
 
     if (file.size === 0) {
       showProcessError('The selected file is empty (0 bytes). Please select a valid image.');
@@ -1111,11 +1142,11 @@
       return;
     }
 
-    if (/^image\/hei[cf](-sequence)?$/i.test(file.type) || /\.hei[cf]$/i.test(file.name || '')) {
+    if (!window.ApplyReadyFiles && (/^image\/hei[cf](-sequence)?$/i.test(file.type) || /\.hei[cf]$/i.test(file.name || ''))) {
       showProcessError("iPhone photos (HEIC) aren't supported. Set Camera → Formats → Most Compatible, or share the photo as JPG.");
       return;
     }
-    if (!/^(image\/(jpeg|jpg|png|webp|bmp|gif|avif))$/i.test(file.type) && !(!file.type && /\.(jpg|jpeg|png|webp|bmp|gif|avif)$/i.test(file.name))) {
+    if (!window.ApplyReadyFiles && !/^(image\/(jpeg|jpg|png|webp|bmp|gif|avif))$/i.test(file.type) && !(!file.type && /\.(jpg|jpeg|png|webp|bmp|gif|avif)$/i.test(file.name))) {
       showProcessError('Unsupported format. Please select a JPG, PNG, WebP, GIF, BMP or AVIF image.');
       return;
     }

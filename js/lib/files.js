@@ -116,7 +116,10 @@
     if (!kinds.includes(info.kind)) {
       if (info.kind === 'heic') return { ok: false, info, error: `${file.name} is an HEIC photo. Most browsers cannot open HEIC; on an iPhone choose "Most Compatible" in Settings → Camera → Formats, or share the photo as JPEG.` };
       const wanted = kinds.map(k => ({ image: 'an image (JPEG, PNG, WebP)', pdf: 'a PDF', text: 'a text file', zip: 'a ZIP or DOCX file', json: 'a JSON backup' }[k] || k)).join(' or ');
-      return { ok: false, info, error: `${file.name} is ${info.kind === 'unknown' ? 'not a recognised file type' : 'a ' + info.label}. This tool needs ${wanted}.` };
+      const what = info.kind === 'unknown' ? 'not a recognised file type'
+        : info.kind === 'text' ? 'a plain text file'
+        : `${/^[AEIOU]/i.test(info.label) ? 'an' : 'a'} ${info.label}`;
+      return { ok: false, info, error: `${file.name} is ${what}. This tool needs ${wanted}; choose a file of that type instead.` };
     }
     const limit = limitBytes || LIMITS[info.kind] || 50 * MB;
     if (file.size > limit) return { ok: false, info, error: `${file.name} is ${formatBytes(file.size)}. The limit for this tool is ${formatBytes(limit)}, to keep your browser responsive.` };

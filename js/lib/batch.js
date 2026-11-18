@@ -80,7 +80,11 @@
           signal: controller.signal,
           progress: fraction => { item.progress = Math.max(0, Math.min(1, fraction)); emit(item); }
         });
-        if (controller.signal.aborted) throw new DOMException('Cancelled', 'AbortError');
+        if (controller.signal.aborted) {
+          // Finished just as it was cancelled or removed: the result is not kept, so release it now.
+          if (result && typeof opts.release === 'function') { try { opts.release(result, item); } catch (e) { /* ignore */ } }
+          throw new DOMException('Cancelled', 'AbortError');
+        }
         release(item);
         item.result = result;
         item.status = 'done';
@@ -145,10 +149,15 @@
       if (active) pump();
     }
 
-    /** Mark finished items queued again, e.g. after the output settings change. */
-    function requeueAll() {
-      items.forEach(item => { if (item.status !== 'processing') { release(item); item.status = 'queued'; item.error = ''; item.progress = 0; } });
+    /** Mark items queued again, e.g. after the output settings change. `filter(item)` limits it to
+        some items (default: every item that is not processing). Results are released. */
+    function requeueAll(filter) {
+      items.forEach(item => {
+        if (item.status === 'processing' || (typeof filter === 'function' && !filter(item))) return;
+        release(item); item.status = 'queued'; item.error = ''; item.progress = 0;
+      });
       emit();
+      if (active) pump();
     }
 
     function remove(id) {

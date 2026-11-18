@@ -1580,3 +1580,39 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
   .pdf-preview__frame { padding: var(--s-3); }
   .pdf-toolbar .btn { flex: 1 1 auto; }
 }
+
+/* ================================================================== 20. BATCH IMAGES */
+/* Batch image processor, image compressor and image converter (js/batch-image.js, markup from
+   scripts/lib/batch-workspace.js). Builds on the workspace (12) and file lists (17): a progress panel
+   while running, a verdict with the ZIP download when finished, and rows with result facts. */
+.ws--batch[data-state='empty'] #btnBatchStart { display: none; }
+.ws--batch .ws-stage { gap: var(--s-3); }
+.batch-panel { padding: var(--s-4) var(--s-5); background: var(--c-surface); border: var(--bw) solid var(--c-line); border-radius: var(--r-md); }
+.batch-progress__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-3); flex-wrap: wrap; }
+.batch-progress__text { flex: 1 1 200px; font-size: var(--fs-md); font-weight: var(--fw-medium); color: var(--c-text); font-variant-numeric: tabular-nums; }
+.batch-progress__eta { font-size: var(--fs-sm); color: var(--c-text-3); min-height: 1.5em; }
+.verdict.is-warning > .fa-solid { background: var(--c-warning-soft); color: var(--c-warning); }
+.batch-result__note { font-size: var(--fs-sm); color: var(--c-text-3); max-width: 70ch; }
+.batch-msg__title { font-weight: var(--fw-medium); }
+.batch-msg__list { margin: var(--s-1) 0 var(--s-2); padding-left: var(--s-5); display: grid; gap: 2px; font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.notice__body > .btn { margin-top: var(--s-2); }
+.file-row__result { font-size: var(--fs-sm); color: var(--c-text-2); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.file-row__notes { font-size: var(--fs-sm); color: var(--c-text-3); }
+.file-row.is-stale .file-status { color: var(--c-warning); }
+.file-row.is-stale .file-row__result { color: var(--c-text-3); }
+.file-row__actions .btn-icon .fa-solid { font-size: 16px; }
+.input--colour { padding: 2px; cursor: pointer; }
+.input--colour::-webkit-color-swatch-wrapper { padding: 0; }
+.input--colour::-webkit-color-swatch { border: 0; border-radius: var(--r-xs); }
+.input--colour::-moz-color-swatch { border: 0; border-radius: var(--r-xs); }
+.batch-more { border-top: var(--bw) solid var(--c-line); }
+.batch-more .disclosure__body { gap: var(--s-5); }
+/* Beside the long settings rail the empty drop zone stretches to the rail's height; keep its button
+   near the top so it is visible without scrolling. */
+@media (min-width: 1000px) {
+  .ws--batch[data-state='empty'] .dropzone { align-content: start; padding-top: var(--s-8); }
+}
+@media (max-width: 639px) {
+  .batch-panel { padding: var(--s-3) var(--s-4); }
+  .batch-progress__head .btn { width: 100%; }
+}
