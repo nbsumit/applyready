@@ -46,9 +46,9 @@ const stat = (label, id, value = '--') => `            <div class="meta-stat-ite
 
 const select = (id, label, options, selectedIdx = 0, hint = '') => `          <div class="field">
             <label for="${id}" class="field-label">${label}</label>
-            <select id="${id}">
+            <select id="${id}"${hint ? ` aria-describedby="${id}Hint"` : ''}>
 ${options.map(([v, t], i) => `              <option value="${v}"${i === selectedIdx ? ' selected' : ''}>${t}</option>`).join('\n')}
-            </select>${hint ? `\n            <p class="field-hint">${hint}</p>` : ''}
+            </select>${hint ? `\n            <p class="field-hint" id="${id}Hint">${hint}</p>` : ''}
           </div>`;
 
 const section = (title, body) => `        <div class="ws-section">
@@ -122,7 +122,7 @@ ${stat('File size', 'statPdfSize')}
             <a href="compress-pdf.html" class="btn btn-lg"><i class="fa-solid fa-compress" aria-hidden="true"></i> Compress to a size limit</a>
           </div>
         </div>
-${dropzone({ id: 'imgPdfDropzone', inputId: 'imgPdfFileInput', browseId: 'btnImgPdfBrowse', accept: 'image/jpeg,image/png,image/webp', multiple: true, aria: 'Upload images for PDF conversion', title: 'Add photos or scans', text: 'Each image becomes one page. Drop them here, or choose several at once.', button: 'Choose images', hint: 'JPG, PNG or WebP. You can reorder, rotate and remove pages next. Combined on this device, never uploaded.' })}
+${dropzone({ id: 'imgPdfDropzone', inputId: 'imgPdfFileInput', browseId: 'btnImgPdfBrowse', accept: 'image/jpeg,image/png,image/webp', multiple: true, aria: 'Upload images for PDF conversion', title: 'Add photos or scans', text: 'Each image becomes one page. Choose several at once<span class="dropzone__drag">, or drop them here</span>.', button: 'Choose images', hint: 'JPG, PNG or WebP. You can reorder, rotate and remove pages next. Combined on this device, never uploaded.' })}
         <div class="pagelist-head">
           <h2 class="pagelist-head__title">Pages</h2>
           <p class="pagelist-head__hint" id="pageOrderHint">Pages print in this order. Drag a page by its handle to move it, and rotate any page that is sideways.</p>
@@ -204,7 +204,7 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
             <p class="field-error" id="targetKbError" hidden></p>
           </div>
         </div>
-${section('Pages', `${select('compressDpi', 'Resolution', [['200', '200 DPI, sharpest'], ['150', '150 DPI, balanced (recommended)'], ['110', '110 DPI, smaller'], ['72', '72 DPI, smallest']], 1, 'The starting sharpness of each page. If the limit is tight, it is lowered further, down to 50 DPI.')}
+${section('Pages', `${select('compressDpi', 'Resolution', [['200', '200 DPI, sharpest'], ['150', '150 DPI, recommended'], ['110', '110 DPI, smaller'], ['72', '72 DPI, smallest']], 1, 'The starting sharpness of each page. If the limit is tight, it is lowered further, down to 50 DPI.')}
           <label class="switch" for="compressGrey"><span>Black and white (greyscale)</span><input type="checkbox" id="compressGrey" role="switch"></label>
           <p class="field-hint">Greyscale makes files smaller. Leave it off if a document has coloured stamps or photos.</p>`)}
       </div>

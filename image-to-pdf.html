@@ -274,7 +274,7 @@
           <input type="file" id="imgPdfFileInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" tabindex="-1" aria-hidden="true">
           <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
           <h2 class="dropzone__title">Add photos or scans</h2>
-          <p class="dropzone__text">Each image becomes one page. Drop them here, or choose several at once.</p>
+          <p class="dropzone__text">Each image becomes one page. Choose several at once<span class="dropzone__drag">, or drop them here</span>.</p>
           <button type="button" id="btnImgPdfBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose images</button>
           <p class="dropzone__hint">JPG, PNG or WebP. You can reorder, rotate and remove pages next. Combined on this device, never uploaded.</p>
         </div>
@@ -318,12 +318,12 @@
           <h2 class="ws-section__title">Quality</h2>
           <div class="field">
             <label for="pdfQualitySelect" class="field-label">Image quality</label>
-            <select id="pdfQualitySelect">
+            <select id="pdfQualitySelect" aria-describedby="pdfQualitySelectHint">
               <option value="0.92">High, for clear text scans</option>
               <option value="0.80" selected>Balanced, for most forms</option>
               <option value="0.65">Compact, for a smaller file</option>
             </select>
-            <p class="field-hint">Need a strict KB limit? Compress the PDF afterwards.</p>
+            <p class="field-hint" id="pdfQualitySelectHint">Need a strict KB limit? Compress the PDF afterwards.</p>
           </div>
         </div>
       </div>
