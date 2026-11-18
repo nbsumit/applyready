@@ -22,6 +22,7 @@ there are no accounts, no cookies, no analytics and no advertising, and every fe
 Every tool is listed in one registry, `scripts/lib/tools.js`, which generates the header menu, footer,
 the tool directory (`tools.html`), the home page entry points and the site search index.
 
+Contributing: see [`CONTRIBUTING.md`](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
 The plan and its progress are in [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/PROGRESS.md`](docs/PROGRESS.md).
 
 ## Privacy model
@@ -117,7 +118,19 @@ ApplyReady is free and open source. If you find it useful and would like to supp
 development, you can [contribute voluntarily](https://pages.razorpay.com/support-applyready). Your support
 helps maintain and improve the platform. All features remain free, regardless of contributions.
 
-## Licence and contact
+## Licence
 
-The source code is public at [github.com/nbsumit/applyready](https://github.com/nbsumit/applyready).
-Third-party licences are in `docs/licenses/`. Questions: hello@nbsumit.com.
+Copyright (C) 2026 Sumit Sengar and contributors.
+
+ApplyReady is free software: you can redistribute it and/or modify it under the terms of the
+[GNU Affero General Public License, version 3](LICENSE) (AGPL-3.0-only). In short: you may use, study,
+change and share it; if you run a modified version as a public website, you must offer its source code
+to its users under the same licence. That keeps ApplyReady and every derivative free and open.
+
+Third-party components keep their own licences (MIT, BSD, Apache-2.0, OFL, CC BY; see
+[`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) and `docs/licenses/`).
+
+## Contact
+
+Questions: hello@nbsumit.com. Bugs and ideas: [GitHub issues](https://github.com/nbsumit/applyready/issues).
+Security problems: see [`SECURITY.md`](SECURITY.md).
