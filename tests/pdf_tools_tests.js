@@ -644,6 +644,86 @@ const server = http.createServer((req, res) => {
     console.log('✓ Every PDF tool at 320 px with a file open: no sideways scrolling, no axe violations');
   }
 
+  /* ---------------------------------------------------------------- 10. Review: ids, thumbnails, focus, busy guard, limits */
+  {
+    const PAGES = ['merge-pdf.html', 'split-pdf.html', 'organize-pdf.html', 'pdf-to-image.html', 'pdf-to-text.html', 'add-page-numbers.html', 'watermark-pdf.html', 'compress-pdf.html'];
+    for (const file of PAGES) {
+      const html = fs.readFileSync(path.join(root, file), 'utf8');
+      const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]);
+      const dup = ids.filter((id, i) => ids.indexOf(id) !== i);
+      ok(dup.length === 0, `${file}: every id is unique (${dup.join(', ')})`);
+    }
+    // The main button of every drop zone opens the file picker (Compress once lost its binding).
+    for (const file of PAGES) {
+      const { context, page } = await open(file);
+      const chooser = page.waitForEvent('filechooser', { timeout: 5000 }).then(() => true, () => false);
+      await page.locator('.ws .dropzone button').first().click();
+      ok(await chooser, `${file}: the Choose button opens the file picker`);
+      await context.close();
+    }
+    // Thumbnails of every page shape sit inside their box, in the selectable grid and in Organise, desktop and phone.
+    for (const [file, input, grid, width] of [['split-pdf.html', '#splitApp .dropzone input', '#splitGrid', 1280], ['organize-pdf.html', '#orgDropInput', '#orgGrid', 1280], ['organize-pdf.html', '#orgDropInput', '#orgGrid', 390]]) {
+      const { context, page } = await open(file, { viewport: { width, height: 900 } });
+      await page.setInputFiles(input, F['text.pdf']);
+      await page.waitForFunction(g => document.querySelectorAll(`${g} .page-tile__img img`).length >= 6, grid, { timeout: 30000 });
+      await page.waitForTimeout(400);
+      const outside = await page.evaluate(g => [...document.querySelectorAll(`${g} .page-tile__img`)].filter(box => {
+        const b = box.getBoundingClientRect(), i = box.querySelector('img').getBoundingClientRect();
+        return i.left < b.left - 0.5 || i.right > b.right + 0.5 || i.top < b.top - 0.5 || i.bottom > b.bottom + 0.5;
+      }).length, grid);
+      ok(outside === 0, `${file} at ${width} px: every thumbnail fits inside its box (${outside} do not)`);
+      // The drop zone folds away once the file is open; keyboard focus lands on the file's name, not the top of the page.
+      await context.close();
+    }
+    for (const [file, button, nameSel] of [['add-page-numbers.html', '#pnApp [data-browse]', '#pnFileName'], ['compress-pdf.html', '#btnCompressBrowse', '#compressFileInfoText']]) {
+      const { context, page } = await open(file);
+      await page.locator(button).focus();
+      const chooserPromise = page.waitForEvent('filechooser', { timeout: 15000 });
+      await page.waitForTimeout(300); // file chooser interception is switched on asynchronously
+      await page.keyboard.press('Enter');
+      const chooser = await chooserPromise;
+      await chooser.setFiles(F['text.pdf']);
+      await page.waitForFunction(sel => document.activeElement === document.querySelector(sel), nameSel, { timeout: 30000 });
+      await page.keyboard.press('Tab');
+      ok(/Replace|different/i.test(await page.evaluate(() => document.activeElement.textContent + ' ' + (document.activeElement.getAttribute('aria-label') || ''))), `${file}: after opening a file with the keyboard, focus is on its name and Tab reaches Replace`);
+      await context.close();
+    }
+    // A file pasted while a job runs must not replace the open document mid-job.
+    {
+      const { context, page } = await open('pdf-to-image.html');
+      await page.setInputFiles('#imgApp .dropzone input', F['scan-12.pdf']);
+      await waitShown(page, '#imgPages');
+      await page.selectOption('#imgDpi', '300').catch(() => page.evaluate(() => { const s = document.getElementById('imgDpi'); s.value = '300'; s.dispatchEvent(new Event('change')); }));
+      await page.click('#imgRun');
+      await waitShown(page, '#imgProgress');
+      const second = fs.readFileSync(F['second.pdf']).toString('base64');
+      await page.evaluate(b64 => {
+        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        const dt = new DataTransfer();
+        dt.items.add(new File([bytes], 'second.pdf', { type: 'application/pdf' }));
+        document.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true }));
+      }, second);
+      await page.click('#imgRemove');
+      await page.waitForTimeout(500);
+      ok(await page.locator('#imgProgress').isVisible() && await page.locator('#imgFile').isVisible() && /scan-12\.pdf/.test(await page.locator('#imgFileName').innerText()), 'pdf-to-image: while the job runs, a pasted file and Remove leave the open file in place');
+      await waitShown(page, '#imgResult', 120000);
+      ok(await page.locator('#imgFile').isVisible() && /scan-12\.pdf/.test(await page.locator('#imgFileName').innerText()) && await page.locator('#imgOutputs li').count() === 12, 'pdf-to-image: a paste or Remove during a job waits; the job finishes with the original file');
+      await context.close();
+    }
+    // Split refuses a plan over the output limit before it starts.
+    {
+      const many = path.join(tmp, 'many.pdf');
+      fs.writeFileSync(many, await textPdf('MANY', Array.from({ length: Kit.LIMITS.outputs + 1 }, () => [300, 400, 0])));
+      const { context, page } = await open('split-pdf.html');
+      await page.setInputFiles('#splitApp .dropzone input', many);
+      await waitShown(page, '#splitPages');
+      await page.click('#splitMode [data-value="every"]');
+      ok(await page.locator('#splitRun').isDisabled() && /limit is 500/.test(await page.locator('#splitSummary').innerText()), 'split: every page of a 501-page PDF is refused before starting, with the limit named');
+      await context.close();
+    }
+    console.log('✓ Review checks: unique ids, thumbnails inside their boxes, focus after opening, no file change mid-job, split limit');
+  }
+
   ok(errors.length === 0, `page errors or CSP violations: ${errors.join(' | ')}`);
   await browser.close();
   server.close();

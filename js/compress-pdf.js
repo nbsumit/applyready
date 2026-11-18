@@ -108,6 +108,8 @@
     onFiles: take,
     onReject: messages => error.show(messages.map(m => /hoose|try/i.test(m) ? m : `${m} Choose a PDF or a photo of the document.`))
   });
+  // The workspace markup (scripts/build-tool-pages.js) names its button by id rather than data-browse.
+  $('btnCompressBrowse').addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); dz.open(); });
   els.replace.addEventListener('click', () => dz.open());
   els.remove.addEventListener('click', clear);
 

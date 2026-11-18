@@ -61,7 +61,7 @@
     const withMarkers = els.markers.checked;
     return res.pages.map(p => {
       if (!withMarkers) return p.text;
-      const body = p.text || '[No text on this page. It is probably a scanned picture; ApplyReady does not read text from pictures.]';
+      const body = p.text || (p.failed ? '[This page could not be read. The PDF may be damaged here.]' : '[No text on this page. It is probably a scanned picture; ApplyReady does not read text from pictures.]');
       return `Page ${p.index + 1}\n\n${body}`;
     }).filter(s => s !== '').join(withMarkers ? '\n\n\n' : '\n\n');
   }
@@ -73,25 +73,28 @@
     const url = urls.make(new Blob([text.replace(/\n/g, '\r\n')], { type: 'text/plain;charset=utf-8' }));
     els.download.href = url;
     els.download.setAttribute('download', `${UI.stem(tool.state.file.name)}.txt`);
-    const empty = res.pages.filter(p => !p.text);
-    const withText = res.pages.length - empty.length;
+    const empty = res.pages.filter(p => !p.text && !p.failed);
+    const failed = res.pages.filter(p => p.failed);
+    const withText = res.pages.length - empty.length - failed.length;
     els.statPages.textContent = String(res.pages.length);
     els.statWith.textContent = String(withText);
     els.statChars.textContent = res.pages.reduce((s, p) => s + p.text.length, 0).toLocaleString('en-IN');
     if (!withText) {
-      els.resultTitle.textContent = 'No text found';
-      els.resultText.textContent = 'None of these pages contains text. They are probably scans or photos, which are pictures of text.';
+      els.resultTitle.textContent = empty.length ? 'No text found' : 'The text could not be read';
+      els.resultText.textContent = empty.length
+        ? 'None of these pages contains text. They are probably scans or photos, which are pictures of text.'
+        : 'These pages could not be read. The PDF may be damaged; open it on your device to check it.';
     } else {
       els.resultTitle.textContent = 'Text extracted';
       els.resultText.textContent = `Text from ${UI.plural(withText, 'page')} is below. Check columns and tables before you paste.`;
     }
     els.result.querySelector('.verdict > .fa-solid').className = withText ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
     els.result.classList.toggle('is-warning', !withText);
-    els.empty.classList.toggle('hidden', !empty.length);
-    if (empty.length) {
-      const list = K.formatRanges(empty.map(p => p.index));
-      els.emptyBody.textContent = `${empty.length === 1 ? 'Page' : 'Pages'} ${list} ${empty.length === 1 ? 'has' : 'have'} no text: probably a scanned picture. ApplyReady does not read text from pictures (OCR). Use the original document, or type that text yourself.`;
-    }
+    els.empty.classList.toggle('hidden', !empty.length && !failed.length);
+    const notes = [];
+    if (empty.length) notes.push(`${empty.length === 1 ? 'Page' : 'Pages'} ${K.formatRanges(empty.map(p => p.index))} ${empty.length === 1 ? 'has' : 'have'} no text: probably a scanned picture. ApplyReady does not read text from pictures (OCR). Use the original document, or type that text yourself.`);
+    if (failed.length) notes.push(`${failed.length === 1 ? 'Page' : 'Pages'} ${K.formatRanges(failed.map(p => p.index))} could not be read; the PDF may be damaged there.`);
+    els.emptyBody.textContent = notes.join(' ');
     els.copy.disabled = !text.trim() || !withText;
     els.download.classList.toggle('hidden', !withText);
   }
@@ -106,10 +109,11 @@
       for (let k = 0; k < list.length; k++) {
         K.throwIfAborted(signal);
         if (k % 5 === 0) progress(k / list.length, `Reading page ${list[k] + 1} (${k + 1} of ${list.length})…`);
-        let text = '';
+        // A damaged page should not cost the text of every other page: note it and carry on.
+        let text = '', failed = false;
         try { text = await K.pageText(state.jsDoc, list[k]); }
-        catch (e) { throw new K.PdfError('damaged', `Page ${list[k] + 1} could not be read. The PDF may be damaged.`); }
-        out.push({ index: list[k], text });
+        catch (e) { failed = true; }
+        out.push({ index: list[k], text, failed });
         if (k % 10 === 9) await K.tick();
       }
       return { pages: out };
