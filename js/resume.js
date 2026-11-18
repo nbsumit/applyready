@@ -293,8 +293,6 @@
     redoStack.length = 0;
     isDirty = false;
     collapsedEntries.clear();
-    const apply = getEl('btnApplyRecommendedOrder');
-    if (apply) apply.classList.add('hidden');
     refreshWholeEditor();
     updateUndoRedoButtons();
   }
@@ -814,35 +812,10 @@
     if (tmpl.fontFamily) resumeData.design.fontFamily = tmpl.fontFamily;
     if (tmpl.density) resumeData.design.density = tmpl.density;
 
-    const btnApplyRecommended = getEl('btnApplyRecommendedOrder');
-
-    if (tmpl.recommendedOrder && Array.isArray(tmpl.recommendedOrder)) {
-      if (isDocumentEmpty()) {
-        // Automatically apply recommended order for new empty documents
-        resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData);
-        if (btnApplyRecommended) btnApplyRecommended.classList.add('hidden');
-      } else {
-        // Document has content: do not overwrite user's section order silently.
-        const currentOrder = resumeData.design.sectionOrder || [];
-        const isDifferent = JSON.stringify(SCHEMA.normalizeSectionOrder(currentOrder, resumeData)) !== JSON.stringify(SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData));
-        if (btnApplyRecommended) {
-          if (isDifferent) {
-            btnApplyRecommended.classList.remove('hidden');
-            btnApplyRecommended.innerHTML = `<i aria-hidden="true" class="fa-solid fa-arrows-rotate"></i> Apply ${escapeHTML(tmpl.name)}'s Recommended Section Order`;
-            btnApplyRecommended.onclick = () => {
-              pushHistoryState();
-              resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData);
-              renderSectionOrderControls();
-              renderResumePreview();
-              btnApplyRecommended.classList.add('hidden');
-            };
-          } else {
-            btnApplyRecommended.classList.add('hidden');
-          }
-        }
-      }
-    } else if (btnApplyRecommended) {
-      btnApplyRecommended.classList.add('hidden');
+    // An empty resume takes the template's section order; one with content keeps its own order,
+    // and the Style step offers the template's order as a button (updateRecommendedOrderButton).
+    if (Array.isArray(tmpl.recommendedOrder) && isDocumentEmpty()) {
+      resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData);
     }
 
     // Update gallery UI active states
@@ -1215,6 +1188,27 @@
     }
 
     renderSectionOrderControls();
+    const apply = getEl('btnApplyRecommendedOrder');
+    if (apply) apply.addEventListener('click', () => {
+      const tmpl = TEMPLATES[resumeData.template];
+      if (!tmpl || !Array.isArray(tmpl.recommendedOrder)) return;
+      pushHistoryState();
+      resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData);
+      renderSectionOrderControls();
+      renderResumePreview();
+      const first = document.querySelector('#sectionOrderContainer button:not(:disabled), #sectionOrderContainer input');
+      if (first) first.focus();
+    });
+  }
+
+  // Offer the template's own section order whenever the resume uses a different one.
+  function updateRecommendedOrderButton() {
+    const apply = getEl('btnApplyRecommendedOrder');
+    if (!apply) return;
+    const tmpl = TEMPLATES[resumeData.template] || {};
+    const differs = Array.isArray(tmpl.recommendedOrder) && JSON.stringify(SCHEMA.sectionKeys(resumeData)) !== JSON.stringify(SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData));
+    apply.classList.toggle('hidden', !differs);
+    if (differs) apply.innerHTML = `<i aria-hidden="true" class="fa-solid fa-arrows-rotate"></i> Use the ${escapeHTML(tmpl.name)} section order`;
   }
 
   function updateDesignControlsFromState() {
@@ -1244,6 +1238,7 @@
     container.innerHTML = '';
 
     const order = SCHEMA.sectionKeys(resumeData);
+    updateRecommendedOrderButton();
     const labels = { academic: 'Academic & Research (CV)' };
     ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => { labels[key] = TPL.getSectionTitle(resumeData, resumeData.template, key); });
     ['certifications', 'achievements', 'volunteering', 'languages', 'publications', 'references'].forEach(key => { labels[key] = TPL.getSectionLabel(resumeData.template, key); });

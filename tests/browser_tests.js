@@ -109,24 +109,24 @@ const server = http.createServer((req,res) => {
   await page.locator('#btnUndo').click();ok(await page.locator('#fullName').inputValue()==='', 'Typing undo restores previous text');
   await page.locator('#btnRedo').click();ok(await page.locator('#fullName').inputValue()==='Jordan Lee', 'Typing redo restores text');
   await page.locator('#email').fill('jordan@example.com');
-  await page.locator('#tabDownload').click();
-  await page.locator('#chkSaveDraft').check();
+  // Saving is on by default: the resume is written to this browser shortly after typing stops.
   await page.locator('#tabDesign').click();await page.locator('#pageSizeSelect').selectOption('letter');await page.locator('#fontSelect').selectOption('sans');
-  await page.reload();ok(await page.locator('#fullName').inputValue()==='Jordan Lee','Consented draft restores after reload');
+  await page.waitForFunction(()=>/^Saved on this device/.test(document.getElementById('saveStatusText').textContent));
+  await page.reload();await page.waitForFunction(()=>document.getElementById('fullName').value==='Jordan Lee');ok(await page.locator('#fullName').inputValue()==='Jordan Lee','Autosaved resume reopens after reload');
   await page.locator('#tabDesign').click();ok(await page.locator('#pageSizeSelect').inputValue()==='letter','Restored design selector agrees with saved paper size');
-  ok(await page.locator('#fontSelect').inputValue()==='sans','Restored typography selector agrees with saved draft');
+  ok(await page.locator('#fontSelect').inputValue()==='sans','Restored typography selector agrees with the saved resume');
   await page.locator('#tabContent').click();
   const nameBefore=await page.locator('#fullName').inputValue();
-  await page.locator('#btnLoadSample').click();await dialog.waitFor({state:'visible'});ok(await dialog.count()===1,'Replacing an existing draft requires an explicit decision');
+  await page.locator('#btnLoadSample').click();await dialog.waitFor({state:'visible'});ok(await dialog.count()===1,'Replacing written content with the sample requires an explicit decision');
   await dialog.locator('[data-act="cancel"]').click();
   ok(await page.locator('#fullName').inputValue()===nameBefore,'Canceling sample replacement preserves content');
   await page.locator('#tabDownload').click();
   await page.locator('#fileImportInput').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({version:2,data:{personal:{fullName:[]},experience:[],education:[],projects:[]}}))});
-  await page.locator('#taskNotification').filter({hasText:'Could not import'}).waitFor();
+  await page.locator('#taskNotification').filter({hasText:'not an ApplyReady resume backup'}).waitFor();
   ok(await page.locator('#fullName').inputValue()===nameBefore,'Malformed backup cannot erase or crash the current resume');
   const fixture=resumeFixture();
+  // Importing never overwrites: the backup opens as a new resume and the current one stays saved.
   await page.locator('#fileImportInput').setInputFiles({name:'resume.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({version:2,app:'ApplyReady',data:fixture}))});
-  await dialog.waitFor({state:'visible'});await dialog.locator('[data-act="ok"]').click();
   await page.waitForFunction(()=>document.getElementById('resumeSheet').textContent.includes('GRANT_MARKER'));
   ok(await page.locator('#fullName').evaluate(el=>el===document.activeElement), 'Restoring a backup focuses its contact details');
   ok(await page.locator('#fullName').evaluate(el=>el.getBoundingClientRect().top>=document.querySelector('.site-header').getBoundingClientRect().bottom), 'Restored contact fields are clear of the sticky navigation');
@@ -207,12 +207,13 @@ const server = http.createServer((req,res) => {
   ok(await page.locator('[data-template-id="software-engineer"] .btn-select-template').getAttribute('aria-pressed')==='true','Gallery still marks the template in use after loading the sample');
   ok((await page.locator('#resumeVisualPages').textContent()).includes('Frameworks & Libraries:'),'Template skill labels reach the preview');
   const openSection=async id=>{const header=page.locator(`#${id} .accordion-header`);if(await header.getAttribute('aria-expanded')!=='true')await header.click();};
+  const previewHas=text=>page.waitForFunction(t=>document.getElementById('resumeVisualPages').textContent.includes(t),text).then(()=>true,()=>false);
   await openSection('sec-experience');await page.locator('#sec-experience .disclosure--quiet > summary').click();await page.locator('#experienceTitleInput').fill('Internships');
-  ok((await page.locator('#resumeVisualPages').textContent()).includes('INTERNSHIPS'),'Edited section heading reaches the preview');
+  ok(await previewHas('INTERNSHIPS'),'Edited section heading reaches the preview');
   await openSection('sec-skills');await page.locator('#skillLabelLanguages').fill('Programming');
-  ok((await page.locator('#resumeVisualPages').textContent()).includes('Programming:'),'Renamed skill row label reaches the preview');
+  ok(await previewHas('Programming:'),'Renamed skill row label reaches the preview');
   await page.locator('#skillLabelLanguages').fill('');
-  ok((await page.locator('#resumeVisualPages').textContent()).includes('Languages:'),'Clearing a skill label restores the template wording');
+  ok(await previewHas('Languages:'),'Clearing a skill label restores the template wording');
   await page.locator('#tabDesign').click();
   await page.getByRole('button',{name:/^Tech \(\d+\)$/}).click();
   const techCount=Object.values(TEMPLATES).filter(t=>t.group==='tech').length;
@@ -241,6 +242,8 @@ const server = http.createServer((req,res) => {
   ok(missingTerms.includes('Kubernetes') && missingTerms.includes('Terraform'),'Job description terms absent from the resume are listed');
   ok(foundTerms.includes('Jira') && foundTerms.includes('Smartsheet'),'Job description terms already in the resume are recognised');
   ok(await page.evaluate(()=>!JSON.stringify(localStorage).includes('Kubernetes')),'Pasted job description is never stored');
+  await page.waitForTimeout(900);
+  ok(await page.evaluate(async()=>!JSON.stringify(await window.ApplyReadyStore.getAll('resumes')).includes('Kubernetes')),'Pasted job description is not saved with the resume');
   await audit('resume-review-tab');
   await page.setViewportSize({width:320,height:800});
   await page.locator('#tabEdit').click();
@@ -253,19 +256,24 @@ const server = http.createServer((req,res) => {
   }
   ok(!await overflow(), 'Mobile export controls fit a 320px screen');
   await page.screenshot({path:path.join(output,'resume-mobile-export.png'),fullPage:true});
-  // Unsaved work without device saving is protected from an accidental close.
-  for (const [saveDraft, expected] of [[false, true], [true, false]]) {
+  // With saving switched off (shared computer), closing with changes asks first; with saving on it does not.
+  for (const [savingOn, expected] of [[false, true], [true, false]]) {
     const guarded = await context.newPage();
-    await guarded.addInitScript(enabled => { try { localStorage.setItem('applyready_draft_enabled', String(enabled)); localStorage.removeItem('applyready_resume_draft'); } catch (e) {} }, saveDraft);
     await guarded.goto(`${origin}/resume.html`);
+    await guarded.waitForFunction(() => !document.getElementById('resumeAppLayout').hasAttribute('aria-busy'));
+    await guarded.locator('#tabDownload').click();
+    if (savingOn) await guarded.locator('#chkSaveDevice').check(); else await guarded.locator('#chkSaveDevice').uncheck();
+    await guarded.locator('#tabContent').click();
     await guarded.locator('#fullName').fill('Unsaved Person');
+    if (savingOn) await guarded.waitForFunction(() => /^Saved on this device/.test(document.getElementById('saveStatusText').textContent));
+    else ok(await guarded.locator('#saveNotice').filter({ hasText: 'Saving is off on this device' }).isVisible(), 'Saving switched off is explained next to the editor');
     let warned = false;
     guarded.on('dialog', dialog => { if (dialog.type() === 'beforeunload') warned = true; return dialog.accept(); });
     await guarded.close({ runBeforeUnload: true });
     await new Promise(resolve => setTimeout(resolve, 300));
-    ok(warned === expected, saveDraft ? 'No leave warning when the draft is saved on the device' : 'Closing with unsaved resume work asks for confirmation');
+    ok(warned === expected, savingOn ? 'No leave warning when the resume is saved on the device' : 'Closing with unsaved resume work asks for confirmation when saving is off');
   }
-  console.log('✓ Draft recovery, malformed imports, all templates, PDF/Word/text downloads, and modal focus');
+  console.log('✓ Autosave and reopen, malformed imports, all templates, PDF/Word/text downloads, and modal focus');
 
   await visit('image-resizer.html');await page.setViewportSize({width:390,height:844});
   const image=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d'),pixels=x.createImageData(512,512);let seed=17;for(let i=0;i<pixels.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;pixels.data[i]=seed&255;pixels.data[i+1]=(seed>>8)&255;pixels.data[i+2]=(seed>>16)&255;pixels.data[i+3]=255;}x.putImageData(pixels,0,0);x.clearRect(220,220,72,72);return c.toDataURL('image/png').split(',')[1];});
