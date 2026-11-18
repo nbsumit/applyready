@@ -854,6 +854,9 @@
     if (layout) layout.removeAttribute('aria-busy');
     scheduleSave();
     refreshStatus();
+    // Say at once what a screen reader user would otherwise only find in the notice.
+    if (!state.persistent) notify('This browser is not keeping data for ApplyReady, so your work is lost when you close this tab. Download a backup file to keep a copy.', true);
+    else if (linkProblem) notify(linkProblem);
   }
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', start);
