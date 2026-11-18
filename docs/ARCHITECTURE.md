@@ -138,6 +138,10 @@ All resumes (Your data page and the resume library):
 }
 ```
 
+The Your data page reads, exports and imports resumes with the same `js/resume-library.js` functions as the
+resume builder, refuses an import when saving is switched off or browser storage is unavailable, and
+posts `deleted` and `saved` messages on the `applyready-resumes` channel so open builder tabs follow.
+
 Importing never overwrites: each imported resume becomes a new library entry, keeping the edit
 dates from the file (never later than the import). Files over 5 MB, with an
 unknown `app`, or with a newer version than the code understands are refused with a message.
