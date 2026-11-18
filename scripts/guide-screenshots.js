@@ -170,6 +170,7 @@ function photoSet(n) {
 const SHOTS = {
   /* ---- shots used by the background guides (regenerated with the current interface) ---- */
   'resizer-result-table': {
+    viewport: 720,
     alt: 'An ApplyReady result for a 350 by 450 pixel photo under a 50 KB limit: the Download button, a preview, and a table comparing the required file size, dimensions and format with the produced file.',
     async run(page, origin) {
       await resizerWith(page, origin, '/passport-photo-resizer.html', null, sample('test-portrait.jpg'));
@@ -177,38 +178,41 @@ const SHOTS = {
       await page.waitForSelector('#resultArea:not(.hidden)');
       await settle(page, 600);
       await top(page);
-      await annotate(page, [['.check-table tbody tr:nth-child(1)', 'Size in KB and exact bytes', 'left'], ['.check-table tbody tr:nth-child(2)', 'Pixel size, read back from the file', 'left'], ['#btnDownload', 'Download only after the ticks', 'left']]);
+      await annotate(page, [['.check-table tbody tr:nth-child(1)', 'Size in KB and exact bytes', 'corner'], ['.check-table tbody tr:nth-child(2)', 'Pixel size, read back from the file', 'corner'], ['#btnDownload', 'Download only after the ticks', 'corner']]);
       return regionOf(page, ['.ws-result__head', '.check-table']);
     }
   },
   'resizer-settings': {
+    viewport: 720,
     alt: 'The Size, file limit and format panel of the ApplyReady resizer, showing width and height in pixels, the minimum and maximum KB fields and the file format menu.',
     async run(page, origin) {
-      await resizerWith(page, origin, '/image-resizer.html', 'custom', sample('test-portrait.jpg'));
+      await resizerWith(page, origin, '/passport-photo-resizer.html', null, sample('test-portrait.jpg'));
       await openSettings(page);
       await settle(page, 300);
-      await annotate(page, [['.ws-dims', 'Pixel size the form asks for', 'above'], ['#customMinKB', 'Minimum KB, if the form has one', 'above'], ['#customMaxKB', 'Maximum KB', 'below'], ['#formatSelect', 'JPEG unless the form says otherwise', 'below']]);
+      await annotate(page, [['.ws-dims', 'Pixel size the form asks for', 'corner'], ['#customMinKB', 'Minimum KB, if the form has one', 'corner'], ['#customMaxKB', 'Maximum KB', 'corner'], ['#formatSelect', 'JPEG unless the form says otherwise', 'corner']]);
       return regionOf(page, ['#wsCustom']);
     }
   },
   'resizer-units-cm': {
+    viewport: 720,
     alt: 'The ApplyReady resizer with the unit set to centimetres and 300 DPI, showing the width and height fields labelled in centimetres.',
     async run(page, origin) {
       await resizerWith(page, origin, '/image-resizer.html', 'custom', sample('test-portrait.jpg'));
       await openSettings(page);
       await page.selectOption('#unitSelect', 'cm');
       await settle(page, 300);
-      await annotate(page, [['#unitSelect', 'Unit: centimetres', 'below'], ['#dpiSelect', 'DPI turns cm into pixels', 'below'], ['.ws-dims', 'Size in cm', 'above']]);
+      await annotate(page, [['#unitSelect', 'Unit: centimetres', 'corner'], ['#dpiSelect', 'DPI turns cm into pixels', 'corner'], ['.ws-dims', 'Size in cm', 'corner']]);
       return regionOf(page, ['.ws-dims', '#unitSelect', '#dpiSelect']);
     }
   },
   'resizer-crop': {
+    viewport: 720,
     alt: 'The ApplyReady crop frame over a test portrait, with the frame locked to the passport photo shape and the rotate and zoom buttons below it.',
     async run(page, origin) {
       await resizerWith(page, origin, '/passport-photo-resizer.html', null, sample('test-portrait.jpg'));
       await page.evaluate(() => document.getElementById('cropperActiveArea').scrollIntoView({ block: 'start' }));
-      await annotate(page, [['.cropper-crop-box', 'Frame keeps the output shape', 'right'], ['.ws-toolbar__group', 'Rotate and zoom', 'below']]);
-      return regionOf(page, ['.cropper-container-wrapper', '.ws-toolbar']);
+      await annotate(page, [['.cropper-crop-box', 'Frame keeps the output shape', 'right'], ['.ws-toolbar__group', 'Rotate and zoom', 'corner']]);
+      return regionOf(page, ['#cropperActiveArea .ws-step', '.cropper-container-wrapper', '.ws-toolbar']);
     }
   },
   'signature-cleaner': {
@@ -218,18 +222,19 @@ const SHOTS = {
       await page.setInputFiles('#cleanerFileInput', sample('test-signature.jpg'));
       await page.waitForFunction(() => (document.getElementById('btnCleanerDownload').getAttribute('href') || '').startsWith('blob:'));
       await settle(page);
-      await annotate(page, [['#cleanerOriginalCanvas', 'Phone photo: grey, uneven paper', 'above'], ['#cleanerCanvas', 'Cleaned: white paper, dark ink', 'above']]);
+      await annotate(page, [['#cleanerOriginalCanvas', 'Phone photo: grey, uneven paper', 'below'], ['#cleanerCanvas', 'Cleaned: white paper, dark ink', 'below']]);
       return regionOf(page, ['#cleanerOriginalCanvas', '#cleanerCanvas']);
     }
   },
   'passport-sheet': {
+    viewport: 560,
     alt: 'The ApplyReady passport photo print preview: copies of one photo laid out on a 4 by 6 inch sheet with thin cutting lines.',
     async run(page, origin) {
       await page.goto(origin + '/passport-photo-print.html');
       await page.setInputFiles('#printFileInput', sample('test-portrait.jpg'));
       await page.waitForSelector('#printPreviewArea:not(.hidden)');
       await settle(page, 600);
-      await annotate(page, [['#printPreviewArea .ws-preview', 'Whole sheet, to scale', 'above']]);
+      await annotate(page, [['#printPreviewArea .ws-preview', 'Whole sheet, to scale', 'below']]);
       return regionOf(page, ['#printPreviewArea']);
     }
   },
@@ -240,11 +245,12 @@ const SHOTS = {
       await page.setInputFiles('#imgPdfFileInput', [sample('test-portrait.jpg'), sample('test-signature.jpg')]);
       await page.locator('.page-row').nth(1).waitFor();
       await settle(page);
-      await annotate(page, [['.page-row__num', 'Page order in the PDF', 'above'], ['.page-row__handle', 'Drag to reorder', 'below'], ['.page-row .btn-rotate', 'Rotate a sideways scan', 'below']]);
-      return regionOf(page, ['#imageListContainer']);
+      await annotate(page, [['.page-row__num', 'Page order in the PDF', 'right'], ['.page-row__actions', 'Drag, rotate, move or remove', 'below']]);
+      return regionOf(page, ['#pageOrderHint', '#imageListContainer']);
     }
   },
   'compress-pdf': {
+    viewport: 720,
     alt: 'The ApplyReady PDF compressor showing the file size before and after compression and the maximum file size choices.',
     async run(page, origin) {
       await page.goto(origin + '/compress-pdf.html');
@@ -262,7 +268,7 @@ const SHOTS = {
       await resumePage(page, origin);
       await page.click('#tabReview');
       await settle(page);
-      await annotate(page, [['#reviewChecklist .review-item', 'What is missing, and where', 'above'], ['#reviewChecklist .review-jump-btn', 'Fix opens the exact field', 'left']]);
+      await annotate(page, [['#reviewChecklist .review-item', 'What is missing, and where', 'above'], ['#reviewChecklist .review-jump-btn', 'Fix opens the exact field', 'corner']]);
       return regionOf(page, ['#reviewHeading', '#reviewChecklist']);
     }
   },
@@ -275,7 +281,7 @@ const SHOTS = {
       await page.fill('#jobDescriptionInput', 'We are hiring an Operations Coordinator to manage vendor contracts, improve on-time delivery, build Power BI dashboards, run SQL queries on logistics data and coordinate with procurement and finance teams. Experience with ERP systems, inventory planning and stakeholder communication is required.');
       await settle(page, 800);
       await page.evaluate(() => document.getElementById('jobDescriptionInput').scrollIntoView({ block: 'start' }));
-      await annotate(page, [['#jobDescriptionInput', 'Paste the job advert', 'above'], ['#keywordMatchResult', 'Terms found and missing', 'above']]);
+      await annotate(page, [['#jobDescriptionInput', 'Paste the job advert', 'corner'], ['#keywordMatchResult', 'Terms found and missing', 'corner']]);
       return regionOf(page, ['#jobDescriptionInput', '#keywordMatchResult']);
     }
   },
@@ -286,7 +292,7 @@ const SHOTS = {
       await loadSample(page);
       await openSection(page, 'skills');
       await page.locator('#sec-skills').scrollIntoViewIfNeeded();
-      await annotate(page, [['#sec-skills .skill-row-inputs', 'Label, then the skills on one line', 'above']]);
+      await annotate(page, [['#sec-skills .skill-row-inputs', 'Label, then the skills on one line', 'corner']]);
       return regionOf(page, ['#sec-skills']);
     }
   },
@@ -299,7 +305,7 @@ const SHOTS = {
       await page.click('#tabDesign');
       await settle(page, 700);
       await top(page);
-      await annotate(page, [['.rb-pages', 'Page count updates as you edit', 'below'], ['#templateGalleryGrid > :first-child', 'Every template is single-column', 'right']]);
+      await annotate(page, [['.rb-pages', 'Page count updates as you edit', 'below'], ['#templateGalleryGrid > :first-child', 'Every template is single-column', 'corner']]);
       return regionOf(page, ['.rb'], 12);
     }
   },
@@ -309,7 +315,7 @@ const SHOTS = {
       await resumePage(page, origin);
       await page.click('#tabDownload');
       await settle(page);
-      await annotate(page, [['.export-row--primary', 'PDF for portals and email', 'above'], ['#btnDownloadText', 'Plain text for form fields', 'left']]);
+      await annotate(page, [['.export-row--primary', 'PDF for portals and email', 'corner'], ['#btnDownloadText', 'Plain text for form fields', 'corner']]);
       return regionOf(page, ['.export-actions']);
     }
   },
@@ -323,8 +329,8 @@ const SHOTS = {
       await waitSaved(page);
       await page.evaluate(() => document.activeElement.blur());
       await top(page);
-      await annotate(page, [['#saveStatus', 'Saves as you type', 'right'], ['#fullName', 'Only the name is required', 'above'], ['#btnLoadSample', 'Or look at a sample first', 'left']]);
-      return regionOf(page, ['.rb-doc', '#sec-personal']);
+      await annotate(page, [['#saveStatus', 'Saves as you type', 'right'], ['#fullName', 'Only the name is required', 'corner'], ['#btnLoadSample', 'Or look at a sample first', 'left']]);
+      return regionOf(page, ['#saveStatus', '#sec-personal']);
     }
   },
   'tut-resume-experience': {
@@ -400,6 +406,7 @@ const SHOTS = {
     }
   },
   'tut-yourdata-resumes': {
+    viewport: 720,
     alt: 'The Saved resumes section of the ApplyReady Your data page listing two resumes kept in this browser, with buttons to export them all, import a backup and delete them.',
     async run(page, origin) {
       await resumePage(page, origin);
@@ -422,6 +429,7 @@ const SHOTS = {
 
   /* ---- tutorial: resize a photo ---- */
   'tut-resizer-requirement': {
+    viewport: 720,
     alt: 'The first step of the ApplyReady image resizer, What are you preparing, with choices such as ID or passport photo, Signature, Profile photo and Custom size, each showing its pixel size and KB limit.',
     async run(page, origin) {
       await page.goto(origin + '/image-resizer.html');
@@ -472,11 +480,12 @@ const SHOTS = {
       await settle(page);
       await page.locator('#cleanerCanvas').scrollIntoViewIfNeeded();
       const sliders = await page.locator('main input[type=range]').evaluateAll(rs => rs.map(r => r.id));
-      await annotate(page, [[`#${sliders[0]}`, 'Grey paper? Raise this', 'above'], [`#${sliders[1]}`, 'Faint strokes? Raise this', 'above'], ['#btnCleanerDownload', 'Save the cleaned file', 'above']]);
+      await annotate(page, [[`#${sliders[0]}`, 'Grey paper? Raise this', 'left'], [`#${sliders[1]}`, 'Faint strokes? Raise this', 'left'], ['#btnCleanerDownload', 'Save the cleaned file', 'above']]);
       return regionOf(page, ['#cleanerCanvas', '#btnCleanerDownload', 'main a[href*="preset=signature"]', `#${sliders[0]}`]);
     }
   },
   'tut-signature-result': {
+    viewport: 720,
     alt: 'The ApplyReady signature resizer result for a 300 by 100 pixel signature with a 10 to 20 KB range: the file was padded to 10.00 KB without changing the picture, and every row of the check table is met.',
     async run(page, origin) {
       await resizerWith(page, origin, '/signature-resizer.html', null, sample('test-signature-cleaned.jpg'));
@@ -488,7 +497,7 @@ const SHOTS = {
       await page.waitForSelector('#resultArea:not(.hidden)');
       await settle(page, 600);
       await top(page);
-      await annotate(page, [['.check-table tbody tr:nth-child(1)', 'Minimum reached with padding', 'left'], ['#btnDownload', 'Then download', 'left']]);
+      await annotate(page, [['.check-table tbody tr:nth-child(1)', 'Minimum reached with padding', 'corner'], ['#btnDownload', 'Then download', 'corner']]);
       return regionOf(page, ['.ws-result__head', '.check-table']);
     }
   },
@@ -552,6 +561,7 @@ const SHOTS = {
 
   /* ---- tutorial: batch ---- */
   'tut-batch-preset': {
+    viewport: 1000,
     alt: 'The batch image processor with six photos added and the Passport photo preset chosen, which sets an exact 350 by 450 pixel size, JPEG and a 50 KB maximum for every image.',
     async run(page, origin) {
       await page.goto(origin + '/batch-image.html');
@@ -637,6 +647,7 @@ const SHOTS = {
     }
   },
   'tut-yourdata-delete': {
+    viewport: 720,
     alt: 'The Delete everything section of the ApplyReady Your data page, which removes saved resumes, settings, the recently used list and the offline copy from this browser.',
     async run(page, origin) {
       await page.goto(origin + '/your-data.html');
@@ -644,7 +655,7 @@ const SHOTS = {
       const section = page.locator('section', { has: page.locator('h2', { hasText: 'Delete everything' }) });
       const id = await section.evaluate(s => { s.id = s.id || 'guideDeleteAll'; return s.id; });
       await section.scrollIntoViewIfNeeded();
-      await annotate(page, [[`#${id} button`, 'One step, cannot be undone', 'right']]);
+      await annotate(page, [[`#${id} button`, 'Asks first; cannot be undone', 'right']]);
       return regionOf(page, [`#${id}`], 16);
     }
   }
@@ -687,7 +698,9 @@ function syncPages(manifest) {
   };
   for (const [name, shot] of Object.entries(SHOTS)) {
     if (wanted.length && !wanted.includes(name)) continue;
-    const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: 'light', deviceScaleFactor: 1, acceptDownloads: true });
+    // A shot may use a narrower window (shot.viewport), so that a wide tool reflows into a picture that
+    // fits the guide column without being scaled down until its text is unreadable.
+    const context = await browser.newContext({ viewport: { width: shot.viewport || 1280, height: 900 }, colorScheme: 'light', deviceScaleFactor: 1, acceptDownloads: true });
     await context.route('**/*', r => (r.request().url().startsWith(origin) || /^(data|blob):/.test(r.request().url()) ? r.continue() : r.abort()));
     // Sticky bars would be painted mid-image in a full-page capture; keep them in the flow.
     // The skip link and the passing notification are not part of what a guide shows.

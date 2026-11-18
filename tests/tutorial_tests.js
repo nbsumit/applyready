@@ -324,6 +324,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     ok(await page.inputValue('#bMaxKB') === '100' && await page.isChecked('#bAllowShrink'), 'the compressor starts at 100 KB with smaller dimensions allowed');
     await page.setInputFiles('#batchApp input[type=file]', [guideSample('photo-applicant-1.jpg'), guideSample('photo-applicant-2.jpg'), guideSample('document-page-1.jpg'), sample('test-signature-cleaned.jpg')]);
     await page.waitForFunction(() => document.querySelectorAll('#batchList li').length === 4);
+    ok(squash(await page.textContent('#batchCounts')) === '4 images · 1.2 MB', `the bar counts the images as quoted (${squash(await page.textContent('#batchCounts'))})`);
+    says(T, '4 images · 1.2 MB');
     await setValue(page, 'bMaxKB', '50');
     ok(/Compress 4 images/.test(await page.textContent('#btnBatchStart')), 'the start button names the job');
     await page.click('#btnBatchStart');
@@ -334,6 +336,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     ok(rows[2].includes('The pixel size was reduced to meet the 50 KB limit.') && rows[2].includes('1036 × 1465 px'), 'pixel size note and size as quoted');
     says(T, 'The pixel size was reduced to meet the 50 KB limit.');
     says(T, '1036 × 1465 px');
+    ok(rows[2].includes('Quality was lowered to 52% to fit under 50 KB.'), `the scanned page also has the quality note (${rows[2]})`);
+    says(T, 'quality was lowered to 52%');
     ok(!/Quality was lowered|pixel size was reduced/.test(rows[3]) && rows[3].includes('38 KB'), 'the small signature has no note');
     ok(squash(await page.textContent('#batchVerdictTitle')) === '4 images compressed' && squash(await page.textContent('#batchVerdictText')) === '184 KB in total, from 1.2 MB.', 'totals as quoted');
     says(T, '184 KB in total, from 1.2 MB.');
@@ -354,6 +358,10 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await page.goto(origin + '/merge-pdf.html');
     await page.setInputFiles('#mergeDropInput', [guideSample('sample-cover-letter.pdf'), guideSample('sample-marksheet.pdf'), guideSample('document-page-2.jpg')]);
     await page.waitForFunction(() => /3 files/.test(document.getElementById('mergeCounts').textContent));
+    ok(squash(await page.textContent('#mergeCounts')) === '3 files · 4 pages · 383 KB', `the bar counts files, pages and size as quoted (${squash(await page.textContent('#mergeCounts'))})`);
+    says(T, '3 files · 4 pages · 383 KB');
+    ok(squash(await page.textContent('main')).includes('4 pages from 3 files will be joined in the order shown.'), 'the line above the button as quoted');
+    says(T, '4 pages from 3 files will be joined in the order shown.');
     const listText = squash(await page.getByRole('list', { name: 'Files to merge, in order' }).innerText());
     ok(listText.includes('2 pages · starts A4 portrait') && listText.includes('Image, becomes 1 A4 page'), 'rows describe pages as quoted');
     says(T, '2 pages · starts A4 portrait');
