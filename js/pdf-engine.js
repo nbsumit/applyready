@@ -235,6 +235,21 @@
     return result;
   }
 
+  // Whether one character can be written with the built-in WinAnsi fonts (the test escapePdfText makes).
+  function pdfCharSupported(char) {
+    if (char.length !== 1) return false;
+    const code = char.charCodeAt(0);
+    return (code >= 32 && code <= 126) || !!WINANSI_SPECIAL[code] || (code >= 160 && code <= 255) || /\s/.test(char);
+  }
+
+  // The distinct characters of `text` that the vector PDF cannot write (₹, arrows, emoji, Indic
+  // scripts), in order of appearance. Invisible pasted characters are ignored, as the export drops them.
+  function unsupportedCharacters(text) {
+    const found = [];
+    for (const char of cleanInvisible(String(text || ''))) if (!pdfCharSupported(char) && !found.includes(char)) found.push(char);
+    return found;
+  }
+
   // PDF text string for the document information dictionary (UTF-16BE, BOM).
   function pdfTextString(value) {
     let hexOut = 'FEFF';
@@ -657,6 +672,13 @@
       }
       return false;
     }
+    // Start a block that must not be split (a bullet, a heading with what follows it) on a new page
+    // when it does not fit here. A block taller than a whole page is split after all; `minimum` is
+    // the room still reserved in that case.
+    const usableHeight = pageBottom - marginTop;
+    function keepTogether(height, minimum = 0) {
+      ensureSpace(height <= usableHeight ? Math.max(height, minimum) : minimum);
+    }
 
     function drawWrapped(text, fontSize, style = 'normal', color = [0.15, 0.15, 0.15], align = 'left', url = '') {
       const lines = splitTextToLines(text, fontSize, contentWidth - 8, fontKey, style);
@@ -671,6 +693,7 @@
     }
     function drawBullet(text, fontSize) {
       const lines = splitTextToLines(text, fontSize, contentWidth - 16, fontKey);
+      keepTogether(lines.length * (fontSize + 4));
       lines.forEach((line, index) => {
         ensureSpace(fontSize + 4);
         if (index === 0) doc.drawText('•', marginLeft + 2, currentY + fontSize, { fontSize });
@@ -746,15 +769,19 @@
     /**
      * Render Section Header
      */
-    function renderSectionHeader(title, reserveLines = 2) {
+    // `reserve` is the room the section's first block needs: a number of body lines, or { height }
+    // for an entry, so the heading never ends a page apart from its content.
+    function renderSectionHeader(title, reserve = 2) {
       currentY += pendingGap;
       pendingGap = 0;
       const headingFontSize = baseFontSize + 0.5;
       const headingText = style.headingCase === 'asis' ? title : title.toUpperCase();
       const headingLines = splitTextToLines(headingText, headingFontSize, contentWidth - 8, fontKey, 'bold');
-      // Reserve the actual heading plus two body lines, not a fixed 65pt block.
+      // Reserve the actual heading plus its first block, not a fixed 65pt block.
       // Short final sections can then use the available space on this page.
-      ensureSpace(headingLines.length * (headingFontSize + (isCompact ? 2 : 3)) + (isCompact ? 5 : 8) + reserveLines * (baseFontSize + 4));
+      const headingHeight = headingLines.length * (headingFontSize + (isCompact ? 2 : 3)) + (isCompact ? 5 : 8);
+      const body = typeof reserve === 'number' ? reserve * (baseFontSize + 4) : reserve.height;
+      keepTogether(headingHeight + body, headingHeight + Math.min(2, typeof reserve === 'number' ? reserve : 2) * (baseFontSize + 4));
       for (const line of headingLines) {
         ensureSpace(headingFontSize + 4);
         doc.drawText(line, marginLeft, currentY + headingFontSize, {
@@ -776,19 +803,42 @@
     // Two-part entry heading: bold title on the left, italic dates/location on
     // the right (or on the next line when it does not fit or the template
     // keeps every detail in reading order).
-    function renderEntryHeading(title, meta, gapAfterInline) {
+    // A line that fits is kept exactly as written, so the spaced separators ("  —  ", "  •  ") look
+    // the same whether the details sit on the right or below; only a line that must wrap is split.
+    function wrapKeepingSpaces(text, fontSize, fontStyle) {
+      return measureTextWidth(text, fontSize, fontKey, fontStyle) <= contentWidth - 8 ? [text] : splitTextToLines(text, fontSize, contentWidth - 8, fontKey, fontStyle);
+    }
+    // Whether the details of an entry fit on the right of its title.
+    function headingFitsInline(title, meta) {
+      if (!datesInline) return false;
+      const metaWidth = meta ? measureTextWidth(meta, metaSize, fontKey, 'italic') : 0;
+      const titleWidth = title ? measureTextWidth(title, baseFontSize, fontKey, 'bold') : 0;
+      return titleWidth <= (metaWidth > 0 ? contentWidth - metaWidth - 12 : contentWidth);
+    }
+    // One placement per section: when the details of any entry have to go below its title, they go
+    // below in every entry of that section, so dates never jump between the right and the left.
+    const detailsBelow = entries => !datesInline || entries.some(e => e.title && e.meta && !headingFitsInline(e.title, e.meta));
+    function entryHeadingHeight(title, meta, gapAfterInline, below) {
+      if (!title && !meta) return 0;
+      if (!below && headingFitsInline(title, meta)) return baseFontSize + gapAfterInline;
+      const titleLines = title ? wrapKeepingSpaces(title, baseFontSize, 'bold').length : 0;
+      return titleLines * (baseFontSize + 2) + (meta ? wrapKeepingSpaces(meta, 9, 'italic').length * 13 : 2);
+    }
+
+    // Two-part entry heading: bold title on the left, italic dates/location on
+    // the right, or on the next line when `below` is set, when they do not fit,
+    // or when the template keeps every detail in reading order.
+    function renderEntryHeading(title, meta, gapAfterInline, below = false) {
       if (!title && !meta) return;
       const titleSize = baseFontSize;
-      const metaWidth = meta ? measureTextWidth(meta, metaSize, fontKey, 'italic') : 0;
-      const titleWidth = title ? measureTextWidth(title, titleSize, fontKey, 'bold') : 0;
-      const maxTitleWidth = metaWidth > 0 ? contentWidth - metaWidth - 12 : contentWidth;
-      if (datesInline && titleWidth <= maxTitleWidth) {
+      if (!below && headingFitsInline(title, meta)) {
+        const metaWidth = meta ? measureTextWidth(meta, metaSize, fontKey, 'italic') : 0;
         if (title) doc.drawText(title, marginLeft, currentY + titleSize, { fontSize: titleSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
         if (meta) doc.drawText(meta, pageWidth - marginRight - metaWidth, currentY + titleSize, { fontSize: metaSize, fontStyle: 'italic', color: metaColor });
         currentY += titleSize + gapAfterInline;
         return;
       }
-      const lines = title ? splitTextToLines(title, titleSize, contentWidth - 8, fontKey, 'bold') : [];
+      const lines = title ? wrapKeepingSpaces(title, titleSize, 'bold') : [];
       for (let i = 0; i < lines.length; i++) {
         if (i > 0) ensureSpace(titleSize + 2);
         doc.drawText(lines[i], marginLeft, currentY + titleSize, { fontSize: titleSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
@@ -796,18 +846,29 @@
       }
       if (meta) {
         ensureSpace(12);
-        drawWrapped(meta, 9, 'italic', metaColor);
+        for (const line of wrapKeepingSpaces(meta, 9, 'italic')) {
+          ensureSpace(13);
+          doc.drawText(line, marginLeft, currentY + 9, { fontSize: 9, fontStyle: 'italic', color: metaColor });
+          currentY += 13;
+        }
       } else {
         currentY += 2;
       }
     }
 
-    function renderBullets(text) {
-      const bulletIndent = isCompact ? 10 : 12;
-      const bulletTextWidth = contentWidth - bulletIndent;
+    // Bullets are laid out before drawing, so a page break never falls inside one, and the last
+    // bullet of a list stays with the one before it instead of standing alone on a new page.
+    const bulletIndent = isCompact ? 10 : 12;
+    const bulletLineHeight = baseFontSize + (isCompact ? 3 : 4);
+    const bulletBlocks = text => bulletLines(text).map(line => splitTextToLines(line, baseFontSize, contentWidth - bulletIndent, fontKey));
+    function bulletNeed(blocks, i) {
+      if (i >= blocks.length) return 0;
+      return (blocks[i].length + (i === blocks.length - 2 ? blocks[i + 1].length : 0)) * bulletLineHeight;
+    }
+    function renderBullets(blocks) {
       const bulletFontSize = baseFontSize;
-      for (const bulletText of bulletLines(text)) {
-        const lines = splitTextToLines(bulletText, bulletFontSize, bulletTextWidth, fontKey);
+      blocks.forEach((lines, i) => {
+        keepTogether(bulletNeed(blocks, i));
         for (let bl = 0; bl < lines.length; bl++) {
           ensureSpace(baseFontSize + 4);
           if (bl === 0) {
@@ -818,9 +879,25 @@
             fontStyle: 'normal',
             color: [0.15, 0.15, 0.15]
           });
-          currentY += baseFontSize + (isCompact ? 3 : 4);
+          currentY += bulletLineHeight;
         }
+      });
+    }
+
+    // Entries with a heading and bullet points (work experience, custom sections). Each entry starts
+    // with its heading and first bullet together, and the section heading stays with the first entry.
+    function renderEntries(title, entries) {
+      const below = detailsBelow(entries);
+      const gap = isCompact ? 3 : 4;
+      const need = entry => entryHeadingHeight(entry.title, entry.meta, gap, below) + bulletNeed(entry.blocks, 0);
+      renderSectionHeader(title, { height: need(entries[0]) });
+      for (const entry of entries) {
+        keepTogether(need(entry), isCompact ? 20 : 28);
+        renderEntryHeading(entry.title, entry.meta, gap, below);
+        renderBullets(entry.blocks);
+        currentY += gap;
       }
+      currentY += isCompact ? 2 : 4;
     }
 
     const vis = visibility(resumeData, options);
@@ -852,31 +929,30 @@
       const experience = (Array.isArray(resumeData.experience) ? resumeData.experience : []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || clean(exp.duration) || clean(exp.location) || bulletLines(exp.bulletsText).length));
       if (!experience.length) return;
 
-      renderSectionHeader(layout.title('experience'));
-
-      for (const exp of experience) {
-        ensureSpace(isCompact ? 20 : 28);
-        const roleCompany = [clean(exp.role), clean(exp.company)].filter(Boolean).join('  |  ');
-        const dateLoc = [clean(exp.duration), clean(exp.location)].filter(Boolean).join('  •  ');
-        if (roleCompany || dateLoc) renderEntryHeading(roleCompany, dateLoc, isCompact ? 3 : 4);
-        renderBullets(exp.bulletsText);
-        currentY += (isCompact ? 3 : 4);
-      }
-      currentY += (isCompact ? 2 : 4);
+      renderEntries(layout.title('experience'), experience.map(exp => ({
+        title: [clean(exp.role), clean(exp.company)].filter(Boolean).join('  |  '),
+        meta: [clean(exp.duration), clean(exp.location)].filter(Boolean).join('  •  '),
+        blocks: bulletBlocks(exp.bulletsText)
+      })));
     }
 
     function renderEducation() {
       const education = (Array.isArray(resumeData.education) ? resumeData.education : []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution) || clean(edu.duration) || clean(edu.location) || clean(edu.score)));
       if (!education.length) return;
 
-      renderSectionHeader(layout.title('education'));
+      const entries = education.map(edu => ({
+        title: [clean(edu.degree), clean(edu.institution)].filter(Boolean).join('  —  '),
+        meta: [clean(edu.duration), clean(edu.location), clean(edu.score)].filter(Boolean).join('  •  ')
+      }));
+      const below = detailsBelow(entries);
+      const gap = isCompact ? 4 : 6;
+      const after = isCompact ? 2 : 4;
+      renderSectionHeader(layout.title('education'), { height: entryHeadingHeight(entries[0].title, entries[0].meta, gap, below) });
 
-      for (const edu of education) {
-        ensureSpace(isCompact ? 18 : 24);
-        const degreeInst = [clean(edu.degree), clean(edu.institution)].filter(Boolean).join('  —  ');
-        const metaParts = [clean(edu.duration), clean(edu.location), clean(edu.score)].filter(Boolean).join('  •  ');
-        if (degreeInst || metaParts) renderEntryHeading(degreeInst, metaParts, isCompact ? 4 : 6);
-        currentY += (isCompact ? 2 : 4);
+      for (const entry of entries) {
+        keepTogether(entryHeadingHeight(entry.title, entry.meta, gap, below) + after, isCompact ? 18 : 24);
+        renderEntryHeading(entry.title, entry.meta, gap, below);
+        currentY += after;
       }
       currentY += (isCompact ? 2 : 4);
     }
@@ -885,43 +961,48 @@
       const projects = (Array.isArray(resumeData.projects) ? resumeData.projects : []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || clean(proj.link) || bulletLines(proj.bulletsText).length));
       if (!projects.length) return;
 
-      renderSectionHeader(layout.title('projects'));
+      const projFontSize = baseFontSize;
+      const techFontSize = isCompact ? 8.5 : 9;
+      const linkFontSize = 8.5;
+      const wrappedHeight = (text, size, fontStyle) => (text ? splitTextToLines(text, size, contentWidth - 8, fontKey, fontStyle).length * (size + 4) : 0);
+      const entries = projects.map(proj => {
+        const name = clean(proj.name);
+        const tech = clean(proj.tech);
+        const link = clean(proj.link);
+        const title = name || tech;
+        // The tools follow the name after a separator on the same line; on a line of their own they
+        // start without one.
+        const subTech = name && tech ? tech : '';
+        const nameWidth = title ? measureTextWidth(title, projFontSize, fontKey, 'bold') : 0;
+        const techWidth = subTech ? measureTextWidth('|  ' + subTech, techFontSize, fontKey, 'italic') + 6 : 0;
+        const linkWidth = link ? measureTextWidth(link, linkFontSize, fontKey) : 0;
+        const inline = datesInline && nameWidth + techWidth + (link ? linkWidth + 12 : 0) <= contentWidth - 8;
+        const headHeight = !(title || link) ? 0
+          : inline ? projFontSize + (isCompact ? 3 : 4)
+            : wrappedHeight(title, projFontSize, 'bold') + wrappedHeight(subTech, techFontSize, 'italic') + wrappedHeight(link, linkFontSize, 'normal');
+        return { title, subTech, link, nameWidth, linkWidth, inline, headHeight, blocks: bulletBlocks(proj.bulletsText) };
+      });
+      const need = entry => entry.headHeight + bulletNeed(entry.blocks, 0);
+      renderSectionHeader(layout.title('projects'), { height: need(entries[0]) });
 
-      for (const proj of projects) {
-        ensureSpace(isCompact ? 20 : 28);
-
-        const projName = clean(proj.name);
-        const techText = clean(proj.tech);
-        const linkText = clean(proj.link);
-        const titleText = projName || techText;
-        const subTech = projName && techText ? '|  ' + techText : '';
-        const projFontSize = baseFontSize;
-        const techFontSize = isCompact ? 8.5 : 9;
-        const linkFontSize = 8.5;
-
-        if (titleText || linkText) {
-          const nameWidth = titleText ? measureTextWidth(titleText, projFontSize, fontKey, 'bold') : 0;
-          const techWidth = subTech ? measureTextWidth(subTech, techFontSize, fontKey, 'italic') + 6 : 0;
-          const linkWidth = linkText ? measureTextWidth(linkText, linkFontSize, fontKey) : 0;
-          const inlineWidth = nameWidth + techWidth + (linkText ? linkWidth + 12 : 0);
-
-          if (datesInline && inlineWidth <= contentWidth - 8) {
-            if (titleText) doc.drawText(titleText, marginLeft, currentY + projFontSize, { fontSize: projFontSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
-            if (subTech) doc.drawText(subTech, marginLeft + nameWidth + 6, currentY + projFontSize, { fontSize: techFontSize, fontStyle: 'italic', color: metaColor });
-            if (linkText) {
-              const linkX = pageWidth - marginRight - linkWidth;
-              doc.drawText(linkText, linkX, currentY + projFontSize, { fontSize: linkFontSize, color: style.linkColor });
-              doc.addLink(linkX, currentY, linkWidth, projFontSize + 2, linkText);
-            }
-            currentY += projFontSize + (isCompact ? 3 : 4);
-          } else {
-            if (titleText) drawWrapped(titleText, projFontSize, 'bold', [0.05, 0.05, 0.05]);
-            if (subTech) drawWrapped(subTech, techFontSize, 'italic', metaColor);
-            if (linkText) drawWrapped(linkText, linkFontSize, 'normal', style.linkColor, 'left', linkText);
+      for (const entry of entries) {
+        keepTogether(need(entry), isCompact ? 20 : 28);
+        if (entry.inline) {
+          if (entry.title) doc.drawText(entry.title, marginLeft, currentY + projFontSize, { fontSize: projFontSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
+          if (entry.subTech) doc.drawText('|  ' + entry.subTech, marginLeft + entry.nameWidth + 6, currentY + projFontSize, { fontSize: techFontSize, fontStyle: 'italic', color: metaColor });
+          if (entry.link) {
+            const linkX = pageWidth - marginRight - entry.linkWidth;
+            doc.drawText(entry.link, linkX, currentY + projFontSize, { fontSize: linkFontSize, color: style.linkColor });
+            doc.addLink(linkX, currentY, entry.linkWidth, projFontSize + 2, entry.link);
           }
+          if (entry.headHeight) currentY += entry.headHeight;
+        } else {
+          if (entry.title) drawWrapped(entry.title, projFontSize, 'bold', [0.05, 0.05, 0.05]);
+          if (entry.subTech) drawWrapped(entry.subTech, techFontSize, 'italic', metaColor);
+          if (entry.link) drawWrapped(entry.link, linkFontSize, 'normal', style.linkColor, 'left', entry.link);
         }
 
-        renderBullets(proj.bulletsText);
+        renderBullets(entry.blocks);
         currentY += (isCompact ? 3 : 4);
       }
       currentY += (isCompact ? 2 : 4);
@@ -1018,15 +1099,8 @@
     function renderCustom(key) {
       const content = customContent(customSectionFor(resumeData, key));
       if (!content) return;
-      renderSectionHeader(content.title);
-      if (content.mode === 'text') { renderParagraphs(content.paragraphs); return; }
-      for (const entry of content.entries) {
-        ensureSpace(isCompact ? 20 : 28);
-        if (entry.heading || entry.date) renderEntryHeading(entry.heading, entry.date, isCompact ? 3 : 4);
-        renderBullets(entry.bullets.join('\n'));
-        currentY += isCompact ? 3 : 4;
-      }
-      currentY += isCompact ? 2 : 4;
+      if (content.mode === 'text') { renderSectionHeader(content.title); renderParagraphs(content.paragraphs); return; }
+      renderEntries(content.title, content.entries.map(entry => ({ title: entry.heading, meta: entry.date, blocks: bulletBlocks(entry.bullets.join('\n')) })));
     }
 
     // Render sections in configured order
@@ -1202,6 +1276,7 @@
     measureTextWidth,
     splitTextToLines,
     escapePdfText,
+    unsupportedCharacters,
     sanitizeUrl,
     bulletLines,
     optionalEntries,
