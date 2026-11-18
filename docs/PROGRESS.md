@@ -3,10 +3,69 @@
 Plan: [`ROADMAP.md`](ROADMAP.md). This file records what is done, how it was verified and what remains.
 It is updated at the end of each phase.
 
-## Current phase
+## Current state (18 Nov 2026)
 
-Phase 5 (applicant workspaces) and the Phase 6 tutorials with genuine screenshots are being built,
-each followed by an independent review. Privacy policy, terms and changelog are rewritten.
+All nine phases of the roadmap are implemented, reviewed and merged on the development branch. Nothing
+has been deployed: publishing is an owner decision (see "Owner actions" below). Known limitations are
+listed at the end of this file.
+
+## Phase 9: final review by persona, and fixes (complete, 18 Nov 2026)
+
+Eight independent reviewers used the whole site as a first-time visitor, a job seeker, a cyber cafe
+operator, a phone user, a keyboard and screen-reader user, and as SEO, security/privacy and
+documentation/open-source reviewers. They reported 105 findings (9 high, 43 medium, 53 low). A second
+agent reproduced every high and medium finding before any work started; one was rejected as a feature
+request (saving workspace settings, which workspaces deliberately do not keep).
+
+The findings were fixed in six packages, each on its own branch. Each package was then checked by a
+separate verifier, who replayed the original scenarios at 1280 px and 360 px and reviewed the diff.
+Every issue the verifiers raised (16 in all, including one new keyboard trap and a 404 search panel
+covering its own buttons) was fixed before merging. Highlights:
+
+- **Search and navigation:** the directory filter shows exactly the cards it counts, and the KB pages
+  appear as presets of the image resizer. Search understands conversions ("word to pdf" leads to help
+  on exporting from Office, not to the resume builder), swapped-letter typos, and tool popularity. The
+  phone menu is grouped by category, starts with search, fits one screen and traps focus while open.
+  Menu, home page and directory use the same category order. Each tool is listed once in the footer,
+  and every footer page can be found by search.
+- **Older pages and SEO:** registry names, sentence case and correct breadcrumbs on every tool page,
+  titles of at most 65 characters, descriptions of at most 160, complete Open Graph tags on every page
+  (generated, and checked by the content tests), and a new social card. The 404 page sends moved
+  pages to their new address, explains removed ones, and offers a search. About and the changelog are current, and Font Awesome is credited.
+- **Resume builder:** templates apply their promised section order (unless the order was set by
+  hand); skill labels no longer change with the template; a rupee sign, arrow or tick is named with the
+  field that holds it and can be replaced in one click (₹ becomes "Rs."); page breaks never split a bullet; re-importing a backup skips
+  identical resumes and marks restored copies; download names include the resume's name; keyboard focus is kept when moving
+  entries; and errors are shown next to the field. The Word engine loads only when it is needed.
+- **Image and cyber cafe tools:** nothing carries over from one customer to the next (name strip,
+  label, merged file name). Downloads are named after the source file. Names such as "Ravi S/O Ramesh"
+  survive in ZIP names. The Organise PDF Restore icon is fixed. On phones the result's Download button
+  is scrolled into view, and every batch ZIP can be named.
+- **Security and privacy:** photos merged into a PDF no longer carry their EXIF block (GPS, camera,
+  date). PDFs have a 2,000-page limit, and images are checked for decompression bombs before a
+  thumbnail is drawn. Hidden direction characters are shown in file names instead of disguising the
+  extension. The file checker warns about executable and unknown extensions. Your data lists a resume
+  draft left by an older version. The service worker no longer downloads the whole site on the first
+  visit: a full offline copy is the visitor's choice on Your data, and Save-Data is respected.
+- **Docs and guides:** tutorial screenshots now have phone captures, so text is readable on a phone,
+  and every PDF tool page links its guide. README, CONTRIBUTING and Contribute list every tool and
+  every test prerequisite. `build-tool-pages.js` gained the `--check` mode the README promised.
+
+## Phases 5 to 8 (complete, 18 Nov 2026)
+
+- **Phase 5, applicant workspaces (cyber cafe mode):** a separate, memory-only workspace per applicant,
+  with passport photo, signature, documents and a combined PDF. Each applicant gets a ZIP named after
+  them, and "End session" leaves nothing behind. It was reviewed in the same way as the earlier phases;
+  the review caught a password dialog opening for the wrong applicant, among other defects.
+- **Phase 6, documentation and tutorials:** nine step-by-step tutorials with genuine screenshots taken
+  from the real tools by `scripts/guide-screenshots.js`, rebuilt whenever the interface changes. The
+  About, Philosophy, Privacy (with a storage table), Terms, Contact, Feedback, Changelog and Contribute
+  pages are rewritten.
+- **Phase 7, open source:** AGPL-3.0 licence, README, CONTRIBUTING, Code of Conduct, SECURITY, issue
+  and pull request templates, architecture, design system and dependency licence documents, and a CI
+  workflow (`.github/workflows/quality.yml`) that runs every node and browser suite.
+- **Phase 8, SEO and performance:** see the Phase 9 fixes above for titles, descriptions, social tags,
+  breadcrumbs and internal links. Measured page weights are in the "Verification" section below.
 
 ## Phases 2 to 4: resume library, PDF tools, batch images, document tools (complete, 18 Nov 2026)
 
