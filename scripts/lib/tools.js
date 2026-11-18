@@ -15,7 +15,8 @@
      summary   one short line: what you get (menus, cards, search results)
      keywords  words people type when they need this tool, including synonyms and misspellings
      live      false hides a tool everywhere until its page exists (never link to a missing page)
-     popular   order on the home page "most used" row (lower first); also breaks ties in search
+     popular   order on the home page "Common tasks" row (lower first), chosen by hand: the site measures
+               nothing. Also breaks ties in search
      presetOf  the tool this page is a ready-set version of (the KB limit pages open the image
                resizer with a limit chosen). Such a page is not a separate tool: the directory shows
                it as a link on its parent's card, search lists it on its own, and the header menu
@@ -48,7 +49,7 @@ const TOOLS = [
     keywords: ['passport photo', 'passport size photo', 'photo for form', 'id photo', '35x45', '3.5 x 4.5', 'profile photo', 'face photo', 'photograph'] },
   { id: 'signature-resizer', name: 'Signature resizer', path: 'signature-resizer.html', category: 'image', icon: 'signature',
     summary: 'Signature image at the exact size and KB limit',
-    keywords: ['signature', 'signature size', 'resize signature', 'sign', 'signature kb', 'signature 20kb', 'sign image', 'autograph'] },
+    keywords: ['signature', 'signature size', 'resize signature', 'sign', 'signature kb', 'signature 20kb', 'sign image', 'autograph', 'thumb impression', 'left thumb impression', 'thumb'] },
   { id: 'compress-image', name: 'Image compressor', path: 'compress-image.html', category: 'image', also: ['batch'], icon: 'compress',
     summary: 'Make photos smaller in KB, one or many at once',
     keywords: ['compress image', 'compress photo', 'reduce kb', 'reduce file size', 'shrink image', 'smaller photo', 'image under 100kb', 'optimise', 'optimize', 'compressor'] },
@@ -83,10 +84,10 @@ const TOOLS = [
     keywords: ['organize pdf', 'organise pdf', 'reorder pages', 'rotate pdf', 'delete pdf pages', 'arrange pdf', 'sort pages', 'move pages', 'turn page'] },
   { id: 'image-to-pdf', name: 'Image to PDF', path: 'image-to-pdf.html', category: 'pdf', icon: 'file-pdf', popular: 5,
     summary: 'Combine photos and scans into one PDF',
-    keywords: ['image to pdf', 'jpg to pdf', 'photo to pdf', 'scan to pdf', 'png to pdf', 'pictures to pdf', 'convert to pdf', 'certificates', 'certificate photos', 'combine photos', 'scanned documents'] },
+    keywords: ['image to pdf', 'jpg to pdf', 'photo to pdf', 'scan to pdf', 'png to pdf', 'pictures to pdf', 'convert to pdf', 'certificates', 'certificate photos', 'combine photos', 'scanned documents', 'marksheet', 'marksheet to pdf', 'aadhaar card', 'aadhaar card pdf', 'pan card'] },
   { id: 'compress-pdf', name: 'Compress PDF', path: 'compress-pdf.html', category: 'pdf', icon: 'file-zipper', popular: 6,
     summary: 'Make a PDF small enough for an upload limit',
-    keywords: ['compress pdf', 'reduce pdf size', 'pdf kb', 'pdf mb', 'shrink pdf', 'pdf under 1mb', 'smaller pdf', 'pdf size'] },
+    keywords: ['compress pdf', 'reduce pdf size', 'pdf kb', 'pdf mb', 'shrink pdf', 'pdf under 1mb', 'smaller pdf', 'pdf size', 'marksheet pdf', 'aadhaar pdf'] },
   { id: 'pdf-to-image', name: 'PDF to images', path: 'pdf-to-image.html', category: 'pdf', icon: 'images',
     summary: 'Save PDF pages as JPG or PNG images',
     keywords: ['pdf to image', 'pdf to jpg', 'pdf to png', 'convert pdf', 'pdf page image', 'pdf photo'] },
@@ -126,7 +127,7 @@ const PAGES = [
   { id: 'guides', name: 'Guides', path: 'guides/', icon: 'book-open', summary: 'Step-by-step help for every tool', keywords: ['guide', 'help', 'how to', 'tutorial', 'instructions'] },
   { id: 'how-to-use', name: 'How to use ApplyReady', path: 'how-to-use.html', icon: 'circle-question', summary: 'A short walk through each tool', keywords: ['how to use', 'getting started', 'start', 'walkthrough', 'help', 'instructions'] },
   { id: 'word-to-pdf', name: 'Word to PDF', path: 'file-checker.html#word-to-pdf', icon: 'file-word', summary: 'ApplyReady does not convert Office files: how to save a PDF from Word, Excel, PowerPoint, Google Docs or LibreOffice', keywords: ['word to pdf', 'docx to pdf', 'doc to pdf', 'excel to pdf', 'xlsx to pdf', 'xls to pdf', 'powerpoint to pdf', 'ppt to pdf', 'pptx to pdf', 'convert word', 'word file', 'google docs', 'libreoffice', 'save as pdf', 'export pdf'] },
-  { id: 'your-data', name: 'Your data', path: 'your-data.html', icon: 'database', summary: 'See and delete what ApplyReady keeps on this device', keywords: ['your data', 'my data', 'delete my data', 'delete data', 'clear data', 'saved resumes', 'storage', 'recently used', 'reset', 'remove everything'] },
+  { id: 'your-data', name: 'Your data', path: 'your-data.html', icon: 'database', summary: 'See and delete what ApplyReady keeps on this device', keywords: ['your data', 'my data', 'delete my data', 'delete data', 'clear data', 'saved resumes', 'storage', 'recently used', 'reset', 'remove everything', 'backup', 'restore resumes', 'clear history', 'offline', 'save offline', 'offline copy', 'use offline'] },
   { id: 'privacy', name: 'Privacy', path: 'privacy.html', icon: 'shield-halved', summary: 'What is stored, where, and how to delete it', keywords: ['privacy', 'data', 'upload', 'safe', 'security', 'storage', 'privacy policy'] },
   { id: 'about', name: 'About ApplyReady', path: 'about.html', icon: 'circle-info', summary: 'What ApplyReady is and who it is for', keywords: ['about', 'who', 'free', 'open source'] },
   { id: 'philosophy', name: 'Our philosophy', path: 'philosophy.html', icon: 'heart', summary: 'Why ApplyReady is free, open source and private', keywords: ['philosophy', 'why free', 'values', 'principles', 'no ads'] },

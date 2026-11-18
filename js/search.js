@@ -13,31 +13,43 @@
   /* ------------------------------------------------------------ Matching */
   // Words that mean the same thing to someone looking for a tool. Each group is expanded both ways.
   // Only true synonyms belong here: "add" is not "merge" (it pulled "Add page numbers" into every
-  // merge search).
+  // merge search). Common Hinglish words are included ("pdf chota karna" is "make the PDF smaller").
   const SYNONYMS = [
-    ['photo', 'image', 'picture', 'pic', 'photograph', 'jpg', 'jpeg', 'png', 'img'],
-    ['compress', 'reduce', 'shrink', 'smaller', 'decrease', 'minimise', 'minimize', 'optimise', 'optimize', 'kb', 'mb'],
+    ['photo', 'image', 'picture', 'pic', 'photograph', 'jpg', 'jpeg', 'png', 'img', 'tasveer', 'foto'],
+    ['compress', 'reduce', 'shrink', 'smaller', 'decrease', 'minimise', 'minimize', 'optimise', 'optimize', 'kb', 'mb', 'chota', 'chhota', 'choti', 'chhoti', 'kam', 'ghatana', 'ghatao'],
     ['resize', 'size', 'dimension', 'dimensions', 'pixel', 'pixels', 'scale', 'crop'],
-    ['merge', 'combine', 'join', 'attach'],
+    ['merge', 'combine', 'join', 'attach', 'jodna', 'jodo', 'jod', 'milana', 'milao'],
     ['split', 'separate', 'extract', 'cut', 'divide'],
     ['resume', 'cv', 'biodata', 'curriculum'],
     ['signature', 'sign', 'autograph'],
-    ['convert', 'change', 'converter', 'transform'],
+    ['convert', 'change', 'converter', 'transform', 'badlo', 'badalna', 'badle'],
     ['organise', 'organize', 'reorder', 'arrange', 'rotate', 'sort'],
     ['batch', 'bulk', 'multiple', 'many', 'all', 'mass'],
     ['cafe', 'cyber', 'operator', 'shop', 'centre', 'center'],
     ['text', 'txt', 'words'],
-    ['word', 'doc', 'docx']
+    ['word', 'doc', 'docx'],
+    ['backup', 'back']
   ];
   const SYN = new Map();
   SYNONYMS.forEach(group => group.forEach(w => SYN.set(w, group)));
-  const STOP = new Set(['a', 'an', 'the', 'my', 'for', 'of', 'in', 'on', 'and', 'or', 'how', 'do', 'i', 'can', 'into', 'online', 'free', 'tool', 'tools', 'with', 'from', 'me', 'please', 'want', 'need', 'to']);
+  const STOP = new Set(['a', 'an', 'the', 'my', 'for', 'of', 'in', 'on', 'and', 'or', 'how', 'do', 'i', 'can', 'into', 'online', 'free', 'tool', 'tools', 'with', 'from', 'me', 'please', 'want', 'need', 'to',
+    // Hinglish: "karna" (to do), "kaise" (how), "ko", "ka", "ki", "ke", "hai", "mein", "banana" (to make)
+    'karna', 'karo', 'kare', 'karen', 'kaise', 'ko', 'ka', 'ki', 'ke', 'hai', 'mein', 'banana', 'banao']);
+  // A few words typed in Devanagari, read as the English word the index knows.
+  const DEVANAGARI = [['फोटो', 'photo'], ['फ़ोटो', 'photo'], ['तस्वीर', 'photo'], ['पीडीएफ', 'pdf'], ['साइज', 'size'], ['साइज़', 'size'], ['रिज्यूमे', 'resume'], ['बायोडाटा', 'biodata'],
+    ['हस्ताक्षर', 'signature'], ['सिग्नेचर', 'signature'], ['छोटा', 'chota'], ['कम', 'kam'], ['जोड़ना', 'jodna'], ['जोड़ो', 'jodo'], ['मिलाना', 'milana']]
+    .map(([hi, en]) => [hi.normalize('NFC'), en]).sort((x, y) => y[0].length - x[0].length); // longest first: "जोड़ना" before a shorter word inside it
   // File formats. "word to pdf" or "pdf to jpg" asks for one direction, so only an item that names
   // that conversion matches; "pdf to jpg" must not offer Image to PDF, the opposite job.
   const FORMATS = new Set(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'gif', 'image', 'images', 'photo', 'photos', 'picture', 'pictures', 'pic', 'img', 'scan', 'scans', 'word', 'doc', 'docx', 'txt', 'text', 'excel', 'xls', 'xlsx', 'ppt', 'pptx', 'powerpoint', 'html', 'zip']);
 
-  const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+  const devanagari = s => (/[\u0900-\u097F]/.test(s) ? DEVANAGARI.reduce((t, [hi, en]) => t.split(hi).join(` ${en} `), s.normalize('NFC')) : s);
+  const norm = s => devanagari(String(s || '')).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .replace(/(\d+)\s*(kb|mb|px|cm)\b/g, '$1$2').replace(/[^a-z0-9.\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  // A file size typed with its unit ("300kb", "2mb"): a size limit. It matches the preset page for
+  // that size when there is one ("50kb"), and otherwise reads as the unit, which names the tools
+  // that make files smaller ("pdf 300kb" is a search for Compress PDF, not for every PDF tool).
+  const sizeUnit = t => { const m = t.match(/^\d+(?:\.\d+)?(kb|mb)$/); return m ? m[1] : null; };
   const words = s => norm(s).split(' ').filter(Boolean);
 
   // One typing mistake: a letter added, missing, changed, or two neighbours swapped ("mrege").
@@ -82,8 +94,10 @@
   }
   // A word nobody uses ("mrege", "resise") is read as the known words one typing mistake away.
   // Words still being typed ("merg") are left alone: they match as prefixes.
+  // Four-letter words are left alone: one letter off is too often another real word ("mode", "move").
   function correct(token, known) {
-    if (token.length < 4 || known.has(token) || /\d/.test(token)) return [token];
+    if (sizeUnit(token)) return [token, sizeUnit(token)];
+    if (token.length < 5 || known.has(token) || /\d/.test(token)) return [token];
     for (const w of known) if (w.length > token.length && w.startsWith(token)) return [token];
     const near = [...known].filter(w => w.length >= 4 && editDistanceAtMost1(w, token));
     return near.length ? near : [token];
@@ -124,7 +138,11 @@
     if (convert && !converts(f, convert[0], convert[1])) return 0;
     let total = 0, matched = 0;
     for (const set of tokenSets) {
-      const s = Math.max(...set.map(t => tokenScore(f, t))); // a corrected word may have several readings
+      // A corrected word may have several readings. A size read as its unit ("300kb" as "kb") counts for
+      // half, and only when a name or keyword says it (not a passing "KB" in a summary): it only says
+      // the file must get smaller, so it must not crowd out the page for that size.
+      const reading = (t, i) => { const v = tokenScore(f, t); return i && sizeUnit(set[0]) ? (v >= 4 ? v / 2 : 0) : v; };
+      const s = Math.max(...set.map(reading));
       if (s) matched++;
       total += s;
     }
@@ -136,12 +154,16 @@
       else if (f.keys.some(k => k === query)) total += 10;
       else if (f.keys.some(k => k.includes(query) || (query.includes(k) && k.length >= 4))) total += 6;
     } else if (f.keys.some(k => k === query)) total += 10; // a single word that is a keyword, such as "cv"
+    // A page made for exactly the size typed ("photo under 50 kb": Resize image to 50 KB) beats the
+    // tools that only make files smaller.
+    if (tokenSets.length > 1 && tokenSets.some(set => sizeUnit(set[0]) && (f.name.includes(set[0]) || f.keyWords.includes(set[0])))) total += 10;
     if (matched < tokenSets.length) total *= matched / tokenSets.length * 0.6; // not every word matched
     // The closer the name is to what was typed, the better: "photo" fits "Passport photo resizer"
     // (one of three words) better than "Passport photo print sheet" (one of four).
-    const named = f.name.filter(w => tokenSets.some(set => set.some(t => w === t || (SYN.get(t) || []).includes(w)))).length;
+    // (A size read as its unit does not count here: "50kb" does not name Compress PDF.)
+    const named = f.name.filter(w => tokenSets.some(set => (sizeUnit(set[0]) ? set.slice(0, 1) : set).some(t => w === t || (SYN.get(t) || []).includes(w)))).length;
     total += 2 * named / Math.max(f.name.length, 1);
-    // One broad word ("photo", "pdf") is most often a search for an everyday tool, so the most used
+    // One broad word ("photo", "pdf") is most often a search for an everyday tool, so the everyday
     // tools whose names say it come first: Image resizer before Passport photo resizer.
     if (tokenSets.length === 1 && named && item.kind === 'tool' && item.popular) total += 6 / item.popular;
     // Tools first, then guides: someone typing "cv" wants the builder before an article about CVs.
@@ -150,7 +172,8 @@
     return total;
   }
 
-  // Ties go to the tool people use most (the home page "most used" order), then to the name.
+  // Ties go to the everyday tools (the home page "Common tasks" order, chosen by the maintainers; nothing
+  // is measured), then to the name.
   const popularity = item => (item.kind === 'tool' && item.popular ? item.popular : 99);
 
   function search(query, limit) {
@@ -226,7 +249,7 @@
       else {
         const recent = itemsById(recentIds());
         items = recent.length ? recent : popular();
-        heading = recent.length ? 'Recently used' : 'Popular tools';
+        heading = recent.length ? 'Recently used' : 'Common tasks';
       }
       if (opts.inline && !q) { items = []; heading = ''; }
       label.textContent = heading;
