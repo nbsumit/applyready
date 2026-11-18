@@ -1736,3 +1736,10 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
   .yd-resumes .file-row { grid-template-columns: 40px minmax(0, 1fr); }
   .yd-resumes .file-row__actions { grid-column: 1 / -1; grid-row: auto; justify-content: flex-start; }
 }
+
+/* ================================================================== 22. TUTORIALS */
+/* A wide screenshot in a step-by-step tutorial links to the image itself, so on a phone it can be
+   opened full size and zoomed. The link adds no visual chrome; focus shows on the image. */
+.shot__full { display: block; border-radius: var(--r-md); cursor: zoom-in; }
+.shot__full:focus-visible { outline-offset: 3px; }
+.shot__full:hover img { border-color: var(--c-text-3); }

@@ -93,6 +93,24 @@ Edit the generator, not the generated markup:
 Each generator has a `--check` mode, and `npm test` fails when anything is out of date. The icon subset changes the
 stylesheet, so run `node scripts/sync-shell.js` once more after `build-icons.py` to refresh the service worker's cache name.
 
+## Guide screenshots and sample files
+
+Screenshots in the guides and step-by-step tutorials are taken from the running site, never mocked up.
+The inputs are synthetic samples made by scripts (no real person or document), so every image can be
+regenerated after an interface change:
+
+```bash
+python3 scripts/make-sample-images.py   # test photos and signature (img/samples/), tutorial photos (img/samples/guide/)
+node scripts/make-sample-pdfs.js         # sample PDFs for the tutorials, one protected with the password "sample"
+BROWSER_EXECUTABLE_PATH=/path/to/chrome node scripts/guide-screenshots.js [shot ...]
+```
+
+`guide-screenshots.js` drives each tool with Playwright, draws numbered callouts over real elements, saves
+WebP files in `img/guides/`, records their size and alt text in `img/guides/manifest.json` and updates the
+width and height of every `<img>` that shows them. `tests/guides_tests.js` (part of `npm test`) checks that
+images, manifest and pages agree, and `tests/tutorial_tests.js` (part of `npm run test:browser`) follows each
+tutorial in the tools and fails when a label, message or measurement quoted in a tutorial no longer matches.
+
 ## Testing
 
 ```bash
@@ -100,8 +118,9 @@ npm ci
 npm test
 ```
 
-`npm test` runs the unit suite, behaviour regressions and the content checks (metadata, links, sitemap,
-offline cache, CSP, the single donation link, and guards that fail if advertising or the retired test-specific pages come back).
+`npm test` runs the unit suite, behaviour regressions, the content checks (metadata, links, sitemap,
+offline cache, CSP, the single donation link, and guards that fail if advertising or the retired test-specific pages come back)
+and the guide image checks.
 
 ```bash
 npm run test:browser

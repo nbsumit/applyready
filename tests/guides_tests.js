@@ -92,7 +92,8 @@ for (const f of tutorials) {
   const main = (html.match(/<main[\s\S]*?<\/main>/) || [''])[0];
   for (const heading of ['Before you start', 'What you get', 'If something goes wrong']) ok(main.includes(`<h2>${heading}</h2>`), `${f}: has a "${heading}" section`);
   ok(/<h2>Step 1: /.test(main) && /<h2>Step 2: /.test(main), `${f}: numbered steps`);
-  ok((main.match(/<figure class="shot">\s*<img src="\.\.\/img\/guides\//g) || []).length >= 2, `${f}: at least two screenshots from the tools`);
+  ok((main.match(/<figure class="shot">\s*(?:<a class="shot__full" href="\.\.\/img\/guides\/[^"]+">)?<img src="\.\.\/img\/guides\//g) || []).length >= 2, `${f}: at least two screenshots from the tools`);
+  for (const m of main.matchAll(/<a class="shot__full" href="([^"]+)"><img src="([^"]+)"/g)) ok(m[1] === m[2], `${f}: the full-size link opens the same image (${m[1]})`);
   ok(tutorialsGroup.includes(`href="${path.posix.basename(f)}"`), `${f}: listed under Step-by-step tutorials in guides/index.html`);
 }
 
