@@ -147,11 +147,6 @@
     return s.indexOf('%%EOF') < 0 && s.indexOf('startxref') < 0;
   }
 
-  /**
-   * A first look at a PDF: page count and whether it is password protected.
-   * Encrypted files report their page count without a password (the page tree is not encrypted).
-   * Throws PdfError damaged / empty / notpdf.
-   */
   /** The checks every PDF gets before a library sees it. Throws PdfError empty / notpdf / damaged. */
   function precheck(bytes, name) {
     const label = name || 'This PDF';
@@ -160,6 +155,11 @@
     if (looksTruncated(bytes)) throw new PdfError('damaged', `${label} ${TRUNCATED}`);
   }
 
+  /**
+   * A first look at a PDF: page count and whether it is password protected.
+   * Encrypted files report their page count without a password (the page tree is not encrypted).
+   * Throws PdfError damaged / empty / notpdf.
+   */
   async function inspect(bytes, name) {
     const label = name || 'This PDF';
     precheck(bytes, name);
