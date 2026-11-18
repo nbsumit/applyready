@@ -57,7 +57,10 @@
     return sniff(new Uint8Array(head));
   }
 
-  const RESERVED = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+  // Windows device names. They are reserved whatever follows the first dot: "CON.jpg" and "con.backup.jpg"
+  // both name the device, so such a file cannot be created or extracted from a ZIP there.
+  const RESERVED = /^(con|prn|aux|nul|com[0-9\u00b9\u00b2\u00b3]|lpt[0-9\u00b9\u00b2\u00b3])$/i;
+  const reservedName = s => RESERVED.test(String(s).split('.')[0].trim());
   // Invisible characters that change the direction of text. In a name they can disguise the real
   // extension: "invoice\u202Efdp.exe" is displayed as "invoiceexe.pdf".
   const HIDDEN_DIRECTION = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
@@ -78,9 +81,55 @@
     const dot = s.lastIndexOf('.');
     let stem = dot > 0 ? s.slice(0, dot) : s;
     let ext = dot > 0 ? s.slice(dot + 1).replace(/[^A-Za-z0-9]/g, '').slice(0, 10) : '';
-    if (!stem || RESERVED.test(stem)) stem = (fallback || 'file') + (stem ? '_' + stem : '');
+    if (!stem || reservedName(s)) stem = (fallback || 'file') + (stem ? '_' + stem : '');
     if (stem.length > 120) stem = stem.slice(0, 120).trim();
     return ext ? `${stem}.${ext.toLowerCase()}` : stem;
+  }
+
+  /**
+   * True when an image file is a single still picture with no hidden details: no EXIF (camera,
+   * location, orientation), XMP, IPTC or text comments, and no animation. Such a file can be handed
+   * back as it is instead of a re-encoded copy without losing anything a new copy would remove.
+   * Anything not recognised, or not parsed to the end, counts as not plain.
+   */
+  function plainStill(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    const n = b.length;
+    const u32 = i => ((b[i] << 24) >>> 0) + (b[i + 1] << 16) + (b[i + 2] << 8) + b[i + 3];
+    const le32 = i => b[i] + (b[i + 1] << 8) + (b[i + 2] << 16) + ((b[i + 3] << 24) >>> 0);
+    if (startsWith(b, [0xFF, 0xD8, 0xFF])) {
+      // Segments up to the image data. Kept: APP0 (JFIF), APP2 (colour profile), APP14 (Adobe colour).
+      for (let i = 2; i + 4 <= n;) {
+        if (b[i] !== 0xFF) return false;
+        const m = b[i + 1];
+        if (m === 0xFF) { i++; continue; }
+        if (m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { i += 2; continue; }
+        if (m === 0xDA) return true;
+        if (m === 0xD9) return false;
+        if (m === 0xFE || (m >= 0xE1 && m <= 0xEF && m !== 0xE2 && m !== 0xEE)) return false;
+        i += 2 + ((b[i + 2] << 8) | b[i + 3]);
+      }
+      return false;
+    }
+    if (startsWith(b, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) {
+      for (let i = 8; i + 8 <= n;) {
+        const len = u32(i), type = ascii(b, i + 4, i + 8);
+        if (/^(tEXt|zTXt|iTXt|eXIf|tIME|acTL)$/.test(type)) return false;
+        if (type === 'IEND') return true;
+        i += 12 + len;
+      }
+      return false;
+    }
+    if (ascii(b, 0, 4) === 'RIFF' && ascii(b, 8, 12) === 'WEBP') {
+      for (let i = 12; i + 8 <= n;) {
+        const type = ascii(b, i, i + 4), len = le32(i + 4);
+        if (type === 'VP8X' && (b[i + 8] & 0x0E)) return false;   // animation, EXIF or XMP flag
+        if (/^(EXIF|XMP |ANIM|ANMF)$/.test(type)) return false;
+        i += 8 + len + (len & 1);
+      }
+      return true;
+    }
+    return false;
   }
 
   function stem(name) {
@@ -99,6 +148,22 @@
     if (n < MB) return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)} KB`;
     if (n < 1024 * MB) return `${(n / MB).toFixed(n < 10 * MB ? 1 : 0)} MB`;
     return `${(n / (1024 * MB)).toFixed(1)} GB`;
+  }
+
+  /**
+   * A size that is over `limit`, written so that it reads as more than the limit: formatBytes rounds
+   * 50.4 MB to "50 MB", which beside a 50 MB limit makes no sense. More decimals are shown when
+   * needed, and "just over" the limit when even three decimals would round down to it.
+   */
+  function formatOver(n, limit) {
+    const shown = formatBytes(n);
+    if (shown !== formatBytes(limit)) return shown;
+    const [unit, word] = n >= 1024 * MB ? [1024 * MB, 'GB'] : n >= MB ? [MB, 'MB'] : [1024, 'KB'];
+    for (let d = 1; d <= 3; d++) {
+      const v = (n / unit).toFixed(d);
+      if (Number(v) > limit / unit) return `${v} ${word}`;
+    }
+    return `just over ${formatBytes(limit)}`;
   }
 
   /** Save a Blob under a safe name. The object URL is released after the download starts. */
@@ -134,9 +199,9 @@
       return { ok: false, info, error: `${file.name} is ${what}. This tool needs ${wanted}; choose a file of that type instead.` };
     }
     const limit = limitBytes || LIMITS[info.kind] || 50 * MB;
-    if (file.size > limit) return { ok: false, info, error: `${file.name} is ${formatBytes(file.size)}. The limit for this tool is ${formatBytes(limit)}, to keep your browser responsive.` };
+    if (file.size > limit) return { ok: false, info, error: `${file.name} is ${formatOver(file.size, limit)}. The limit for this tool is ${formatBytes(limit)}, to keep your browser responsive.` };
     return { ok: true, info };
   }
 
-  return { sniff, sniffFile, safeFileName, withoutHiddenDirection, withExtension, stem, formatBytes, download, validate, LIMITS };
+  return { sniff, sniffFile, plainStill, safeFileName, withoutHiddenDirection, withExtension, stem, formatBytes, formatOver, download, validate, LIMITS };
 });
