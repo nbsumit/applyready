@@ -2,7 +2,7 @@
 
 This document describes what `css/app.css`, the page generators and `js/components.js` implement
 today. The code is the source of truth: if this file and the CSS disagree, the CSS wins and this file
-is wrong. Why the interface looks this way is recorded in `docs/UI_UX_REBUILD_PLAN.md`.
+is wrong. The product plan behind it is in `docs/ROADMAP.md`; earlier design rationale is in the Git history.
 
 ## Character
 
@@ -14,13 +14,16 @@ requirement and I will get the file right", not as a list of features.
 
 | File | Owns |
 |---|---|
-| `css/app.css` | The whole interface, in 17 numbered sections: tokens, base, layout, header, footer, buttons and fields, choice controls, tabs and disclosure, feedback, dialogs and toasts, reading content, page patterns, tool workspace, tool specifics, resume builder, responsive, print and motion. |
+| `css/app.css` | The whole interface, in numbered sections: 0 tokens, 1 base, 2 layout, 3 header (Tools menu, search), 4 footer, 5 buttons and fields, 6 choice controls, 7 tabs and disclosure, 8 feedback, 9 dialogs and toasts, 10 reading content, 11 page patterns (home, directory, guide lists, FAQ), 12 tool workspace, 13 tool specifics, 14 resume builder, 15 responsive, 16 print and motion, 17 file lists and batches, then one section per newer tool. |
 | `css/document.css` | The resume paper, its templates and its print layout (resume.html only). It is the output format, not interface, and `tests/content_tests.js` pins its hash. Do not edit it for interface work. |
 | `css/vendor/icons.min.css`, `css/vendor/cropper.min.css` | Icon subset (only the classes listed in it exist) and the cropper, restyled in `app.css`. |
 | `js/site.js` | Theme, header menu and phone sheet, on-screen keyboard state, phone layout of reference tables, `ApplyReadyUI.notify` (toast), `ApplyReadyUI.reveal`, `ApplyReadyUI.confirm` (dialog). |
 | `js/components.js` | Custom select, range fill, segmented-control sync, and the workspace state machine. |
+| `scripts/lib/tools.js` | The tool registry: names, paths, categories, icons, summaries and search keywords. Everything that lists tools reads it. |
 | `scripts/lib/shell.js` | Header, Tools menu, footer and stylesheet links for every page (`node scripts/sync-shell.js`). |
-| `scripts/lib/image-workspace.js` | The image resizer workspace (home, KB pages, exam pages, Hindi pages; `node scripts/build-image-pages.js`). |
+| `js/search.js`, `js/tool-index.js` | Site search (dialog and inline box) and its generated index. |
+| `js/lib/file-kit.js`, `scripts/lib/tool-kit.js` | Shared drop zone, thumbnails, ZIP download and unload guard; matching markup helpers. |
+| `scripts/lib/image-workspace.js` | The image resizer workspace (image resizer, passport and signature resizers, KB pages; `node scripts/build-image-pages.js`). |
 | `scripts/build-tool-pages.js` | Signature cleaner, Image to PDF, Compress PDF and Passport photo print workspaces. |
 
 Markup between `<!-- tool:start -->` and `<!-- tool:end -->`, and between the `shell:` markers, is
@@ -51,7 +54,7 @@ status pairing is contrast-checked from the stylesheet by `tests/run_tests.js` (
 
 ### Type
 
-Local Inter with a local Noto Devanagari companion; no network fonts.
+Local Inter with a local Noto Devanagari companion (downloaded only when Devanagari text is on screen, such as a name typed in Hindi); no network fonts.
 
 | Token | Size | Role |
 |---|---|---|
@@ -98,15 +101,31 @@ sides of every former and current breakpoint.
 ## Patterns
 
 ### Shell
-- **Header** (`.site-header`): brand, Tools menu, Resume builder, Guides, हिन्दी, theme. The current
-  page gets a 2 px ink underline. Below 640 px the nav becomes a full-height sheet; on tablets the
-  Tools menu spans the header.
-- **Tools menu** (`.menu`): what you can do, not a site map. The left column lists the five tools with
-  an icon, name and one-line purpose (`.menu__item`), grouped as Image tools and PDF tools; the right
-  column lists the five exams with what each covers. File-size pages are reached from the footer and
-  the resizer itself. Arrow keys, Home, End and Escape work.
-- **Footer** (`.site-footer`): brand statement and four link columns (Tools, Resize to a file size, Exam
-  requirements, ApplyReady), so it divides evenly in every mode (4, 4 under the brand, 2 by 2).
+- **Header** (`.site-header`): brand, Tools menu, Resume builder, Guides; on the right the search
+  control (`.search-trigger`, a field-like button with a `/` hint; an icon button below 1000 px) and the
+  theme toggle. The current page gets a 2 px ink underline. Below 640 px the nav becomes a full-height
+  sheet listing every tool by category.
+- **Tools menu** (`.menu`): every live tool from the registry, grouped by category in up to four columns
+  (`.menu__cols--N`): Resume and Document tools, Image tools, PDF tools, Batch and Cyber cafe tools
+  (tinted). Category titles link to their section of `tools.html`; a foot row links "All tools" and
+  teaches the `/` shortcut. Arrow keys, Home, End and Escape work. Two columns on tablets.
+- **Search** (`js/search.js`): a combobox (`role="combobox"`, `aria-activedescendant`, listbox of
+  `.search-result` options with icon, name, one-line summary and category). In the header it opens as a
+  dialog (full screen on phones); on the home page it is inline (`.search-inline`). With an empty query
+  it lists recently used tools, or the most used ones.
+- **Footer** (`.site-footer`): brand statement and motto, then four link columns generated from the
+  registry (Resume and images, PDF and documents, Batch and help, ApplyReady). A project page appears in
+  the footer as soon as its file exists. The base row carries the Source code link and the single
+  voluntary donation link.
+
+### Home and directory
+- **Home** (`index.html`): `.home-hero` (eyebrow motto, title, lede, inline search, "Browse all tools")
+  beside `.home-tasks`, a panel of the four most common tasks. Then `#homeContinue` (recent tools and
+  saved resumes, filled by `js/home.js`, hidden when empty), `.cat-grid` of `.cat-card` category entry
+  points with their first four tools, `.tool-grid` of the most used tools, and `.promise-list`.
+- **Directory** (`tools.html`): filter box (same matching as search, `js/directory.js`), `.dir-nav`
+  category chips, then a `.dir-section` per category (stable ids: `#resume`, `#image`, `#pdf`,
+  `#document`, `#batch`, `#cafe`) with a `.tool-grid` of `.tool-card` links.
 
 ### Page heads
 `.page-head` holds an optional `.breadcrumb-nav`, `.eyebrow`, `.page-title`, `.page-lede` and on the
@@ -160,10 +179,13 @@ Variants: `data-compact-drop` folds the drop zone into a one-line strip once fil
 PDF). After a file loads, the resizer scrolls the editor into view when most of it is below the screen
 (phones and short laptops).
 
-Language: Hindi pages carry their own wording. Generated labels come from `L.hi` in
-`scripts/lib/image-workspace.js`; sentences written by `js/resizer.js` come from `data-*` attributes
-(process summary, result status and limit) and from its `HINDI_MESSAGES` table (validation and file
-errors), applied when `<html lang="hi">`.
+### Multi-file tools (section 17)
+Batch and PDF tools share one vocabulary: a `.dropzone` built by `scripts/lib/tool-kit.js` and wired by
+`ApplyReadyFileKit.dropzone` (picker, drag and drop, paste, validation by file content), a `.batch-bar`
+with counts and actions, a `.batch-progress` bar, and a `.file-list` of `.file-row` items (thumbnail,
+name and facts, `.file-status` in words with an icon, actions). `data-status` on a row is `queued`,
+`processing`, `done`, `error` or `cancelled`. PDF page thumbnails use `.page-grid` of `.page-tile`.
+Downloads of several results are offered individually and as one ZIP.
 
 ### Requirement (image resizer)
 Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, never inside a rail.
@@ -174,7 +196,7 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
   desktops, `req-grid--t{2,3}` on tablets, one column on phones. Cards in a grid share one size, so
   there are no orphans or partial rows (8 options: 4 x 2, 2 x 4, 1 x 8; 3 options: 3, 3, 1).
 - Choice: the home page has no default (`data-require-choice`, `data-req="pending"`); processing waits
-  for a choice and the action line says so, with "Show me". Exam and file-size pages, and links with
+  for a choice and the action line says so, with "Show me". Landing pages (passport, signature, file-size), and links with
   `?preset=` or `?targetKB=`, arrive with their requirement chosen.
 - Summary: once chosen the grid folds to `.req-summary` (name, pixels, KB, format) with a Change
   button (`aria-expanded`, Escape folds it again). It stays visible in every state.
