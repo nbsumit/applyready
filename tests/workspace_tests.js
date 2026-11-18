@@ -474,6 +474,74 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     await context.close();
   }
 
+  /* ================================================================== names in downloads and live regions, Finish, the file limit */
+  {
+    const context = await newContext();
+    const page = await context.newPage();
+    watch(page);
+    await page.goto(origin + '/workspace.html');
+    const liveText = () => page.evaluate(() => Array.from(document.querySelectorAll('[aria-live]')).map(n => n.textContent).join(' | '));
+    await page.click('#wkStartBtn');
+    await page.setInputFiles('#wkDropInput', [fx('ishaan-photo.jpg'), fx('tara-locked.pdf')]);
+    await page.waitForFunction(() => document.querySelectorAll('#wkFiles .file-row__thumb img').length === 1 && /password protected/.test(document.getElementById('wkFiles').innerText));
+
+    // A failure is shown with the file name, but the hidden announcement leaves the name out.
+    await row(page, 'tara-locked.pdf').locator('[data-act="run:pdf"]').click();
+    await page.waitForSelector('.pdf-password');
+    await page.click('.pdf-password [data-act="cancel"]');
+    await page.waitForFunction(() => /did not work/.test(document.getElementById('wkFiles').innerText));
+    await page.waitForTimeout(200);
+    ok(/tara-locked\.pdf was not opened because no password was given/.test(await row(page, 'tara-locked.pdf').innerText()), 'the row shows the reason with the file name');
+    const said = await liveText();
+    ok(/did not work: the file was not opened because no password was given/.test(said) && !/tara-locked/.test(said), `the announcement says why without the file name (${said})`);
+
+    // Single downloads start with the applicant's label, and follow the name as it is typed.
+    await row(page, 'ishaan-photo.jpg').locator('[data-act="run:photo"]').click();
+    await waitState(page, s => s.applicants[0].results === 1 && s.applicants[0].running === 0);
+    const first = await download(page, () => resultRow(page, 'ishaan-photo-photo.jpg').locator('[data-act="download"]').click());
+    ok(first.name === 'Applicant-1_ishaan-photo-photo.jpg', `an unnamed applicant’s download starts with their number (${first.name})`);
+    await page.fill('#wkName', 'Asha S/O Test');
+    const link = resultRow(page, 'ishaan-photo-photo.jpg').locator('[data-act="download"]');
+    ok(await link.getAttribute('download') === 'Asha-S-O-Test_ishaan-photo-photo.jpg' && /saved as Asha-S-O-Test_ishaan-photo-photo\.jpg/.test(await link.getAttribute('aria-label')), 'typing the name updates the download name at once');
+    const named = await download(page, () => link.click());
+    ok(named.name === 'Asha-S-O-Test_ishaan-photo-photo.jpg', `a named applicant’s download carries the name, slash and all (${named.name})`);
+
+    // Everything is marked downloaded, but the page cannot know a file was saved: Finish still checks, lightly.
+    await page.waitForFunction(() => /All 1 result downloaded|1 of 1 result downloaded/.test(document.getElementById('wkTally').innerText) || document.querySelectorAll('.wk-result__status[data-downloaded="true"]').length === 1);
+    await page.click('#wkFinish');
+    const dialog = page.locator('.dialog--confirm');
+    await dialog.waitFor();
+    const askText = (await dialog.innerText()).replace(/\s+/g, ' ');
+    ok(/The result was downloaded\. Check that it is in the Downloads folder or already uploaded/.test(askText), `Finish asks for a quick check even when all is downloaded (${askText})`);
+    ok(await dialog.locator('[data-act="ok"]').evaluate(b => b.classList.contains('btn-primary') && !b.classList.contains('btn-danger-solid')) && await page.evaluate(() => document.activeElement.dataset.act) === 'ok', 'a light confirmation with Finish focused, so Enter finishes');
+    await page.keyboard.press('Escape');
+    ok((await state(page)).applicants.length === 1, 'Escape keeps the applicant');
+    await page.click('#wkFinish');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.ApplyReadyWorkspace.state.applicants.length === 0);
+    await page.waitForTimeout(300);
+    const after = await liveText();
+    ok(!/tara|ishaan|Asha/i.test(after) && !/tara|ishaan|Asha/i.test(await pageDump(page)), `nothing of the finished applicant is left, live regions included (${after})`);
+
+    // A second applicant with the same files gets different download names.
+    await page.click('#wkNoneNew');
+    await page.setInputFiles('#wkDropInput', [fx('ishaan-photo.jpg')]);
+    await page.waitForFunction(() => document.querySelectorAll('#wkFiles .file-row__thumb img').length === 1);
+    await row(page, 'ishaan-photo.jpg').locator('[data-act="run:photo"]').click();
+    await waitState(page, s => s.applicants[0].results === 1 && s.applicants[0].running === 0);
+    const second = await download(page, () => resultRow(page, 'ishaan-photo-photo.jpg').locator('[data-act="download"]').click());
+    ok(second.name === 'Applicant-2_ishaan-photo-photo.jpg' && second.name !== first.name, `the next applicant’s file has its own name (${second.name})`);
+
+    // More files than there is room for: one message with the real count.
+    const many = Array.from({ length: 52 }, (_, i) => ({ name: `sign-${String(i + 1).padStart(2, '0')}.png`, mimeType: 'image/png', buffer: fs.readFileSync(fx('ishaan-sign.png')) }));
+    await page.setInputFiles('#wkDropInput', many);
+    await page.waitForFunction(() => document.getElementById('wkFileCount').textContent.trim() === '50', null, { timeout: 30000 });
+    const capErrors = await page.locator('#wkErrorList li').allInnerTexts();
+    ok(capErrors.length === 1 && /Only 49 more files could be added: an applicant can have up to 50 files\. The other 3 were left out\./.test(capErrors[0]), `one accurate message for the file limit (${JSON.stringify(capErrors)})`);
+    ok(errors.length === 0, `no page errors: ${errors.join(' | ')}`);
+    await context.close();
+  }
+
   /* ================================================================== phone (320 px) */
   {
     const context = await newContext({ viewport: { width: 320, height: 720 }, isMobile: true, hasTouch: true });
