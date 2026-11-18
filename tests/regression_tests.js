@@ -489,6 +489,13 @@ check('Job keywords keep .NET, Go, R and two-letter acronyms, and match them onl
   for (const term of ['.NET', 'Go', 'R', 'C']) assert(yes.found.includes(term), `${term} is found when the resume has it`);
   assert(!keywords.extractKeywords('Go to client sites twice a month and report on sales.').includes('Go'), '"Go" starting a sentence is a verb');
   assert(!keywords.extractKeywords('Report to the PM by 5 PM. UK based, OK with travel.').some(t => ['PM', 'UK', 'OK'].includes(t)), 'common capitals are not skills');
+  const ad = 'Accounts Executive. Send your CV to HR. Valid ID required. Two-wheeler with DL needed. BA or MA in commerce. Tally and GST filing.';
+  const adTerms = keywords.extractKeywords(ad);
+  for (const term of ['CV', 'HR', 'ID', 'DL', 'BA', 'MA']) assert(!adTerms.includes(term), `${term} is not a key term`);
+  const adMatch = keywords.matchKeywords(ad, 'Accounts executive. Tally, GST filing and MS Office.');
+  for (const term of ['CV', 'HR', 'DL']) assert(!adMatch.missing.includes(term), `${term} is not listed as missing`);
+  const acronyms = keywords.extractKeywords('Designer for UI and UX work, with QA, BI dashboards and CI pipelines.');
+  for (const term of ['UI', 'UX', 'QA', 'BI', 'CI']) assert(acronyms.includes(term), `${term} is a key term`);
 });
 (async () => {
   const { ensureMinKB } = require('../js/resizer');

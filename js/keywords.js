@@ -55,13 +55,15 @@
   const meaningful = token => token.length > 1 && !STOPWORDS.has(token) && !/^\d+$/.test(token);
 
   /* Short names that are skills only as written: the languages R, C and Go (capitalised, not at the
-     start of a sentence, where "Go" is a verb) and two-letter acronyms in capitals (AI, ML, QA, UX).
-     They are matched in the resume with the same capitals, so "go live" is not the language Go. */
-  const SHORT_STOP = new Set(['eg', 'eu', 'ie', 'ok', 'pm', 'uk', 'vs']);
+     start of a sentence, where "Go" is a verb) and a short list of two-letter skill acronyms in
+     capitals. Other capitals of two letters are usually not skills (send your CV to HR, a DL, a valid
+     ID, BA or MA, UK based, 5 PM), so only this list is kept. They are matched in the resume with the
+     same capitals, so "go live" is not the language Go. */
+  const SHORT_SKILLS = new Set(['AI', 'ML', 'QA', 'QC', 'UI', 'UX', 'BI', 'AR', 'VR', 'CI', 'CD', 'JS', 'TS', 'RF']);
   function shortName(original, sentenceStart) {
     if (original === 'R' || original === 'C') return true;
     if (original === 'Go') return !sentenceStart;
-    return /^\p{Lu}{2}$/u.test(original) && !STOPWORDS.has(original.toLowerCase()) && !SHORT_STOP.has(original.toLowerCase());
+    return SHORT_SKILLS.has(original);
   }
   const isShortTerm = term => /^(\p{L}{1,2})$/u.test(term);
 
