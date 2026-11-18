@@ -37,9 +37,11 @@ The plan and its progress are in [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs
   libraries. Nothing is sent to a server; there is no server.
 - A Content Security Policy on every page allows scripts, styles, fonts, images and connections from
   this origin only, so the page cannot contact third parties.
-- Data kept on the device: the theme preference and the list of recently used tools (`localStorage`),
-  and saved resumes when the resume builder saves them (browser storage on the device).
-- A service worker caches the site's own pages and assets for offline use. It never caches user files.
+- Data kept on the device: the theme preference, the list of recently used tools and whether that list
+  is turned off (`localStorage`), and saved resumes when the resume builder saves them (IndexedDB).
+  `privacy.html` lists every key, and the Your data page shows and deletes all of it.
+- A service worker keeps the pages a visitor opens, with their styles and code, for offline use; the
+  whole site only when the visitor asks for it on the Your data page. It never caches user files.
 
 ## Technology
 

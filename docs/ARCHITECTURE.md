@@ -78,7 +78,8 @@ Everything stays on the device. Nothing below is ever sent anywhere.
 | `localStorage` | `applyready_recent_off` | `1` when the visitor turned recent tools off | Your data page |
 | IndexedDB `applyready` v1 | `resumes` (keyPath `id`, index `updatedAt`) | saved resumes, see below | resume builder |
 | IndexedDB `applyready` v1 | `meta` (keyPath `key`) | small app records, e.g. `{ key: 'lastResumeId', value }`, `{ key: 'resumeSaving', value: 'off' }` | resume builder |
-| Cache Storage | `applyready-<hash>`, `applyready-vendor-<hash>` | the site's own pages and code for offline use | `sw.js` |
+| `localStorage` | `applyready_resume_draft`, `applyready_draft_enabled` | a draft from releases before the resume library; no longer written | moved into the library by the resume builder (saving on); listed, downloadable and deletable on Your data |
+| Cache Storage | `applyready-files`, `applyready-vendor-<hash>` | the site's own pages and code for offline use: the pages this browser opened, or the whole site when the visitor asks | `sw.js` |
 
 Applicant workspaces (cyber cafe mode) keep files **in memory only**; nothing about them is written to
 any storage. Closing the tab removes them. Each applicant is an object from `js/lib/applicants.js` that owns
@@ -184,8 +185,11 @@ unknown `app`, or with a newer version than the code understands are refused wit
   the compressor) before it is offered. Compress PDF draws each page with pdf.js and saves it as a JPEG
   whose quality is searched to fit the page's share of the limit (resolution lowered only when needed,
   down to 50 DPI), then rebuilds the document with the same page count, order, sizes and rotation; the
-  pages become images. Limits: 100 MB per PDF, 500 MB per merge, 300 pages for the compressor, 500 for
-  PDF to images, 1,500 for organise, canvases under 16 million pixels.
+  pages become images. Limits: 100 MB per PDF, 500 MB per merge, 2,000 pages for a job that copies or
+  changes pages (merge, split, page numbers, watermark; a small crafted file can claim hundreds of
+  thousands), 300 pages for the compressor, 500 for PDF to images, 1,500 for organise, canvases under
+  16 million pixels, and pictures over 50 megapixels are refused before they are decoded. Photos added
+  to a PDF lose their metadata (EXIF, GPS, comments): JPEG segments are dropped without re-encoding.
 - **pdf.js and the CSP**: pdf.js loads as an ES module from a same-origin URL and runs in a module
   worker. Its WebAssembly decoders (JPEG 2000, JBIG2, colour profiles) run inside that worker, which
   takes no policy from the page's CSP meta tag; `tests/pdf_tools_tests.js` decodes a JPEG 2000 image to
@@ -194,15 +198,23 @@ unknown `app`, or with a newer version than the code understands are refused wit
 
 ## 5. Offline
 
-`sw.js` precaches pages, styles, scripts, fonts and guide images, under a cache name derived from a hash
-of their content, so every release reaches returning visitors without a manual version bump. Vendored
-libraries are cached on first use in a separate cache that survives releases until a vendored file
-changes. Pages are network-first; assets are stale-while-revalidate.
+`sw.js` does not download the site uninvited. On install it caches `/offline.html` only. Pages and
+files are cached as this browser fetches them; the first page, loaded before the service worker took
+over, posts the list of files it loaded and the service worker copies them from the HTTP cache. The
+full list of the site's files (`STATIC_ASSETS`, written by `scripts/build-sw.js` with a content hash
+per file) is downloaded only when the visitor selects "Save every tool for offline use" on Your data.
+Every file is stored once, under its path plus its content hash (`/js/site.js?sw=1a2b3c4d`), whatever
+query string the page used, so a release keeps unchanged files and refetches only the changed files
+the browser had (skipped under Save-Data). Vendored libraries are cached on first use in a separate
+cache that survives releases until a vendored file changes. Pages are network-first; assets are
+stale-while-revalidate.
 
 ## 6. Security boundaries
 
 - CSP meta on every page: `default-src 'self'; script-src 'self'; connect-src 'self' blob: data:;
   worker-src 'self' blob:; frame-src 'none'; object-src 'none'` and related directives. No inline
   scripts, no `eval`. GitHub Pages cannot send headers, so `frame-ancestors` and HSTS are not set.
-- No third-party requests. The only external links are the source repository and the donation page.
+- No third-party requests. Tool pages link out only to the source repository and the donation page;
+  guides also link to reference sites (MDN, government portals) as ordinary links the visitor chooses
+  to follow.
 - See `SECURITY.md` for reporting vulnerabilities.

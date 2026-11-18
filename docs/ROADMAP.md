@@ -13,7 +13,8 @@ that a contributor can disagree with them on the merits.
    files, verifies its own output and works on a phone. A tool that cannot be made reliable in a
    browser is documented as a limitation, not shipped half-working.
 2. **Nothing leaves the device.** No uploads, accounts, analytics, ads or third-party requests. The
-   Content Security Policy enforces this (`connect-src 'self'`).
+   Content Security Policy enforces this (`connect-src 'self' blob: data:`: the page can only connect
+   to its own origin, plus in-memory blob and data URLs for the files it makes).
 3. **Static and boring.** Plain HTML, CSS and JavaScript on GitHub Pages. No framework, bundler or
    backend. Generators in `scripts/` keep shared markup consistent.
 4. **Find it in seconds.** Every tool has its own URL, is reachable from the header in two clicks or
