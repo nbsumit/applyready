@@ -1536,6 +1536,8 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
   .fc-group .meta-stat-label { flex: none; }
   .fc-group .meta-stat-val, .yd-stats .meta-stat-val { text-align: left; }
   .fc-pages { max-width: none; }
+  .fc-check tbody th { width: auto; }
+  .fc-check__caption { display: block; padding: var(--s-3) var(--s-3) 0; }
   .fc-req { padding: 0 var(--s-3); }
   .yd-panel { padding: var(--s-4); }
   .yd-actions .btn, .ttp-chars__actions .btn { flex: 1 1 100%; }
