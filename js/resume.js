@@ -922,11 +922,14 @@
     certifications: 'Certifications', achievements: 'Achievements', volunteering: 'Leadership and volunteering', languages: 'Languages', publications: 'Publications',
     academic: 'Academic and research', references: 'References', custom: 'Custom sections'
   };
-  // A template's order for a resume. A template that does not place the summary (it hides it by
-  // default) keeps a written summary at the top rather than after every other section.
+  // A template's order for a resume. A template that hides the summary by default (or does not
+  // place it) still keeps a written summary at the top rather than after every other section:
+  // choosing a template does not hide the summary, so its place must stay where a reader expects it.
   function recommendedOrderFor(templateId, data) {
-    const order = (TEMPLATES[templateId] || {}).recommendedOrder || [];
-    return SCHEMA.normalizeSectionOrder(order.includes('summary') ? order : ['summary', ...order], data);
+    const tmpl = TEMPLATES[templateId] || {};
+    const order = tmpl.recommendedOrder || [];
+    const hidesSummary = !order.includes('summary') || (tmpl.defaultVisibility && tmpl.defaultVisibility.summary === false);
+    return SCHEMA.normalizeSectionOrder(hidesSummary ? ['summary', ...order.filter(key => key !== 'summary')] : order, data);
   }
 
   // Whether the person arranged the sections themselves. Resumes saved before this was recorded
@@ -1012,7 +1015,7 @@
    */
   function populateAllFormFields() {
     const p = resumeData.personal || {};
-    if (getEl('fullName')) getEl('fullName').value = p.fullName || '';
+    if (getEl('fullName')) { getEl('fullName').value = p.fullName || ''; clearFullNameError(); }
     if (getEl('targetTitle')) getEl('targetTitle').value = p.targetTitle || '';
     if (getEl('email')) getEl('email').value = p.email || '';
     if (getEl('phone')) getEl('phone').value = p.phone || '';
@@ -1690,7 +1693,7 @@
       const more = odd.length > 1 ? ` (and ${odd.length - 1} more ${odd.length === 2 ? 'place' : 'places'})` : '';
       issues.push({
         type: 'warning',
-        message: `${quoteList(chars)} cannot be written with the PDF's built-in fonts, so Download PDF opens your browser's print dialog instead, where Save as PDF keeps every character. Word and text downloads keep them as well.`,
+        message: `${capital(quoteList(chars))} cannot be written with the PDF's built-in fonts, so Download PDF opens your browser's print dialog instead, where Save as PDF keeps every character. Word and text downloads keep them as well.`,
         section: odd[0].section,
         where: odd[0].where + more,
         targetField: odd[0].field,
@@ -1714,11 +1717,50 @@
     '≥': { pattern: /≥/g, with: '>=', label: '>=' },
     '≤': { pattern: /≤/g, with: '<=', label: '<=' }
   };
-  const quoteList = chars => {
-    const quoted = chars.slice(0, 5).map(c => `“${c}”`);
-    const tail = chars.length > 5 ? ` and ${chars.length - 5} more characters` : '';
-    return quoted.length === 1 ? quoted[0] + tail : quoted.slice(0, -1).join(', ') + (tail ? ', ' + quoted[quoted.length - 1] + tail : ' and ' + quoted[quoted.length - 1]);
+  // Writing systems named as a whole ("Devanagari text") rather than letter by letter: their vowel
+  // signs and viramas mean nothing on their own. Keys are Unicode script names.
+  const SCRIPT_NAMES = {
+    Devanagari: 'Devanagari', Bengali: 'Bengali', Gurmukhi: 'Gurmukhi', Gujarati: 'Gujarati', Oriya: 'Odia', Tamil: 'Tamil',
+    Telugu: 'Telugu', Kannada: 'Kannada', Malayalam: 'Malayalam', Sinhala: 'Sinhala', Ol_Chiki: 'Ol Chiki', Meetei_Mayek: 'Meetei Mayek',
+    Arabic: 'Arabic', Hebrew: 'Hebrew', Thai: 'Thai', Lao: 'Lao', Khmer: 'Khmer', Myanmar: 'Myanmar', Tibetan: 'Tibetan',
+    Han: 'Chinese or Japanese', Hiragana: 'Japanese', Katakana: 'Japanese', Hangul: 'Korean',
+    Cyrillic: 'Cyrillic', Greek: 'Greek', Armenian: 'Armenian', Georgian: 'Georgian', Ethiopic: 'Ethiopic'
   };
+  const SCRIPT_TESTS = Object.keys(SCRIPT_NAMES).map(key => [new RegExp(`\\p{Script_Extensions=${key}}`, 'u'), `${SCRIPT_NAMES[key]} text`]);
+  const EMOJI_PART = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}\u{FE00}-\u{FE0F}\u{20E3}\u{E0020}-\u{E007F}]/u;
+  // What a reader should look for: "Devanagari text", "emoji", "accent marks", or the character itself.
+  function charGroup(c) {
+    for (const [test, name] of SCRIPT_TESTS) if (test.test(c)) return name;
+    if (EMOJI_PART.test(c)) return 'emoji';
+    if (/\p{M}/u.test(c)) return 'accent marks';
+    return `“${c}”`;
+  }
+  // "Devanagari text and “₹”": scripts and emoji once each, other characters quoted one by one.
+  const quoteList = chars => {
+    const items = [...new Set(chars.map(charGroup))];
+    const shown = items.slice(0, 5);
+    const rest = items.length - shown.length;
+    if (rest) return `${shown.join(', ')} and ${rest} more${items.slice(5).every(item => item.startsWith('“')) ? (rest === 1 ? ' character' : ' characters') : ''}`;
+    return andList(shown);
+  };
+  const andList = items => (items.length === 1 ? items[0] : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+  const capital = text => text.charAt(0).toUpperCase() + text.slice(1);
+  // "replace ₹ with Rs.", "remove ✓": what the Review step's Replace button will do.
+  const replacementPhrase = c => (REPLACEMENTS[c].with === '' ? `remove ${c}` : `replace ${c} with ${REPLACEMENTS[c].label}`);
+
+  /* The message when Download PDF has to fall back to the print dialog. It names what is in the
+     first place found, and offers the Review step's replacement only for characters that have one. */
+  function unsupportedDownloadMessage(odd) {
+    if (!odd.length) return 'Use Save as PDF in the print dialog to preserve all your characters.';
+    const all = [...new Set(odd.flatMap(x => x.chars))];
+    const replaceable = all.filter(c => REPLACEMENTS[c]);
+    const others = odd.length - 1;
+    const more = others ? ` (and ${others} more ${others === 1 ? 'place' : 'places'})` : '';
+    const next = replaceable.length
+      ? `The Review step ${replaceable.length < all.length ? 'shows where the rest is and ' : ''}can ${andList(replaceable.map(replacementPhrase))}`.replace(/\.?$/, '.')
+      : 'The Review step shows where.';
+    return `${capital(quoteList(odd[0].chars))} in ${odd[0].where}${more} cannot go into this PDF, so the print dialog opens: choose Save as PDF there. ${next}`;
+  }
   const PDF_ENGINE = () => (typeof window !== 'undefined' && window.ApplyReadyPDF) || (typeof require === 'function' ? require('./pdf-engine.js') : null);
 
   /* Every printed field holding characters the vector PDF cannot write, in reading order:
@@ -1914,6 +1956,8 @@
                 section.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
               }
               setEntryOpen(target.closest('.entry'), true);
+              // A field inside a closed disclosure (a section heading, a skill label) cannot take focus.
+              for (let box = target.closest('details'); box; box = box.parentElement && box.parentElement.closest('details')) box.open = true;
               if (!iss.targetField) section.querySelector('.accordion-header').focus();
               else target.focus();
               target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2762,6 +2806,17 @@
     document.fonts.ready.then(() => window.print());
   }
 
+  /* The error under Full name lasts only while the field is empty. Typing clears it, and so does
+     any change that fills the form from data (a sample, another saved resume, an import, undo). */
+  function clearFullNameError() {
+    const input = getEl('fullName');
+    const shown = getEl('fullNameError');
+    if (!input || !shown || !input.value.trim()) return;
+    shown.remove();
+    input.removeAttribute('aria-invalid');
+    input.removeAttribute('aria-describedby');
+  }
+
   /* Every download needs the name. Without it, go to the field, mark it invalid and put the reason
      under it (linked with aria-describedby), so it stays after the toast has gone. Typing clears it. */
   function requireFullName() {
@@ -2783,13 +2838,7 @@
     }
     if (!input.dataset.nameCheck) {
       input.dataset.nameCheck = 'on';
-      input.addEventListener('input', () => {
-        const shown = getEl('fullNameError');
-        if (!shown || !input.value.trim()) return;
-        shown.remove();
-        input.removeAttribute('aria-invalid');
-        input.removeAttribute('aria-describedby');
-      });
+      input.addEventListener('input', clearFullNameError);
     }
     error.textContent = 'Enter your full name before downloading. It goes at the top of the resume and in the file name.';
     input.setAttribute('aria-invalid', 'true');
@@ -2837,11 +2886,7 @@
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
       if (err.code === 'UNSUPPORTED_PDF_TEXT') {
-        const odd = findUnsupportedText(resumeData);
-        const chars = [...new Set(odd.flatMap(x => x.chars))];
-        notify(odd.length
-          ? `${quoteList(chars)} in ${odd[0].where} cannot go into this PDF, so the print dialog opens: choose Save as PDF there. ${chars.some(c => REPLACEMENTS[c]) ? 'The Review step can replace it.' : 'The Review step lists where it is.'}`
-          : 'Use Save as PDF in the print dialog to preserve all your characters.');
+        notify(unsupportedDownloadMessage(findUnsupportedText(resumeData)));
         printResume();
       } else notify('PDF could not be generated. Try Browser Print or Word.', true);
     } finally {
@@ -2956,6 +3001,7 @@
       sanitizeHref,
       isValidUrlFormat,
       generateReviewReport,
+      unsupportedDownloadMessage,
       renderResumeDataToHTML,
       TEMPLATES
     };

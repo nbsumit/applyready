@@ -323,6 +323,23 @@ check('The review names the character and the field that keep the PDF from downl
   d.sectionVisibility.experience = false;
   assert(!generateReviewReport(d, 1).some(x => /built-in fonts/.test(x.message)), 'a hidden section does not print, so it is not reported');
 });
+check('An Indian-script name is named as a script, and only replaceable characters are offered a replacement', () => {
+  const { generateReviewReport, unsupportedDownloadMessage } = require('../js/resume');
+  const d = schema.migrate({ personal: { fullName: 'प्रिया शर्मा', email: 'priya@example.com' },
+    experience: [{ id: 'exp-a', role: 'Analyst', company: 'Firm', duration: '2024', bulletsText: 'Closed deals worth ₹12 lakh' }] });
+  const item = generateReviewReport(d, null).find(x => /built-in fonts/.test(x.message));
+  assert(item.message.startsWith('Devanagari text and “₹” cannot'), item.message);
+  for (const mark of ['्', 'ि', '“प”']) assert(!item.message.includes(mark), `no lone "${mark}" in: ${item.message}`);
+  assert.deepEqual(item.replace, ['₹']);
+  const odd = [{ chars: pdf.unsupportedCharacters('प्रिया शर्मा'), where: 'Contact details, name' }, { chars: ['₹'], where: 'Work experience, role 1' }];
+  const toast = unsupportedDownloadMessage(odd);
+  assert(toast.startsWith('Devanagari text in Contact details, name (and 1 more place) cannot go into this PDF'), toast);
+  assert(toast.endsWith('The Review step shows where the rest is and can replace ₹ with Rs.'), toast);
+  assert(!/replace it\b/.test(toast), toast);
+  assert(unsupportedDownloadMessage([{ chars: ['😀'], where: 'Professional summary' }]).startsWith('Emoji in Professional summary'));
+  assert(unsupportedDownloadMessage([{ chars: ['😀'], where: 'Professional summary' }]).endsWith('The Review step shows where.'));
+  assert(unsupportedDownloadMessage([{ chars: ['₹', '✓'], where: 'Skills, row 1' }]).endsWith('can replace ₹ with Rs. and remove ✓.'));
+});
 check('Job keywords split a title line, skip degree words and match British and American spellings', () => {
   const keywords = require('../js/keywords');
   const job = 'Business Analyst - Graduate Programme\nYou will gather requirements from senior stakeholders and own data visualization in Power BI. A degree in any field is required. Organise workshops.';

@@ -185,6 +185,15 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-flow-'));
   await page.keyboard.press('Escape');
   await page.locator('.btn-select-template[data-template="modern-minimal"]').click();
   await page.locator('#btnApplyRecommendedOrder').click().catch(() => {});
+  // A template that hides the summary by default (Finance & Consulting) still keeps a written
+  // summary at the top, not after every other section.
+  await page.locator('.btn-select-template[data-template="finance-consulting"]').click();
+  texts = await printed();
+  const summaryAt = texts.findIndex(t => /SUMMARY/.test(t));
+  ok(summaryAt >= 0 && summaryAt < texts.indexOf('WORK EXPERIENCE') && summaryAt < texts.indexOf('EDUCATION'), 'Finance & Consulting keeps the written summary first');
+  ok(!/Summary$|Summary\./.test(await page.locator('.template-note').textContent().catch(() => '')), 'The note does not list the summary last');
+  await page.locator('.btn-select-template[data-template="modern-minimal"]').click();
+  await page.locator('#btnApplyRecommendedOrder').click().catch(() => {});
 
   // 8. Review: a complete resume passes, findings are grouped
   await tab('#tabReview');
@@ -201,6 +210,21 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-flow-'));
   await rupee.locator('.review-replace-btn').click();
   await settle();
   ok((await exp(0).locator('.item-bullets').inputValue()).includes('Closed deals worth Rs. 12 lakh'), 'Replace swaps ₹ for Rs.');
+  // A section heading sits in a closed disclosure: Fix opens it and puts the cursor in the heading.
+  await tab('#tabContent'); await openSection('experience');
+  const headingBox = page.locator('#sec-experience details.disclosure');
+  await headingBox.locator('summary').click();
+  const heading = await page.locator('#experienceTitleInput').inputValue();
+  await page.locator('#experienceTitleInput').fill('Work ₹');
+  await headingBox.locator('summary').click();
+  ok(await headingBox.evaluate(el => !el.open), 'The heading disclosure is closed again');
+  await tab('#tabReview');
+  const inHeading = page.locator('.review-item', { hasText: 'built-in fonts' });
+  ok((await inHeading.locator('.review-item__where').textContent()).includes('Work experience, heading'), 'The review names the section heading');
+  await inHeading.locator('.review-jump-btn').click();
+  await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'experienceTitleInput', null, { timeout: 3000 }).catch(() => {});
+  ok(await page.evaluate(() => document.activeElement.id === 'experienceTitleInput'), 'Fix opens the closed disclosure and focuses the heading field');
+  await page.locator('#experienceTitleInput').fill(heading);
 
   // 9. Exports contain the edited content
   await tab('#tabContent');
@@ -252,7 +276,13 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-flow-'));
   const p = await phone.newPage();
   p.on('pageerror', e => errors.push(e.message));
   await p.goto(`${origin}/resume.html`);
+  // The missing-name error goes once the name is filled in any way, here by Try a sample.
+  await p.locator('#tabDownload').click();
+  await p.locator('#btnDownloadPDF').click();
+  await p.waitForFunction(() => document.getElementById('fullNameError'));
+  ok(await p.locator('#fullName').getAttribute('aria-invalid') === 'true', 'Downloading a blank resume marks the name field');
   await p.locator('#btnLoadSample').click(); await p.waitForFunction(() => document.getElementById('fullName').value !== '');
+  ok(await p.locator('#fullNameError').count() === 0 && await p.locator('#fullName').getAttribute('aria-invalid') === null && await p.locator('#fullName').getAttribute('aria-describedby') === null, 'Try a sample clears the missing-name error');
   await p.waitForFunction(() => { const t = document.getElementById('taskNotification'); return t && t.classList.contains('is-visible'); });
   await p.waitForTimeout(300);
   ok(await p.evaluate(() => document.getElementById('taskNotification').getBoundingClientRect().bottom <= document.querySelector('.rb-bar').getBoundingClientRect().top), 'A message shows above the Edit / Preview / Download bar, not over it');
