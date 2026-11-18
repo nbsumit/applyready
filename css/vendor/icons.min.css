@@ -76,6 +76,7 @@
 .fa-eye:before{content:"\f06e"}
 .fa-triangle-exclamation:before{content:"\f071"}
 .fa-chevron-down:before{content:"\f078"}
+.fa-folder-open:before{content:"\f07c"}
 .fa-arrows-up-down:before{content:"\f07d"}
 .fa-arrow-up-right-from-square:before{content:"\f08e"}
 .fa-upload:before{content:"\f093"}
@@ -96,9 +97,11 @@
 .fa-paper-plane:before{content:"\f1d8"}
 .fa-clock-rotate-left:before{content:"\f1da"}
 .fa-wifi:before{content:"\f1eb"}
+.fa-hourglass-half:before{content:"\f252"}
 .fa-circle-pause:before{content:"\f28b"}
 .fa-rotate-left:before{content:"\f2ea"}
 .fa-trash-can:before{content:"\f2ed"}
+.fa-rotate:before{content:"\f2f1"}
 .fa-rotate-right:before{content:"\f2f9"}
 .fa-pen:before{content:"\f304"}
 .fa-lock-open:before{content:"\f3c1"}

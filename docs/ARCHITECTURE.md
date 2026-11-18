@@ -95,6 +95,24 @@ object from an allow-list, so a damaged or hostile record cannot inject markup (
 entry ids matching `^[A-Za-z0-9_-]{1,80}$`). A record that fails validation is listed as damaged,
 never opened silently, and can be exported raw or deleted.
 
+Resume data version 3 (`js/resume-schema.js`) adds `references` (name, title, organization, contact),
+`referencesOnRequest`, `customSections` (`{ id, title, mode: 'entries' | 'text', visible, text,
+entries: [{ id, title, subtitle, date, bulletsText }] }`, at most 20) and a top-level `publications`
+list (versions 1 and 2 kept publications in `academic.publications`; migration moves them and keeps
+their visibility). Section order holds the fixed section keys plus `custom:<id>` for each custom
+section. Migration from versions 1 and 2 is lossless, and `validate()` accepts versions 1 to 3.
+
+Resume modules: `js/resume-library.js` (record and backup formats, no interface, unit-tested in Node),
+`js/resume-library-ui.js` (autosave, status, My resumes, import and export, cross-tab safety),
+`js/resume-sections.js` (references and custom sections editor), `js/resume-render.js` (HTML
+document) and `js/resume.js` (the editor, exposed to the others as `window.ApplyReadyResumeEditor`).
+Autosave writes about 600 ms after typing stops and at once on `visibilitychange` (hidden) and
+`pagehide`. Before each write the stored `updatedAt` is compared with the version this tab last read,
+and tabs announce saves on the `BroadcastChannel` named `applyready-resumes`. A tab with nothing
+unsaved simply shows the newer version; a tab with unsaved changes pauses saving and asks which
+version to keep. Library actions (new, open, import, duplicate, delete) run one at a time, and a new
+blank resume is stored only once something is typed into it.
+
 ### Backup files
 
 Single resume (unchanged from earlier versions, still importable):
@@ -102,6 +120,11 @@ Single resume (unchanged from earlier versions, still importable):
 ```json
 { "app": "ApplyReady", "version": 2, "exportedAt": "2026-11-18T10:00:00.000Z", "data": { } }
 ```
+
+So that earlier releases can still import it, `data` carries `version: 2`, a section order made only
+of the version 2 sections and a copy of the publications in `academic.publications`; the full order
+travels in `data.design.sectionOrderV3` and `data.schemaVersion` is 3. The file may also carry the
+resume's `name`, `createdAt` and `updatedAt`, which older importers ignore.
 
 All resumes (Your data page and the resume library):
 
@@ -115,7 +138,8 @@ All resumes (Your data page and the resume library):
 }
 ```
 
-Importing never overwrites: each imported resume becomes a new library entry. Files over 5 MB, with an
+Importing never overwrites: each imported resume becomes a new library entry, keeping the edit
+dates from the file (never later than the import). Files over 5 MB, with an
 unknown `app`, or with a newer version than the code understands are refused with a message.
 
 ## 4. Processing

@@ -534,7 +534,7 @@ input[type='range']:disabled { opacity: .5; cursor: not-allowed; }
 .dialog--confirm .dialog__head { border-bottom: 0; padding-bottom: 0; }
 .dialog--confirm .dialog__body { padding-top: var(--s-3); line-height: 1.55; }
 .dialog--confirm .dialog__foot { border-top: 0; padding-top: 0; }
-.task-notification { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-3) var(--s-4); background: var(--c-text); color: var(--c-surface); border-radius: var(--r-md); box-shadow: var(--sh-pop); font-size: var(--fs-label); font-weight: var(--fw-medium); line-height: 1.45; opacity: 0; transform: translateY(8px); transition: opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease); }
+.task-notification { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-3) var(--s-4); background: var(--c-text); color: var(--c-surface); border-radius: var(--r-md); box-shadow: var(--sh-pop); font-size: var(--fs-label); font-weight: var(--fw-medium); line-height: 1.45; overflow-wrap: anywhere; opacity: 0; transform: translateY(8px); transition: opacity var(--t-base) var(--ease), transform var(--t-base) var(--ease); }
 .task-notification { position: fixed; left: 50%; bottom: calc(var(--s-4) + env(safe-area-inset-bottom, 0px) + var(--toast-lift, 0px)); translate: -50% 0; z-index: var(--z-toast); width: max-content; max-width: min(520px, calc(100vw - 2 * var(--s-4))); pointer-events: none; }
 .task-notification.is-visible { opacity: 1; transform: none; }
 .task-notification.is-error { background: var(--c-danger); color: var(--c-surface); }
@@ -1425,7 +1425,67 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
   .batch-bar__actions .btn { flex: 1; }
 }
 
-/* ================================================================== 18. DOCUMENT TOOLS AND YOUR DATA */
+/* ================================================================== 18. RESUME LIBRARY AND SAVING */
+/* The resume builder's save status under the title, the notice for anything that puts work at risk,
+   the "My resumes" dialog (js/resume-library-ui.js) and the custom-section footer (js/resume-sections.js). */
+.rb-doc { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-1) var(--s-3); margin-top: var(--s-2); font-size: var(--fs-label); color: var(--c-text-3); }
+.rb-doc__name { min-width: 0; max-width: 100%; overflow-wrap: anywhere; font-weight: var(--fw-strong); color: var(--c-text); }
+.rb-save { display: inline-flex; align-items: center; gap: 6px; }
+.rb-save .fa-solid { font-size: 12px; }
+.rb-save[data-state='saved'] .fa-solid { color: var(--c-success); }
+.rb-save[data-state='off'], .rb-save[data-state='memory'], .rb-save[data-state='error'], .rb-save[data-state='conflict'] { color: var(--c-warning); font-weight: var(--fw-medium); }
+.rb-save[data-state='error'] { color: var(--c-danger); }
+.rb-notice { margin: calc(-1 * var(--s-2)) 0 var(--s-5); }
+.rb-notice p { margin: 0; }
+.rb-notice__actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+
+.rl-open { overflow: hidden; }
+.rl-dialog { width: min(100%, 720px); }
+.rl-body { display: grid; gap: var(--s-4); align-content: start; }
+.rl-intro { font-size: var(--fs-md); color: var(--c-text-3); line-height: 1.5; }
+.rl-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.rl-list { list-style: none; display: grid; background: var(--c-surface); border: var(--bw) solid var(--c-line); border-radius: var(--r-md); }
+.rl-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: var(--s-2) var(--s-3); padding: var(--s-3); }
+.rl-row + .rl-row { border-top: var(--bw) solid var(--c-line); }
+.rl-row.is-current { background: var(--c-accent-soft); }
+.rl-row.is-damaged { background: var(--c-danger-soft); }
+.rl-row__icon { display: grid; place-items: center; width: 28px; height: 28px; font-size: 16px; color: var(--c-text-3); }
+.rl-row.is-damaged .rl-row__icon { color: var(--c-danger); }
+.rl-row__text { display: grid; gap: 2px; min-width: 0; }
+.rl-row__name { font-weight: var(--fw-strong); color: var(--c-text); overflow-wrap: anywhere; }
+.rl-row__meta { font-size: var(--fs-sm); color: var(--c-text-3); line-height: 1.45; }
+.rl-row__meta strong { color: var(--c-text-2); font-weight: var(--fw-medium); }
+.rl-row__error { color: var(--c-danger); }
+.rl-row__actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 2px; }
+.rl-row__actions .btn:first-child { margin-right: var(--s-1); }
+.rl-act__word { display: none; }
+.rl-rename { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.rl-rename .input { flex: 1 1 200px; min-width: 0; }
+.rl-empty { padding: var(--s-5) var(--s-4); color: var(--c-text-3); text-align: center; }
+.rl-storage { display: grid; gap: var(--s-2); padding-top: var(--s-4); border-top: var(--bw) solid var(--c-line); }
+#customSectionsArea > .accordion-section { border-top: var(--bw) solid var(--c-line); }
+.home-continue .tool-grid + .tool-grid { margin-top: var(--s-3); }
+.cs-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-2) var(--s-4); padding-top: var(--s-3); border-top: var(--bw) solid var(--c-line); }
+
+/* Below 1000px the bottom bar carries Download, but My resumes stays one tap away in the head. */
+@media (max-width: 999px) {
+  .rb-head__actions { display: flex; }
+  .rb-head__actions #btnOpenExport { display: none; }
+}
+@media (max-width: 639px) {
+  .rl-row { grid-template-columns: 28px minmax(0, 1fr); }
+  .rl-row__actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .rl-row__actions .btn:first-child { flex: 1 1 100%; margin: 0 0 var(--s-1); }
+  .rl-row__actions .rl-act { flex: 1 1 0; width: auto; min-width: 0; min-height: var(--h-lg); flex-direction: column; gap: 2px; padding: var(--s-1); }
+  .rl-act__word { display: block; font-size: var(--fs-xs); font-weight: var(--fw-medium); }
+  .rl-actions .btn { flex: 1 1 calc(50% - var(--s-2)); }
+  .rb-head__actions { width: 100%; }
+  .rb-head__actions .btn { flex: 1 1 auto; }
+}
+@media print {
+  .resume-page .breadcrumb-nav, .resume-page .tool-privacy, .rb-notice, .rl-backdrop { display: none !important; }
+
+/* ================================================================== 19. DOCUMENT TOOLS AND YOUR DATA */
 /* File checker (file-checker.html, js/file-checker.js), Text to PDF (text-to-pdf.html, js/text-to-pdf.js)
    and Your data (your-data.html, js/your-data.js). Built from the workspace, notice, meta-stats and
    check-table patterns; only the arrangement below is new. */

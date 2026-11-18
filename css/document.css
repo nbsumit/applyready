@@ -498,3 +498,4 @@
 .ats-resume-sheet .resume-summary { margin: 0; line-height: 1.4; }
 .ats-resume-sheet .resume-list-entry { padding-left: 12pt; text-indent: -9pt; }
 .ats-resume-sheet .resume-list-entry::before { content: "\2022\00a0\00a0"; }
+.ats-resume-sheet.heading-case-asis .resume-section-title { text-transform: none; letter-spacing: 0; }

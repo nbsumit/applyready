@@ -1,11 +1,27 @@
-/* Shared, allowlisted backup validation and lossless v1/v2 migration. */
+/* Resume data schema: allow-listed validation and lossless migration from versions 1, 2 and 3.
+
+   Version 3 (November 2026) adds references, custom sections and a first-class Publications
+   section (in versions 1 and 2 publications lived inside the Academic section). Every resume that
+   reaches the editor, the library or an export passes through migrate(), which rebuilds the object
+   from this allow-list. Entry ids always match ID_PATTERN because the editor puts them into HTML
+   attributes without escaping. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.ApplyReadySchema = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  const sections = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
+  const CURRENT_VERSION = 3;
+  const ID_PATTERN = /^[A-Za-z0-9_-]{1,80}$/;
+  const CUSTOM_PREFIX = 'custom:';
+  const MAX_CUSTOM_SECTIONS = 20;
+  const MAX_REFERENCES = 20;
+  const MAX_ENTRIES = 150;
+  // Fixed sections, in their default order. Custom sections join the order as "custom:<id>".
+  const sections = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'publications', 'academic', 'references'];
+  const LEGACY_SECTIONS = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
   const templates = ['classic-professional', 'modern-minimal', 'graduate-early-career', 'experienced-professional', 'project-focused', 'career-transition', 'compact-professional', 'academic-cv', 'ivy-classic', 'software-engineer', 'campus-fresher', 'ats-strict', 'executive-impact', 'healthcare-licensed', 'finance-consulting'];
+  // Retired template ids and the template that replaces them, so saved resumes always open.
+  const templateAliases = {};
   const personalFields = ['fullName', 'targetTitle', 'email', 'phone', 'location', 'linkedin', 'github', 'website'];
   const skillFields = ['languages', 'frameworks', 'tools', 'other'];
   const entries = {
@@ -19,71 +35,128 @@
     publications: ['title', 'citation'],
     teaching: ['role', 'course', 'institution', 'term'],
     presentations: ['title', 'event'],
-    grants: ['title', 'name', 'funder', 'year']
+    grants: ['title', 'name', 'funder', 'year'],
+    references: ['name', 'title', 'organization', 'contact'],
+    customEntries: ['title', 'subtitle', 'date', 'bulletsText']
   };
+  const TOP_LISTS = ['experience', 'education', 'projects', 'certifications', 'achievements', 'volunteering', 'languages'];
+  const ACADEMIC_LISTS = ['teaching', 'presentations', 'grants'];
   const record = x => !!x && typeof x === 'object' && !Array.isArray(x);
   const text = x => typeof x === 'string' && x.length <= 50000;
   const fieldsValid = (obj, fields) => record(obj) && fields.every(key => obj[key] === undefined || text(obj[key]));
-  function normalizeSectionOrder(order) {
-    return [...new Set([...(Array.isArray(order) ? order.filter(key => sections.includes(key)) : []), ...sections])];
+  const isCustomKey = key => typeof key === 'string' && key.startsWith(CUSTOM_PREFIX) && ID_PATTERN.test(key.slice(CUSTOM_PREFIX.length));
+  const customKey = id => CUSTOM_PREFIX + id;
+  const versionOk = v => v === undefined || [1, 2, 3].includes(v);
+
+  // The custom-section keys a resume can have in its section order.
+  function customKeysOf(data) {
+    return (record(data) && Array.isArray(data.customSections) ? data.customSections : [])
+      .filter(s => record(s) && ID_PATTERN.test(String(s.id || ''))).map(s => customKey(s.id));
   }
+
+  /* Every fixed section exactly once plus every custom section of `data`, keeping the given order.
+     A legacy order without "publications" gets it just before "academic", where publications used
+     to print, so an old resume keeps its layout. */
+  function normalizeSectionOrder(order, data) {
+    const customs = customKeysOf(data);
+    const allowed = key => sections.includes(key) || customs.includes(key);
+    const given = Array.isArray(order) ? order.filter(allowed) : [];
+    if (!given.includes('publications') && given.includes('academic')) given.splice(given.indexOf('academic'), 0, 'publications');
+    return [...new Set([...given, ...sections, ...customs])];
+  }
+
+  /** The order in which the sections of `data` print. */
+  function sectionKeys(data) {
+    return normalizeSectionOrder(record(data) && record(data.design) ? data.design.sectionOrder : [], data);
+  }
+
   function validate(payload) {
     if (!record(payload) || !record(payload.data)) return false;
     if (payload.app !== undefined && payload.app !== 'ApplyReady') return false;
-    if (payload.version !== undefined && ![1, 2].includes(payload.version)) return false;
+    if (!versionOk(payload.version)) return false;
     const d = payload.data;
     if (!fieldsValid(d.personal, personalFields)) return false;
     if (!['experience', 'education', 'projects'].every(key => Array.isArray(d[key]))) return false;
-    if (d.version !== undefined && ![1, 2].includes(d.version)) return false;
+    if (!versionOk(d.version) || !versionOk(d.schemaVersion)) return false;
     if (!['summary', 'summaryTitle', 'experienceTitle', 'educationTitle', 'projectsTitle', 'skillsTitle'].every(key => d[key] === undefined || text(d[key]))) return false;
     if (d.skills !== undefined && !fieldsValid(d.skills, skillFields)) return false;
     if (d.skillLabels !== undefined && !fieldsValid(d.skillLabels, skillFields)) return false;
     if (d.design !== undefined && !record(d.design)) return false;
     if (d.sectionVisibility !== undefined && (!record(d.sectionVisibility) || !sections.every(key => d.sectionVisibility[key] === undefined || typeof d.sectionVisibility[key] === 'boolean'))) return false;
-    if (d.design && d.design.sectionOrder !== undefined && (!Array.isArray(d.design.sectionOrder) || d.design.sectionOrder.length > 30 || !d.design.sectionOrder.every(key => sections.includes(key)))) return false;
-    const arrayValid = (array, keys, allowStrings) => Array.isArray(array) && array.length <= 150 && array.every(item =>
+    if (d.design && d.design.sectionOrder !== undefined && (!Array.isArray(d.design.sectionOrder) || d.design.sectionOrder.length > 60 || !d.design.sectionOrder.every(key => sections.includes(key) || isCustomKey(key)))) return false;
+    const arrayValid = (array, keys, allowStrings, max) => Array.isArray(array) && array.length <= (max || MAX_ENTRIES) && array.every(item =>
       (allowStrings && text(item)) || (fieldsValid(item, keys) && (item.id === undefined || typeof item.id === 'string' || typeof item.id === 'number')));
-    for (const key of Object.keys(entries).slice(0, 7)) {
+    for (const key of TOP_LISTS) {
       if (d[key] !== undefined && !arrayValid(d[key], entries[key], ['achievements', 'languages'].includes(key))) return false;
     }
+    if (d.publications !== undefined && !arrayValid(d.publications, entries.publications, true)) return false;
     if (d.academic !== undefined) {
       if (!record(d.academic)) return false;
-      for (const key of ['publications', 'teaching', 'presentations', 'grants']) {
+      for (const key of ['publications', ...ACADEMIC_LISTS]) {
         if (d.academic[key] !== undefined && !arrayValid(d.academic[key], entries[key], key !== 'teaching')) return false;
+      }
+    }
+    if (d.references !== undefined && !arrayValid(d.references, entries.references, false, MAX_REFERENCES)) return false;
+    if (d.referencesOnRequest !== undefined && typeof d.referencesOnRequest !== 'boolean') return false;
+    if (d.customSections !== undefined) {
+      if (!Array.isArray(d.customSections) || d.customSections.length > MAX_CUSTOM_SECTIONS) return false;
+      for (const s of d.customSections) {
+        if (!record(s) || !['title', 'text'].every(key => s[key] === undefined || text(s[key]))) return false;
+        if (s.id !== undefined && typeof s.id !== 'string') return false;
+        if (s.mode !== undefined && !['entries', 'text'].includes(s.mode)) return false;
+        if (s.visible !== undefined && typeof s.visible !== 'boolean') return false;
+        if (s.entries !== undefined && !arrayValid(s.entries, entries.customEntries, false)) return false;
       }
     }
     return true;
   }
+
   function migrate(raw) {
     const src = record(raw) ? (record(raw.data) ? raw.data : raw) : {};
     const design = record(src.design) ? src.design : {};
+    const isV3 = src.schemaVersion === 3 || src.version === 3;
     const enumValue = (value, allowed, fallback) => allowed.includes(value) ? value : fallback;
     const pickText = (obj, keys) => Object.fromEntries(keys.map(key => [key, text(obj && obj[key]) ? obj[key] : '']));
     let nextId = 0;
     const usedIds = new Set();
-    function list(array, keys, stringField) {
-      return (Array.isArray(array) ? array : []).slice(0, 150).filter(item => record(item) || text(item)).map(item => {
+    function freshId(candidate) {
+      let id = String(candidate || '');
+      if (!ID_PATTERN.test(id) || usedIds.has(id)) id = `entry-${++nextId}`;
+      while (usedIds.has(id)) id = `entry-${++nextId}`;
+      usedIds.add(id);
+      return id;
+    }
+    function list(array, keys, stringField, max) {
+      return (Array.isArray(array) ? array : []).slice(0, max || MAX_ENTRIES).filter(item => record(item) || text(item)).map(item => {
         const obj = typeof item === 'string' ? { [stringField || 'title']: item } : item;
-        let id = String(obj.id || '');
-        if (!/^[A-Za-z0-9_-]{1,80}$/.test(id) || usedIds.has(id)) id = `entry-${++nextId}`;
-        while (usedIds.has(id)) id = `entry-${++nextId}`;
-        usedIds.add(id);
-        return { id, ...pickText(obj, keys) };
+        return { id: freshId(obj.id), ...pickText(obj, keys) };
       });
     }
-    const template = enumValue(src.template, templates, enumValue(design.templateId, templates, 'classic-professional'));
+    const aliased = id => (typeof id === 'string' && templateAliases[id]) || id;
+    const template = enumValue(aliased(src.template), templates, enumValue(aliased(design.templateId), templates, 'classic-professional'));
+    const srcVis = record(src.sectionVisibility) ? src.sectionVisibility : {};
     const vis = {};
-    sections.forEach((key, i) => { vis[key] = typeof (src.sectionVisibility || {})[key] === 'boolean' ? src.sectionVisibility[key] : i < 5; });
+    sections.forEach(key => { vis[key] = typeof srcVis[key] === 'boolean' ? srcVis[key] : LEGACY_SECTIONS.indexOf(key) > -1 && LEGACY_SECTIONS.indexOf(key) < 5; });
+    // Before version 3 publications printed as part of Academic, so they share its visibility.
+    if (!isV3 || typeof srcVis.publications !== 'boolean') vis.publications = typeof srcVis.academic === 'boolean' ? srcVis.academic : false;
     const acad = record(src.academic) ? src.academic : {};
+    const customSections = (Array.isArray(src.customSections) ? src.customSections : []).slice(0, MAX_CUSTOM_SECTIONS).filter(record).map(s => ({
+      id: freshId(s.id),
+      title: text(s.title) ? s.title.slice(0, 120) : '',
+      mode: enumValue(s.mode, ['entries', 'text'], 'entries'),
+      visible: typeof s.visible === 'boolean' ? s.visible : true,
+      text: text(s.text) ? s.text : '',
+      entries: list(s.entries, entries.customEntries)
+    }));
     const result = {
-      version: 2, schemaVersion: 2, app: 'ApplyReady', template,
+      version: CURRENT_VERSION, schemaVersion: CURRENT_VERSION, app: 'ApplyReady', template,
       design: {
         templateId: template,
         fontFamily: enumValue(design.fontFamily || src.fontFamily, ['serif', 'sans'], 'serif'),
         fontSize: enumValue(design.fontSize, ['standard', 'comfortable', 'compact'], 'standard'),
         density: enumValue(design.density, ['standard', 'compact'], 'standard'),
         pageSize: enumValue(design.pageSize, ['a4', 'letter'], 'a4'), accentColor: 'navy',
-        sectionOrder: normalizeSectionOrder(design.sectionOrder)
+        sectionOrder: []
       },
       sectionVisibility: vis, personal: pickText(src.personal, personalFields), skills: pickText(src.skills, skillFields),
       skillLabels: Object.fromEntries(Object.entries(pickText(src.skillLabels, skillFields)).map(([key, value]) => [key, value.slice(0, 60)])),
@@ -93,11 +166,52 @@
       educationTitle: text(src.educationTitle) && src.educationTitle ? src.educationTitle : 'Education',
       projectsTitle: text(src.projectsTitle) && src.projectsTitle ? src.projectsTitle : 'Projects',
       skillsTitle: text(src.skillsTitle) && src.skillsTitle ? src.skillsTitle : 'Skills',
-      academic: {}
+      academic: {},
+      publications: [],
+      references: [],
+      referencesOnRequest: src.referencesOnRequest === true,
+      customSections
     };
-    for (const key of Object.keys(entries).slice(0, 7)) result[key] = list(src[key], entries[key], key === 'languages' ? 'name' : 'title');
-    for (const key of ['publications', 'teaching', 'presentations', 'grants']) result.academic[key] = list(acad[key], entries[key]);
+    for (const key of TOP_LISTS) result[key] = list(src[key], entries[key], key === 'languages' ? 'name' : 'title');
+    // Version 3 keeps publications at the top level. A version 3 backup may also carry a copy in
+    // academic.publications for older importers; the top-level list is the authoritative one.
+    result.publications = list(isV3 && Array.isArray(src.publications) ? src.publications : acad.publications, entries.publications);
+    for (const key of ACADEMIC_LISTS) result.academic[key] = list(acad[key], entries[key]);
+    result.references = list(src.references, entries.references, 'name', MAX_REFERENCES);
+    result.design.sectionOrder = normalizeSectionOrder(design.sectionOrder, result);
     return result;
   }
-  return { validate, migrate, normalizeSectionOrder, sections, templates };
+
+  /* A copy of migrated data that the version 2 importer (earlier ApplyReady releases) also accepts:
+     version 2 markers, a section order made only of the sections it knows, and publications mirrored
+     into academic.publications. The full version 3 order travels in design.sectionOrderV3, and
+     migrate() reads it back, so nothing is lost when this release imports the file. */
+  function toLegacyCompatible(data) {
+    const d = migrate(data);
+    const out = JSON.parse(JSON.stringify(d));
+    out.version = 2;
+    out.schemaVersion = CURRENT_VERSION;
+    out.design.sectionOrderV3 = d.design.sectionOrder.slice();
+    out.design.sectionOrder = d.design.sectionOrder.filter(key => LEGACY_SECTIONS.includes(key));
+    out.academic.publications = d.publications.map(p => ({ id: p.id, title: p.title, citation: p.citation }));
+    return out;
+  }
+
+  // Read the full order back from a file written by toLegacyCompatible().
+  const migrateBase = migrate;
+  function migrateWithOrder(raw) {
+    const src = record(raw) ? (record(raw.data) ? raw.data : raw) : {};
+    const design = record(src.design) ? src.design : null;
+    if (design && Array.isArray(design.sectionOrderV3) && design.sectionOrderV3.length <= 60 && design.sectionOrderV3.every(key => sections.includes(key) || isCustomKey(key))) {
+      const copy = Object.assign({}, src, { design: Object.assign({}, design, { sectionOrder: design.sectionOrderV3 }) });
+      return migrateBase(copy);
+    }
+    return migrateBase(src);
+  }
+
+  return {
+    validate, migrate: migrateWithOrder, normalizeSectionOrder, sectionKeys, customKeysOf, isCustomKey, customKey, toLegacyCompatible,
+    sections, legacySections: LEGACY_SECTIONS, templates, templateAliases, entries, CURRENT_VERSION, ID_PATTERN, CUSTOM_PREFIX,
+    MAX_CUSTOM_SECTIONS, MAX_REFERENCES
+  };
 });

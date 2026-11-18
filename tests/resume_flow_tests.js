@@ -183,6 +183,11 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-flow-'));
   await page.waitForFunction(() => document.getElementById('fullName').value === 'Riya Flow');
   ok((await sheet()).includes('ROLE_TWO') && (await sheet()).includes('DEGREE_ONE'), 'Importing the backup restores the resume');
   ok(await page.locator('#viewContent').isVisible(), 'Importing returns to the Write step');
+  // Importing never overwrites: the backup became a second saved resume next to the cleared one.
+  await page.locator('#btnLibrary').click(); await page.locator('#libraryDialog').waitFor();
+  await page.waitForFunction(() => document.querySelectorAll('#libList .rl-row').length >= 2);
+  ok(await page.locator('#libList .rl-row').count() === 2, 'Importing adds the backup as a new resume and keeps the cleared one');
+  await page.keyboard.press('Escape');
 
   // 11. Phone: Edit and Preview switch, nothing overflows
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, acceptDownloads: true });
