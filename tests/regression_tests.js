@@ -316,6 +316,57 @@ check('Page breaks never split a bullet or leave a last bullet alone at the top 
     });
   }
 });
+// Moves every later page break by a few points at a time: `shift` short education entries come first.
+// `lines` lines of summary move them by a different step, so together they reach every position.
+function shiftedResume(template, density, shift, extra, lines) {
+  const d = schema.migrate(Object.assign({ template, design: { templateId: template, density }, personal: { fullName: 'Break Case' },
+    summary: Array.from({ length: lines || 0 }, () => 'Summary line').join('\n'),
+    sectionVisibility: { summary: true, education: true, experience: true },
+    education: Array.from({ length: shift }, (_, i) => ({ degree: `Course ${i + 1}`, institution: 'Institute' })),
+    experience: Array.from({ length: 6 }, (_, r) => ({ role: `Role ${r + 1}`, company: 'Company', duration: '2019 - 2020', bulletsText: [1, 2, 3, 4].map(n =>
+      `Result ${n}: coordinated a cross-team reporting change that cut turnaround and kept the work on schedule across several quarters for the regional team`).join('\n') })) }, extra || {}));
+  d.design.sectionOrder = schema.normalizeSectionOrder(['summary', 'education', 'experience', 'references'], d);
+  d.sectionVisibility.references = true;
+  return d;
+}
+check('A bullet is never split across pages, in either density (RES-03)', () => {
+  for (const template of ['compact-professional', 'classic-professional', 'software-engineer']) {
+    for (const density of ['compact', 'standard']) {
+      for (let shift = 0; shift <= 24; shift++) for (let lines = 0; lines <= 12; lines++) {
+        const doc = pdf.generateResumePDF(shiftedResume(template, density, shift, null, lines));
+        doc.pages.forEach((page, p) => {
+          const texts = page.elements.filter(e => e.type === 'text');
+          const bulletYs = texts.filter(e => e.text === '•').map(e => e.y);
+          const bulletX = texts.filter(e => e.text.startsWith('Result ')).map(e => e.x)[0];
+          // Every line drawn at the bullet text position is either a bullet's first line (a • on the
+          // same line) or follows a line of the same bullet on the same page.
+          const top = texts.filter(e => Math.abs(e.x - bulletX) < 0.5 && !e.text.startsWith('Result ')).sort((a, b) => a.y - b.y)[0];
+          if (!top) return;
+          const above = texts.some(e => e.y < top.y - 0.5 && Math.abs(e.x - bulletX) < 0.5);
+          assert(above || bulletYs.some(y => Math.abs(y - top.y) < 0.5), `${template} ${density} shift ${shift}+${lines}: page ${p + 1} starts with the rest of a bullet ("${top.text.slice(0, 30)}")`);
+        });
+      }
+    }
+  }
+});
+check('A referee\'s name, details and contact stay on one page (RES-02)', () => {
+  const references = Array.from({ length: 5 }, (_, i) => ({ name: `Referee ${i + 1}`, title: 'Head of Operations, my manager 2019 - 2024', organization: 'Northwind Traders', contact: `referee${i + 1}@example.com · +91 98765 4321${i}` }));
+  for (const template of ['compact-professional', 'classic-professional', 'executive-impact']) {
+    for (const density of ['compact', 'standard']) {
+      for (let shift = 0; shift <= 30; shift++) {
+        const doc = pdf.generateResumePDF(shiftedResume(template, density, shift, { references }));
+        const pageOf = text => doc.pages.findIndex(page => page.elements.some(e => e.type === 'text' && e.text.includes(text)));
+        references.forEach((ref, i) => {
+          const name = pageOf(ref.name);
+          assert(name >= 0, `${template}: ${ref.name} is printed`);
+          assert(pageOf('Northwind') >= 0 && pageOf(`referee${i + 1}@`) === name, `${template} ${density} shift ${shift}: the contact of ${ref.name} is on another page than the name`);
+        });
+        const heading = doc.pages.findIndex(page => page.elements.some(e => e.type === 'text' && /^references$/i.test(e.text.trim())));
+        assert.equal(heading, pageOf('Referee 1'), `${template} ${density} shift ${shift}: the References heading stays with the first referee`);
+      }
+    }
+  }
+});
 check('Project tools start without a separator when they sit on their own line', () => {
   for (const template of Object.keys(TEMPLATES)) {
     const d = schema.migrate(require('../js/resume').SAMPLE_DATA);

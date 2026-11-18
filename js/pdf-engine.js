@@ -870,7 +870,9 @@
       blocks.forEach((lines, i) => {
         keepTogether(bulletNeed(blocks, i));
         for (let bl = 0; bl < lines.length; bl++) {
-          ensureSpace(baseFontSize + 4);
+          // The same line height as bulletNeed() reserved, or the last line of a bullet could still
+          // move to the next page (compact density has tighter lines).
+          ensureSpace(bulletLineHeight);
           if (bl === 0) {
             doc.drawText('•', marginLeft + 2, currentY + bulletFontSize, { fontSize: bulletFontSize, fontStyle: 'bold', color: [0.3, 0.3, 0.3] });
           }
@@ -1085,13 +1087,19 @@
     function renderReferences() {
       const refs = referenceContent(resumeData, layout.label);
       if (!refs) return;
-      renderSectionHeader(layout.label('references'), 1);
-      if (refs.onRequest) { drawWrapped(refs.onRequest, baseFontSize, 'normal', [0.1, 0.1, 0.1]); pendingGap = sectionGap; return; }
+      if (refs.onRequest) { renderSectionHeader(layout.label('references'), 1); drawWrapped(refs.onRequest, baseFontSize, 'normal', [0.1, 0.1, 0.1]); pendingGap = sectionGap; return; }
+      // A referee (name, title and organisation, contact) is one block: a page break never separates
+      // a contact line from the name it belongs to, and the heading stays with the first referee.
+      const refSize = baseFontSize - 0.5;
+      const gap = isCompact ? 2 : 3;
+      const lineCount = text => (text ? splitTextToLines(text, refSize, contentWidth - 8, fontKey, 'normal').length : 0);
+      const refHeight = ref => entryHeadingHeight(ref.name, '', gap, false) + (lineCount(ref.details) + lineCount(ref.contact)) * (refSize + 4);
+      renderSectionHeader(layout.label('references'), { height: refHeight(refs.items[0]) });
       for (const ref of refs.items) {
-        ensureSpace(isCompact ? 20 : 26);
-        renderEntryHeading(ref.name, '', isCompact ? 2 : 3);
-        if (ref.details) drawWrapped(ref.details, baseFontSize - 0.5, 'normal', [0.2, 0.2, 0.2]);
-        if (ref.contact) drawWrapped(ref.contact, baseFontSize - 0.5, 'normal', [0.2, 0.2, 0.2]);
+        keepTogether(refHeight(ref), isCompact ? 20 : 26);
+        renderEntryHeading(ref.name, '', gap);
+        if (ref.details) drawWrapped(ref.details, refSize, 'normal', [0.2, 0.2, 0.2]);
+        if (ref.contact) drawWrapped(ref.contact, refSize, 'normal', [0.2, 0.2, 0.2]);
         currentY += isCompact ? 3 : 4;
       }
       pendingGap = sectionGap;
