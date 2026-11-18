@@ -26,12 +26,13 @@ check('Valid current backup and legacy version 1 remain supported', () => {
 });
 for (const [name, mutate] of [
   ['non-text name', d => d.personal.fullName = []], ['null entry', d => d.experience = [null]],
-  ['non-text bullet', d => d.experience[0].bulletsText = {}], ['wrong academic list', d => d.academic.publications = 'wrong'],
+  ['non-text bullet', d => d.experience[0].bulletsText = {}], ['wrong academic list', d => d.academic.publications = 'wrong'], ['wrong publications list', d => d.publications = 'wrong'],
+  ['non-boolean references switch', d => d.referencesOnRequest = 'yes'], ['too many custom sections', d => d.customSections = Array(21).fill({ title: 'x' })],
   ['array instead of personal object', d => d.personal = []], ['oversized entry count', d => d.experience = Array(151).fill({role:'Analyst'})]
 ]) check(`Reject ${name} before it reaches the editor`, () => { const data = resumeFixture(); mutate(data); assert.equal(schema.validate(backup(data)),false); });
 check('Future incompatible schema versions are rejected', () => assert.equal(schema.validate({version:99,data:resumeFixture()}),false));
 check('Legacy string entries and missing IDs are safely migrated without losing content', () => {
-  const d=resumeFixture(); assert(d.achievements[0].title==='AWARD_MARKER'); assert(d.academic.publications[0].title==='PUBLICATION_MARKER');
+  const d=resumeFixture(); assert(d.achievements[0].title==='AWARD_MARKER'); assert(d.publications[0].title==='PUBLICATION_MARKER');
   assert.equal(d.academic.grants[0].title,'GRANT_MARKER'); assert(d.experience[0].id);
 });
 check('Unsafe and duplicated entry IDs cannot create HTML attributes or duplicate DOM IDs', () => {
@@ -41,7 +42,7 @@ check('Unsafe and duplicated entry IDs cannot create HTML attributes or duplicat
 });
 check('Partial recommended orders retain every optional section exactly once', () => {
   const order=schema.normalizeSectionOrder(['skills','skills','experience']);
-  assert.equal(order.length,10); assert.equal(order[0],'skills'); assert(order.includes('academic'));
+  assert.equal(order.length,12); assert.equal(order[0],'skills'); assert(order.includes('academic') && order.includes('publications') && order.includes('references'));
 });
 check('Selected font sizes change actual PDF and Word body text', () => {
   const d=resumeFixture();
@@ -124,6 +125,22 @@ check('Template catalogue entries are complete and their thumbnails describe the
     assert(t.recommendedOrder.every(key => schema.sections.includes(key)), id);
     assert(templatesApi.TEMPLATE_GROUPS.some(g => g.id === t.group), id);
   }
+});
+check('No two templates render the same resume identically', () => {
+  // Same content, same section order; each template with its own font and spacing.
+  const seen = new Map();
+  for (const [id, t] of Object.entries(TEMPLATES)) {
+    const d = resumeFixture(); d.template = id; d.design.templateId = id;
+    d.design.fontFamily = t.fontFamily; d.design.density = t.density || 'standard';
+    d.design.sectionOrder = schema.sections.slice();
+    const doc = pdf.generateResumePDF(d);
+    const signature = JSON.stringify(doc.pages.map(p => p.elements.map(e => [e.type, Math.round(e.x || e.x1 || 0), Math.round(e.y || e.y1 || 0), e.text || '', (e.color || []).join(','), e.fontStyle || '', e.fontSize || e.lineWidth || 0])));
+    assert(!seen.has(signature), `${id} renders exactly like ${seen.get(signature)}`);
+    seen.set(signature, id);
+  }
+});
+check('Template descriptions make no guarantee about applicant tracking systems', () => {
+  for (const [id, t] of Object.entries(TEMPLATES)) assert(!/ATS|applicant tracking|guarantee|Workday|Taleo|Lever|ISO 32000|maximum compatibility/i.test(`${t.name} ${t.description} ${t.badge} ${t.category}`), id);
 });
 check('ATS Plain draws no lines and keeps dates on their own line', () => {
   const d = resumeFixture(); d.template = 'ats-strict';

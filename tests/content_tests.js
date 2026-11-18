@@ -261,7 +261,7 @@ for (const f of pages) {
   ok(problems.length === 0, `${f}: unbalanced markup (${problems.slice(0, 3).join(', ')})`);
 }
 // The resume sheet, templates and print layout are the output format: change them on purpose, then update this hash.
-ok(require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, 'css/document.css'))).digest('hex') === '5518e883c77adb7de2b939e506d7fc7ca9cea1e70ed1cdd926b4d55d7100ccc1', 'css/document.css (resume sheet and print layout) changed; confirm the exported resume is meant to change, then update the hash');
+ok(require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, 'css/document.css'))).digest('hex') === '3c8498458a76e604f88736b6b98a31d0468d77ef1d07af44970661ea153eb6bd', 'css/document.css (resume sheet and print layout) changed; confirm the exported resume is meant to change, then update the hash');
 ok(!fs.existsSync(path.join(root, 'css/style.css')) && !fs.existsSync(path.join(root, 'css/workspace.css')), 'retired stylesheets are deleted');
 // Generated markup is in sync with its generator (shell, search index, tool listings, image workspaces).
 for (const script of ['sync-shell.js', 'build-directory.js', 'build-image-pages.js', 'build-sitemap.js']) {
