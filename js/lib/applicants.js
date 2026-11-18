@@ -38,7 +38,8 @@
   /**
    * "{applicant}-{date}" with the applicant's label, today's date and number. Spaces and characters
    * a file name cannot hold become hyphens, so "Ravi S/O Ramesh" gives "Ravi-S-O-Ramesh": a slash
-   * would otherwise be read as a folder and everything before it lost.
+   * would otherwise be read as a folder and everything before it lost. A slash typed in the pattern
+   * itself ("BCA 2026/27-{applicant}") becomes a hyphen for the same reason.
    */
   function zipName(pattern, applicant, now) {
     const d = now instanceof Date ? now : new Date();
@@ -55,6 +56,7 @@
       .replace(/\{time\}/gi, time)
       .replace(/\{n\}/gi, String(applicant.number))
       .replace(/\.zip$/i, '')
+      .replace(/\s*[\\/]+\s*/g, '-')
       .trim();
     if (!base) base = `${label}-${date}`;
     return `${base}.zip`;

@@ -156,6 +156,9 @@ const blob = (type) => ({ type: type || 'image/jpeg', size: 10 });
     ok(Model.zipName('{applicant}-{date}', a, d) === 'Ravi-Kumar-S-2026-11-18.zip', 'characters a file name cannot hold become hyphens');
     a.name = '//';
     ok(Model.zipName('{applicant}-{date}', a, d) === 'Applicant-1-2026-11-18.zip', 'a name of only such characters falls back to the number');
+    a.name = 'Ravi Kumar';
+    ok(Model.zipName('BCA 2026/27 {applicant}', a, d) === 'BCA 2026-27 Ravi-Kumar.zip', 'a slash typed in the pattern becomes a hyphen, so nothing before it is lost');
+    ok(Model.zipName('Class 10\\A {n}', a, d) === 'Class 10-A 1.zip', 'a backslash typed in the pattern becomes a hyphen');
   }
 
   // Results follow the order of the files they came from

@@ -478,6 +478,13 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     await page.fill('#bZipName', 'BCA 2026 roll.zip');
     const named = await saveDownload(page, () => page.click('#btnBatchZip'), 'named.zip');
     ok(named.suggested === 'BCA 2026 roll.zip', `the ZIP uses the typed name (${named.suggested})`);
+    // A slash or backslash in the name is kept as a hyphen, not read as a folder that cuts the name short.
+    await page.fill('#bZipName', 'BCA 2026/27 roll');
+    const year = await saveDownload(page, () => page.click('#btnBatchZip'), 'year.zip');
+    ok(year.suggested === 'BCA 2026-27 roll.zip', `a slash in the ZIP name becomes a hyphen (${year.suggested})`);
+    await page.fill('#bZipName', 'Class 10\\A');
+    const back = await saveDownload(page, () => page.click('#btnBatchZip'), 'back.zip');
+    ok(back.suggested === 'Class 10-A.zip', `a backslash in the ZIP name becomes a hyphen (${back.suggested})`);
     await page.fill('#bZipName', '');
     const plain = await saveDownload(page, () => page.click('#btnBatchZip'), 'plain.zip');
     ok(plain.suggested === 'applyready-images.zip', `an empty ZIP name uses the page's default (${plain.suggested})`);

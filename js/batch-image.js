@@ -537,9 +537,11 @@
   }
 
   // The ZIP is named in More settings (each batch can have its own name); empty uses the page's default.
+  // A slash becomes a hyphen first, so "BCA 2026/27 roll" gives "BCA 2026-27 roll.zip": the browser
+  // and safeFileName() would read it as a folder and keep only "27 roll".
   function zipName() {
     const fallback = app.dataset.zip || 'images.zip';
-    const typed = el.zipName ? String(el.zipName.value).trim().replace(/\.zip$/i, '').trim() : '';
+    const typed = el.zipName ? String(el.zipName.value).replace(/\s*[\\/]+\s*/g, '-').trim().replace(/\.zip$/i, '').trim() : '';
     return typed ? Files.safeFileName(`${typed}.zip`, 'images') : fallback;
   }
 
