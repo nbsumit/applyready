@@ -46,7 +46,7 @@
    */
   function splitFirst(pages, then) {
     if (pages <= LIMITS.pages) return `Split it into smaller parts with Split PDF first${then ? `, then ${then}` : ''}.`;
-    return `Split PDF also works on up to ${grouped(LIMITS.pages)} pages, so a file this long cannot be handled in a browser; use a desktop PDF program for it.`;
+    return `Split PDF also works on up to ${grouped(LIMITS.pages)} pages, so it cannot break this file into parts here; use a desktop PDF program for a file this long.`;
   }
   /** Why the compressor refuses a long PDF, and what to do instead. */
   const compressAdvice = pages => `The compressor redraws every page, so it works on up to ${grouped(LIMITS.compressPages)} pages at a time. ${splitFirst(pages, 'compress each part and merge the parts again')}`;
