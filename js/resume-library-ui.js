@@ -270,6 +270,9 @@
     state.notFound = '';
     if (o.stored) { if (state.savingOn) setMeta('lastResumeId', rec.id); updateUrl(); }
     else if (o.unsavedBaseline) state.lastSavedJSON = editorJSON();
+    // setResume() redraws and reports a change before the baseline above is known; drop that save.
+    clearTimeout(state.timer);
+    state.timer = null;
     refreshStatus();
   }
 
@@ -282,7 +285,8 @@
     if (!state.current) return true;
     if (canWrite()) { await flush(); return true; }
     if (hasUnsaved() && !state.editor.isEmpty()) {
-      return askConfirm({ title: 'Leave this resume without saving?', message: 'Saving is off, so the changes to the resume on screen are lost. Download a backup first if you need them.', confirmLabel: actionLabel || 'Continue', danger: true });
+      const why = state.conflict ? 'The latest changes to the resume on screen are not saved, because it was changed in another tab.' : 'Saving is off, so the changes to the resume on screen are lost.';
+      return askConfirm({ title: 'Leave this resume without saving?', message: `${why} Download a backup first if you need them.`, confirmLabel: actionLabel || 'Continue', danger: true });
     }
     return true;
   }
@@ -439,15 +443,17 @@
     showContactDetails();
   }
 
-  async function createNew(kind) {
+  async function createNew(kind, fromToolbar) {
     if (!(await leaveCurrent(kind === 'sample' ? 'Open the sample' : 'Start a new resume'))) return;
+    const previous = state.current && state.stored ? state.current.name : '';
     const data = kind === 'sample' ? state.editor.sample() : state.editor.blank();
     const rec = newRecordFor(data, kind === 'sample' ? 'Sample resume' : LIB.DEFAULT_NAME);
     useResume(rec, { stored: false });
     if (state.savingOn) await flush(true);
     else state.lastSavedJSON = editorJSON();
     refreshStatus();
-    notify(kind === 'sample' ? 'Opened a new resume filled with sample content. Replace it with your own details.' : 'Started a new, empty resume.');
+    const kept = fromToolbar && previous ? ` “${previous}” is kept in My resumes.` : '';
+    notify(kind === 'sample' ? `Opened a new resume filled with sample content.${kept}` : 'Started a new, empty resume.');
     closeDialog(false);
     showContactDetails();
   }
@@ -804,6 +810,7 @@
       return;
     }
     wire();
+    state.editor.openSampleAsNew = () => createNew('sample', true);
     renderStatus();
     let status = { persistent: false };
     try { status = await STORE.status(); } catch (e) { /* treated as memory only */ }

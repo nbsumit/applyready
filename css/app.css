@@ -1474,6 +1474,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 @media (max-width: 639px) {
   .rl-row { grid-template-columns: 28px minmax(0, 1fr); }
   .rl-row__actions { grid-column: 1 / -1; justify-content: flex-start; }
+  .rl-row__actions .btn:first-child { flex: 1 1 100%; margin: 0 0 var(--s-1); }
   .rl-actions .btn { flex: 1 1 calc(50% - var(--s-2)); }
   .rb-head__actions { width: 100%; }
   .rb-head__actions .btn { flex: 1 1 auto; }

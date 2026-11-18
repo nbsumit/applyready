@@ -12,7 +12,7 @@ there are no accounts, no cookies, no analytics and no advertising, and every fe
 
 | Tool | Page | Main script |
 |---|---|---|
-| Resume builder: templates, live preview, PDF / Word / text export, JSON backup, review checks, job-description keyword match | `resume.html` | `js/resume.js` (+ `templates.js`, `pdf-engine.js`, `docx-engine.js`, `keywords.js`, `resume-schema.js`) |
+| Resume builder: several resumes saved on the device with autosave (My resumes), templates, live preview, references and custom sections, PDF / Word / text export, JSON backups, review checks, job-description keyword match | `resume.html` | `js/resume.js` (+ `resume-library-ui.js`, `resume-library.js`, `resume-sections.js`, `resume-render.js`, `templates.js`, `pdf-engine.js`, `docx-engine.js`, `keywords.js`, `resume-schema.js`, `lib/store.js`) |
 | Image resizer: exact pixels and KB limits, crop, rotate, format, minimum-size padding | `image-resizer.html`, `resize-image-to-*.html` | `js/resizer.js`, `js/presets.js` |
 | Signature cleaner | `signature-cleaner.html` | `js/signature-cleaner.js` |
 | Passport photo print sheet | `passport-photo-print.html` | `js/passport-photo-print.js` |

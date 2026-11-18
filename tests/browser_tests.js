@@ -117,9 +117,14 @@ const server = http.createServer((req,res) => {
   ok(await page.locator('#fontSelect').inputValue()==='sans','Restored typography selector agrees with the saved resume');
   await page.locator('#tabContent').click();
   const nameBefore=await page.locator('#fullName').inputValue();
-  await page.locator('#btnLoadSample').click();await dialog.waitFor({state:'visible'});ok(await dialog.count()===1,'Replacing written content with the sample requires an explicit decision');
-  await dialog.locator('[data-act="cancel"]').click();
-  ok(await page.locator('#fullName').inputValue()===nameBefore,'Canceling sample replacement preserves content');
+  // "Try a sample" on a resume with content opens the sample as a new resume; nothing is overwritten.
+  const ownId=new URL(page.url()).searchParams.get('id');
+  await page.locator('#btnLoadSample').click();
+  await page.waitForFunction(()=>document.getElementById('fullName').value==='ALEX R. MORGAN');
+  ok(new URL(page.url()).searchParams.get('id')!==ownId,'The sample opens as a new resume');
+  ok(await page.evaluate(async id=>{const r=await window.ApplyReadyStore.get('resumes',id);return r&&r.data.personal.fullName;},ownId)===nameBefore,'The resume with content stays saved, unchanged');
+  await page.goto(`${origin}/resume.html?id=${ownId}`);await page.waitForFunction(n=>document.getElementById('fullName').value===n,nameBefore);
+  ok(await page.locator('#fullName').inputValue()===nameBefore,'The original resume reopens from its link');
   await page.locator('#tabDownload').click();
   await page.locator('#fileImportInput').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({version:2,data:{personal:{fullName:[]},experience:[],education:[],projects:[]}}))});
   await page.locator('#taskNotification').filter({hasText:'not an ApplyReady resume backup'}).waitFor();

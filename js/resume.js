@@ -768,7 +768,7 @@
           <span class="template-thumb-wrap">${svgThumb}</span>
           <span class="template-meta-row">
             <strong class="template-card-title">${escapeHTML(tmpl.name)}</strong>
-            <span class="template-badge">${escapeHTML(tmpl.badge || 'ATS')}</span>
+            <span class="template-badge">${escapeHTML(tmpl.badge || '')}</span>
             <span class="template-check" aria-hidden="true"><i class="fa-solid fa-check"></i> In use</span>
           </span>
           <span class="template-card-desc">${escapeHTML(tmpl.description)}</span>
@@ -1457,7 +1457,7 @@
       const field = name => (exp.id ? `exp-${name}-${exp.id}` : undefined);
       if (!t(exp.role)) add('warning', `Experience "${label}" has no job title.`, 'experience', field('role'));
       if (!t(exp.company)) add('info', `Experience "${label}" has no company or organisation.`, 'experience', field('comp'));
-      if (!t(exp.duration)) add('warning', `Experience "${label}" has no dates. Applicant tracking systems use dates to calculate experience.`, 'experience', field('dur'));
+      if (!t(exp.duration)) add('warning', `Experience "${label}" has no dates. Recruiters and many applicant tracking systems use dates to work out your experience.`, 'experience', field('dur'));
       if (!splitBullets(exp.bulletsText).length) add('info', `Experience "${label}" has no bullet points describing your work.`, 'experience', field('bul'));
       if (splitBullets(exp.bulletsText).length > 8) add('info', `Experience "${label}" has ${splitBullets(exp.bulletsText).length} bullets. Keep the strongest 3 to 6.`, 'experience', field('bul'));
     });
@@ -2027,6 +2027,8 @@
     if (btnLoadSample) {
       btnLoadSample.addEventListener('click', async () => {
         if (!isDocumentEmpty()) {
+          // With the library, the sample opens as a new resume and nothing written is replaced.
+          if (typeof editorApi.openSampleAsNew === 'function') { editorApi.openSampleAsNew(); return; }
           const ok = await askConfirm({ title: 'Replace your content with the sample?', message: 'The sample overwrites what you have written so far. You can undo this straight afterwards.', confirmLabel: 'Use the sample' });
           if (!ok) return;
         }
@@ -2041,7 +2043,7 @@
     const btnClearForm = getEl('btnClearForm');
     if (btnClearForm) {
       btnClearForm.addEventListener('click', async () => {
-        const ok = await askConfirm({ title: 'Clear the whole resume?', message: 'Every field will be emptied. You can undo this straight afterwards.', confirmLabel: 'Clear resume', danger: true });
+        const ok = await askConfirm({ title: 'Clear the whole resume?', message: 'Every field of this resume will be emptied, and the empty version is saved. You can undo this straight afterwards. To keep a copy, duplicate it in My resumes first.', confirmLabel: 'Clear resume', danger: true });
         if (!ok) return;
         pushHistoryState();
         resumeData = withCurrentDesign(SCHEMA.migrate(EMPTY_DATA), EMPTY_DATA.sectionVisibility);
