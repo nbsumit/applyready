@@ -9,11 +9,16 @@ document explains how the pieces fit, and the contracts that modules must keep.
 ```
 Pages (*.html, guides/)          Hand-written content + generated shell and tool markup
   │
-  ├─ Shell        js/site.js       theme, header menu, mobile sheet, search loader, toasts, confirm dialog, recent tools
+  ├─ Shell        js/theme.js      applies the saved light or dark theme before first paint (loaded in <head>)
+  │               js/site.js       theme switch, header menu, mobile sheet, search loader, toasts, confirm dialog, recent tools
   │               js/components.js custom select, ranges, workspace state machine (.ws data-state)
   │               js/search.js     site search (dialog and inline), uses js/tool-index.js
   │
-  ├─ Tool scripts js/<tool>.js     one per tool page: interface only; no processing maths
+  ├─ Page scripts js/home.js       home page: saved resumes and recently used tools from this browser
+  │               js/directory.js  tools.html: filter the directory as you type (same matching as search)
+  │               js/contact.js    contact form: opens the visitor's email app; nothing is sent from the page
+  │
+  ├─ Tool scripts js/<tool>.js     one per tool page; interface, with processing in js/lib/ (exceptions below)
   │
   ├─ Shared lib   js/lib/files.js      type detection by magic bytes, safe names, sizes, download
   │               js/lib/file-kit.js   drop zone, thumbnails, ZIP download, unload guard, announcements
@@ -40,7 +45,13 @@ Rules:
 
 - **Interface, processing and storage are separate.** A tool script reads the form, calls shared
   modules, and renders results. Processing (images, PDFs, ZIP) lives in `js/lib/` and is testable in
-  Node or a worker. Only `js/lib/store.js` touches IndexedDB.
+  Node or a worker. Only `js/lib/store.js` touches IndexedDB. New tools must follow this rule.
+  Four tools from the first release predate the shared modules and still do their own processing in
+  the page script: `js/resizer.js` (decoding, crop and the quality search for a KB limit, not
+  `js/lib/image-ops.js`), `js/signature-cleaner.js` (pixel cleaning), `js/passport-photo-print.js`
+  (sheet layout and its PDF) and `js/image-to-pdf.js` (its own PDF writer). They are documented
+  exceptions, not a pattern to copy: when one of them needs new processing, prefer moving that part
+  into `js/lib/` with unit tests.
 - **Modules are plain scripts** that define one global (`window.ApplyReadyX`) and, where useful, a
   CommonJS export for Node tests (UMD pattern, see `js/lib/zip.js`). No bundler, no ES module graph,
   except pdf.js, which ships as ES modules and is loaded with dynamic `import()` by `pdf-kit.js`.
@@ -57,11 +68,14 @@ keywords, `live`). Generators read it:
 |---|---|
 | `scripts/sync-shell.js` | header (Tools menu by category), footer, stylesheet links, CSP and `applyready-tool` meta on every page; calls `build-tool-index.js` (→ `js/tool-index.js`) and `build-sw.js` (→ `sw.js` precache list and content-hash cache names) |
 | `scripts/build-directory.js` | category cards and "most used" on `index.html`; the full directory on `tools.html` |
-| `scripts/build-image-pages.js` | the resizer workspace on each resizer page (`PAGES` table) |
+| `scripts/build-image-pages.js` | the resizer workspace on each resizer page (`PAGES` table, markup from `scripts/lib/image-workspace.js`), and the batch workspace on `batch-image.html`, `compress-image.html` and `convert-image.html` (`scripts/lib/batch-workspace.js`) |
 | `scripts/build-tool-pages.js` | the workspace of the older single-file tools (signature cleaner, image to PDF, compress PDF, print sheet) |
 | `scripts/build-pdf-pages.js` | the PDF tool pages: workspace, and with `--force` the whole page (questions and FAQPage data come from one list) |
 | `scripts/build-sitemap.js` | `sitemap.xml` |
 | `scripts/build-icons.py` | the Font Awesome subset |
+
+Every generator has a `--check` mode that writes nothing and exits 1 when its output is out of date.
+`tests/content_tests.js` runs all of them, so a hand edit inside generated markup fails `npm test`.
 
 A tool with `live: false` is hidden everywhere and must not be linked from any page (a content test
 enforces this). New pages are created with `node scripts/new-page.js` (or `createPage()` from it), which

@@ -23,10 +23,22 @@ Read [`philosophy.html`](philosophy.html) (or the live page) first. In short:
 git clone https://github.com/nbsumit/applyready.git
 cd applyready
 npm ci                      # dev dependencies: Playwright and axe-core, for tests only
-python3 -m http.server 8000 # then open http://localhost:8000/
+python3 -m http.server 8000 # then open http://localhost:8000/ (serve the root, not a sub-path)
 ```
 
-Optional, to rebuild the icon subset: `pip install fonttools brotli`.
+`npm test` needs only Node.js 22. The rest depends on what you run:
+
+- **Icon subset** (rebuild it, or let `npm test` check it instead of skipping): `pip install fonttools brotli`.
+- **Browser tests** (`npm run test:browser`):
+  - Chromium for Playwright: `npx playwright install chromium`, or set `BROWSER_EXECUTABLE_PATH` to a
+    local Chromium or Chrome.
+  - poppler-utils (`pdfinfo`, `pdftotext`), `unzip` and ImageMagick (`identify`, `convert`), which the
+    suites use to check downloaded files. Debian or Ubuntu: `sudo apt-get install poppler-utils unzip imagemagick`;
+    macOS: `brew install poppler imagemagick`.
+  - Python 3 with Pillow (`pip install pillow`), which some suites use to make and check images.
+- **Sample files and guide screenshots**: Python 3 with Pillow and the same Chromium (see the README).
+
+CI (`.github/workflows/quality.yml`) installs exactly this list.
 
 ## How the code is organised
 
