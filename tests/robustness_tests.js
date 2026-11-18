@@ -1,5 +1,5 @@
-/* Failure paths that once went wrong silently: offline reloads, a PDF with pages the compressor
-   cannot keep, a new file chosen while the resizer is busy, page order in image to PDF, and the
+/* Failure paths that once went wrong silently: offline reloads, a PDF whose text page an older
+   compressor dropped, a new file chosen while the resizer is busy, page order in image to PDF, and the
    contact form's empty message. Each check failed before its fix. */
 'use strict';
 const fs = require('node:fs');
@@ -8,7 +8,7 @@ const http = require('node:http');
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '..');
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.wasm': 'application/wasm', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
   const file = path.resolve(root, '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname));
@@ -71,15 +71,23 @@ function mixedPdf(jpeg) {
   await context.setOffline(false);
   console.log('✓ Offline reloads keep styles and scripts; unknown pages fall back to the offline page');
 
-  // 2. Compress PDF refuses a PDF whose text page it would drop.
+  // 2. Compress PDF keeps every page of a PDF that mixes a scanned page and a text page. An older
+  //    version refused such files (and before that dropped the text page); pages are now redrawn.
   await page.goto(origin + '/compress-pdf.html');
-  await page.setInputFiles('#compressFileInput', { name: 'mixed.pdf', mimeType: 'application/pdf', buffer: mixedPdf(sample('test-portrait.jpg')) });
+  const mixed = mixedPdf(sample('test-portrait.jpg'));
+  await page.setInputFiles('#compressFileInput', { name: 'mixed.pdf', mimeType: 'application/pdf', buffer: mixed });
+  await page.waitForSelector('#compressFileInfoBox:not(.hidden)', { timeout: 15000 });
   await page.fill('#targetKbInput', '100');
   await page.click('#btnStartCompress');
-  await page.waitForFunction(() => /2 pages but 1 scanned image/.test((document.getElementById('taskNotification') || {}).textContent || ''), null, { timeout: 15000 });
-  ok(await page.locator('#compressResultArea').evaluate(n => n.classList.contains('hidden')), 'no result is offered for a PDF that would lose a page');
-  ok(!(await page.locator('#btnStartCompress').isDisabled()), 'the compress button is usable again after the refusal');
-  console.log('✓ Compress PDF refuses a PDF with a text page instead of dropping it');
+  await page.waitForSelector('#compressResultArea:not(.hidden)', { timeout: 60000 });
+  const compressed = Buffer.from(await page.evaluate(async () => { const b = new Uint8Array(await (await fetch(document.getElementById('btnDownloadCompressedPdf').href)).arrayBuffer()); let s = ''; b.forEach(c => { s += String.fromCharCode(c); }); return btoa(s); }), 'base64');
+  const PDFLib = require('../js/vendor/pdf-lib.min.js');
+  const out = await PDFLib.PDFDocument.load(compressed);
+  ok(out.getPageCount() === 2, `both pages are kept (${out.getPageCount()})`);
+  ok(out.getPages().every(p => Math.abs(p.getWidth() - 595) < 1 && Math.abs(p.getHeight() - 842) < 1), 'page sizes are kept');
+  ok(compressed.length <= 100 * 1024, `the result is under 100 KB (${compressed.length} bytes)`);
+  ok(await page.locator('#statCompPages').innerText() === '2', 'the result reports two pages');
+  console.log('✓ Compress PDF keeps a text page next to a scanned page');
 
   // 3. Choosing another image while the resizer is busy leaves it usable.
   await page.goto(origin + '/resize-image-to-50kb.html');

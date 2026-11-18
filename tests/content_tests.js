@@ -264,7 +264,7 @@ for (const f of pages) {
 ok(require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, 'css/document.css'))).digest('hex') === '3c8498458a76e604f88736b6b98a31d0468d77ef1d07af44970661ea153eb6bd', 'css/document.css (resume sheet and print layout) changed; confirm the exported resume is meant to change, then update the hash');
 ok(!fs.existsSync(path.join(root, 'css/style.css')) && !fs.existsSync(path.join(root, 'css/workspace.css')), 'retired stylesheets are deleted');
 // Generated markup is in sync with its generator (shell, search index, tool listings, image workspaces).
-for (const script of ['sync-shell.js', 'build-directory.js', 'build-image-pages.js', 'build-sitemap.js']) {
+for (const script of ['sync-shell.js', 'build-directory.js', 'build-image-pages.js', 'build-pdf-pages.js', 'build-sitemap.js']) {
   const run = spawnSync(process.execPath, [path.join(root, 'scripts', script), '--check'], { encoding: 'utf8' });
   ok(run.status === 0, `${script} --check: ${run.stdout}${run.stderr}`);
 }

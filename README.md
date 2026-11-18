@@ -80,11 +80,13 @@ Edit the generator, not the generated markup:
 | `node scripts/build-directory.js` | Tool listings on the home page and `tools.html` |
 | `node scripts/build-image-pages.js` | The resizer workspace on the image resizer pages |
 | `node scripts/build-tool-pages.js` | The workspace of the signature cleaner, passport print, image to PDF and compress PDF pages |
+| `node scripts/build-pdf-pages.js` | The PDF tool pages (merge, split, organise, PDF to images, extract text, page numbers, watermark): their workspace, and with `--force` the whole page, including the questions and their structured data |
 | `node scripts/build-sitemap.js` | `sitemap.xml` |
 | `python3 scripts/build-icons.py` | The Font Awesome subset (`css/vendor/icons.min.css`, `css/webfonts/`) |
 | `node scripts/new-page.js <path> "<Title>" "<Description>"` | A new page with the shared head and shell markers |
 
-Each generator has a `--check` mode, and `npm test` fails when anything is out of date.
+Each generator has a `--check` mode, and `npm test` fails when anything is out of date. The icon subset changes the
+stylesheet, so run `node scripts/sync-shell.js` once more after `build-icons.py` to refresh the service worker's cache name.
 
 ## Testing
 

@@ -151,17 +151,22 @@ ${section('Quality', select('pdfQualitySelect', 'Image quality', [['0.92', 'High
   'compress-pdf.html': () => `<section class="ws" id="compressApp" data-state="empty" data-keep data-settings="open" data-ws-file="#compressFileInfoBox" data-ws-result="#compressResultArea" data-ws-busy="#compressProgressBox" aria-label="PDF compressor">
 ${head(filebar('compressFileInfoBox', 'compressFileInfoText', 'btnCompressReplace', 'btnCompressRemove', 'Choose a different file', 'Remove this file', 'fa-file-pdf'))}
       <div class="ws-stage">
-${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'btnCompressBrowse', accept: 'application/pdf,image/jpeg,image/png', aria: 'Upload a PDF to compress', title: 'Add the PDF to make smaller', text: 'A certificate, mark sheet or scanned document. Photos of a document work too.', button: 'Choose file', hint: 'PDF, JPG or PNG. Compressed on this device, never uploaded.' })}
+        <div class="notice notice--error" id="compressError" role="alert" hidden><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"></div></div>
+${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'btnCompressBrowse', accept: 'application/pdf,.pdf,image/jpeg,image/png,image/webp', aria: 'Upload a PDF to compress', title: 'Add the PDF to make smaller', text: 'A scanned certificate, mark sheet or ID proof. A photo of a document works too.', button: 'Choose file', hint: 'PDF up to 100 MB and 300 pages, or a JPG, PNG or WebP photo. Compressed on this device, never uploaded.' })}
+        <div id="compressLoading" class="pdf-loading hidden" role="status"><span class="pdf-spinner" aria-hidden="true"></span> Opening the file…</div>
         <div class="ws-note">
           <div class="ws-note__body">
-            <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
-            <p class="ws-note__title">Ready to compress</p>
-            <p>Check the maximum file size on the right, then press Compress PDF.</p>
+            <i class="fa-solid fa-file-image" aria-hidden="true"></i>
+            <p class="ws-note__title">Pages become pictures</p>
+            <p>To reach a size limit, every page is redrawn as an image. Text in the result can no longer be selected or searched, so this suits scans and photos of documents best. Set the limit on the right, then press Compress PDF.</p>
           </div>
         </div>
-        <div id="compressProgressBox" class="ws-progress hidden" role="status">
-          <div class="progress"><span id="compressProgressBar" class="progress-bar" style="width: 0%;"></span></div>
-          <p id="compressProgressText" class="progress-text">Processing document…</p>
+        <div id="compressProgressBox" class="ws-progress pdf-progress hidden">
+          <div class="pdf-progress__row">
+            <p id="compressProgressText" class="progress-text">Processing document…</p>
+            <button type="button" class="btn btn-sm" id="compressCancel">Cancel</button>
+          </div>
+          <div class="progress" role="progressbar" aria-labelledby="compressProgressText" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="compressProgressBar" class="progress-bar" style="width:0%"></span></div>
         </div>
         <div id="compressResultArea" class="ws-result hidden">
           <p id="compressStatus" class="result-status" role="status"></p>
@@ -169,11 +174,12 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
             <dl class="size-compare__item"><dt class="size-compare__label">Before</dt><dd id="statOrigSize">--</dd></dl>
             <span class="size-compare__arrow" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
             <dl class="size-compare__item"><dt class="size-compare__label">After</dt><dd id="statCompSize">--</dd></dl>
-            <dl class="size-compare__foot"><div><dt>Reduction</dt><dd id="statReduction">--</dd></div><div><dt>Pages</dt><dd id="statCompPages">--</dd></div></dl>
+            <dl class="size-compare__foot"><div><dt>Reduction</dt><dd id="statReduction">--</dd></div><div><dt>Pages</dt><dd id="statCompPages">--</dd></div><div><dt>Resolution</dt><dd id="statCompDpi">--</dd></div></dl>
           </div>
+          <p class="field-hint" id="compressNote"></p>
           <div class="ws-result__actions">
             <a id="btnDownloadCompressedPdf" class="btn btn-primary btn-lg" href="#" download="Compressed_Document.pdf"><i class="fa-solid fa-download" aria-hidden="true"></i> Download compressed PDF</a>
-            <a href="image-to-pdf.html" class="btn btn-lg"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Combine images into a PDF</a>
+            <a href="merge-pdf.html" class="btn btn-lg"><i class="fa-solid fa-object-group" aria-hidden="true"></i> Merge with other PDFs</a>
           </div>
         </div>
       </div>
@@ -184,18 +190,22 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
           <div class="target-grid" role="group" aria-labelledby="targetKbLabel">
             <button type="button" class="chip preset-kb-btn" data-kb="100" aria-pressed="false">100 KB <span class="chip-sub">strict portals</span></button>
             <button type="button" class="chip preset-kb-btn active" data-kb="200" aria-pressed="true">200 KB <span class="chip-sub">most common</span></button>
-            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">Larger documents</span></button>
+            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">a few pages</span></button>
             <button type="button" class="chip preset-kb-btn" data-kb="500" aria-pressed="false">500 KB <span class="chip-sub">larger scans</span></button>
           </div>
           <div class="field">
             <label for="targetKbInput" class="field-label">Or type the limit from your form</label>
             <div class="input-unit">
-              <input type="number" id="targetKbInput" class="input" value="200" min="20" max="10000" step="10" inputmode="numeric">
+              <input type="number" id="targetKbInput" class="input" value="200" min="5" max="10000" step="10" inputmode="numeric" aria-describedby="targetKbHint">
               <span class="input-unit__text" aria-hidden="true">KB</span>
             </div>
-            <p class="field-hint">Image quality is lowered only as far as needed to fit. Text stays sharp where it can.</p>
+            <p class="field-hint" id="targetKbHint">From 5 to 10000 KB. Quality is lowered only as far as the limit needs.</p>
+            <p class="field-error" id="targetKbError" hidden></p>
           </div>
         </div>
+${section('Pages', `${select('compressDpi', 'Resolution', [['200', '200 DPI, sharpest'], ['150', '150 DPI, balanced (recommended)'], ['110', '110 DPI, smaller'], ['72', '72 DPI, smallest']], 1, 'The starting sharpness of each page. If the limit is tight, it is lowered further, down to 50 DPI.')}
+          <label class="switch" for="compressGrey"><span>Black and white (greyscale)</span><input type="checkbox" id="compressGrey" role="switch"></label>
+          <p class="field-hint">Greyscale makes files smaller. Leave it off if a document has coloured stamps or photos.</p>`)}
       </div>
       <div class="ws-action">
         <button type="button" id="btnStartCompress" class="btn btn-primary btn-lg btn-block" disabled><i class="fa-solid fa-compress" aria-hidden="true"></i> Compress PDF</button>
