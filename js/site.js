@@ -209,7 +209,9 @@
     if (!el.isConnected) return;
     const gap = 12;
     const edges = coveredEdges(el);
-    const lo = edges.top + gap, hi = window.innerHeight - edges.bottom - gap;
+    // At least the page's own scroll padding (header plus a gap), so a result lands where links to it do.
+    const pad = parseFloat(getComputedStyle(root).scrollPaddingTop) || 0;
+    const lo = Math.max(edges.top + gap, pad), hi = window.innerHeight - edges.bottom - gap;
     const r = el.getBoundingClientRect();
     const t = target && typeof target.getBoundingClientRect === 'function' && target.getClientRects().length ? target.getBoundingClientRect() : null;
     const headVisible = r.top >= edges.top && r.top < lo + (hi - lo) * 0.6;

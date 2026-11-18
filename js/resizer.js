@@ -414,9 +414,16 @@
 
   function sampleCanvas(kind, targetW, targetH) {
     const tw = Math.max(20, targetW || 960), th = Math.max(20, targetH || 1200);
-    let k = Math.max(1, 1200 / Math.max(tw, th));
-    if (tw * th * k * k > 12e6) k = Math.sqrt(12e6 / (tw * th));
-    const w = Math.max(20, Math.round(tw * k)), h = Math.max(20, Math.round(th * k));
+    let w, h;
+    if (kind === 'document') {
+      // A page keeps its 4:5 shape (text must not be stretched) and covers the target box.
+      const k = Math.min(Math.max(1, tw / 960, th / 1200), Math.sqrt(12e6 / (960 * 1200)));
+      w = Math.round(960 * k); h = Math.round(1200 * k);
+    } else {
+      let k = Math.max(1, 1200 / Math.max(tw, th));
+      if (tw * th * k * k > 12e6) k = Math.sqrt(12e6 / (tw * th));
+      w = Math.max(20, Math.round(tw * k)); h = Math.max(20, Math.round(th * k));
+    }
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext('2d');
@@ -451,9 +458,9 @@
       for (let i = 1; i <= 12; i++) { ctx.beginPath(); ctx.ellipse(w / 2, h / 2, u * 0.025 * i, u * 0.033 * i, 0.2, 0, Math.PI * 2); ctx.stroke(); }
       label('SAMPLE IMPRESSION', h * 0.96);
     } else {
-      // A page: a 960 × 1200 layout scaled to the canvas.
+      // A page: the 960 × 1200 layout, scaled evenly.
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
-      ctx.save(); ctx.scale(w / 960, h / 1200);
+      ctx.save(); ctx.scale(w / 960, w / 960);
       ctx.fillStyle = '#17634d'; ctx.fillRect(72, 80, 56, 7);
       ctx.fillStyle = '#182126'; ctx.font = 'bold 48px sans-serif'; ctx.fillText('Sample document', 72, 170);
       ctx.font = '24px sans-serif'; ctx.fillStyle = '#5c6970'; ctx.fillText('ApplyReady image tools · demonstration file', 72, 216);

@@ -751,7 +751,7 @@
     else label = `${VERB} images`;
     el.startLabel.textContent = label;
     // While running the button only shows progress. aria-disabled, not disabled: a disabled button
-    // loses keyboard focus, and the person who pressed Start should stay where they are.
+    // drops keyboard focus to the page (a run started here moves focus to Cancel in any case).
     el.start.disabled = !enabled && !running;
     if (!enabled && running) el.start.setAttribute('aria-disabled', 'true'); else el.start.removeAttribute('aria-disabled');
     el.start.querySelector('i').className = 'fa-solid fa-bolt';
