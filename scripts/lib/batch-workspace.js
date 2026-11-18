@@ -66,12 +66,12 @@ function sectionMarkup(id, d, I) {
 ${I}  <h2 class="ws-section__title">Size</h2>
 ${I}  <div class="field">
 ${I}    <label for="bPreset" class="field-label">Preset</label>
-${I}    <select id="bPreset">${Object.entries(PRESETS).map(([k, p]) => `<option value="${k}"${k === d.preset ? ' selected' : ''}>${esc(p.spec ? `${p.name}: ${p.spec}` : p.name)}</option>`).join('')}</select>
-${I}    <p class="field-hint">A preset fills in the size, format and file limit. Change any value to make your own.</p>
+${I}    <select id="bPreset" aria-describedby="bPresetHint">${Object.entries(PRESETS).map(([k, p]) => `<option value="${k}"${k === d.preset ? ' selected' : ''}>${esc(p.spec ? `${p.name}: ${p.spec}` : p.name)}</option>`).join('')}</select>
+${I}    <p class="field-hint" id="bPresetHint">A preset fills in the size, format and file limit. Change any value to make your own.</p>
 ${I}  </div>
 ${I}  <div class="field">
 ${I}    <label for="bResize" class="field-label">Resize</label>
-${I}    <select id="bResize">${opt(RESIZE, d.resize)}</select>
+${I}    <select id="bResize" aria-describedby="bResizeHint">${opt(RESIZE, d.resize)}</select>
 ${I}    <p class="field-hint" id="bResizeHint"></p>
 ${I}  </div>
 ${I}  <div class="field-row" id="bDims">
@@ -123,7 +123,7 @@ ${I}</div>`;
 ${I}  <h2 class="ws-section__title">Format</h2>
 ${I}  <div class="field">
 ${I}    <label for="bFormat" class="field-label">Save as</label>
-${I}    <select id="bFormat">${opt(FORMATS, d.format)}</select>
+${I}    <select id="bFormat" aria-describedby="bFormatHint">${opt(FORMATS, d.format)}</select>
 ${I}    <p class="field-hint" id="bFormatHint">GIF, BMP and AVIF files are saved as JPEG when you keep the format.</p>
 ${I}  </div>
 ${I}  <div class="field">
@@ -138,7 +138,7 @@ ${I}</div>`;
 ${I}  <h2 class="ws-section__title">File names</h2>
 ${I}  <div class="field">
 ${I}    <label for="bNaming" class="field-label">Name the results</label>
-${I}    <select id="bNaming">${opt(NAMING, d.naming)}</select>
+${I}    <select id="bNaming" aria-describedby="bNamingHint">${opt(NAMING, d.naming)}</select>
 ${I}  </div>
 ${I}  <div class="field" id="bSuffixField">
 ${I}    <label for="bSuffix" class="field-label">Word to add</label>
@@ -149,6 +149,11 @@ ${I}    <label for="bPrefix" class="field-label">Name before the number</label>
 ${I}    <input type="text" id="bPrefix" class="input" maxlength="40" value="${esc(d.prefix)}" autocomplete="off" spellcheck="false">
 ${I}  </div>
 ${I}  <p class="field-hint" id="bNamingHint">Two results with the same name get (2), (3) and so on, in the list and in the ZIP file.</p>
+${I}  <div class="field">
+${I}    <label for="bZipName" class="field-label">ZIP file name</label>
+${I}    <div class="input-unit"><input type="text" id="bZipName" class="input" maxlength="60" value="${esc(String(d.zip || 'images.zip').replace(/\.zip$/i, ''))}" autocomplete="off" spellcheck="false" aria-describedby="bZipNameHint"><span class="input-unit__text" aria-hidden="true">.zip</span></div>
+${I}    <p class="field-hint" id="bZipNameHint">Name each batch, for example after the class or the date, so the downloads are easy to tell apart.</p>
+${I}  </div>
 ${I}</div>`;
   }
   throw new Error(`unknown section ${id}`);
@@ -158,6 +163,7 @@ function renderBatchWorkspace(mode) {
   const m = MODES[mode];
   if (!m) throw new Error(`unknown batch mode ${mode}`);
   const d = m.defaults;
+  const dz = Object.assign({ zip: m.zip }, d);   // the ZIP name field starts from the page's ZIP name
   const I = '        ';
   const data = [
     ['mode', mode], ['zip', m.zip], ['preset', d.preset], ['resize', d.resize], ['width', d.width], ['height', d.height],
@@ -208,11 +214,11 @@ function renderBatchWorkspace(mode) {
       </div>
       <div class="ws-rail">
       <div class="ws-side">
-${m.primary.map(id => sectionMarkup(id, d, I)).join('\n')}
+${m.primary.map(id => sectionMarkup(id, dz, I)).join('\n')}
         <details class="disclosure batch-more" id="batchMore">
           <summary>More settings</summary>
           <div class="disclosure__body">
-${m.more.map(id => sectionMarkup(id, d, I + '    ')).join('\n')}
+${m.more.map(id => sectionMarkup(id, dz, I + '    ')).join('\n')}
           </div>
         </details>
         <button type="button" id="btnBatchReset" class="btn btn-sm btn-ghost ws-reset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset to defaults</button>

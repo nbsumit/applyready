@@ -315,7 +315,11 @@
       }
     }
     if (!opts.allowShrink) {
-      throw new Error(`This image does not fit under ${kb(limit)} at ${p.width} × ${p.height} px${lossy ? ' even at the lowest quality' : ''}. Turn on "Allow smaller dimensions"${lossy ? '' : ', choose JPEG'} or raise the limit.`);
+      // The code and detail let a page word this for its own settings (the workspace has no such switch).
+      const err = new Error(`This image does not fit under ${kb(limit)} at ${p.width} × ${p.height} px${lossy ? ' even at the lowest quality' : ''}. Turn on "Allow smaller dimensions"${lossy ? '' : ', choose JPEG'} or raise the limit.`);
+      err.code = 'nofit';
+      err.detail = { limit, width: p.width, height: p.height, lossy };
+      throw err;
     }
 
     // 2. Find the largest pixel size that fits at the floor quality: estimate from the overshoot

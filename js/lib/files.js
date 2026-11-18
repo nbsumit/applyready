@@ -65,6 +65,8 @@
   function withoutHiddenDirection(name) {
     return String(name == null ? '' : name).replace(HIDDEN_DIRECTION, '');
   }
+  // Every picture type sniff() recognises as kind 'image'; messages name them all.
+  const IMAGE_TYPES = 'JPEG, PNG, WebP, GIF, BMP or AVIF';
 
   /** A file name that is safe on Windows, macOS, Linux and Android. Keeps the extension. */
   function safeFileName(name, fallback) {
@@ -125,7 +127,7 @@
     const kinds = Array.isArray(accept) ? accept : [accept];
     if (!kinds.includes(info.kind)) {
       if (info.kind === 'heic') return { ok: false, info, error: `${file.name} is an HEIC photo. Most browsers cannot open HEIC; on an iPhone choose "Most Compatible" in Settings → Camera → Formats, or share the photo as JPEG.` };
-      const wanted = kinds.map(k => ({ image: 'an image (JPEG, PNG, WebP)', pdf: 'a PDF', text: 'a text file', zip: 'a ZIP or DOCX file', json: 'a JSON backup' }[k] || k)).join(' or ');
+      const wanted = kinds.map(k => ({ image: `an image (${IMAGE_TYPES})`, pdf: 'a PDF', text: 'a text file', zip: 'a ZIP or DOCX file', json: 'a JSON backup' }[k] || k)).join(' or ');
       const what = info.kind === 'unknown' ? 'not a recognised file type'
         : info.kind === 'text' ? 'a plain text file'
         : `${/^[AEIOU]/i.test(info.label) ? 'an' : 'a'} ${info.label}`;

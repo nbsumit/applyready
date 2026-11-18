@@ -278,6 +278,18 @@ const server = http.createServer((req, res) => {
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => /no password was given/.test(document.getElementById('mergeError').textContent), null, { timeout: 10000 });
     ok(await page.locator('.merge-row').count() === 4, 'password: Escape cancels and nothing is added');
+    // The next person never gets the last person's file name: emptying the list resets it.
+    await page.fill('#mergeName', 'Ravi Kumar documents');
+    await page.click('#mergeClear');
+    await page.click('.dialog [data-act="ok"]');
+    ok(await page.inputValue('#mergeName') === 'merged', `merge: Remove all puts the file name back to "merged" (${await page.inputValue('#mergeName')})`);
+    await page.setInputFiles('#mergeDropInput', [F['text.pdf'], F['second.pdf']]);
+    await page.waitForFunction(() => document.querySelectorAll('.merge-row').length === 2, null, { timeout: 30000 });
+    await page.fill('#mergeName', 'Priya Sharma documents');
+    await page.locator('.merge-row').first().locator('.merge-remove').click();
+    ok(await page.inputValue('#mergeName') === 'Priya Sharma documents', 'merge: the name stays while files are left');
+    await page.locator('.merge-row').first().locator('.merge-remove').click();
+    ok(await page.inputValue('#mergeName') === 'merged', 'merge: removing the last file one by one also resets the name');
     await context.close();
     console.log('✓ Merge: order by buttons, keyboard and drag; sizes, rotations and inherited boxes kept; images as A4; bad and protected files');
   }
@@ -421,6 +433,8 @@ const server = http.createServer((req, res) => {
     await tile(0).locator('[data-act=right]').click();          // MARKER-1: 0 -> 90
     await tile(1).locator('[data-act=delete]').click();         // delete MARKER-2
     ok(await tile(1).evaluate(n => n.classList.contains('is-deleted')) && /Restore/.test(await tile(1).locator('[data-act=delete]').getAttribute('aria-label')), 'organise: a deleted page stays with a Restore button');
+    const restoreIcon = await tile(1).locator('[data-act=delete] i').evaluate(i => ({ content: getComputedStyle(i, '::before').content, w: i.getBoundingClientRect().width }));
+    ok(restoreIcon.content !== 'none' && restoreIcon.content !== 'normal' && restoreIcon.w > 0, `organise: the Restore button shows its icon (${JSON.stringify(restoreIcon)})`);
     await tile(2).locator('[data-act=earlier]').click();        // MARKER-3 before MARKER-2
     await tile(1).locator('[data-act=earlier]').click();        // MARKER-3 first
     await tile(3).locator('[data-act=left]').click();           // MARKER-4: 180 -> 90
@@ -640,6 +654,8 @@ const server = http.createServer((req, res) => {
     const size = fs.statSync(out.file).size;
     ok(info.pages === 3 && info.sizes.every(s => near(s[0], 595.28) && near(s[1], 841.89)), `compress: 3 A4 pages kept (${info.pages})`);
     ok(size <= 120 * 1024 && /Under 120 KB/.test(await page.locator('#compressStatus').innerText()), `compress: under the 120 KB target (${size} bytes)`);
+    const mergeLink = page.locator('#compressResultArea a[href="merge-pdf.html"]');
+    ok(/Open Merge PDF/.test(await mergeLink.innerText()) && /download it first/.test(await page.locator('#' + await mergeLink.getAttribute('aria-describedby')).innerText()), 'compress: the Merge PDF link says it opens the tool and that the file must be downloaded first');
     // A scan followed by text pages, some turned: every page is kept with its size and rotation
     // (an older version dropped pages that held text).
     await page.click('#btnCompressRemove');
@@ -708,6 +724,39 @@ const server = http.createServer((req, res) => {
       await context.close();
     }
     console.log('✓ Every PDF tool at 320 px with a file open: no sideways scrolling, no axe violations');
+  }
+
+  /* ---------------------------------------------------------------- 9b. Phone: the finished result's download is in view */
+  {
+    // After a job the focused download button must be on screen and not under the sticky header or
+    // the tool's sticky action bar (WCAG 2.4.11), including after scrolling down to the settings first.
+    const cases = [
+      ['merge-pdf.html', async page => { await page.setInputFiles('#mergeDropInput', [F['text.pdf'], F['second.pdf'], path.join(root, 'img/samples/test-signature.jpg')]); await page.waitForFunction(() => document.querySelectorAll('.merge-row').length === 3, null, { timeout: 30000 }); }, '#mergeRun', '#mergeDownload'],
+      ['compress-pdf.html', async page => { await page.setInputFiles('#compressFileInput', F['second.pdf']); await waitShown(page, '#compressFileInfoBox'); }, '#btnStartCompress', '#btnDownloadCompressedPdf'],
+      ['add-page-numbers.html', async page => { await page.setInputFiles('#pnApp .dropzone input', F['text.pdf']); await waitShown(page, '#pnFile'); }, '#pnRun', '#pnDownload'],
+      ['watermark-pdf.html', async page => { await page.setInputFiles('#wmApp .dropzone input', F['text.pdf']); await waitShown(page, '#wmFile'); await page.fill('#wmText', 'COPY'); }, '#wmRun', '#wmDownload']
+    ];
+    for (const [width, height] of [[360, 740], [390, 844]]) {
+      for (const [file, load, run, download] of cases) {
+        for (const scrolled of [false, true]) {
+          const { context, page } = await open(file, { viewport: { width, height } });
+          await load(page);
+          if (scrolled) await page.evaluate(() => window.scrollTo(0, document.querySelector('.ws-side, .ws-settings, .ws-rail').getBoundingClientRect().top + window.scrollY));
+          await page.locator(run).click();
+          await waitShown(page, download, 90000);
+          await page.waitForTimeout(1200);
+          const spot = await page.evaluate(sel => {
+            const b = document.querySelector(sel).getBoundingClientRect();
+            const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+            const head = document.getElementById('siteHeader').getBoundingClientRect().bottom;
+            return { top: Math.round(b.top), bottom: Math.round(b.bottom), head: Math.round(head), vh: innerHeight, free: !!hit && hit.closest(sel) !== null, focused: document.activeElement === document.querySelector(sel) };
+          }, download);
+          ok(spot.focused && spot.free && spot.top >= spot.head && spot.bottom <= spot.vh, `${file} at ${width} px${scrolled ? ', started from the settings' : ''}: the focused download is in view and uncovered (${JSON.stringify(spot)})`);
+          await context.close();
+        }
+      }
+    }
+    console.log('✓ Phone: every finished download is in view, clear of the sticky header and action bar');
   }
 
   /* ---------------------------------------------------------------- 10. Review: ids, thumbnails, focus, busy guard, limits */

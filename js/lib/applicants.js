@@ -35,19 +35,28 @@
     return candidate;
   }
 
-  /** "{applicant}-{date}" with the applicant's label (spaces become hyphens), today's date and number. */
+  /**
+   * "{applicant}-{date}" with the applicant's label, today's date and number. Spaces and characters
+   * a file name cannot hold become hyphens, so "Ravi S/O Ramesh" gives "Ravi-S-O-Ramesh": a slash
+   * would otherwise be read as a folder and everything before it lost. A slash typed in the pattern
+   * itself ("BCA 2026/27-{applicant}") becomes a hyphen for the same reason.
+   */
   function zipName(pattern, applicant, now) {
     const d = now instanceof Date ? now : new Date();
     const two = n => String(n).padStart(2, '0');
     const date = `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`;
     const time = `${two(d.getHours())}${two(d.getMinutes())}`;
-    const label = String(applicant.label).trim().replace(/\s+/g, '-');
+    const label = String(applicant.label).trim()
+      .replace(/[\s\\/:*?"<>|\u0000-\u001f]+/g, '-')
+      .replace(/-{2,}/g, '-')
+      .replace(/^[-.]+|[-.]+$/g, '') || `Applicant-${applicant.number}`;
     let base = String(pattern || '{applicant}-{date}')
       .replace(/\{applicant\}/gi, label)
       .replace(/\{date\}/gi, date)
       .replace(/\{time\}/gi, time)
       .replace(/\{n\}/gi, String(applicant.number))
       .replace(/\.zip$/i, '')
+      .replace(/\s*[\\/]+\s*/g, '-')
       .trim();
     if (!base) base = `${label}-${date}`;
     return `${base}.zip`;
@@ -243,12 +252,25 @@
         return { files: this.files.length, results: this.results.length, downloaded, running: this.jobs.length, waiting: this.results.length - downloaded };
       }
 
-      /** new: nothing added | working: jobs running or no results yet | ready: results to download | downloaded: all downloaded */
+      /** new: nothing added | added: files, but nothing run yet | working: a task is running |
+          ready: results to download | downloaded: all downloaded */
       get status() {
         const c = this.counts();
         if (!c.files && !c.results && !c.running) return 'new';
-        if (c.running || !c.results) return 'working';
+        if (c.running) return 'working';
+        if (!c.results) return 'added';
         return c.waiting ? 'ready' : 'downloaded';
+      }
+
+      /**
+       * Results in the order of the files they came from (the first source file counts), so the list
+       * and the ZIP follow the file list, not the order in which tasks happened to finish. Results
+       * whose files were removed follow, in the order they were made.
+       */
+      get orderedResults() {
+        const pos = new Map(this.files.map((f, i) => [f.id, i]));
+        const rank = r => r.sourceIds.reduce((m, id) => (pos.has(id) ? Math.min(m, pos.get(id)) : m), Infinity);
+        return this.results.map((r, i) => ({ r, i, k: rank(r) })).sort((a, b) => (a.k - b.k) || (a.i - b.i)).map(x => x.r);
       }
 
       get hasData() { return this.files.length > 0 || this.results.length > 0 || this.jobs.length > 0; }

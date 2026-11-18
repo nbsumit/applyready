@@ -269,7 +269,7 @@
           <div id="dropzone" class="dropzone" role="group" aria-label="Choose or drop an image">
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
             <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
-            <p class="dropzone__text">Drag it here, or</p>
+            <p class="dropzone__text dropzone__drag">Drag it here<span class="dropzone__or">, or</span></p>
             <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose image</button>
             <p class="dropzone__hint">JPG, PNG, WebP, GIF, BMP or AVIF up to 50 MB. Processed on your device, never uploaded.</p>
           </div>
@@ -418,12 +418,12 @@
             <div class="disclosure__body">
               <div class="field">
                 <label for="bgFillSelect" class="field-label">Background fill</label>
-                <select id="bgFillSelect">
+                <select id="bgFillSelect" aria-describedby="bgFillHint">
                 <option value="white" selected>White (recommended)</option>
                 <option value="black">Black</option>
                 <option value="transparent" disabled>Transparent (PNG and WebP only)</option>
                 </select>
-                <p class="field-hint">JPEG cannot be transparent. Empty margins use this colour.</p>
+                <p class="field-hint" id="bgFillHint">JPEG cannot be transparent. Empty margins use this colour.</p>
               </div>
               <div id="dateOptionsBox" class="check-group">
                 <label class="switch" for="addDateCheckbox"><span>Add a name and date strip</span><input type="checkbox" id="addDateCheckbox" role="switch"></label>

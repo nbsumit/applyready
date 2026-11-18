@@ -38,7 +38,7 @@
     width: $('bWidth'), height: $('bHeight'), scaleField: $('bScaleField'), scale: $('bScale'),
     maxKB: $('bMaxKB'), minKB: $('bMinKB'), quality: $('bQuality'), qualityVal: $('bQualityVal'), allowShrink: $('bAllowShrink'),
     format: $('bFormat'), formatHint: $('bFormatHint'), background: $('bBackground'),
-    naming: $('bNaming'), suffix: $('bSuffix'), suffixField: $('bSuffixField'), prefix: $('bPrefix'), prefixField: $('bPrefixField'),
+    naming: $('bNaming'), suffix: $('bSuffix'), suffixField: $('bSuffixField'), prefix: $('bPrefix'), prefixField: $('bPrefixField'), zipName: $('bZipName'),
     more: $('batchMore'), reset: $('btnBatchReset'),
     bar: $('batchBar'), counts: $('batchCounts'), add: $('btnBatchAdd'), clear: $('btnBatchClear'),
     error: $('batchError'), errorTitle: $('batchErrorTitle'), errorList: $('batchErrorList'), errorClose: $('btnBatchErrorClose'),
@@ -175,6 +175,7 @@
     el.naming.value = DEFAULTS.naming;
     el.suffix.value = DEFAULTS.suffix;
     el.prefix.value = DEFAULTS.prefix;
+    if (el.zipName) el.zipName.value = el.zipName.defaultValue;
     settingsChanged();
   }
 
@@ -478,6 +479,10 @@
     if (!queued) return;
     showErrors('', []);
     if (!queue.running) {
+      // Started from a button here (Start, Retry, Process again): Cancel takes the focus, so the way
+      // to stop is the next thing a keyboard user reaches, not dozens of controls away.
+      const a = document.activeElement;
+      focusCancel = !!(a && a !== document.body && app.contains(a));
       run = { settings: s, key: keyOf(s), startedAt: performance.now(), startFinished: finishedCount(), smoothed: null };
       Kit.announce(`${VERB === 'Process' ? 'Processing' : VERB.replace(/e$/, '') + 'ing'} ${plural(queued, 'image')}.`);
       queue.start().then(onIdle);
@@ -485,11 +490,16 @@
     refresh();
   }
 
+  let focusCancel = false;
+  let cancelArmedAt = 0;
+  let revealResult = false;
+
   function finishedCount() { return queue.items.filter(i => i.status === 'done' || i.status === 'error' || i.status === 'cancelled').length; }
 
   function onIdle(summary) {
     const finishedRun = run;
     run = null;
+    revealResult = true;
     refresh();
     if (!finishedRun || finishedRun.cancelled) return;
     const done = summary.done, failed = summary.error + summary.cancelled;
@@ -526,6 +536,15 @@
     Kit.announce(`Downloaded ${name}.`);
   }
 
+  // The ZIP is named in More settings (each batch can have its own name); empty uses the page's default.
+  // A slash becomes a hyphen first, so "BCA 2026/27 roll" gives "BCA 2026-27 roll.zip": the browser
+  // and safeFileName() would read it as a folder and keep only "27 roll".
+  function zipName() {
+    const fallback = app.dataset.zip || 'images.zip';
+    const typed = el.zipName ? String(el.zipName.value).replace(/\s*[\\/]+\s*/g, '-').trim().replace(/\.zip$/i, '').trim() : '';
+    return typed ? Files.safeFileName(`${typed}.zip`, 'images') : fallback;
+  }
+
   // One result is downloaded as it is: a ZIP around a single photo is only an extra step.
   let zipping = false;
   async function downloadAll() {
@@ -538,7 +557,7 @@
     zipping = true;
     refresh();
     try {
-      const ok = await Kit.downloadZip(entries, app.dataset.zip || 'images.zip', { button: el.zip });
+      const ok = await Kit.downloadZip(entries, zipName(), { button: el.zip });
       if (ok) done.forEach(i => { i.meta.downloaded = true; });
     } finally {
       zipping = false;
@@ -663,6 +682,13 @@
 
     // Progress while running
     show(el.progress, running);
+    if (running && focusCancel) {
+      focusCancel = false;
+      el.cancel.focus();
+      // A quick second press of Enter meant for Start must not land on Cancel.
+      cancelArmedAt = performance.now() + 450;
+    }
+    if (!running) focusCancel = false;
     if (running) {
       const finished = summary.done + summary.error + summary.cancelled;
       const pct = Math.round(summary.progress * 100);
@@ -699,6 +725,11 @@
       show(el.retry, failed > 0);
       el.retry.innerHTML = `<i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Retry ${plural(failed, 'failed image', 'failed and cancelled images')}`;
     }
+    let revealed = false;
+    if (revealResult && !running) {
+      revealResult = false;
+      if (showResult && UI().reveal) { UI().reveal(el.result, done.length ? el.zip : el.verdictTitle); revealed = true; }
+    }
 
     // Settings changed after processing
     show(el.stale, !running && stale.length > 0);
@@ -712,19 +743,20 @@
     else if (running) label = `Working… ${summary.done + failed} of ${total}`;
     else if (queued) { label = `${VERB} ${plural(queued, 'image')}`; enabled = true; intent = 'start'; }
     else if (stale.length) { label = 'Process again'; enabled = true; intent = 'again'; }
-    else if (toDownload && done.length) {
-      // The next step is the download; on a phone the result panel is far above this bar.
-      label = zipping ? 'Preparing ZIP…' : done.length === 1 ? 'Download the image' : `Download all ${done.length} as ZIP`;
-      enabled = true; intent = 'download';   // stays enabled while zipping so focus is not lost; the handler ignores repeats
-      note = `${describe(s)}. ${plural(done.length, 'image')} ${DONE_WORD}.`;
-    } else if (total) { label = 'All images processed'; note = `${describe(s)}. Change a setting or add images to process more.`; }
+    else if (total) {
+      // The download is the result's own button; the bar does not repeat it, it only says where things stand.
+      label = 'All images processed';
+      note = toDownload && done.length
+        ? `${describe(s)}. ${plural(done.length, 'image')} ${DONE_WORD}; download ${done.length === 1 ? 'it' : 'them'} from the result.`
+        : `${describe(s)}. Change a setting or add images to process more.`;
+    }
     else label = `${VERB} images`;
     el.startLabel.textContent = label;
     // While running the button only shows progress. aria-disabled, not disabled: a disabled button
-    // loses keyboard focus, and the person who pressed Start should stay where they are.
+    // drops keyboard focus to the page (a run started here moves focus to Cancel in any case).
     el.start.disabled = !enabled && !running;
     if (!enabled && running) el.start.setAttribute('aria-disabled', 'true'); else el.start.removeAttribute('aria-disabled');
-    el.start.querySelector('i').className = intent === 'download' ? (done.length === 1 ? 'fa-solid fa-download' : 'fa-solid fa-file-zipper') : 'fa-solid fa-bolt';
+    el.start.querySelector('i').className = 'fa-solid fa-bolt';
     // Nothing left to do: no greyed-out button in the sticky bar, only the line that says why.
     show(el.start, !(valid && !running && total && !intent));
     el.start.dataset.intent = intent;
@@ -741,7 +773,8 @@
         if (focused.getClientRects().length || (document.activeElement !== focused && document.activeElement !== document.body)) return;
         const visible = node => node && node.getClientRects().length;
         const target = [el.verdictTitle, el.start, el.add, el.drop && el.drop.querySelector('[data-browse]')].find(visible);
-        if (target) target.focus();
+        // reveal() has just scrolled the result into place; focusing must not jump past it.
+        if (target) target.focus({ preventScroll: revealed && target === el.verdictTitle });
       });
     }
   }
@@ -764,10 +797,12 @@
     if (el.start.getAttribute('aria-disabled') === 'true') return;
     const intent = el.start.dataset.intent;
     if (intent === 'again') processAgain();
-    else if (intent === 'download') downloadAll();
     else start();
   });
-  el.cancel.addEventListener('click', cancel);
+  // detail is 0 for a click made with the keyboard; a mouse or touch press always cancels.
+  el.cancel.addEventListener('click', e => { if (e.detail === 0 && performance.now() < cancelArmedAt) return; cancel(); });
+  // Enter held down on Start repeats; the repeats must not reach Cancel once it has the focus.
+  el.cancel.addEventListener('keydown', e => { if (e.repeat && (e.key === 'Enter' || e.key === ' ')) e.preventDefault(); });
   el.retry.addEventListener('click', retryFailed);
   el.rerun.addEventListener('click', processAgain);
   el.zip.addEventListener('click', downloadAll);

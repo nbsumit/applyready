@@ -409,7 +409,8 @@ input[type='date']::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .select-btn:focus-visible, .select.is-open .select-btn { outline: none; border-color: var(--c-focus); box-shadow: 0 0 0 3px var(--c-focus-ring); }
 .select-btn:disabled { background: var(--c-surface-2); color: var(--c-text-4); border-color: var(--c-line-strong); }
 .select.is-invalid .select-btn { border-color: var(--c-danger); }
-.select-value { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The chosen value wraps rather than being cut off, so it stays readable with larger text spacing (WCAG 1.4.12). */
+.select-value { flex: 1; min-width: 0; padding-block: var(--s-1); overflow-wrap: anywhere; }
 .select-value.is-placeholder { color: var(--c-text-3); }
 .select-btn::after { content: ''; flex: none; width: 14px; height: 14px; background: var(--c-text-3); -webkit-mask: var(--mask-chevron) center/contain no-repeat; mask: var(--mask-chevron) center/contain no-repeat; transition: transform var(--t-base) var(--ease); }
 .select.is-open .select-btn::after { transform: rotate(180deg); }
@@ -798,6 +799,8 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .dropzone__icon .fa-solid { font-size: 20px; }
 .dropzone__title { font-size: var(--fs-xl); letter-spacing: -.01em; }
 .dropzone__text { color: var(--c-text-3); font-size: var(--fs-md); margin-bottom: var(--s-2); }
+/* A touch screen cannot drag files in, so "Drag it here, or" is left out there; the button says it all. */
+@media (hover: none) and (pointer: coarse) { .dropzone__drag { display: none; } }
 .dropzone__hint { margin-top: var(--s-2); font-size: var(--fs-sm); color: var(--c-text-3); max-width: 52ch; }
 .ws-empty > .btn-link { align-self: center; }
 
@@ -940,7 +943,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .ws[data-compact-drop]:not([data-state='empty']) .dropzone__icon .fa-solid { font-size: 16px; }
 .ws[data-compact-drop]:not([data-state='empty']) .dropzone__title { font-size: var(--fs-md); grid-column: 2; }
 .ws[data-compact-drop]:not([data-state='empty']) .dropzone__text { grid-column: 2; margin: 0; font-size: var(--fs-sm); }
-.ws[data-compact-drop]:not([data-state='empty']) .dropzone .btn, .ws[data-compact-drop]:not([data-state='empty']) .dropzone__hint { display: none; }
+.ws[data-compact-drop]:not([data-state='empty']) .dropzone .btn, .ws[data-compact-drop]:not([data-state='empty']) .dropzone__hint, .ws[data-compact-drop]:not([data-state='empty']) .dropzone__or { display: none; }
 .ws[data-state='ready'] #cleanerDropzone, .ws[data-state='ready'] #printDropzone, .ws[data-state='ready'] #compressDropzone, .ws[data-state='done'] #compressDropzone { display: none; }
 .ws[data-keep][data-state='done'] .ws-action, .ws[data-keep][data-state='done'] .ws-side { display: grid; }
 /* Once a result exists, Download is the one dominant action; running again becomes secondary. */
@@ -1226,6 +1229,8 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
   .ws[data-state='empty'] .ws-action { position: static; box-shadow: none; }
   .ws[data-state='empty']:not([data-keep]) .ws-action { display: none; }
   .ws[data-state='done']:not([data-keep]) .ws-side { display: none; }
+  /* Once a result is shown, the bar only offers to run again: it stays in the flow instead of covering the result's Download button. */
+  .ws[data-keep][data-state='done'] .ws-action { position: static; box-shadow: none; }
   .ws[data-state='done'] .ws-stage { border-radius: 0 0 var(--r-md) var(--r-md); }
   .dropzone { min-height: 260px; padding: var(--s-6) var(--s-4); }
   .cropper-container-wrapper { height: clamp(260px, 52vh, 420px); }

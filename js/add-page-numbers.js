@@ -130,7 +130,7 @@
       els.statNumbered.textContent = String(numbered);
       els.statSize.textContent = Files.formatBytes(bytes.length);
       els.resultText.textContent = `${UI.plural(numbered, 'page')} numbered${o.skipFirst ? ', the cover left blank' : ''}. The file was checked after saving.`;
-      tool.showResult();
+      tool.showResult(els.download);
       Kit.announce(`Page numbers added to ${UI.plural(numbered, 'page')}.`);
       els.download.focus({ preventScroll: true });
       return true;

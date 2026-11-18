@@ -119,7 +119,8 @@
     const del = li.querySelector('[data-act="delete"]');
     del.setAttribute('aria-label', `${t.deleted ? 'Restore' : 'Delete'} ${label(t)}`);
     del.title = t.deleted ? 'Restore' : 'Delete';
-    del.innerHTML = `<i class="fa-solid fa-${t.deleted ? 'trash-can-arrow-up' : 'trash-can'}" aria-hidden="true"></i>`;
+    // Whole class names, so scripts/build-icons.py finds both icons for the subset.
+    del.innerHTML = `<i class="fa-solid ${t.deleted ? 'fa-trash-can-arrow-up' : 'fa-trash-can'}" aria-hidden="true"></i>`;
     li.querySelector('.org-tile__name').textContent = label(t);
     const turn = K.norm(t.turn);
     li.querySelector('.org-tile__state').textContent = t.deleted ? 'Deleted' : turn ? `Turned ${turn === 90 ? 'right' : turn === 270 ? 'left' : 'upside down'}` : '';
@@ -274,7 +275,7 @@
       els.statChanges.textContent = [c.moved && 'Reordered', c.turned && `${c.turned} turned`, c.deleted && `${c.deleted} deleted`, c.inserted && `${c.inserted} added`].filter(Boolean).join(', ') || 'None';
       els.statSize.textContent = Files.formatBytes(bytes.length);
       els.resultText.textContent = `${UI.plural(keep.length, 'page')} in the order shown, checked after saving. Your original file is unchanged.`;
-      tool.showResult();
+      tool.showResult(els.download);
       Kit.announce(`New PDF ready: ${UI.plural(keep.length, 'page')}.`);
       els.download.focus({ preventScroll: true });
       return true;

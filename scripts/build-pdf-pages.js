@@ -72,9 +72,9 @@ ${body}
 
 const select = (id, label, options, selected, hint) => `          <div class="field">
             <label for="${id}" class="field-label">${label}</label>
-            <select id="${id}">
+            <select id="${id}"${hint ? ` aria-describedby="${id}Hint"` : ''}>
 ${options.map(([v, t]) => `              <option value="${v}"${String(v) === String(selected) ? ' selected' : ''}>${t}</option>`).join('\n')}
-            </select>${hint ? `\n            <p class="field-hint">${hint}</p>` : ''}
+            </select>${hint ? `\n            <p class="field-hint" id="${id}Hint">${hint}</p>` : ''}
           </div>`;
 
 const nameField = (id, value) => `          <div class="field">

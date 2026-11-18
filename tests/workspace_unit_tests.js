@@ -102,8 +102,12 @@ const blob = (type) => ({ type: type || 'image/jpeg', size: 10 });
     const s = Model.createSession(fakeEnv());
     const a = s.add();
     ok(a.status === 'new' && !a.hasData && !s.hasData(), 'an empty applicant is new and holds no data');
-    a.addFile(file('x.jpg'), { kind: 'image' });
-    ok(a.status === 'working' && s.hasData(), 'files without results are in progress');
+    const fx = a.addFile(file('x.jpg'), { kind: 'image' });
+    ok(a.status === 'added' && s.hasData(), 'files with nothing run yet are not started, not in progress');
+    const running = a.startJob({ fileIds: [fx.id] });
+    ok(a.status === 'working', 'a running task is in progress');
+    a.endJob(running);
+    ok(a.status === 'added', 'a task that ended without a result leaves it not started');
     const r1 = a.addResult({ blob: blob(), name: 'one.jpg' });
     a.addResult({ blob: blob(), name: 'two.jpg' });
     ok(a.status === 'ready' && a.counts().waiting === 2, 'results to download make it ready');
@@ -146,6 +150,33 @@ const blob = (type) => ({ type: type || 'image/jpeg', size: 10 });
     ok(Model.zipName('{applicant}-{date}', a, d) === 'Ravi-Kumar-2026-11-18.zip', 'spaces in the name become hyphens');
     ok(Model.zipName('cafe-{n}-{applicant}.zip', a, d) === 'cafe-1-Ravi-Kumar.zip', '{n} and an explicit .zip are handled');
     ok(Model.zipName('', a, d) === 'Ravi-Kumar-2026-11-18.zip', 'an empty pattern falls back to the default');
+    a.name = 'Ravi S/O Ramesh';
+    ok(Model.zipName('{applicant}-{date}', a, d) === 'Ravi-S-O-Ramesh-2026-11-18.zip', 'a slash in the name (S/O) keeps the whole name');
+    a.name = 'Ravi\\Kumar: "S" ';
+    ok(Model.zipName('{applicant}-{date}', a, d) === 'Ravi-Kumar-S-2026-11-18.zip', 'characters a file name cannot hold become hyphens');
+    a.name = '//';
+    ok(Model.zipName('{applicant}-{date}', a, d) === 'Applicant-1-2026-11-18.zip', 'a name of only such characters falls back to the number');
+    a.name = 'Ravi Kumar';
+    ok(Model.zipName('BCA 2026/27 {applicant}', a, d) === 'BCA 2026-27 Ravi-Kumar.zip', 'a slash typed in the pattern becomes a hyphen, so nothing before it is lost');
+    ok(Model.zipName('Class 10\\A {n}', a, d) === 'Class 10-A 1.zip', 'a backslash typed in the pattern becomes a hyphen');
+  }
+
+  // Results follow the order of the files they came from
+  {
+    const s = Model.createSession(fakeEnv());
+    const a = s.add();
+    const photo = a.addFile(file('photo.jpg'), { kind: 'image' });
+    const sign = a.addFile(file('sign.jpg'), { kind: 'image' });
+    const scan = a.addFile(file('scan.pdf'), { kind: 'pdf' });
+    const rScan = a.addResult({ blob: blob('application/pdf'), name: 'scan.pdf', sourceIds: [scan.id] });
+    const rSign = a.addResult({ blob: blob(), name: 'sign-signature.jpg', sourceIds: [sign.id] });
+    const rBoth = a.addResult({ blob: blob('application/pdf'), name: 'photo-combined.pdf', sourceIds: [sign.id, photo.id] });
+    const rPhoto = a.addResult({ blob: blob(), name: 'photo-photo.jpg', sourceIds: [photo.id] });
+    ok(a.orderedResults.map(r => r.name).join(',') === 'photo-combined.pdf,photo-photo.jpg,sign-signature.jpg,scan.pdf', `results follow the file list, not the finishing order (${a.orderedResults.map(r => r.name)})`);
+    a.moveFile(scan.id, -2);
+    ok(a.orderedResults[0] === rScan, 'moving a file moves its results');
+    a.removeFile(sign.id);
+    ok(a.orderedResults.indexOf(rSign) === a.results.length - 1 && a.orderedResults.includes(rBoth) && a.orderedResults.includes(rPhoto), 'a result whose file was removed goes last');
   }
 
   // Events

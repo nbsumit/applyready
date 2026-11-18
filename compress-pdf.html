@@ -308,8 +308,9 @@
           <p class="field-hint" id="compressNote"></p>
           <div class="ws-result__actions">
             <a id="btnDownloadCompressedPdf" class="btn btn-primary btn-lg" href="#" download="Compressed_Document.pdf"><i class="fa-solid fa-download" aria-hidden="true"></i> Download compressed PDF</a>
-            <a href="merge-pdf.html" class="btn btn-lg"><i class="fa-solid fa-object-group" aria-hidden="true"></i> Merge with other PDFs</a>
+            <a href="merge-pdf.html" class="btn btn-lg" aria-describedby="compressMergeHint"><i class="fa-solid fa-object-group" aria-hidden="true"></i> Open Merge PDF</a>
           </div>
+          <p class="field-hint" id="compressMergeHint">To join this file with others, download it first, then add the downloaded file in Merge PDF.</p>
         </div>
       </div>
       <div class="ws-rail">
@@ -336,13 +337,13 @@
           <h2 class="ws-section__title">Pages</h2>
           <div class="field">
             <label for="compressDpi" class="field-label">Resolution</label>
-            <select id="compressDpi">
+            <select id="compressDpi" aria-describedby="compressDpiHint">
               <option value="200">200 DPI, sharpest</option>
-              <option value="150" selected>150 DPI, balanced (recommended)</option>
+              <option value="150" selected>150 DPI, recommended</option>
               <option value="110">110 DPI, smaller</option>
               <option value="72">72 DPI, smallest</option>
             </select>
-            <p class="field-hint">The starting sharpness of each page. If the limit is tight, it is lowered further, down to 50 DPI.</p>
+            <p class="field-hint" id="compressDpiHint">The starting sharpness of each page. If the limit is tight, it is lowered further, down to 50 DPI.</p>
           </div>
           <label class="switch" for="compressGrey"><span>Black and white (greyscale)</span><input type="checkbox" id="compressGrey" role="switch"></label>
           <p class="field-hint">Greyscale makes files smaller. Leave it off if a document has coloured stamps or photos.</p>

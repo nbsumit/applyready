@@ -40,6 +40,12 @@
     if (output) { urls.revoke(output.url); output = null; }
   }
 
+  // The output name belongs to the files in the list. Once the list is empty it goes back to the
+  // page's default, so the next person's merge is never saved under the previous person's name.
+  function resetNameIfEmpty() {
+    if (!items.length && els.name.value !== els.name.defaultValue) els.name.value = els.name.defaultValue;
+  }
+
   function updateCounts() {
     const has = items.length > 0;
     els.bar.classList.toggle('hidden', !has);
@@ -73,7 +79,7 @@
       thumb.className = 'file-row__thumb';
       thumb.setAttribute('aria-hidden', 'true');
       if (it.thumb) { const img = doc.createElement('img'); img.src = it.thumb; img.alt = ''; thumb.appendChild(img); }
-      else thumb.innerHTML = `<i class="fa-solid fa-${it.kind === 'image' ? 'image' : 'file-pdf'}"></i>`;
+      else thumb.innerHTML = `<i class="fa-solid ${it.kind === 'image' ? 'fa-image' : 'fa-file-pdf'}"></i>`;
 
       const text = doc.createElement('span');
       text.className = 'file-row__text';
@@ -95,14 +101,14 @@
         b.className = `btn btn-ghost btn-icon btn-sm ${cls}`;
         b.setAttribute('aria-label', label);
         b.title = tip;
-        b.innerHTML = `<i class="fa-solid fa-${iconName}" aria-hidden="true"></i>`;
+        b.innerHTML = `<i class="fa-solid ${iconName}" aria-hidden="true"></i>`;
         b.disabled = !!disabled;
         return b;
       };
       actions.append(
-        mk('merge-up', 'arrow-up', `Move ${it.file.name} up`, 'Move up', i === 0),
-        mk('merge-down', 'arrow-down', `Move ${it.file.name} down`, 'Move down', i === items.length - 1),
-        mk('merge-remove btn-danger-ghost', 'xmark', `Remove ${it.file.name}`, 'Remove')
+        mk('merge-up', 'fa-arrow-up', `Move ${it.file.name} up`, 'Move up', i === 0),
+        mk('merge-down', 'fa-arrow-down', `Move ${it.file.name} down`, 'Move down', i === items.length - 1),
+        mk('merge-remove btn-danger-ghost', 'fa-xmark', `Remove ${it.file.name}`, 'Remove')
       );
       li.append(handle, thumb, text, actions);
       els.list.appendChild(li);
@@ -136,6 +142,7 @@
       const [it] = items.splice(i, 1);
       if (it.thumb) URL.revokeObjectURL(it.thumb);
       invalidate();
+      resetNameIfEmpty();
       const next = items[Math.min(i, items.length - 1)];
       render(next ? { id: next.id, sel: '.merge-remove' } : null);
       els.status.textContent = `${it.file.name} removed.`;
@@ -221,6 +228,7 @@
     items.forEach(it => { if (it.thumb) URL.revokeObjectURL(it.thumb); });
     items = [];
     invalidate();
+    resetNameIfEmpty();
     error.hide();
     render();
     const browse = app.querySelector('[data-browse]'); if (browse) browse.focus();
@@ -259,7 +267,7 @@
       els.statSize.textContent = Files.formatBytes(bytes.length);
       els.resultText.textContent = `${UI.plural(expected, 'page')} in the order shown, checked after saving.`;
       els.result.classList.remove('hidden');
-      if (window.ApplyReadyUI && window.ApplyReadyUI.reveal) window.ApplyReadyUI.reveal(els.result);
+      if (window.ApplyReadyUI && window.ApplyReadyUI.reveal) window.ApplyReadyUI.reveal(els.result, els.download);
       Kit.announce(`Merged PDF ready: ${UI.plural(expected, 'page')}, ${Files.formatBytes(bytes.length)}.`);
       els.download.focus({ preventScroll: true });
       return true;

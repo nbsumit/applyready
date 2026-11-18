@@ -279,6 +279,19 @@
     if (workspaceStatus) workspaceStatus.textContent = message;
   }
 
+  // Scrolling from script ignores the CSS reduced-motion rule, so every scroll asks first.
+  function scrollBehavior() {
+    return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  }
+
+  /** The chosen file's name without its extension, safe to use in a download name. */
+  function sourceStem(file) {
+    const Files = typeof window !== 'undefined' ? window.ApplyReadyFiles : null;
+    const raw = file && file.name ? String(file.name) : '';
+    const stem = Files ? Files.stem(Files.safeFileName(raw, 'image')) : raw.replace(/\.[^.]*$/, '').replace(/[\\/:*?"<>|]/g, '_');
+    return (stem || 'image').slice(0, 60).trim() || 'image';
+  }
+
   // Keep the ratio honest: invalid or oversized results are validated, not clamped.
   function scaleLockedDimension(value, ratio, changedAxis) {
     const size = Number(value);
@@ -394,31 +407,91 @@
     if (window.ApplyReadyUI) window.ApplyReadyUI.notify('Full image selected at its original dimensions. Set your file limit, then resize & compress.');
   }
 
-  function loadExample() {
-    // A clearly labelled synthetic document keeps the demo local and contains no personal data.
+  // The sample suits the requirement in use: a portrait for photos, a scribble for signatures,
+  // a ridge pattern for thumb impressions and a page for everything else. It is drawn at least
+  // as large as the target, so the demo never has to enlarge it. Synthetic, with no personal data.
+  const SAMPLE_KIND = { passport: 'photo', avatar: 'photo', 'kb-10': 'photo', 'kb-20': 'photo', 'kb-50': 'photo', 'kb-100': 'photo', 'kb-200': 'photo', signature: 'signature', declaration: 'signature', thumb: 'thumb' };
+
+  function sampleCanvas(kind, targetW, targetH) {
+    const tw = Math.max(20, targetW || 960), th = Math.max(20, targetH || 1200);
+    let w, h;
+    if (kind === 'document') {
+      // A page keeps its 4:5 shape (text must not be stretched) and covers the target box.
+      const k = Math.min(Math.max(1, tw / 960, th / 1200), Math.sqrt(12e6 / (960 * 1200)));
+      w = Math.round(960 * k); h = Math.round(1200 * k);
+    } else {
+      let k = Math.max(1, 1200 / Math.max(tw, th));
+      if (tw * th * k * k > 12e6) k = Math.sqrt(12e6 / (tw * th));
+      w = Math.max(20, Math.round(tw * k)); h = Math.max(20, Math.round(th * k));
+    }
     const canvas = document.createElement('canvas');
-    canvas.width = 960; canvas.height = 1200;
+    canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 960, 1200);
-    ctx.fillStyle = '#17634d'; ctx.fillRect(72, 80, 56, 7);
-    ctx.fillStyle = '#182126'; ctx.font = 'bold 48px sans-serif'; ctx.fillText('Sample document', 72, 170);
-    ctx.font = '24px sans-serif'; ctx.fillStyle = '#5c6970'; ctx.fillText('ApplyReady image tools · demonstration file', 72, 216);
-    ctx.font = 'bold 25px sans-serif'; ctx.fillStyle = '#182126'; ctx.fillText('A simple way to prepare your files', 72, 322);
-    ctx.font = '22px sans-serif'; ctx.fillStyle = '#344148';
-    ['Choose your dimensions and file size limit.', 'Adjust the crop to keep the details you need.', 'Download a verified image, ready to upload.', '', 'Use original size to keep this entire document.', 'Try another preset to see how the crop changes.'].forEach((line, i) => ctx.fillText(line, 72, 375 + i * 42));
-    ctx.strokeStyle = '#dfe4e7'; ctx.lineWidth = 2;
-    for (let y = 710; y <= 1000; y += 58) { ctx.beginPath(); ctx.moveTo(72, y); ctx.lineTo(888, y); ctx.stroke(); }
-    ctx.font = '18px sans-serif'; ctx.fillStyle = '#5c6970'; ctx.fillText('SAMPLE ONLY — no personal information', 72, 1110);
+    const u = Math.min(w, h);
+    const label = (text, y) => {
+      ctx.font = `${Math.max(10, Math.round(u * 0.045))}px sans-serif`;
+      ctx.fillStyle = '#5c6970'; ctx.textAlign = 'center';
+      ctx.fillText(text, w / 2, y);
+      ctx.textAlign = 'start';
+    };
+    if (kind === 'photo') {
+      ctx.fillStyle = '#e8eef2'; ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#5c6970';
+      ctx.beginPath(); ctx.ellipse(w / 2, h * 1.02, w * 0.42, h * 0.3, 0, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#9aa7b0';
+      ctx.beginPath(); ctx.ellipse(w / 2, h * 0.42, u * 0.2, u * 0.25, 0, 0, Math.PI * 2); ctx.fill();
+      label('SAMPLE PHOTO · not a real person', h * 0.08);
+    } else if (kind === 'signature') {
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#1f2a5a'; ctx.lineWidth = Math.max(2, u * 0.03); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(w * 0.1, h * 0.62);
+      ctx.bezierCurveTo(w * 0.18, h * 0.1, w * 0.26, h * 0.95, w * 0.34, h * 0.5);
+      ctx.bezierCurveTo(w * 0.42, h * 0.15, w * 0.48, h * 0.8, w * 0.56, h * 0.48);
+      ctx.bezierCurveTo(w * 0.64, h * 0.2, w * 0.72, h * 0.75, w * 0.9, h * 0.4);
+      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(w * 0.12, h * 0.78); ctx.lineTo(w * 0.86, h * 0.72); ctx.stroke();
+      label('SAMPLE SIGNATURE', h * 0.95);
+    } else if (kind === 'thumb') {
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#1f2a5a'; ctx.lineWidth = Math.max(2, u * 0.012);
+      for (let i = 1; i <= 12; i++) { ctx.beginPath(); ctx.ellipse(w / 2, h / 2, u * 0.025 * i, u * 0.033 * i, 0.2, 0, Math.PI * 2); ctx.stroke(); }
+      label('SAMPLE IMPRESSION', h * 0.96);
+    } else {
+      // A page: the 960 × 1200 layout, scaled evenly.
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+      ctx.save(); ctx.scale(w / 960, w / 960);
+      ctx.fillStyle = '#17634d'; ctx.fillRect(72, 80, 56, 7);
+      ctx.fillStyle = '#182126'; ctx.font = 'bold 48px sans-serif'; ctx.fillText('Sample document', 72, 170);
+      ctx.font = '24px sans-serif'; ctx.fillStyle = '#5c6970'; ctx.fillText('ApplyReady image tools · demonstration file', 72, 216);
+      ctx.font = 'bold 25px sans-serif'; ctx.fillStyle = '#182126'; ctx.fillText('A simple way to prepare your files', 72, 322);
+      ctx.font = '22px sans-serif'; ctx.fillStyle = '#344148';
+      ['Choose your dimensions and file size limit.', 'Adjust the crop to keep the details you need.', 'Download a verified image, ready to upload.', '', 'Use original size to keep this entire document.', 'Try another preset to see how the crop changes.'].forEach((line, i) => ctx.fillText(line, 72, 375 + i * 42));
+      ctx.strokeStyle = '#dfe4e7'; ctx.lineWidth = 2;
+      for (let y = 710; y <= 1000; y += 58) { ctx.beginPath(); ctx.moveTo(72, y); ctx.lineTo(888, y); ctx.stroke(); }
+      ctx.font = '18px sans-serif'; ctx.fillStyle = '#5c6970'; ctx.fillText('SAMPLE ONLY — no personal information', 72, 1110);
+      ctx.restore();
+    }
+    return canvas;
+  }
+
+  function loadExample() {
+    // Keep the requirement the person chose; Document scan is used only when nothing is chosen yet.
+    if (!requirementChosen) {
+      chooseRequirement();
+      applyPreset('document');
+    }
+    setRequirementOpen(false, false);
+    const specs = getActiveSpecs();
+    const kind = SAMPLE_KIND[currentPresetKey] || 'document';
+    const canvas = sampleCanvas(kind, specs.isValid ? specs.width : 0, specs.isValid ? specs.height : 0);
     const requestId = currentOpId;
     if (btnTryExample) btnTryExample.disabled = true;
     canvas.toBlob(blob => {
       if (btnTryExample) btnTryExample.disabled = false;
       if (requestId !== currentOpId) return;
       if (!blob) { showProcessError('Could not create the sample. Please choose an image instead.'); return; }
-      chooseRequirement();
-      applyPreset('document');
-      setRequirementOpen(false, false);
-      handleFileSelect(new File([blob], 'ApplyReady_sample_document.png', { type: 'image/png' }));
+      handleFileSelect(new File([blob], `ApplyReady_sample_${kind}.png`, { type: 'image/png' }));
     }, 'image/png');
   }
 
@@ -720,8 +793,7 @@
         show.type = 'button';
         show.addEventListener('click', () => {
           revealSettings();
-          const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          firstInvalid.scrollIntoView({ block: 'center', behavior: still ? 'auto' : 'smooth' });
+          firstInvalid.scrollIntoView({ block: 'center', behavior: scrollBehavior() });
           firstInvalid.focus({ preventScroll: true });
         });
         processSummary.append(show);
@@ -733,8 +805,7 @@
       const show = el('button', d.labelShow || 'Show me');
       show.type = 'button';
       show.addEventListener('click', () => {
-        const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (reqPanel) reqPanel.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+        if (reqPanel) reqPanel.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
         const first = reqPanel && reqPanel.querySelector('.choice');
         if (first) first.focus({ preventScroll: true });
       });
@@ -1029,7 +1100,7 @@
     });
 
     on(btnReplaceFile, 'click', () => { if (fileInput) fileInput.click(); });
-    on(btnRemoveFile, 'click', removeUploadedImage);
+    on(btnRemoveFile, 'click', () => removeUploadedImage());
 
     // Before / After comparison view toggle
     if (btnViewProcessed && btnViewOriginal) {
@@ -1106,7 +1177,7 @@
       if (resultArea) resultArea.classList.add('hidden');
       if (cropperActiveArea) {
         cropperActiveArea.classList.remove('hidden');
-        cropperActiveArea.scrollIntoView({ behavior: 'smooth' });
+        cropperActiveArea.scrollIntoView({ behavior: scrollBehavior() });
       }
       setWorkspaceStatus('Ready to edit');
     });
@@ -1151,7 +1222,7 @@
       return;
     }
 
-    removeUploadedImage();
+    removeUploadedImage(!currentFile);
     const opId = ++currentOpId;
     currentFile = file;
     setWorkspaceStatus('Opening image…');
@@ -1248,8 +1319,7 @@
               const frame = cropperActiveArea && cropperActiveArea.querySelector ? cropperActiveArea.querySelector('.cropper-container-wrapper') : null;
               if (frame && frame.getBoundingClientRect && typeof window.innerHeight === 'number') {
                 const r = frame.getBoundingClientRect();
-                const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                if (Math.min(r.bottom, window.innerHeight - 80) - r.top < r.height * 0.6) cropperActiveArea.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+                if (Math.min(r.bottom, window.innerHeight - 80) - r.top < r.height * 0.6) cropperActiveArea.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
               }
               const specs = getActiveSpecs();
               if (btnProcess) btnProcess.disabled = !specs.isValid || !requirementChosen;
@@ -1272,7 +1342,24 @@
   /**
    * Reset / Remove image state
    */
-  function removeUploadedImage() {
+  /* The name and date strip belongs to one person's photo. A cafe operator removes or replaces
+     the photo for the next customer, so the strip is switched off and the name cleared then;
+     otherwise the next photo would carry the previous person's name. */
+  function clearPrintedDetails() {
+    const had = Boolean((addDateCheckbox && addDateCheckbox.checked) || (candidateNameInput && candidateNameInput.value.trim()));
+    if (addDateCheckbox) addDateCheckbox.checked = false;
+    if (dateInputGroup) dateInputGroup.style.display = 'none';
+    if (candidateNameInput) candidateNameInput.value = '';
+    setTodayDate();
+    if (had) {
+      updatePresetUI();
+      if (window.ApplyReadyUI && window.ApplyReadyUI.notify) window.ApplyReadyUI.notify('The printed name and date were cleared, so they are not added to the next photo.');
+    }
+  }
+
+  function removeUploadedImage(keepPrintedDetails) {
+    // True only when the first photo arrives: a name and date typed before it are meant for it.
+    if (!keepPrintedDetails) clearPrintedDetails();
     currentOpId++;
     cropperReady = false;
     if (cropper) {
@@ -1307,7 +1394,7 @@
     if (processErrorBox && processErrorMessage) {
       processErrorMessage.textContent = msg;
       processErrorBox.classList.remove('hidden');
-      processErrorBox.scrollIntoView({ behavior: 'smooth' });
+      processErrorBox.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
     }
   }
 
@@ -1726,7 +1813,8 @@
       // Set Download Link
       const ext = specs.mimeType === 'image/png' ? 'png' : specs.mimeType === 'image/webp' ? 'webp' : 'jpg';
       const dateSuffix = addDate ? '_Dated' : '';
-      const filename = `${specs.prefix}${dateSuffix}_${specs.width}x${specs.height}.${ext}`;
+      // The source name comes first, so one customer's file is never confused with the last one's.
+      const filename = `${sourceStem(currentFile)}_${specs.prefix}${dateSuffix}_${specs.width}x${specs.height}.${ext}`;
 
       if (btnDownload) {
         btnDownload.href = processedBlobUrl;
@@ -1737,7 +1825,9 @@
       if (cropperActiveArea) cropperActiveArea.classList.add('hidden');
       if (resultArea) {
         resultArea.classList.remove('hidden');
-        resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // The result heading and the Download button, clear of the sticky header.
+        if (window.ApplyReadyUI && window.ApplyReadyUI.reveal) window.ApplyReadyUI.reveal(resultArea, btnDownload, { align: true });
+        else resultArea.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
       }
       setWorkspaceStatus('Ready to download');
       if (btnDownload) btnDownload.focus({ preventScroll: true });

@@ -126,7 +126,7 @@
       els.statText.textContent = o.text;
       els.statSize.textContent = Files.formatBytes(bytes.length);
       els.resultText.textContent = `"${o.text}" on ${UI.plural(state.pageCount, 'page')}. The file was checked after saving.`;
-      tool.showResult();
+      tool.showResult(els.download);
       Kit.announce(`Watermark added to ${UI.plural(state.pageCount, 'page')}.`);
       els.download.focus({ preventScroll: true });
       return true;

@@ -240,7 +240,7 @@
           <input type="file" id="batchDropInput" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif" multiple class="hidden" tabindex="-1" aria-hidden="true">
           <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
           <p class="dropzone__title" id="batchDropTitle">Add the images to make smaller</p>
-          <p class="dropzone__text">Drag them here, or</p>
+          <p class="dropzone__text dropzone__drag">Drag them here<span class="dropzone__or">, or</span></p>
           <button type="button" class="btn btn-primary btn-lg" data-browse><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose images</button>
           <p class="dropzone__hint">JPG, PNG, WebP, GIF, BMP or AVIF, up to 50 MB each and 500 files at a time. You can paste images too. Processed on your device, never uploaded.</p>
         </div>
@@ -297,7 +297,7 @@
           <h2 class="ws-section__title">Format</h2>
           <div class="field">
             <label for="bFormat" class="field-label">Save as</label>
-            <select id="bFormat"><option value="keep" selected>Same as the original</option><option value="image/jpeg">JPEG (.jpg), accepted everywhere</option><option value="image/png">PNG (.png), sharp edges, transparency</option><option value="image/webp">WebP (.webp), small, not accepted everywhere</option></select>
+            <select id="bFormat" aria-describedby="bFormatHint"><option value="keep" selected>Same as the original</option><option value="image/jpeg">JPEG (.jpg), accepted everywhere</option><option value="image/png">PNG (.png), sharp edges, transparency</option><option value="image/webp">WebP (.webp), small, not accepted everywhere</option></select>
             <p class="field-hint" id="bFormatHint">GIF, BMP and AVIF files are saved as JPEG when you keep the format.</p>
           </div>
           <div class="field">
@@ -313,12 +313,12 @@
               <h2 class="ws-section__title">Size</h2>
               <div class="field">
                 <label for="bPreset" class="field-label">Preset</label>
-                <select id="bPreset"><option value="custom" selected>Custom settings</option><option value="passport">Passport photo: 350 × 450 px, under 50 KB</option><option value="signature">Signature: 300 × 100 px, under 30 KB</option><option value="profile">Profile photo: 400 × 400 px, under 100 KB</option><option value="document">Document scan: within 1240 × 1754 px, under 500 KB</option></select>
-                <p class="field-hint">A preset fills in the size, format and file limit. Change any value to make your own.</p>
+                <select id="bPreset" aria-describedby="bPresetHint"><option value="custom" selected>Custom settings</option><option value="passport">Passport photo: 350 × 450 px, under 50 KB</option><option value="signature">Signature: 300 × 100 px, under 30 KB</option><option value="profile">Profile photo: 400 × 400 px, under 100 KB</option><option value="document">Document scan: within 1240 × 1754 px, under 500 KB</option></select>
+                <p class="field-hint" id="bPresetHint">A preset fills in the size, format and file limit. Change any value to make your own.</p>
               </div>
               <div class="field">
                 <label for="bResize" class="field-label">Resize</label>
-                <select id="bResize"><option value="none" selected>Keep the original size</option><option value="fit">Fit within a box, keep proportions</option><option value="fill">Exact size, crop to fill</option><option value="pad">Exact size, add padding</option><option value="scale">Scale by a percentage</option></select>
+                <select id="bResize" aria-describedby="bResizeHint"><option value="none" selected>Keep the original size</option><option value="fit">Fit within a box, keep proportions</option><option value="fill">Exact size, crop to fill</option><option value="pad">Exact size, add padding</option><option value="scale">Scale by a percentage</option></select>
                 <p class="field-hint" id="bResizeHint"></p>
               </div>
               <div class="field-row" id="bDims">
@@ -343,7 +343,7 @@
               <h2 class="ws-section__title">File names</h2>
               <div class="field">
                 <label for="bNaming" class="field-label">Name the results</label>
-                <select id="bNaming"><option value="keep" selected>Keep the original name</option><option value="suffix">Add a word to the end</option><option value="sequence">Number them in order</option></select>
+                <select id="bNaming" aria-describedby="bNamingHint"><option value="keep" selected>Keep the original name</option><option value="suffix">Add a word to the end</option><option value="sequence">Number them in order</option></select>
               </div>
               <div class="field" id="bSuffixField">
                 <label for="bSuffix" class="field-label">Word to add</label>
@@ -354,6 +354,11 @@
                 <input type="text" id="bPrefix" class="input" maxlength="40" value="image" autocomplete="off" spellcheck="false">
               </div>
               <p class="field-hint" id="bNamingHint">Two results with the same name get (2), (3) and so on, in the list and in the ZIP file.</p>
+              <div class="field">
+                <label for="bZipName" class="field-label">ZIP file name</label>
+                <div class="input-unit"><input type="text" id="bZipName" class="input" maxlength="60" value="compressed-images" autocomplete="off" spellcheck="false" aria-describedby="bZipNameHint"><span class="input-unit__text" aria-hidden="true">.zip</span></div>
+                <p class="field-hint" id="bZipNameHint">Name each batch, for example after the class or the date, so the downloads are easy to tell apart.</p>
+              </div>
             </div>
           </div>
         </details>

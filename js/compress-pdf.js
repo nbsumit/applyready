@@ -42,7 +42,9 @@
   $('compressCancel').setAttribute('data-cancel', '');
   const runner = UI.runner(box, { error, button: els.start, busyLabel: 'Compressing…', onState: busy => { els.replace.disabled = busy; els.remove.disabled = busy; } });
 
+  // Sizes compared with the limit stay in exact KB; the file's own size reads like the file list (KB or MB).
   const fmtKB = bytes => (bytes / 1024).toFixed(1);
+  const sized = bytes => (bytes < 1024 * 1024 ? `${fmtKB(bytes)} KB` : Files.formatBytes(bytes));
 
   function dropResult() {
     if (output) { urls.revoke(output); output = null; }
@@ -87,7 +89,7 @@
       if (ticket !== opening) { if (next.jsDoc) K.closeJs(next.jsDoc); return; }
       await release();
       current = next;
-      els.fileText.textContent = `${file.name} (${fmtKB(file.size)} KB${next.kind === 'pdf' ? `, ${UI.plural(next.pageCount, 'page')}` : ', photo'}${next.encrypted ? ', password protected' : ''})`;
+      els.fileText.textContent = `${file.name} (${sized(file.size)}${next.kind === 'pdf' ? `, ${UI.plural(next.pageCount, 'page')}` : ', photo'}${next.encrypted ? ', password protected' : ''})`;
       els.fileBox.classList.remove('hidden');
       UI.keepFocus(els.zone, els.fileText);
       validateTarget();
@@ -157,14 +159,14 @@
       : `This file could not get under ${kb} KB, and compressing would not make it smaller, so your original (${fmtKB(bytes.length)} KB) is kept. Try a higher limit, or upload fewer pages.`;
     else text.textContent = met ? `Under ${kb} KB. Ready to upload.` : `This file could not get under ${kb} KB. The smallest readable version is ${fmtKB(bytes.length)} KB. Try a higher limit, or upload fewer pages.`;
     els.status.append(icon, text);
-    els.orig.textContent = `${fmtKB(original)} KB`;
+    els.orig.textContent = sized(original);
     els.comp.textContent = `${fmtKB(bytes.length)} KB`;
     els.reduction.textContent = kept ? 'None' : original > bytes.length ? `${Math.round((1 - bytes.length / original) * 100)}%` : 'None';
     els.pages.textContent = String(pageCount);
     els.dpiStat.textContent = kept ? 'Unchanged' : `${minDpi} DPI${minDpi < Number(els.dpi.value) ? ' (lowered to fit)' : ''}`;
     els.note.textContent = kept ? '' : `Every page is now an image, so its text cannot be selected or searched. Zoom in on the download to check that numbers, dates and stamps are easy to read.`;
     els.result.classList.remove('hidden');
-    if (window.ApplyReadyUI && window.ApplyReadyUI.reveal) window.ApplyReadyUI.reveal(els.result);
+    if (window.ApplyReadyUI && window.ApplyReadyUI.reveal) window.ApplyReadyUI.reveal(els.result, els.download);
     Kit.announce(text.textContent);
     els.download.focus({ preventScroll: true });
   }

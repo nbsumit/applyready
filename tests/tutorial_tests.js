@@ -268,8 +268,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     ok(size === '26.47 KB (27,109 bytes)', `measured size (${size})`);
     says(T, '26.47 KB (27,109 bytes)');
     const [img] = await Promise.all([page.waitForEvent('download'), page.click('#btnDownload')]);
-    ok(img.suggestedFilename() === 'Passport_Photo_350x450.jpg', `file name (${img.suggestedFilename()})`);
-    says(T, 'Passport_Photo_350x450.jpg');
+    ok(img.suggestedFilename() === 'test-portrait_Passport_Photo_350x450.jpg', `file name (${img.suggestedFilename()})`);
+    says(T, 'test-portrait_Passport_Photo_350x450.jpg');
     const imgFile = await save(img);
     const dims = jpegSize(imgFile);
     ok(dims && dims.width === 350 && dims.height === 450 && fs.statSync(imgFile).size <= 51200, `the file is 350 × 450 px and at most 51,200 bytes (${JSON.stringify(dims)}, ${fs.statSync(imgFile).size})`);
