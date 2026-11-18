@@ -28,6 +28,8 @@ Pages (*.html, guides/)          Hand-written content + generated shell and tool
   │                                    drag to reorder, lazy page thumbnails
   │               js/lib/inspect.js    file checker parsers: real type, image/PDF/Office details, requirement check, lossless metadata removal
   │               js/lib/text-pdf.js   text to PDF: WinAnsi character check, word wrap, pagination, PDF writing (pdf-lib standard fonts)
+  │               js/lib/applicants.js applicant workspaces: memory-only session of isolated applicants (files, results,
+  │                                    jobs, object URLs), job delivery guard, wipe on finish; no DOM, unit-tested in Node
   │
   ├─ Workers      js/workers/image-worker.js
   │
@@ -79,7 +81,15 @@ Everything stays on the device. Nothing below is ever sent anywhere.
 | Cache Storage | `applyready-<hash>`, `applyready-vendor-<hash>` | the site's own pages and code for offline use | `sw.js` |
 
 Applicant workspaces (cyber cafe mode) keep files **in memory only**; nothing about them is written to
-any storage. Closing the tab removes them.
+any storage. Closing the tab removes them. Each applicant is an object from `js/lib/applicants.js` that owns
+its files, results, running jobs and every object URL made for it (thumbnails, result links, its ZIP). A job
+keeps a reference to the applicant that started it and delivers its result there, never to whoever is on
+screen; `endJob` returns false once the job was cancelled or the applicant finished, and the result is
+dropped. Finishing an applicant aborts its jobs (image workers are terminated), revokes its URLs and drops
+every reference; the page then rebuilds the panel from the next applicant. Leaving the page (`pagehide`)
+ends the session too. Names typed for applicants use `autocomplete="off"` and `spellcheck="false"` so they
+do not reach the browser's form history or online spellcheck, and toasts and announcements never carry
+names. `tests/workspace_tests.js` checks the DOM, the blob URLs and every storage after finishing.
 
 ### Resume record (IndexedDB `resumes`)
 

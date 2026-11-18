@@ -901,7 +901,10 @@
   }
 
   el.tabs.addEventListener('click', e => { const t = e.target.closest('[role="tab"]'); if (t) activate(t.dataset.id, true); });
+  // site.js already moves between the tabs of any tab list with Left, Right, Home and End (by
+  // clicking the next tab); this adds Up and Down, and steps in only when it did not.
   el.tabs.addEventListener('keydown', e => {
+    if (e.defaultPrevented) return;
     const tabs = Array.from(el.tabs.querySelectorAll('[role="tab"]'));
     const i = tabs.indexOf(doc.activeElement);
     if (i < 0) return;

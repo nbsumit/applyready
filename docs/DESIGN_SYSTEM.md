@@ -14,7 +14,7 @@ requirement and I will get the file right", not as a list of features.
 
 | File | Owns |
 |---|---|
-| `css/app.css` | The whole interface, in numbered sections: 0 tokens, 1 base, 2 layout, 3 header (Tools menu, search), 4 footer, 5 buttons and fields, 6 choice controls, 7 tabs and disclosure, 8 feedback, 9 dialogs and toasts, 10 reading content, 11 page patterns (home, directory, guide lists, FAQ), 12 tool workspace, 13 tool specifics, 14 resume builder, 15 responsive, 16 print and motion, 17 file lists and batches, then one section per newer tool (18 resume library and saving, 19 PDF tools, 20 batch images, 21 document tools and your data). |
+| `css/app.css` | The whole interface, in numbered sections: 0 tokens, 1 base, 2 layout, 3 header (Tools menu, search), 4 footer, 5 buttons and fields, 6 choice controls, 7 tabs and disclosure, 8 feedback, 9 dialogs and toasts, 10 reading content, 11 page patterns (home, directory, guide lists, FAQ), 12 tool workspace, 13 tool specifics, 14 resume builder, 15 responsive, 16 print and motion, 17 file lists and batches, then one section per newer tool (18 resume library and saving, 19 PDF tools, 20 batch images, 21 document tools and your data, 22 applicant workspaces). |
 | `css/document.css` | The resume paper, its templates and its print layout (resume.html only). It is the output format, not interface, and `tests/content_tests.js` pins its hash. Do not edit it for interface work. |
 | `css/vendor/icons.min.css`, `css/vendor/cropper.min.css` | Icon subset (only the classes listed in it exist) and the cropper, restyled in `app.css`. |
 | `js/site.js` | Theme, header menu and phone sheet, on-screen keyboard state, phone layout of reference tables, `ApplyReadyUI.notify` (toast), `ApplyReadyUI.reveal`, `ApplyReadyUI.confirm` (dialog). |
@@ -228,6 +228,13 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
   are a `.notice--warning.ttp-chars` with replace, print and remove actions; the print fallback is `.ttp-print`.
 - **Your data** (section 21): `.yd-grid` of `.yd-panel` blocks (saved resumes, recent tools, theme, storage, offline
   copy, delete everything as `.yd-panel--danger`).
+- **Applicant workspaces** (section 22): `.wk` holds a permanent `.notice--info.wk-banner`, the session settings
+  (`.disclosure.wk-settings` with `.wk-fieldset` groups and a one-line summary), the start screen (`.wk-start`)
+  and the session: `.wk-nav` (wrapping `.wk-tab` buttons in a `role="tablist"` from 640 px, a select below
+  640 px, New applicant, End session) and the `.wk-panel` (name field and completion tally with Finish, then
+  `.wk-grid`: files with a `.wk-selbar` for combining and `.wk-file` rows whose one-click actions sit on a
+  second line, and work in progress (`.wk-job`) and results (`.wk-result`) in a second column from 1000 px).
+  Finish becomes the primary action only when every result is downloaded; until then the ZIP is.
 - **Signature cleaner**: `.compare-pair` shows the original and the cleaned result side by side from
   640 px (stacked on phones); the cleaned pane is outlined in ink.
 - **PDF tools** (section 19): one-PDF tools use `.ws--pdf` (the drop zone hides once a file is open), a
