@@ -250,7 +250,7 @@ const server = http.createServer((req, res) => {
     await page.setInputFiles('#mergeDropInput', [F['notes.pdf'], F['damaged.pdf'], F['empty.pdf']]);
     await page.waitForFunction(() => !document.getElementById('mergeError').hidden && /incomplete/.test(document.getElementById('mergeError').textContent), null, { timeout: 15000 });
     const msg = await errorText(page, '#mergeError');
-    ok(/notes\.pdf is a Plain text.*needs a PDF or an image/.test(msg) && /empty/.test(msg) && /damaged\.pdf seems to be incomplete/.test(msg), `merge: wrong, empty and truncated files are explained (${msg})`);
+    ok(/notes\.pdf is a plain text file.*needs a PDF or an image/i.test(msg) && /empty/.test(msg) && /damaged\.pdf seems to be incomplete/.test(msg), `merge: wrong, empty and truncated files are explained (${msg})`);
     ok((await names()).length === 3, 'merge: bad files are not added');
     // A password-protected PDF: wrong password first, then the right one.
     await page.setInputFiles('#mergeDropInput', F['enc.pdf']);
