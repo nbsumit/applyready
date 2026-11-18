@@ -195,7 +195,7 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
   per mode by classes the generator chooses from the number of options: `req-grid--d{2,3,4}` on
   desktops, `req-grid--t{2,3}` on tablets, one column on phones. Cards in a grid share one size, so
   there are no orphans or partial rows (8 options: 4 x 2, 2 x 4, 1 x 8; 3 options: 3, 3, 1).
-- Choice: the home page has no default (`data-require-choice`, `data-req="pending"`); processing waits
+- Choice: the image resizer has no default (`data-require-choice`, `data-req="pending"`); processing waits
   for a choice and the action line says so, with "Show me". Landing pages (passport, signature, file-size), and links with
   `?preset=` or `?targetKB=`, arrive with their requirement chosen.
 - Summary: once chosen the grid folds to `.req-summary` (name, pixels, KB, format) with a Change
