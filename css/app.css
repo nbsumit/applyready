@@ -1424,3 +1424,93 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
   .batch-bar__actions { width: 100%; }
   .batch-bar__actions .btn { flex: 1; }
 }
+
+/* ================================================================== 18. PDF TOOLS */
+/* Merge, split, organise, PDF to images, extract text, page numbers, watermark and compress.
+   Built on the workspace (section 12) and the file lists and page grids (section 17); behaviour in
+   js/lib/pdf-ui.js and the tools' scripts. One-file tools hide the drop zone once a file is open. */
+.ws--pdf:not([data-compact-drop]):not([data-state='empty']) .dropzone { display: none; }
+.pdf-loading { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4) var(--s-5); background: var(--c-surface); border: var(--bw) solid var(--c-line); border-radius: var(--r-md); font-size: var(--fs-md); color: var(--c-text-2); }
+.pdf-spinner { flex: none; width: 20px; height: 20px; border: 2px solid var(--c-surface-3); border-top-color: var(--c-accent); border-radius: 50%; animation: ar-spin .8s linear infinite; }
+.pdf-progress__row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+.pdf-progress__row .progress-text { flex: 1 1 200px; min-width: 0; overflow-wrap: anywhere; }
+.pdf-pages { display: grid; gap: var(--s-3); min-width: 0; }
+.pdf-toolbar { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.pdf-choices { display: grid; gap: var(--s-2); min-width: 0; }
+.pdf-choices .choice { min-height: 56px; }
+.pdf-facts { display: grid; gap: var(--s-2); padding-left: var(--s-4); font-size: var(--fs-sm); line-height: 1.5; color: var(--c-text-3); }
+.pdf-summary { font-size: var(--fs-md); color: var(--c-text-2); line-height: 1.5; }
+.pdf-estimate:empty { display: none; }
+.pdf-quick .chip { white-space: normal; text-align: left; }
+.ws-result.is-warning .verdict > .fa-solid { background: var(--c-warning-soft); color: var(--c-warning); }
+.pdf-text { min-height: 320px; font-size: var(--fs-md); line-height: 1.55; white-space: pre-wrap; }
+
+/* Selectable page thumbnails (split, PDF to images): the whole tile is the toggle */
+.page-tile__body { display: grid; gap: var(--s-2); width: 100%; min-width: 0; padding: 0; color: inherit; text-align: left; background: none; border: 0; border-radius: var(--r-xs); cursor: default; }
+button.page-tile__body { cursor: pointer; }
+button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 4px; }
+.page-tile__placeholder { font-size: var(--fs-lg); font-weight: var(--fw-strong); color: var(--c-text-4); font-variant-numeric: tabular-nums; }
+.page-tile__img img { display: block; width: auto; height: auto; background: #fff; }
+.page-tile.is-selected .page-tile__label { color: var(--c-accent); font-weight: var(--fw-strong); }
+.page-tile.is-selected .page-tile__label::after { content: ''; flex: none; width: 12px; height: 12px; background: var(--c-accent); -webkit-mask: var(--mask-check) center/contain no-repeat; mask: var(--mask-check) center/contain no-repeat; }
+
+/* Merge: one row per file, in order */
+.merge-row { grid-template-columns: auto 48px minmax(0, 1fr) auto; }
+/* thumbnails show the whole first page, not a crop */
+.merge-row .file-row__thumb img { object-fit: contain; }
+.merge-row__handle { touch-action: none; cursor: grab; color: var(--c-text-3); }
+.merge-row.is-dragging { position: relative; z-index: 5; background: var(--c-surface); box-shadow: var(--sh-pop); cursor: grabbing; }
+.merge-row.is-drop-target { box-shadow: inset 0 0 0 2px var(--c-accent); }
+.pdf-output { grid-template-columns: 48px minmax(0, 1fr) auto; }
+
+/* Organise: tiles with a drag handle, their position and five actions */
+.org-grid { grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); }
+.org-tile { align-content: start; }
+.org-tile__top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.org-tile__handle { touch-action: none; cursor: grab; color: var(--c-text-3); }
+.org-tile__pos { min-width: 26px; height: 22px; padding: 0 6px; border-radius: var(--r-xs); background: var(--c-text); color: var(--c-surface); font-size: var(--fs-xs); font-weight: var(--fw-strong); line-height: 22px; text-align: center; font-variant-numeric: tabular-nums; }
+.org-tile__pos:empty { visibility: hidden; }
+.org-tile .page-tile__img { aspect-ratio: 1 / 1; }
+.org-tile .page-tile__label { display: grid; gap: 2px; justify-content: stretch; min-width: 0; }
+.org-tile__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--c-text-2); }
+.org-tile__state { font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--c-accent); }
+.org-tile__state:empty { display: none; }
+.org-tile.is-deleted .org-tile__state { color: var(--c-danger); }
+.org-tile.is-deleted .page-tile__img { opacity: .35; }
+.org-tile.is-deleted { opacity: 1; border-style: dashed; }
+.org-tile.is-inserted { border-color: var(--c-accent-line); }
+.org-tile .page-tile__actions { flex-wrap: wrap; justify-content: space-between; padding-top: var(--s-2); border-top: var(--bw) solid var(--c-line); }
+.org-tile.is-dragging { z-index: 5; box-shadow: var(--sh-pop); cursor: grabbing; }
+.org-tile.is-drop-target { box-shadow: inset 0 0 0 2px var(--c-accent); }
+
+/* Page numbers: where on the page, as a small picture of a page */
+.pos-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-2); }
+.pos-grid__btn { display: grid; justify-items: center; gap: var(--s-1); min-height: 72px; padding: var(--s-2) var(--s-1); background: var(--c-surface); border: var(--bw) solid var(--c-line-strong); border-radius: var(--r-sm); font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--c-text-2); line-height: 1.25; text-align: center; transition: background-color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease); }
+.pos-grid__btn:hover { background: var(--c-surface-2); }
+.pos-grid__btn[aria-pressed='true'] { background: var(--c-accent-soft); border-color: var(--c-accent); color: var(--c-accent); box-shadow: inset 0 0 0 1px var(--c-accent); font-weight: var(--fw-strong); }
+.pos-grid__mark { position: relative; width: 24px; height: 30px; border: var(--bw) solid var(--c-field-line); border-radius: 2px; background: var(--c-surface); }
+.pos-grid__mark::after { content: ''; position: absolute; width: 8px; height: 3px; border-radius: 1px; background: currentColor; }
+[data-value^='top'] > .pos-grid__mark::after { top: 3px; }
+[data-value^='bottom'] > .pos-grid__mark::after { bottom: 3px; }
+[data-value$='left'] > .pos-grid__mark::after { left: 3px; }
+[data-value$='right'] > .pos-grid__mark::after { right: 3px; }
+[data-value$='center'] > .pos-grid__mark::after { left: 50%; margin-left: -4px; }
+
+/* Preview of the first changed page (page numbers, watermark) */
+.pdf-preview { display: grid; gap: var(--s-2); justify-items: center; margin: 0; }
+.pdf-preview__frame { display: grid; place-items: center; width: 100%; padding: var(--s-5); background: var(--c-desk); border: var(--bw) solid var(--c-line); border-radius: var(--r-md); }
+.pdf-preview__frame img { display: block; max-width: 100%; max-height: 560px; width: auto; height: auto; background: #fff; box-shadow: var(--sh-paper); }
+
+@media (max-width: 639px) {
+  .merge-row { grid-template-columns: auto 40px minmax(0, 1fr); }
+  .merge-row .file-row__actions { grid-column: 1 / -1; grid-row: 2; justify-content: flex-end; }
+  .pdf-output { grid-template-columns: 40px minmax(0, 1fr); }
+  .pdf-output > .btn { grid-column: 1 / -1; }
+  .org-grid { grid-template-columns: minmax(0, 1fr); }
+  .org-tile { grid-template-columns: 96px minmax(0, 1fr); column-gap: var(--s-3); }
+  .org-tile .page-tile__img { grid-column: 1; grid-row: 1 / span 3; align-self: start; }
+  .org-tile__top, .org-tile .page-tile__label, .org-tile .page-tile__actions { grid-column: 2; }
+  .org-tile .page-tile__actions { justify-content: flex-start; }
+  .pdf-preview__frame { padding: var(--s-3); }
+  .pdf-toolbar .btn { flex: 1 1 auto; }
+}

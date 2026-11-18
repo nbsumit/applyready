@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- shell:csp:start -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="applyready-tool" content="split-pdf">
+  <!-- shell:csp:end -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Split PDF: Extract Pages or Split into Separate Files | ApplyReady</title>
+  <meta name="description" content="Take pages out of a PDF, split it by page ranges, into single pages or into equal parts. See every page as a thumbnail, download each file or a ZIP, with page counts checked. Runs in your browser; nothing is uploaded.">
+  <link rel="canonical" href="https://applyready.in/split-pdf.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ApplyReady">
+  <meta property="og:url" content="https://applyready.in/split-pdf.html">
+  <meta property="og:title" content="Split PDF: Extract Pages or Split into Separate Files | ApplyReady">
+  <meta property="og:description" content="Take pages out of a PDF, split it by page ranges, into single pages or into equal parts. See every page as a thumbnail, download each file or a ZIP, with page counts checked. Runs in your browser; nothing is uploaded.">
+  <meta property="og:image" content="https://applyready.in/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ApplyReady: free, private tools for job applications">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Split PDF: Extract Pages or Split into Separate Files | ApplyReady">
+  <meta name="twitter:description" content="Take pages out of a PDF, split it by page ranges, into single pages or into equal parts. See every page as a thumbnail, download each file or a ZIP, with page counts checked. Runs in your browser; nothing is uploaded.">
+  <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
+
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
+
+  <script src="js/theme.js?v=20261118"></script>
+
+  <!-- shell:styles:start -->
+  <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/vendor/icons.min.css?v=20261118">
+  <link rel="stylesheet" href="css/app.css?v=20261118">
+  <!-- shell:styles:end -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "ApplyReady Split PDF",
+        "url": "https://applyready.in/split-pdf.html",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any modern browser",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://applyready.in/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "PDF tools",
+            "item": "https://applyready.in/tools.html#pdf"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Split PDF",
+            "item": "https://applyready.in/split-pdf.html"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I take just a few pages out of a PDF?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Choose Extract pages, then select the pages or type them, for example 2-4, 7. Select Split PDF and download the new file. The original file is not changed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does \"7-\" mean in the page list?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "From page 7 to the last page. You can also write a range such as 3-5, a single page such as 9, or several separated by commas."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I get every page as a separate PDF?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Choose Every page. You can download each file on its own or all of them in one ZIP file, named with the page number so they sort in order."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will the split pages look the same?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Pages are copied as they are, so text, images, size and rotation stay the same. Nothing is compressed or redrawn."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why are the parts bigger than the original in total?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A font or logo used on every page is stored once in the original, but each new file needs its own copy. Each part is complete on its own, which is what makes it bigger in total."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my PDF uploaded?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. It is read and split by your browser on this device, and closing the tab clears it."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <!-- shell:header:start -->
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="/" aria-label="ApplyReady home">
+        <img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span class="brand__name">ApplyReady</span>
+      </a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+              <div class="menu__cols menu__cols--3">
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
+                </ul>
+              </div>
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#image">Image tools</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="image-resizer.html"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixel size and KB limit, with crop and rotate</span></span></a></li>
+                  <li><a class="menu__item" href="signature-cleaner.html"><i class="fa-solid fa-wand-magic-sparkles menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper and dark ink from a phone photo of a signature</span></span></a></li>
+                  <li><a class="menu__item" href="passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print sheet</span><span class="menu__desc">A printable A4 or 4x6 sheet of passport photos</span></span></a></li>
+                </ul>
+              </div>
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#pdf">PDF tools</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="merge-pdf.html"><i class="fa-solid fa-object-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Merge PDF</span><span class="menu__desc">Join several PDFs into one, in the order you choose</span></span></a></li>
+                  <li><a class="menu__item" href="split-pdf.html" aria-current="page"><i class="fa-solid fa-scissors menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Split PDF</span><span class="menu__desc">Take out pages or split a PDF into parts</span></span></a></li>
+                  <li><a class="menu__item" href="organize-pdf.html"><i class="fa-solid fa-table-cells-large menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Organise PDF pages</span><span class="menu__desc">Reorder, rotate and delete pages</span></span></a></li>
+                  <li><a class="menu__item" href="image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans into one PDF</span></span></a></li>
+                  <li><a class="menu__item" href="compress-pdf.html"><i class="fa-solid fa-file-zipper menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Make a PDF small enough for an upload limit</span></span></a></li>
+                  <li><a class="menu__item" href="pdf-to-image.html"><i class="fa-solid fa-images menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">PDF to images</span><span class="menu__desc">Save PDF pages as JPG or PNG images</span></span></a></li>
+                  <li><a class="menu__item" href="pdf-to-text.html"><i class="fa-solid fa-font menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Extract text from PDF</span><span class="menu__desc">Copy the text out of a PDF</span></span></a></li>
+                  <li><a class="menu__item" href="add-page-numbers.html"><i class="fa-solid fa-list-ol menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Add page numbers</span><span class="menu__desc">Number the pages of a PDF</span></span></a></li>
+                  <li><a class="menu__item" href="watermark-pdf.html"><i class="fa-solid fa-stamp menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Watermark PDF</span><span class="menu__desc">Stamp text such as &quot;Copy&quot; across every page</span></span></a></li>
+                </ul>
+              </div>
+              </div>
+              <div class="menu__foot"><a class="menu__all" href="tools.html">All tools <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><span class="menu__hint">Press <kbd>/</kbd> to search</span></div>
+            </div>
+          </li>
+          <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="guides/">Guides</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="searchOpen" class="search-trigger" aria-haspopup="dialog" aria-keyshortcuts="/ Control+K" aria-label="Search tools"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span class="search-trigger__label" aria-hidden="true">Search tools</span><kbd class="search-trigger__key" aria-hidden="true">/</kbd></button>
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  </header>
+  <!-- shell:header:end -->
+
+  <main id="mainContent" class="page">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <ol class="breadcrumb-list">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="tools.html#pdf">PDF tools</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Split PDF</li>
+      </ol>
+    </nav>
+    <header class="page-head">
+      <h1 class="page-title">Split PDF</h1>
+      <p class="page-lede">Take the pages you need out of a PDF, or split it into several files by range, by page or into equal parts. Download each file, or all of them as one ZIP. The PDF stays on this device.</p>
+    </header>
+
+    <noscript><p class="noscript-note">This tool needs JavaScript. It runs entirely in your browser.</p></noscript>
+    <!-- tool:start -->
+    <section class="ws ws--pdf" id="splitApp" data-state="empty" data-keep data-simple-empty data-settings="open" data-ws-file="#splitFile" data-ws-result="#splitResult" data-ws-busy="#splitProgress" aria-label="Split PDF">
+      <div class="ws-head">
+        <div id="splitFile" class="filebar hidden" data-pdf-file>
+          <i class="fa-regular fa-file-pdf filebar__icon" aria-hidden="true"></i>
+          <span class="filebar__name" id="splitFileName" data-pdf-name></span>
+          <div class="filebar__actions">
+            <button type="button" class="btn btn-sm" id="splitReplace" data-pdf-replace>Replace</button>
+            <button type="button" class="btn btn-sm btn-danger-ghost" id="splitRemove" data-pdf-remove>Remove</button>
+          </div>
+        </div>
+      </div>
+      <div class="ws-stage">
+        <div class="notice notice--error" id="splitError" role="alert" data-pdf-error hidden><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"></div></div>
+        <div class="dropzone" data-dropzone id="splitDrop" role="group" aria-labelledby="splitDropTitle">
+          <input type="file" id="splitDropInput" accept="application/pdf,.pdf" class="hidden" tabindex="-1" aria-hidden="true">
+          <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-file-pdf"></i></span>
+          <p class="dropzone__title" id="splitDropTitle">Add the PDF to split</p>
+          <p class="dropzone__text">Drag it here, or</p>
+          <button type="button" class="btn btn-primary btn-lg" data-browse><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose PDF</button>
+          <p class="dropzone__hint">PDF up to 100 MB. Password-protected files are fine if you know the password. Processed on your device, never uploaded.</p>
+        </div>
+        <div id="splitLoading" class="pdf-loading hidden" data-pdf-loading role="status"><span class="pdf-spinner" aria-hidden="true"></span> Opening the PDF…</div>
+        <div id="splitResult" class="ws-result hidden" data-pdf-result>
+          <div class="ws-result__head">
+            <div class="verdict">
+              <i class="fa-solid fa-check" aria-hidden="true"></i>
+              <div><h2 class="ws-result__title" id="splitResultTitle">Your files are ready</h2><p class="ws-result__ok" id="splitResultText"></p></div>
+            </div>
+          </div>
+          <dl class="meta-stats meta-stats--row">
+            <div class="meta-stat-item"><dt class="meta-stat-label">Files</dt><dd class="meta-stat-val" id="splitStatFiles">--</dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Pages in all</dt><dd class="meta-stat-val" id="splitStatPages">--</dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Total size</dt><dd class="meta-stat-val" id="splitStatSize">--</dd></div>
+          </dl>
+          <div class="ws-result__actions">
+            <button type="button" id="splitZip" class="btn btn-primary btn-lg"><i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download all as ZIP</button>
+          </div>
+          <ul class="file-list pdf-outputs" id="splitOutputs" aria-label="Files"></ul>
+        </div>
+        <div id="splitProgress" class="ws-progress pdf-progress hidden" data-pdf-progress>
+          <div class="pdf-progress__row">
+            <p class="progress-text" id="splitProgressText">Splitting…</p>
+            <button type="button" class="btn btn-sm" id="splitCancel" data-cancel>Cancel</button>
+          </div>
+          <div class="progress" role="progressbar" aria-labelledby="splitProgressText" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="progress-bar" id="splitBar" style="width:0%"></span></div>
+        </div>
+        <div class="pdf-pages hidden" id="splitPages">
+          <div class="pagelist-head">
+            <h2 class="pagelist-head__title">Pages</h2>
+            <p class="pagelist-head__hint">Select pages to add them to the page list. Select a page again to take it out.</p>
+          </div>
+          <ol class="page-grid" id="splitGrid" aria-label="Pages"></ol>
+          <p class="field-hint" id="splitGridNote"></p>
+        </div>
+      </div>
+      <div class="ws-rail">
+      <div class="ws-side">
+        <div class="ws-section">
+          <h2 class="ws-section__title">How to split</h2>
+          <div class="pdf-choices" role="group" aria-labelledby="splitModeLabel" id="splitMode">
+            <p class="field-label" id="splitModeLabel">Choose one</p>
+            <button type="button" class="choice" data-value="extract" aria-pressed="true"><span class="choice__name">Extract pages</span><span class="choice__spec">The pages you choose, in one new PDF</span></button>
+            <button type="button" class="choice" data-value="ranges" aria-pressed="false"><span class="choice__name">One PDF per range</span><span class="choice__spec">For example 1-3, 4-6 gives two files</span></button>
+            <button type="button" class="choice" data-value="every" aria-pressed="false"><span class="choice__name">Every page</span><span class="choice__spec">Each page becomes its own PDF</span></button>
+            <button type="button" class="choice" data-value="chunks" aria-pressed="false"><span class="choice__name">Equal parts</span><span class="choice__spec">A new PDF every few pages</span></button>
+          </div>
+        </div>
+        <div class="ws-section" id="splitPagesSection">
+          <h2 class="ws-section__title">Pages</h2>
+          <div class="field" id="splitRangesField">
+            <label for="splitRanges" class="field-label">Pages to use</label>
+            <input type="text" id="splitRanges" class="input" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. 1-3, 5, 8-10" aria-describedby="splitRangesHint">
+            <p class="field-hint" id="splitRangesHint">Page numbers and ranges, separated by commas. 7- means page 7 to the end.</p>
+            <p class="field-error" id="splitRangesError" hidden></p>
+          </div>
+          <div class="field hidden" id="splitChunkField">
+            <label for="splitChunk" class="field-label">Pages in each file</label>
+            <input type="number" id="splitChunk" class="input" value="2" min="1" max="1000" step="1" inputmode="numeric" aria-describedby="splitChunkHint">
+            <p class="field-hint" id="splitChunkHint">The last file has the pages that are left over.</p>
+            <p class="field-error" id="splitChunkError" hidden></p>
+          </div>
+        </div>
+      </div>
+      <div class="ws-action">
+        <button type="button" id="splitRun" class="btn btn-primary btn-lg btn-block"><i class="fa-solid fa-scissors" aria-hidden="true"></i> Split PDF</button>
+        <p class="process-summary" id="splitSummary" aria-live="polite"></p>
+      </div>
+      </div>
+    </section>
+    <!-- tool:end -->
+
+    <section class="section prose" aria-labelledby="howHeading">
+      <h2 id="howHeading">How it works</h2>
+      <p>Add a PDF and choose how to split it. <strong>Extract pages</strong> puts the pages you choose into one new file, in the order you type them, so "5, 1-3" gives page 5 first. <strong>One PDF per range</strong> makes a file for each range. <strong>Every page</strong> makes one file per page, and <strong>Equal parts</strong> makes a new file every few pages. Select page thumbnails to fill in the page list, or type it; a mistake such as a page number past the end is explained under the field.</p>
+      <p>Pages are copied, not redrawn, so text stays sharp and selectable and each page keeps its size and rotation. Every file is opened again and its page count checked before it is offered. To put pages from different files together, use <a href="merge-pdf.html">Merge PDF</a>; to reorder, turn or delete pages in one file, use <a href="organize-pdf.html">Organise PDF pages</a>; and to save pages as pictures instead, use <a href="pdf-to-image.html">PDF to images</a>.</p>
+      <h3>Limits</h3>
+      <p>Files up to 100 MB, and up to 500 output files in one go. Fonts and images shared by many pages are copied into each new file, so the parts together can be larger than the original. Bookmarks and form fields are not kept in the new files.</p>
+      <p class="tool-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> Your files are processed in this browser and never leave your device. Closing the tab clears them.</p>
+    </section>
+
+    <section class="faq-section" aria-labelledby="faqHeading">
+      <div class="faq-header">
+        <h2 id="faqHeading" class="faq-title">Questions</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary class="faq-question"><span>How do I take just a few pages out of a PDF?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Choose Extract pages, then select the pages or type them, for example 2-4, 7. Select Split PDF and download the new file. The original file is not changed.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>What does &quot;7-&quot; mean in the page list?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>From page 7 to the last page. You can also write a range such as 3-5, a single page such as 9, or several separated by commas.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Can I get every page as a separate PDF?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Yes. Choose Every page. You can download each file on its own or all of them in one ZIP file, named with the page number so they sort in order.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Will the split pages look the same?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Yes. Pages are copied as they are, so text, images, size and rotation stay the same. Nothing is compressed or redrawn.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Why are the parts bigger than the original in total?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>A font or logo used on every page is stored once in the original, but each new file needs its own copy. Each part is complete on its own, which is what makes it bigger in total.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Is my PDF uploaded?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>No. It is read and split by your browser on this device, and closing the tab clears it.</p></div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <!-- shell:footer:start -->
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
+        <p>Free tools for job applications: resumes, photos, signatures and PDFs. Everything runs in your browser, and your files are never uploaded.</p>
+        <p class="site-footer__motto">Free. Open source. Forever.</p>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Resume and images</h2>
+        <ul class="site-footer__list">
+          <li><a href="resume.html">Resume builder</a></li>
+          <li><a href="image-resizer.html">Image resizer</a></li>
+          <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print sheet</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">PDF and documents</h2>
+        <ul class="site-footer__list">
+          <li><a href="merge-pdf.html">Merge PDF</a></li>
+          <li><a href="split-pdf.html">Split PDF</a></li>
+          <li><a href="organize-pdf.html">Organise PDF pages</a></li>
+          <li><a href="image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="compress-pdf.html">Compress PDF</a></li>
+          <li><a href="pdf-to-image.html">PDF to images</a></li>
+          <li><a href="pdf-to-text.html">Extract text from PDF</a></li>
+          <li><a href="add-page-numbers.html">Add page numbers</a></li>
+          <li><a href="watermark-pdf.html">Watermark PDF</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Batch and help</h2>
+        <ul class="site-footer__list">
+          <li><a href="tools.html">All tools</a></li>
+          <li><a href="guides/">Guides</a></li>
+          <li><a href="how-to-use.html">How to use</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">ApplyReady</h2>
+        <ul class="site-footer__list">
+          <li><a href="about.html">About</a></li>
+          <li><a href="privacy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms of use</a></li>
+          <li><a href="contact.html">Contact and support</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__base">
+      <span>No sign-up, no ads, no watermarks. Every feature is free for everyone.</span>
+      <span class="site-footer__ext"><a href="https://github.com/nbsumit/applyready" rel="noopener" target="_blank">Source code<span class="sr-only"> (opens in a new tab)</span></a><a class="site-footer__support" href="https://pages.razorpay.com/support-applyready" rel="noopener" target="_blank"><i class="fa-solid fa-heart" aria-hidden="true"></i> Support ApplyReady<span class="sr-only"> (voluntary contribution, opens in a new tab)</span></a></span>
+    </div>
+  </footer>
+  <!-- shell:footer:end -->
+
+  <script defer src="js/components.js?v=20261118"></script>
+  <script defer src="js/site.js?v=20261118"></script>
+  <script defer src="js/lib/files.js?v=20261118"></script>
+  <script defer src="js/lib/file-kit.js?v=20261118"></script>
+  <script defer src="js/lib/pdf-kit.js?v=20261118"></script>
+  <script defer src="js/lib/pdf-ui.js?v=20261118"></script>
+  <script defer src="js/lib/zip.js?v=20261118"></script>
+  <script defer src="js/split-pdf.js?v=20261118"></script>
+</body>
+</html>
