@@ -451,6 +451,26 @@ check('Job keywords split a title line, skip degree words and match British and 
   for (const filler of ['degree', 'field', 'senior', 'gather']) assert(!result.keywords.includes(filler), filler);
   for (const term of ['visualization', 'organise']) assert(result.found.some(found => found.toLowerCase() === term), `${term} matches the other spelling`);
 });
+check('Job keywords leave out advert verbs and keep two-word skills together (RES-05)', () => {
+  const keywords = require('../js/keywords');
+  const job = 'Software Engineer (Backend). Must know C++, C#, Node.js, React, AWS, Kubernetes, Docker, CI/CD, REST APIs and PostgreSQL. Experience with .NET and Go is a plus. You will design microservices, write unit tests and mentor juniors.';
+  const terms = keywords.extractKeywords(job).map(t => t.toLowerCase());
+  for (const filler of ['know', 'juniors', 'unit', 'tests']) assert(!terms.includes(filler), `"${filler}" is not a key term`);
+  assert(terms.includes('unit tests'), '"unit tests" is one term');
+  assert(keywords.matchKeywords(job, 'Wrote unit testing suites for the billing service.').found.includes('unit tests'), '"unit testing" in the resume covers "unit tests"');
+  const other = keywords.extractKeywords('You should know SQL. Experience running A/B tests is a bonus. Duties include reporting.').map(t => t.toLowerCase());
+  for (const filler of ['know', 'bonus', 'include', 'running']) assert(!other.includes(filler), `"${filler}" is not a key term`);
+});
+check('Job keywords keep .NET, Go, R and two-letter acronyms, and match them only as written (RES-09)', () => {
+  const keywords = require('../js/keywords');
+  const r = keywords.matchKeywords('Backend developer. Must have .NET, Go and R experience. AI and ML a plus.', 'Grew net revenue by 12% in Excel; helped the team go live.');
+  for (const term of ['.NET', 'Go', 'R', 'AI', 'ML']) assert(r.keywords.includes(term), `${term} is a key term`);
+  for (const term of ['.NET', 'Go', 'R']) assert(r.missing.includes(term) && !r.found.includes(term), `${term} is not covered by an ordinary word`);
+  const yes = keywords.matchKeywords('Must have .NET, Go, R and C.', 'Built APIs in ASP.NET Core and Go; analysis in R; firmware in C/C++.');
+  for (const term of ['.NET', 'Go', 'R', 'C']) assert(yes.found.includes(term), `${term} is found when the resume has it`);
+  assert(!keywords.extractKeywords('Go to client sites twice a month and report on sales.').includes('Go'), '"Go" starting a sentence is a verb');
+  assert(!keywords.extractKeywords('Report to the PM by 5 PM. UK based, OK with travel.').some(t => ['PM', 'UK', 'OK'].includes(t)), 'common capitals are not skills');
+});
 (async () => {
   const { ensureMinKB } = require('../js/resizer');
   // A tiny JFIF JPEG header: SOI, APP0 (16 bytes), then the rest of an image.
