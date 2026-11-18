@@ -270,10 +270,37 @@ for (const f of fs.readdirSync(path.join(root, 'css')).filter(x => x.endsWith('.
 // The resume sheet, templates and print layout are the output format: change them on purpose, then update this hash.
 ok(require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, 'css/document.css'))).digest('hex') === '3c8498458a76e604f88736b6b98a31d0468d77ef1d07af44970661ea153eb6bd', 'css/document.css (resume sheet and print layout) changed; confirm the exported resume is meant to change, then update the hash');
 ok(!fs.existsSync(path.join(root, 'css/style.css')) && !fs.existsSync(path.join(root, 'css/workspace.css')), 'retired stylesheets are deleted');
-// Generated markup is in sync with its generator (shell, search index, tool listings, image workspaces).
-for (const script of ['sync-shell.js', 'build-directory.js', 'build-image-pages.js', 'build-pdf-pages.js', 'build-sitemap.js']) {
-  const run = spawnSync(process.execPath, [path.join(root, 'scripts', script), '--check'], { encoding: 'utf8' });
-  ok(run.status === 0, `${script} --check: ${run.stdout}${run.stderr}`);
+// Generated markup is in sync with its generator (shell, search index, tool listings, image, PDF and
+// single-file tool workspaces, sitemap). Every generator that writes pages must be in this list.
+{
+  const generators = ['sync-shell.js', 'build-directory.js', 'build-image-pages.js', 'build-pdf-pages.js', 'build-tool-pages.js', 'build-sitemap.js'];
+  for (const script of generators) {
+    const run = spawnSync(process.execPath, [path.join(root, 'scripts', script), '--check'], { encoding: 'utf8' });
+    ok(run.status === 0, `${script} --check: ${run.stdout}${run.stderr}`);
+  }
+  // build-sw.js and build-tool-index.js are run (and checked) by sync-shell.js.
+  const viaShell = ['build-sw.js', 'build-tool-index.js'];
+  for (const f of fs.readdirSync(path.join(root, 'scripts')).filter(x => /^build-.*\.js$/.test(x))) {
+    ok(generators.includes(f) || viaShell.includes(f), `scripts/${f}: a page generator that npm test does not check; add it to the --check list in tests/content_tests.js`);
+    ok(read('scripts/' + f).includes("'--check'"), `scripts/${f}: has no --check mode`);
+  }
+}
+// Contributor docs agree with the code: the README's tool table names every live tool page in the
+// registry, and the setup notes name everything CI installs to run the tests.
+{
+  const readme = read('README.md');
+  const table = (readme.match(/## What it does[\s\S]*?\n\n([\s\S]*?)\n\n/) || [])[1] || '';
+  const tablePages = (table.match(/`[^`]+\.html`/g) || []).map(x => x.slice(1, -1));
+  const listed = p => tablePages.some(t => t === p || (t.includes('*') && new RegExp('^' + t.replace(/[.]/g, '\\.').replace(/\*/g, '[^/]+') + '$').test(p)));
+  for (const t of require('../scripts/lib/tools').liveTools()) ok(listed(t.path), `README.md "What it does" table does not list ${t.path} (${t.name})`);
+  const ci = read('.github/workflows/quality.yml');
+  const needs = [...(ci.match(/pip install ([^#\n]+)/) || ['', ''])[1].trim().split(/\s+/), ...(ci.match(/apt-get install -y ([^#\n]+)/) || ['', ''])[1].trim().split(/\s+/)];
+  ok(needs.length >= 6 && /playwright install/.test(ci), 'quality.yml: could not read the packages CI installs');
+  for (const doc of ['README.md', 'CONTRIBUTING.md']) {
+    const s = read(doc).toLowerCase();
+    for (const n of needs) ok(s.includes(n.toLowerCase()), `${doc}: does not mention ${n}, which CI installs to run the tests`);
+    ok(s.includes('npx playwright install chromium') && s.includes('browser_executable_path'), `${doc}: does not say how to get Chromium for the browser tests`);
+  }
 }
 // The icon subset matches the icons in use (needs Python with fonttools; CI installs it).
 {
