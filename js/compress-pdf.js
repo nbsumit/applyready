@@ -111,8 +111,8 @@
   function targetKB() { return Number(els.target.value); }
   function validateTarget() {
     const kb = targetKB();
-    const bad = !Number.isFinite(kb) || kb < 20 || kb > 10000;
-    els.targetError.textContent = bad ? 'Type a limit from 20 to 10000 KB.' : '';
+    const bad = !Number.isFinite(kb) || kb < 5 || kb > 10000;
+    els.targetError.textContent = bad ? 'Type a limit from 5 to 10000 KB.' : '';
     els.targetError.hidden = !bad;
     if (bad) { els.target.setAttribute('aria-invalid', 'true'); els.target.setAttribute('aria-describedby', 'targetKbError targetKbHint'); }
     else { els.target.removeAttribute('aria-invalid'); els.target.setAttribute('aria-describedby', 'targetKbHint'); }

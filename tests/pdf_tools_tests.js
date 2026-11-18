@@ -425,6 +425,8 @@ const server = http.createServer((req, res) => {
     ok(await page.locator('#imgOutputs li').count() === 6, 'pdf to image: after cancelling, the run can be repeated');
     // JPEG 2000 decoding under the site's Content Security Policy.
     if (F['jpx.pdf']) {
+      const decoders = [];
+      context.on('request', r => { if (/openjpeg/.test(r.url())) decoders.push(path.basename(new URL(r.url()).pathname)); });
       await page.click('#imgRemove');
       await page.setInputFiles('#imgDropInput', F['jpx.pdf']);
       await waitShown(page, '#imgGrid .page-tile');
@@ -433,6 +435,8 @@ const server = http.createServer((req, res) => {
       const jpx = await save(page, () => page.click('#imgZip'));
       const px = sh('convert', [jpx.file, '-crop', '1x1+297+421', '-format', '%[fx:int(255*r)] %[fx:int(255*g)] %[fx:int(255*b)]', 'info:']).trim().split(' ').map(Number);
       ok(px[0] > 150 && px[1] < 80 && px[2] < 80, `JPEG 2000 image decoded by pdf.js under the CSP (centre pixel ${px})`);
+      ok(decoders.length > 0, 'JPEG 2000: pdf.js fetched its OpenJPEG decoder from this site');
+      console.log(`  JPEG 2000 decoder used: ${[...new Set(decoders)].join(', ')}`);
     }
     await context.close();
     console.log('✓ PDF to images: estimate, JPG ZIP and PNG at chosen DPI (identify), names, cancel and retry, JPEG 2000');

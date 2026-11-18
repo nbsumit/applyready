@@ -204,21 +204,21 @@
 
 <section class="section prose">
 <h2>What the compressor does</h2>
-<p>The <a href="../compress-pdf.html">PDF compressor</a> works on PDFs whose pages are JPEG images, which is how most scanners and phone apps save them. For each page it takes the image, limits it to 1,600 pixels on its longer side, and re-encodes it at the highest quality that fits that page's share of your limit. A PDF made of text, exported from a word processor, has no page images to shrink; it is usually small already.</p>
+<p>The <a href="../compress-pdf.html">PDF compressor</a> redraws every page in your browser at the resolution you choose (150 DPI unless you change it) and saves it as a JPEG, at the highest quality that fits that page's share of your limit. Only when the lowest quality is still too large does it lower the resolution, down to 50 DPI, and it tells you when it has. The result has the same number of pages, in the same order and at the same page sizes, and it is opened again and checked before you can download it. The trade-off is that every page becomes a picture, so text can no longer be selected or searched. That suits scans and phone photos, which are pictures already; a PDF exported from a word processor is usually small enough as it is.</p>
 <figure class="shot">
 <img src="../img/guides/compress-pdf.webp" width="1198" height="272" alt="The ApplyReady PDF compressor showing the file size before and after compression and the maximum file size choices." loading="lazy" decoding="async">
 <figcaption>The compressor shows the size before and after, against the maximum you choose.</figcaption>
 </figure>
-<p>In our test, the 136.3 KB Compact PDF compressed to a 100 KB maximum came out at 77.3 KB. Check the result against your limit and read it at 100% zoom: if the smallest text is not readable, the limit is too tight for that many pages.</p>
+<p>In our test, a three-page A4 scan of 431 KB compressed to a 100 KB maximum came out at 97.8 KB, still at 150 DPI. Check the result against your limit and read it at 100% zoom: if the smallest text is not readable, the limit is too tight for that many pages.</p>
 <p><strong>Only compress a file that is over the limit.</strong> Re-encoding pages that are already compressed loses detail and may not save anything. The compressor therefore keeps your original PDF, unchanged, when it is already under the limit you set or when compressing would not make it smaller, and says so.</p>
 </section>
 
 <section class="section prose">
 <h2>When the limit is too small for the pages</h2>
 <ul>
-<li>Check whether the form has more than one slot, and split the document across them.</li>
+<li>Check whether the form has more than one slot, and split the document across them with <a href="../split-pdf.html">Split PDF</a>. Pages the form does not ask for can be removed with <a href="../organize-pdf.html">Organise PDF pages</a>.</li>
 <li>Rebuild the PDF from the original page images at a lower quality setting, rather than compressing a compressed file again.</li>
-<li>For black-and-white text, a greyscale page compresses better than a colour one; keep colour only where a stamp or seal must stay readable.</li>
+<li>For black-and-white text, a greyscale page compresses better than a colour one: turn on <em>Black and white</em> in the compressor, and keep colour only where a stamp or seal must stay readable.</li>
 <li>If a file falls under a minimum, for example a slot that accepts 50 to 300 KB, rebuild it at a higher quality instead of compressing it.</li>
 </ul>
 <p>Building the PDF in the first place is covered in <a href="combine-documents-into-one-pdf.html">combining documents into one PDF</a>, and page capture in <a href="phone-camera-tips-for-document-scans.html">phone document scans</a>.</p>

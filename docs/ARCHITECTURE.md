@@ -22,7 +22,10 @@ Pages (*.html, guides/)          Hand-written content + generated shell and tool
   │               js/lib/image-ops.js  worker-safe resize/crop/convert/size-target/JPEG padding
   │               js/lib/image-pool.js Web Worker pool for image-ops (main-thread fallback)
   │               js/lib/store.js      IndexedDB wrapper with memory fallback and storage status
-  │               js/lib/pdf-kit.js    lazy loader and helpers for pdf-lib and pdf.js
+  │               js/lib/pdf-kit.js    lazy loader and helpers for pdf-lib and pdf.js (structure, drawing, text, compression)
+  │               js/lib/pdf-kit-boot.js  module script that imports pdf.js; injected by pdf-kit.js on first use
+  │               js/lib/pdf-ui.js     shared PDF tool interface: one-PDF intake, password dialog, progress and cancel,
+  │                                    drag to reorder, lazy page thumbnails
   │
   ├─ Workers      js/workers/image-worker.js
   │
@@ -51,7 +54,8 @@ keywords, `live`). Generators read it:
 | `scripts/sync-shell.js` | header (Tools menu by category), footer, stylesheet links, CSP and `applyready-tool` meta on every page; calls `build-tool-index.js` (→ `js/tool-index.js`) and `build-sw.js` (→ `sw.js` precache list and content-hash cache names) |
 | `scripts/build-directory.js` | category cards and "most used" on `index.html`; the full directory on `tools.html` |
 | `scripts/build-image-pages.js` | the resizer workspace on each resizer page (`PAGES` table) |
-| `scripts/build-tool-pages.js` | the workspace of the older single-file tools |
+| `scripts/build-tool-pages.js` | the workspace of the older single-file tools (signature cleaner, image to PDF, compress PDF, print sheet) |
+| `scripts/build-pdf-pages.js` | the PDF tool pages: workspace, and with `--force` the whole page (questions and FAQPage data come from one list) |
 | `scripts/build-sitemap.js` | `sitemap.xml` |
 | `scripts/build-icons.py` | the Font Awesome subset |
 
@@ -124,9 +128,20 @@ unknown `app`, or with a newer version than the code understands are refused wit
   terminates the worker.
 - **Batches**: `batch.js` runs at most N jobs at once (default 2), so memory stays bounded; results are
   Blobs released when an item is removed or the list is cleared.
-- **PDF**: pdf-lib for structure (merge, split, rotate, reorder, page numbers, watermark, image to PDF);
-  pdf.js (in its own worker) for rendering, thumbnails and text. Encrypted PDFs are detected and
-  explained. Output is reopened and checked (page count) before it is offered.
+- **PDF**: pdf-lib for structure (merge, split, rotate, reorder, page numbers, watermark, images as pages);
+  pdf.js (in its own worker) for rendering, thumbnails and text. Every PDF is checked before a library
+  sees it (header, a missing end of file means a truncated download). Password-protected PDFs open after
+  an accessible password dialog; the password stays in the tab, the file is decrypted in memory and
+  outputs are saved without encryption. Output is reopened and checked (page count, and page sizes for
+  the compressor) before it is offered. Compress PDF draws each page with pdf.js and saves it as a JPEG
+  whose quality is searched to fit the page's share of the limit (resolution lowered only when needed,
+  down to 50 DPI), then rebuilds the document with the same page count, order, sizes and rotation; the
+  pages become images. Limits: 100 MB per PDF, 500 MB per merge, 300 pages for the compressor, 500 for
+  PDF to images, 1,500 for organise, canvases under 16 million pixels.
+- **pdf.js and the CSP**: pdf.js loads as an ES module from a same-origin URL and runs in a module
+  worker. Its WebAssembly decoders (JPEG 2000, JBIG2, colour profiles) run inside that worker, which
+  takes no policy from the page's CSP meta tag; `tests/pdf_tools_tests.js` decodes a JPEG 2000 image to
+  confirm it works under the site CSP in Chromium.
 - **ZIP**: stored entries; no ZIP64, so archives stop at 4 GB with a clear message.
 
 ## 5. Offline

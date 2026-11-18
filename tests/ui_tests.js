@@ -9,7 +9,7 @@ const { chromium, firefox } = require('playwright');
 const AxeBuilder = require('@axe-core/playwright').default;
 const engine = process.env.BROWSER === 'firefox' ? firefox : chromium;
 const root = path.resolve(__dirname, '..');
-const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.png':'image/png', '.svg':'image/svg+xml', '.woff2':'font/woff2', '.txt':'text/plain', '.xml':'application/xml', '.webmanifest':'application/manifest+json' };
+const mime = { '.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript', '.wasm':'application/wasm', '.css':'text/css', '.png':'image/png', '.svg':'image/svg+xml', '.woff2':'font/woff2', '.txt':'text/plain', '.xml':'application/xml', '.webmanifest':'application/manifest+json' };
 let checks = 0;
 const ok = (condition, message) => { assert(condition, message); checks++; };
 
@@ -439,7 +439,7 @@ const server = http.createServer((req, res) => {
   {
     const { context, page } = await open(390, 800);
     let dialogs = 0; page.on('dialog', d => { dialogs++; d.dismiss(); });
-    const cases = [['compress-pdf.html', '#compressFileInput', async () => { await page.locator('#btnStartCompress').click(); }], ['image-to-pdf.html', 'input[type=file]', null], ['passport-photo-print.html', 'input[type=file]', null], ['signature-cleaner.html', 'input[type=file]', null]];
+    const cases = [['compress-pdf.html', '#compressFileInput', async () => { if (await page.locator('#btnStartCompress').isVisible()) await page.locator('#btnStartCompress').click(); }], ['image-to-pdf.html', 'input[type=file]', null], ['passport-photo-print.html', 'input[type=file]', null], ['signature-cleaner.html', 'input[type=file]', null]];
     for (const [file, input, after] of cases) {
       for (const [name, type] of [['notes.txt', 'text/plain'], ['broken.jpg', 'image/jpeg']]) {
         await page.goto(`${origin}/${file}`);
@@ -514,11 +514,16 @@ const server = http.createServer((req, res) => {
     // Compress PDF never hands back a larger file: a PDF already under the target is kept as it is,
     // and a compressed result is never bigger than the PDF it came from.
     {
-      const jpeg = fs.readFileSync(path.join(root, 'img/samples/test-signature-cleaned.jpg'));
-      const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n1 0 obj << /Type /XObject /Subtype /Image /Filter /DCTDecode >> stream\n'), jpeg, Buffer.from('\nendstream endobj\n%%EOF\n')]);
+      // A real one-page scan (the compressor opens the file before it decides anything).
+      const PDFLib = require('../js/vendor/pdf-lib.min.js');
+      const scan = await PDFLib.PDFDocument.create();
+      const img = await scan.embedJpg(fs.readFileSync(path.join(root, 'img/samples/test-signature-cleaned.jpg')));
+      scan.addPage([595.28, 841.89]).drawImage(img, { x: 36, y: 300, width: 523, height: 294 });
+      const pdf = Buffer.from(await scan.save());
       for (const [target, expectKept] of [['200', true], ['30', false]]) {
         await page.goto(`${origin}/compress-pdf.html`);
         await page.locator('#compressFileInput').setInputFiles({ name: 'scan.pdf', mimeType: 'application/pdf', buffer: pdf });
+        await page.locator('#compressFileInfoBox:not(.hidden)').waitFor({ timeout: 15000 });
         await page.locator('#targetKbInput').fill(target);
         await page.locator('#btnStartCompress').click();
         await page.locator('#compressResultArea:not(.hidden)').waitFor({ timeout: 30000 });
@@ -529,9 +534,8 @@ const server = http.createServer((req, res) => {
       }
     }
 
-    // Compress PDF keeps the page geometry: an A4 scan stays A4 with the image fitted on it, and a
-    // camera JPEG with an EXIF thumbnail (whose first FF D9 marker is inside the EXIF segment) is
-    // still read as a page instead of being skipped.
+    // Compress PDF keeps the page geometry: an A4 scan whose camera JPEG carries an EXIF thumbnail
+    // (whose first FF D9 marker is inside the EXIF segment) comes back as one A4 page under the target.
     {
       const main = fs.readFileSync(path.join(root, 'img/samples/test-signature-cleaned.jpg'));
       const thumbB64 = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 24; c.height = 16; c.getContext('2d').fillRect(4, 4, 12, 8); return c.toDataURL('image/jpeg', 0.5).split(',')[1]; });
@@ -553,13 +557,15 @@ const server = http.createServer((req, res) => {
       const pdf = Buffer.concat(parts);
       await page.goto(`${origin}/compress-pdf.html`);
       await page.locator('#compressFileInput').setInputFiles({ name: 'camera-scan.pdf', mimeType: 'application/pdf', buffer: pdf });
+      await page.locator('#compressFileInfoBox:not(.hidden)').waitFor({ timeout: 15000 });
       await page.locator('#targetKbInput').fill('30');
       await page.locator('#btnStartCompress').click();
       await page.locator('#compressResultArea:not(.hidden)').waitFor({ timeout: 30000 });
-      const out = await page.evaluate(async () => { const b = await fetch(document.getElementById('btnDownloadCompressedPdf').href).then(r => r.blob()); return { size: b.size, text: new TextDecoder('latin1').decode(await b.arrayBuffer()) }; });
-      ok(/\/MediaBox \[0 0 595\.28 841\.89\]/.test(out.text) && /\/Count 1\b/.test(out.text), 'compress: an A4 page with an EXIF-thumbnail JPEG comes back as one A4 page');
-      const draw = out.text.match(/q ([\d.]+) 0 0 ([\d.]+) ([\d.]+) ([\d.]+) cm \/Im1 Do Q/);
-      ok(draw && Math.abs(parseFloat(draw[1]) - 595.28) < 0.1 && Math.abs(parseFloat(draw[2]) - 334.85) < 0.5 && parseFloat(draw[3]) === 0 && Math.abs(parseFloat(draw[4]) - 253.52) < 0.5, `compress: the image is fitted to the page width and centred (${draw && draw[0]})`);
+      const out = await page.evaluate(async () => { const b = await fetch(document.getElementById('btnDownloadCompressedPdf').href).then(r => r.blob()); let t = ''; new Uint8Array(await b.arrayBuffer()).forEach(c => { t += String.fromCharCode(c); }); return { size: b.size, b64: btoa(t) }; });
+      const PDFLib = require('../js/vendor/pdf-lib.min.js');
+      const outDoc = await PDFLib.PDFDocument.load(Buffer.from(out.b64, 'base64'));
+      const box = outDoc.getPage(0).getMediaBox();
+      ok(outDoc.getPageCount() === 1 && Math.abs(box.width - 595.28) < 0.1 && Math.abs(box.height - 841.89) < 0.1, `compress: an A4 page with an EXIF-thumbnail JPEG comes back as one A4 page (${outDoc.getPageCount()}, ${box.width} x ${box.height})`);
       ok(out.size <= 30 * 1024 && out.size < pdf.length, `compress: the result (${out.size} bytes) is under 30 KB and smaller than the input (${pdf.length} bytes)`);
     }
 

@@ -14,7 +14,7 @@ requirement and I will get the file right", not as a list of features.
 
 | File | Owns |
 |---|---|
-| `css/app.css` | The whole interface, in 17 numbered sections: tokens, base, layout, header, footer, buttons and fields, choice controls, tabs and disclosure, feedback, dialogs and toasts, reading content, page patterns, tool workspace, tool specifics, resume builder, responsive, print and motion. |
+| `css/app.css` | The whole interface, in 18 numbered sections: tokens, base, layout, header, footer, buttons and fields, choice controls, tabs and disclosure, feedback, dialogs and toasts, reading content, page patterns, tool workspace, tool specifics, resume builder, responsive, print and motion, file lists and batches, PDF tools. |
 | `css/document.css` | The resume paper, its templates and its print layout (resume.html only). It is the output format, not interface, and `tests/content_tests.js` pins its hash. Do not edit it for interface work. |
 | `css/vendor/icons.min.css`, `css/vendor/cropper.min.css` | Icon subset (only the classes listed in it exist) and the cropper, restyled in `app.css`. |
 | `js/site.js` | Theme, header menu and phone sheet, on-screen keyboard state, phone layout of reference tables, `ApplyReadyUI.notify` (toast), `ApplyReadyUI.reveal`, `ApplyReadyUI.confirm` (dialog). |
@@ -22,6 +22,7 @@ requirement and I will get the file right", not as a list of features.
 | `scripts/lib/shell.js` | Header, Tools menu, footer and stylesheet links for every page (`node scripts/sync-shell.js`). |
 | `scripts/lib/image-workspace.js` | The image resizer workspace (home, KB pages, exam pages, Hindi pages; `node scripts/build-image-pages.js`). |
 | `scripts/build-tool-pages.js` | Signature cleaner, Image to PDF, Compress PDF and Passport photo print workspaces. |
+| `scripts/build-pdf-pages.js` | The PDF tool pages (merge, split, organise, PDF to images, extract text, page numbers, watermark). |
 
 Markup between `<!-- tool:start -->` and `<!-- tool:end -->`, and between the `shell:` markers, is
 generated. Edit the generator and re-run it; hand edits are overwritten. After CSS or JS changes bump
@@ -193,6 +194,14 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
   (Before, After, reduction, pages) under a `.result-status` verdict.
 - **Signature cleaner**: `.compare-pair` shows the original and the cleaned result side by side from
   640 px (stacked on phones); the cleaned pane is outlined in ink.
+- **PDF tools** (section 18): one-PDF tools use `.ws--pdf` (the drop zone hides once a file is open), a
+  file bar, `.pdf-loading` while opening, `.pdf-progress` (text, Cancel, bar) for long jobs, and a
+  `.ws-result` above the content. Pages are a `.page-grid` of `.page-tile`s; selectable tiles are
+  toggle buttons (`.page-tile__body[aria-pressed]`, a check beside the label when selected). Merge rows
+  (`.merge-row`) and organise tiles (`.org-tile`) have a drag handle that also moves with the arrow
+  keys, Home and End, plus move buttons. Page numbers choose a position on `.pos-grid`; page numbers
+  and watermark show `.pdf-preview`, the first page made by the same code as the download. Modes are
+  `.choice` cards in `.pdf-choices`. The password dialog (`.pdf-password`) uses the dialog pattern.
 - **Print sheet**: preview on `.ws-preview--desk`, facts in a `.meta-stats--row`, and a reminder to
   print at 100%.
 

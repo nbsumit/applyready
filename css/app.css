@@ -1450,7 +1450,9 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 button.page-tile__body { cursor: pointer; }
 button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outline-offset: 4px; }
 .page-tile__placeholder { font-size: var(--fs-lg); font-weight: var(--fw-strong); color: var(--c-text-4); font-variant-numeric: tabular-nums; }
-.page-tile__img img { display: block; width: auto; height: auto; background: #fff; }
+/* The thumbnail always fits its box, whatever the page shape (a percentage max-height does not resolve against an aspect-ratio box) */
+.page-tile__img { position: relative; }
+.page-tile__img img { position: absolute; inset: var(--s-2); margin: auto; display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; background: #fff; }
 .page-tile.is-selected .page-tile__label { color: var(--c-accent); font-weight: var(--fw-strong); }
 .page-tile.is-selected .page-tile__label::after { content: ''; flex: none; width: 12px; height: 12px; background: var(--c-accent); -webkit-mask: var(--mask-check) center/contain no-repeat; mask: var(--mask-check) center/contain no-repeat; }
 
