@@ -96,7 +96,7 @@ const TOOLS = [
     keywords: ['watermark', 'stamp pdf', 'pdf watermark', 'self attested', 'copy stamp', 'confidential'] },
 
   // Document tools
-  { id: 'text-to-pdf', name: 'Text to PDF', path: 'text-to-pdf.html', category: 'document', also: ['pdf'], icon: 'file-export', live: false,
+  { id: 'text-to-pdf', name: 'Text to PDF', path: 'text-to-pdf.html', category: 'document', also: ['pdf'], icon: 'file-export',
     summary: 'Turn typed or pasted text into a clean PDF',
     keywords: ['text to pdf', 'txt to pdf', 'notepad to pdf', 'write pdf', 'make pdf', 'cover letter pdf', 'letter to pdf'] },
   { id: 'file-checker', name: 'File checker', path: 'file-checker.html', category: 'document', icon: 'file-circle-check',

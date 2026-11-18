@@ -1532,9 +1532,9 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
   .fc-card__head .fc-badge, .fc-card__head .file-status { grid-column: 2 / -1; grid-row: 2; justify-self: start; }
   .fc-card__head [data-action='remove'] { grid-column: 3; grid-row: 1; }
   .fc-card__body { padding: 0 var(--s-3) var(--s-3); }
-  .fc-group .meta-stat-item { flex-direction: column; gap: 2px; }
+  .fc-group .meta-stat-item, .yd-stats .meta-stat-item { flex-direction: column; gap: 2px; }
   .fc-group .meta-stat-label { flex: none; }
-  .fc-group .meta-stat-val { text-align: left; }
+  .fc-group .meta-stat-val, .yd-stats .meta-stat-val { text-align: left; }
   .fc-pages { max-width: none; }
   .fc-req { padding: 0 var(--s-3); }
   .yd-panel { padding: var(--s-4); }
