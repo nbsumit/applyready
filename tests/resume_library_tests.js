@@ -46,7 +46,8 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     page.on('console', m => { if (/Content Security Policy|Refused to/.test(m.text())) errors.push(m.text()); });
     return page;
   };
-  const ready = p => p.waitForFunction(() => !document.getElementById('resumeAppLayout').hasAttribute('aria-busy'));
+  // Waits through a navigation as well: on the page being left the layout is simply not there yet.
+  const ready = p => p.waitForFunction(() => { const el = document.getElementById('resumeAppLayout'); return !!el && !el.hasAttribute('aria-busy'); });
   const statusText = p => p.locator('#saveStatusText').textContent();
   const waitSaved = p => p.waitForFunction(() => /^Saved on this device/.test(document.getElementById('saveStatusText').textContent), null, { timeout: 8000 });
   const records = p => p.evaluate(async () => window.ApplyReadyStore.getAll('resumes'));
@@ -470,11 +471,13 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     await again.locator('#saveNotice').filter({ hasText: '1 resume saved earlier is still in this browser' }).waitFor();
     await again.locator('#saveNotice [data-notice="library"]').click();
     await again.locator('#libraryDialog').waitFor({ state: 'visible' });
-    await again.locator('#libList [data-act="delete"]').first().click();
+    await again.locator('#libraryDialog [data-act="delete-all"]').click();
+    ok(/Delete all 1 saved resume/.test(await confirmDialog(again).textContent()), 'Delete all asks first and says how many resumes it removes');
     await confirmDialog(again).locator('[data-act="ok"]').click();
     await again.waitForFunction(() => document.querySelectorAll('#libList [data-act="delete"]').length === 0);
+    ok(await again.locator('#libraryDialog [data-act="delete-all"]').isDisabled(), 'Delete all is unavailable once nothing is saved');
     await closeLibrary(again);
-    ok((await records(again)).length === 0 && !(await again.locator('#saveNotice').textContent()).includes('saved earlier'), 'After deleting from My resumes, nothing is left and the note no longer mentions saved resumes');
+    ok((await records(again)).length === 0 && !(await again.locator('#saveNotice').textContent()).includes('saved earlier'), 'After Delete all, nothing is left and the note no longer mentions saved resumes');
     await ctx.close();
   }
 

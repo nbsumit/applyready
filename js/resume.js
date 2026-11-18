@@ -1358,6 +1358,8 @@
   function scheduleRender() {
     clearTimeout(renderTimer);
     renderTimer = setTimeout(renderResumePreview, RENDER_DELAY);
+    // The counts in the section headers are cheap, so they follow every keystroke.
+    updateSectionMeta();
   }
   function renderResumePreview() {
     clearTimeout(renderTimer);

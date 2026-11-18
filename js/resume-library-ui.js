@@ -562,6 +562,26 @@
     focusRow(rec.id, 'rename');
   }
 
+  // Clear the library in one step, for example at the end of a session on a shared computer.
+  const removeAll = exclusive(async function removeAllNow() {
+    await loadList();
+    const entries = state.records.map(r => r.id).concat(state.damaged.map(d => d.raw && d.raw.id).filter(id => typeof id === 'string'));
+    const total = state.records.length + state.damaged.length;
+    if (!total) return;
+    const ok = await askConfirm({ title: `Delete all ${total} saved ${total === 1 ? 'resume' : 'resumes'}?`, message: 'Every resume saved in this browser is removed and cannot be recovered. Export a backup first if you need any of them.', confirmLabel: 'Delete all', danger: true });
+    if (!ok) return;
+    try { await STORE.clear('resumes'); } catch (e) { notify('The saved resumes could not be deleted. Try again.', true); return; }
+    try { await STORE.remove('meta', 'lastResumeId'); } catch (e) { /* nothing left to point at either way */ }
+    entries.forEach(id => post({ type: 'deleted', id }));
+    await loadList();
+    if (state.current && state.stored) useResume(newRecordFor(state.editor.blank(), LIB.DEFAULT_NAME), { stored: false, unsavedBaseline: true });
+    notify(`Deleted ${total} saved ${total === 1 ? 'resume' : 'resumes'}. Nothing is left in this browser.`);
+    renderList();
+    refreshStatus();
+    const target = $('libNew');
+    if (target) target.focus();
+  });
+
   function exportRaw(index) {
     const entry = state.damaged[index];
     if (!entry) return;
@@ -627,6 +647,7 @@
             <label class="switch" for="libSaveSwitch"><span>Save resumes on this device</span><input type="checkbox" id="libSaveSwitch" role="switch" data-save-switch></label>
             <p class="field-hint">Turn this off on a shared or public computer. Resumes already saved stay until you delete them.</p>
             <p class="field-hint" id="libStorageNote">Browsers can clear saved site data, for example when you clear browsing data or the device runs low on space. A downloaded backup file is the safe copy.</p>
+            <div><button type="button" class="btn btn-sm btn-danger-ghost" data-act="delete-all"><i class="fa-regular fa-trash-can" aria-hidden="true"></i> Delete all saved resumes</button></div>
           </div>
         </div>
       </div>`;
@@ -714,6 +735,8 @@
     list.innerHTML = rows.join('') || '<li class="rl-empty">No resumes are saved in this browser yet.</li>';
     const exportAllBtn = doc.querySelector('#libraryDialog [data-act="export-all"]');
     if (exportAllBtn) exportAllBtn.disabled = !state.records.length;
+    const deleteAllBtn = doc.querySelector('#libraryDialog [data-act="delete-all"]');
+    if (deleteAllBtn) deleteAllBtn.disabled = !(state.records.length + state.damaged.length);
     syncSwitches();
     const input = list.querySelector('.rl-rename .input');
     if (input) { input.focus(); input.select(); }
@@ -771,6 +794,7 @@
       case 'delete': remove(i, false); break;
       case 'export-raw': exportRaw(i); break;
       case 'delete-damaged': remove(i, true); break;
+      case 'delete-all': removeAll(); break;
       default: break;
     }
   }

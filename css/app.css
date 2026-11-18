@@ -1483,5 +1483,5 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
   .rb-head__actions .btn { flex: 1 1 auto; }
 }
 @media print {
-  .resume-page .breadcrumb-nav, .rb-notice, .rl-backdrop { display: none !important; }
+  .resume-page .breadcrumb-nav, .resume-page .tool-privacy, .rb-notice, .rl-backdrop { display: none !important; }
 }
