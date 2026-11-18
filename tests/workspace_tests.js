@@ -364,6 +364,7 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     await waitState(page, s => s.applicants[0].files === 2);
     await page.waitForFunction(() => !/counting pages/.test(document.getElementById('wkFiles').innerText));
     await row(page, 'ishaan-photo.jpg').locator('[data-act="run:photo"]').click();
+    ok(await page.evaluate(() => !!(document.activeElement && document.activeElement.closest('.wk-file'))), 'focus stays in the file row while its buttons are busy');
     await waitState(page, s => s.applicants[0].results === 1 && s.applicants[0].running === 0);
     ok(await page.locator('#wkTabs').isHidden() && await page.locator('.wk-switch').isVisible(), 'phones use the applicant select instead of tabs');
     await noOverflow(page, '320 px applicant with files and a result');

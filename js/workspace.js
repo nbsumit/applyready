@@ -239,6 +239,7 @@
 
   function clearPanel() {
     [el.files, el.results, el.jobs, el.errorList].forEach(list => { list.textContent = ''; });
+    delete el.errorList.dataset.sig;
     el.errors.hidden = true;
     el.name.value = '';
     el.nameHint.textContent = '';
@@ -279,8 +280,13 @@
     el.finish.classList.toggle('btn-primary', allDone);
 
     // Problems
-    el.errorList.textContent = '';
-    a.errors.forEach(err => { const li = doc.createElement('li'); li.textContent = err.text; el.errorList.appendChild(li); });
+    // Rewritten only when the messages change, so the alert region is not announced again on every redraw.
+    const errorSig = JSON.stringify(a.errors.map(err => err.id));
+    if (el.errorList.dataset.sig !== errorSig) {
+      el.errorList.textContent = '';
+      a.errors.forEach(err => { const li = doc.createElement('li'); li.textContent = err.text; el.errorList.appendChild(li); });
+      el.errorList.dataset.sig = errorSig;
+    }
     el.errors.hidden = !a.errors.length;
 
     // Files
@@ -316,6 +322,8 @@
     const existing = new Map(Array.from(list.children).map(li => [li.dataset.id, li]));
     const active = doc.activeElement;
     const focusKey = active && list.contains(active) && active.dataset ? active.dataset.key : null;
+    const focusRow = focusKey ? active.closest('[data-id]') : null;
+    const focusRowId = focusRow ? focusRow.dataset.id : null;
     let prev = null;
     items.forEach(item => {
       const id = keyOf(item);
@@ -335,7 +343,12 @@
     existing.forEach(li => li.remove());
     list.hidden = !items.length;
     if (focusKey && !list.contains(doc.activeElement)) {
-      const target = list.querySelector(`[data-key="${CSS.escape(focusKey)}"]`);
+      let target = list.querySelector(`[data-key="${CSS.escape(focusKey)}"]`);
+      // A control that became disabled (its file is busy) hands focus to the next usable one in its row.
+      if ((!target || target.disabled) && focusRowId) {
+        const rowNow = Array.from(list.children).find(li => li.dataset.id === focusRowId);
+        target = rowNow ? Array.from(rowNow.querySelectorAll('[data-key]')).find(x => !x.disabled) : null;
+      }
       if (target && !target.disabled) target.focus({ preventScroll: true });
     }
   }
