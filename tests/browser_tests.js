@@ -121,6 +121,8 @@ const server = http.createServer((req,res) => {
   const ownId=new URL(page.url()).searchParams.get('id');
   await page.locator('#btnLoadSample').click();
   await page.waitForFunction(()=>document.getElementById('fullName').value==='ALEX R. MORGAN');
+  // The address gains the new resume's id once its first save completes (asynchronous IndexedDB write).
+  await page.waitForFunction(own=>new URL(location.href).searchParams.get('id')!==own,ownId,{timeout:10000}).catch(()=>{});
   ok(new URL(page.url()).searchParams.get('id')!==ownId,'The sample opens as a new resume');
   ok(await page.evaluate(async id=>{const r=await window.ApplyReadyStore.get('resumes',id);return r&&r.data.personal.fullName;},ownId)===nameBefore,'The resume with content stays saved, unchanged');
   await page.goto(`${origin}/resume.html?id=${ownId}`);await page.waitForFunction(n=>document.getElementById('fullName').value===n,nameBefore);
