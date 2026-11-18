@@ -29,9 +29,9 @@ const L = {
     reqTitle: 'What are you preparing?', reqDone: 'Preparing', reqSelect: 'Requirement', change: 'Change', close: 'Close',
     pending: 'Choose what you are preparing above.', showMe: 'Show me',
     custom: 'Custom size', customSpec: 'Your own size and file limit',
-    dropTitle: 'Add your photo or signature', adjustTitle: 'Position it in the frame', dropText: 'Drag it here, or', choose: 'Choose image',
+    dropTitle: 'Add your photo or signature', adjustTitle: 'Position it in the frame', dropText: 'Drag it here', dropOr: ', or', choose: 'Choose image',
     dropHint: 'JPG, PNG, WebP, GIF, BMP or AVIF up to 50 MB. Processed on your device, never uploaded.',
-    dropAria: 'Choose or drop an image', sample: 'No image handy? Try a sample document',
+    dropAria: 'Choose or drop an image', sample: 'No image handy? Try a sample image',
     fileReplace: 'Replace', fileRemove: 'Remove', fileReplaceTitle: 'Choose a different image', fileRemoveTitle: 'Remove this image',
     cropAlt: 'Image to crop', cropGroup: 'Image crop. Arrow keys move the crop selection; plus and minus zoom.',
     toolbar: 'Crop tools', rotateL: 'Rotate left 90 degrees', rotateR: 'Rotate right 90 degrees', zoomOut: 'Zoom out', zoomIn: 'Zoom in', reset: 'Reset crop', resetShort: 'Reset',
@@ -145,7 +145,7 @@ ${options}
           <div id="dropzone" class="dropzone" role="group" aria-label="${esc(t.dropAria)}">
             <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
             <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
-            <p class="dropzone__text">${esc(t.dropText)}</p>
+            <p class="dropzone__text dropzone__drag">${esc(t.dropText)}<span class="dropzone__or">${esc(t.dropOr)}</span></p>
             <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> ${esc(t.choose)}</button>
             <p class="dropzone__hint">${esc(t.dropHint)}</p>
           </div>${opts.sample && t.sample ? `
@@ -290,10 +290,10 @@ ${ratio}
             <div class="disclosure__body">
               <div class="field">
                 <label for="bgFillSelect" class="field-label">${esc(t.background)}</label>
-                <select id="bgFillSelect">
+                <select id="bgFillSelect" aria-describedby="bgFillHint">
 ${bg}
                 </select>
-                <p class="field-hint">${esc(t.bgHint)}</p>
+                <p class="field-hint" id="bgFillHint">${esc(t.bgHint)}</p>
               </div>
               <div id="dateOptionsBox" class="check-group">
                 <label class="switch" for="addDateCheckbox"><span>${esc(t.strip)}</span><input type="checkbox" id="addDateCheckbox" role="switch"></label>
