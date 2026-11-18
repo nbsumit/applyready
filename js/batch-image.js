@@ -455,7 +455,7 @@
   let pendingRejects = [];
   const notAdded = n => (n === 1 ? 'One file was not added:' : `${n} files were not added:`);
   const dz = Kit.dropzone(app, {
-    accept: ['image'], multiple: true, limitBytes: LIMIT_BYTES, maxFiles: MAX_ITEMS,
+    accept: ['image'], multiple: true, limitBytes: LIMIT_BYTES, maxFiles: MAX_ITEMS, checkPixels: true,
     onReject: messages => {
       pendingRejects = messages;
       showErrors(notAdded(messages.length), messages);

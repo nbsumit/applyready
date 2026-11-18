@@ -364,13 +364,19 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     const t = (await page.locator('#batchError').textContent()).replace(/\s+/g, ' ');
     ok(/huge\.jpg is 51 MB\. The limit for this tool is 50 MB/.test(t) && /empty\.jpg is empty/.test(t), `oversized and empty files refused: ${t}`);
     ok(await page.locator('#batchList .file-row').count() === 0 && !(await page.locator('#btnBatchStart').isVisible()), 'nothing added, nothing to start');
-    await page.setInputFiles('#batchDropInput', [fix('photo_04.jpg'), fix('photo_00.jpg'), fix('photo_as_png.png'), fix('huge_60mp.png')]);
-    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 4);
+    await page.setInputFiles('#batchDropInput', [fix('photo_04.jpg'), fix('photo_00.jpg'), fix('photo_as_png.png')]);
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 3);
     ok(await page.locator('#batchError').isHidden(), 'a clean add clears the old message');
+    // A picture over 50 megapixels is refused when it is added, from its header, with the reason:
+    // it never waits in the list as "Waiting" only to fail after Start.
+    await page.setInputFiles('#batchDropInput', fix('huge_60mp.png'));
+    await page.waitForSelector('#batchError:not([hidden])');
+    const tooBig = (await page.locator('#batchError').textContent()).replace(/\s+/g, ' ');
+    ok(/One file was not added/.test(tooBig) && /huge_60mp\.png is 60 megapixels \(10000 × 6000 px\)/.test(tooBig), `60 MP image refused when added, before decoding: ${tooBig}`);
+    ok(await page.locator('#batchList .file-row').count() === 3 && await page.locator('#batchList .file-row', { hasText: 'huge_60mp.png' }).count() === 0, 'the 60 MP image is not in the list');
     await page.waitForFunction(() => [...document.querySelectorAll('#batchList .file-row')].filter(r => r.querySelector('.file-row__thumb img')).length >= 3, null, { timeout: 15000 });
-    ok(await page.locator('#batchList .file-row', { hasText: 'huge_60mp.png' }).locator('.file-row__thumb img').count() === 0, 'a 60-megapixel picture is not decoded just to draw its preview');
-    await page.waitForFunction(() => /Compress 4 images/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 }).catch(() => {});
-    ok(/Compress 4 images/.test(await page.locator('#btnBatchStart').textContent()), 'compressor wording');
+    await page.waitForFunction(() => /Compress 3 images/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 }).catch(() => {});
+    ok(/Compress 3 images/.test(await page.locator('#btnBatchStart').textContent()), 'compressor wording');
     await page.click('#btnBatchStart');
     await waitIdle(page);
     const items = await page.evaluate(() => window.ApplyReadyBatchImage.items.map(i => ({ name: i.name, status: i.status, error: i.error, r: i.result && { w: i.result.width, h: i.result.height, b: i.result.bytes, mime: i.result.mime, notes: i.result.notes } })));
@@ -383,7 +389,7 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     ok(q04.w === 3000 || (q04.w >= 1200 && q04.notes.some(n => /pixel size was reduced/.test(n))), `pixel size reduced only as far as needed (${q04.w} px)`);
     ok(by('photo_04.jpg').r.notes.some(n => /Quality was lowered to \d+%/.test(n)) || by('photo_04.jpg').r.notes.some(n => /pixel size was reduced/.test(n)), 'notes say what was changed');
     ok(by('photo_as_png.png').r.mime === 'image/png' && by('photo_as_png.png').r.b <= 102400 && by('photo_as_png.png').r.w < 2400 && by('photo_as_png.png').r.notes.some(n => /pixel size was reduced/.test(n)), 'PNG kept as PNG: pixel size reduced and said so');
-    ok(by('huge_60mp.png').status === 'error' && /60 megapixels/.test(by('huge_60mp.png').error), `60 MP image refused before decoding: ${by('huge_60mp.png').error}`);
+    ok(!by('huge_60mp.png'), 'the refused 60 MP image was never processed');
     ok(by('photo_as_png.png').r.notes.some(n => /saving as JPEG keeps many more pixels/.test(n)), 'a PNG that had to shrink suggests JPEG');
     const zip = await saveDownload(page, () => page.click('#btnBatchZip'), 'compressed.zip');
     ok(zip.suggested === 'compressed-images.zip' && /No errors detected/.test(sh('unzip', ['-t', zip.file])), 'compressor ZIP name and integrity');
