@@ -106,8 +106,10 @@ Resume modules: `js/resume-library.js` (record and backup formats, no interface,
 document) and `js/resume.js` (the editor, exposed to the others as `window.ApplyReadyResumeEditor`).
 Autosave writes about 600 ms after typing stops and at once on `visibilitychange` (hidden) and
 `pagehide`. Before each write the stored `updatedAt` is compared with the version this tab last read,
-and tabs announce saves on the `BroadcastChannel` named `applyready-resumes`; a resume changed
-elsewhere pauses saving and asks which version to keep.
+and tabs announce saves on the `BroadcastChannel` named `applyready-resumes`. A tab with nothing
+unsaved simply shows the newer version; a tab with unsaved changes pauses saving and asks which
+version to keep. Library actions (new, open, import, duplicate, delete) run one at a time, and a new
+blank resume is stored only once something is typed into it.
 
 ### Backup files
 
@@ -134,7 +136,8 @@ All resumes (Your data page and the resume library):
 }
 ```
 
-Importing never overwrites: each imported resume becomes a new library entry. Files over 5 MB, with an
+Importing never overwrites: each imported resume becomes a new library entry, keeping the edit
+dates from the file (never later than the import). Files over 5 MB, with an
 unknown `app`, or with a newer version than the code understands are refused with a message.
 
 ## 4. Processing
