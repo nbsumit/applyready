@@ -697,6 +697,8 @@
     else label = `${VERB} images`;
     el.startLabel.textContent = label;
     el.start.disabled = !enabled;
+    // Nothing left to do: no greyed-out button in the sticky bar, only the line that says why.
+    show(el.start, !(valid && !running && total && !queued && !stale.length));
     el.start.dataset.intent = queued ? 'start' : stale.length ? 'again' : '';
     el.summary.textContent = note;
     el.summary.classList.toggle('is-invalid', invalid);

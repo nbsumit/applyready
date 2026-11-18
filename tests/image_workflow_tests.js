@@ -365,7 +365,7 @@ const EXPECTED = {
  },
  "remove:processDisabled": true,
  "invalidType": {
-  "err": "doc.txt is a plain text file. This tool needs an image (JPEG, PNG, WebP).",
+  "err": "doc.txt is a plain text file. This tool needs an image (JPEG, PNG, WebP); choose a file of that type instead.",
   "hasCropper": false
  }
 };

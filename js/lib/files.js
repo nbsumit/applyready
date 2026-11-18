@@ -119,7 +119,7 @@
       const what = info.kind === 'unknown' ? 'not a recognised file type'
         : info.kind === 'text' ? 'a plain text file'
         : `${/^[AEIOU]/i.test(info.label) ? 'an' : 'a'} ${info.label}`;
-      return { ok: false, info, error: `${file.name} is ${what}. This tool needs ${wanted}.` };
+      return { ok: false, info, error: `${file.name} is ${what}. This tool needs ${wanted}; choose a file of that type instead.` };
     }
     const limit = limitBytes || LIMITS[info.kind] || 50 * MB;
     if (file.size > limit) return { ok: false, info, error: `${file.name} is ${formatBytes(file.size)}. The limit for this tool is ${formatBytes(limit)}, to keep your browser responsive.` };
