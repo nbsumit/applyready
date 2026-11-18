@@ -458,7 +458,19 @@
       state = null;
     }
 
+    // While a job runs (its progress box is showing), the open file must stay as it is: a file
+    // pasted, or Replace or Remove pressed, would otherwise close the document mid-job.
+    const progressBox = ws.querySelector('[data-pdf-progress]');
+    function busy() {
+      if (!progressBox || progressBox.classList.contains('hidden')) return false;
+      const m = 'Wait for the current job to finish, or select Cancel, before changing the file.';
+      if (root.ApplyReadyUI && root.ApplyReadyUI.notify) root.ApplyReadyUI.notify(m, true);
+      announce(m);
+      return true;
+    }
+
     async function clear(silent) {
+      if (busy()) return;
       opening++;
       await release();
       if (o.onClear) o.onClear();
@@ -471,7 +483,7 @@
 
     async function take(files) {
       const file = files[0];
-      if (!file) return;
+      if (!file || busy()) return;
       const ticket = ++opening;
       error.hide();
       if (result) result.classList.add('hidden');
@@ -486,6 +498,7 @@
         if (nameEl) nameEl.textContent = `${file.name} (${state.pageCount} page${state.pageCount === 1 ? '' : 's'}, ${Files().formatBytes(file.size)}${state.encrypted ? ', password protected' : ''})`;
         await o.onOpen(state);
         if (fileBar) fileBar.classList.remove('hidden');
+        keepFocus(zone, nameEl);
         announce(`${file.name} is open: ${state.pageCount} page${state.pageCount === 1 ? '' : 's'}.`);
         if (state.previewError) error.show('This PDF opened, but this browser could not draw its pages, so previews are not shown. The tool still works.');
       } catch (e) {
@@ -514,11 +527,24 @@
     return { get state() { return state; }, error, clear, take, open: () => dz.open(), hideResult, showResult };
   }
 
+  /**
+   * The drop zone folds away once a file is open, which would drop keyboard focus to the top of the
+   * page. When focus was in the drop zone (or already lost), move it to `target`, usually the name of
+   * the open file, so keyboard and screen reader users carry on from there.
+   */
+  function keepFocus(zone, target) {
+    const a = doc.activeElement;
+    if (!target || (a && a !== doc.body && !(zone && zone.contains(a)))) return;
+    if (!target.hasAttribute('tabindex') && !/^(A|BUTTON|INPUT|SELECT|TEXTAREA)$/.test(target.tagName)) target.tabIndex = -1;
+    // The workspace shows its file bar from a MutationObserver (js/components.js), so wait for it.
+    setTimeout(() => { const now = doc.activeElement; if (!now || now === doc.body || (zone && zone.contains(now))) target.focus(); }, 0);
+  }
+
   /* ------------------------------------------------------------ Small helpers */
   function stem(name) { return Files().stem(Files().safeFileName(name || 'document.pdf', 'document')) || 'document'; }
   function pdfBlob(bytes) { return new Blob([bytes], { type: 'application/pdf' }); }
   function setDownload(a, url, name) { a.href = url; a.setAttribute('download', Files().safeFileName(name, 'document')); }
   function plural(n, word, many) { return `${n} ${n === 1 ? word : (many || word + 's')}`; }
 
-  root.ApplyReadyPdfUI = { askPassword, openPdf, errorBox, urls, runner, sortable, lazy, pageGrid, singleTool, stem, pdfBlob, setDownload, plural };
+  root.ApplyReadyPdfUI = { askPassword, openPdf, errorBox, urls, runner, sortable, lazy, pageGrid, singleTool, keepFocus, stem, pdfBlob, setDownload, plural };
 })(typeof window !== 'undefined' ? window : this);

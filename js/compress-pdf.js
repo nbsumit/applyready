@@ -55,6 +55,7 @@
   }
 
   async function clear() {
+    if (runner.busy) return;
     opening++;
     await release();
     dropResult();
@@ -67,6 +68,7 @@
 
   async function take(files, infos) {
     const file = files[0], info = infos[0];
+    if (runner.busy) { error.show('Wait for compression to finish, or select Cancel, before choosing another file.'); return; }
     const ticket = ++opening;
     error.hide();
     dropResult();
@@ -87,6 +89,7 @@
       current = next;
       els.fileText.textContent = `${file.name} (${fmtKB(file.size)} KB${next.kind === 'pdf' ? `, ${UI.plural(next.pageCount, 'page')}` : ', photo'}${next.encrypted ? ', password protected' : ''})`;
       els.fileBox.classList.remove('hidden');
+      UI.keepFocus(els.zone, els.fileText);
       validateTarget();
       Kit.announce(`${file.name} is ready to compress.`);
     } catch (e) {

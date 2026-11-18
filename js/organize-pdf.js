@@ -69,16 +69,16 @@
     li.dataset.key = t.key;
     li.innerHTML = `
       <div class="org-tile__top">
-        <button type="button" class="btn btn-ghost btn-icon btn-sm org-tile__handle"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm org-tile__handle" title="Drag to move"><i class="fa-solid fa-grip-vertical" aria-hidden="true"></i></button>
         <span class="org-tile__pos" aria-hidden="true"></span>
       </div>
       <span class="page-tile__img" aria-hidden="true"><span class="page-tile__placeholder"></span></span>
       <span class="page-tile__label"><span class="org-tile__name"></span><span class="org-tile__state"></span></span>
       <div class="page-tile__actions">
-        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-act="earlier"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>
-        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-act="later"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
-        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-act="left"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
-        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-act="right"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-act="earlier" title="Move earlier"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-act="later" title="Move later"><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-act="left" title="Rotate left"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+        <button type="button" class="btn btn-ghost btn-icon btn-sm" data-act="right" title="Rotate right"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
         <button type="button" class="btn btn-ghost btn-icon btn-sm btn-danger-ghost" data-act="delete"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button>
       </div>`;
     li.querySelector('.page-tile__placeholder').textContent = String(t.index + 1);
@@ -118,6 +118,7 @@
     li.querySelector('[data-act="right"]').setAttribute('aria-label', `Rotate ${label(t)} right`);
     const del = li.querySelector('[data-act="delete"]');
     del.setAttribute('aria-label', `${t.deleted ? 'Restore' : 'Delete'} ${label(t)}`);
+    del.title = t.deleted ? 'Restore' : 'Delete';
     del.innerHTML = `<i class="fa-solid fa-${t.deleted ? 'trash-can-arrow-up' : 'trash-can'}" aria-hidden="true"></i>`;
     li.querySelector('.org-tile__name').textContent = label(t);
     const turn = K.norm(t.turn);
@@ -147,24 +148,31 @@
     }
   }
 
+  /** What has changed so far: { kept, deleted, turned, inserted, moved }. */
+  function changeCounts() {
+    const keptTiles = tiles.filter(t => !t.deleted);
+    const original = tiles.filter(t => t.src === 0).map(t => t.index);
+    return {
+      kept: keptTiles.length,
+      deleted: tiles.length - keptTiles.length,
+      turned: keptTiles.filter(t => K.norm(t.turn)).length,
+      inserted: tiles.filter(t => t.src > 0 && !t.deleted).length,
+      moved: original.some((v, i) => v !== i) || tiles.some((t, i) => t.src > 0 && tiles.slice(i + 1).some(x => x.src === 0))
+    };
+  }
+
   function summarise() {
     if (!tiles.length) { els.changes.textContent = 'No changes yet.'; els.summary.textContent = ''; els.run.disabled = true; return; }
-    const keptTiles = tiles.filter(t => !t.deleted);
-    const deleted = tiles.length - keptTiles.length;
-    const turned = keptTiles.filter(t => K.norm(t.turn)).length;
-    const inserted = tiles.filter(t => t.src > 0).length;
-    const original = tiles.filter(t => t.src === 0).map(t => t.index);
-    const moved = original.some((v, i) => v !== i) || tiles.some((t, i) => t.src > 0 && tiles.slice(i + 1).some(x => x.src === 0));
+    const c = changeCounts();
     const parts = [];
-    if (moved) parts.push('pages reordered');
-    if (turned) parts.push(`${UI.plural(turned, 'page')} turned`);
-    if (deleted) parts.push(`${UI.plural(deleted, 'page')} deleted`);
-    if (inserted) parts.push(`${UI.plural(inserted, 'page')} inserted`);
-    els.changes.textContent = parts.length ? `${parts.join(', ')}.`.replace(/^./, c => c.toUpperCase()) : 'No changes yet.';
-    els.run.disabled = !keptTiles.length;
-    els.summary.textContent = keptTiles.length ? `Saves a new PDF with ${UI.plural(keptTiles.length, 'page')}.` : 'Every page is deleted. Restore at least one page to save.';
-    els.summary.classList.toggle('is-invalid', !keptTiles.length);
-    els.summaryParts = parts;
+    if (c.moved) parts.push('pages reordered');
+    if (c.turned) parts.push(`${UI.plural(c.turned, 'page')} turned`);
+    if (c.deleted) parts.push(`${UI.plural(c.deleted, 'page')} deleted`);
+    if (c.inserted) parts.push(`${UI.plural(c.inserted, 'page')} inserted`);
+    els.changes.textContent = parts.length ? `${parts.join(', ')}.`.replace(/^./, ch => ch.toUpperCase()) : 'No changes yet.';
+    els.run.disabled = !c.kept;
+    els.summary.textContent = c.kept ? `Saves a new PDF with ${UI.plural(c.kept, 'page')}.` : 'Every page is deleted. Restore at least one page to save.';
+    els.summary.classList.toggle('is-invalid', !c.kept);
   }
 
   function move(from, to, act) {
@@ -262,7 +270,8 @@
       output = { url };
       UI.setDownload(els.download, url, name);
       els.statPages.textContent = String(keep.length);
-      els.statChanges.textContent = (els.summaryParts && els.summaryParts.length) ? String(els.summaryParts.length === 1 ? els.summaryParts[0] : `${els.summaryParts.length} kinds`) : 'None';
+      const c = changeCounts();
+      els.statChanges.textContent = [c.moved && 'Reordered', c.turned && `${c.turned} turned`, c.deleted && `${c.deleted} deleted`, c.inserted && `${c.inserted} added`].filter(Boolean).join(', ') || 'None';
       els.statSize.textContent = Files.formatBytes(bytes.length);
       els.resultText.textContent = `${UI.plural(keep.length, 'page')} in the order shown, checked after saving. Your original file is unchanged.`;
       tool.showResult();

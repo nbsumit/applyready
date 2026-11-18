@@ -66,6 +66,7 @@
       handle.type = 'button';
       handle.className = 'btn btn-ghost btn-icon btn-sm merge-row__handle';
       handle.setAttribute('aria-label', `Move ${it.file.name}, position ${i + 1} of ${items.length}. Drag, or use the arrow keys.`);
+      handle.title = 'Drag to move';
       handle.innerHTML = '<i class="fa-solid fa-grip-vertical" aria-hidden="true"></i>';
 
       const thumb = doc.createElement('span');
@@ -88,19 +89,20 @@
 
       const actions = doc.createElement('span');
       actions.className = 'file-row__actions';
-      const mk = (cls, iconName, label, disabled) => {
+      const mk = (cls, iconName, label, tip, disabled) => {
         const b = doc.createElement('button');
         b.type = 'button';
         b.className = `btn btn-ghost btn-icon btn-sm ${cls}`;
         b.setAttribute('aria-label', label);
+        b.title = tip;
         b.innerHTML = `<i class="fa-solid fa-${iconName}" aria-hidden="true"></i>`;
         b.disabled = !!disabled;
         return b;
       };
       actions.append(
-        mk('merge-up', 'arrow-up', `Move ${it.file.name} up`, i === 0),
-        mk('merge-down', 'arrow-down', `Move ${it.file.name} down`, i === items.length - 1),
-        mk('merge-remove btn-danger-ghost', 'xmark', `Remove ${it.file.name}`)
+        mk('merge-up', 'arrow-up', `Move ${it.file.name} up`, 'Move up', i === 0),
+        mk('merge-down', 'arrow-down', `Move ${it.file.name} down`, 'Move down', i === items.length - 1),
+        mk('merge-remove btn-danger-ghost', 'xmark', `Remove ${it.file.name}`, 'Remove')
       );
       li.append(handle, thumb, text, actions);
       els.list.appendChild(li);
@@ -173,6 +175,10 @@
   // Files refused by the drop zone are reported together with problems found while opening the rest.
   let rejected = [];
   function addFiles(files, infos) {
+    if (runner.busy) {
+      error.show('Wait for the merge to finish, or select Cancel, before adding more files.');
+      return adding;
+    }
     const earlier = rejected;
     rejected = [];
     if (!earlier.length) error.hide();
@@ -189,6 +195,7 @@
         }
       }
       render();
+      if (items.length) UI.keepFocus($('mergeDrop'), els.add);
       if (problems.length) error.show(problems);
       if (added) Kit.announce(`${UI.plural(added, 'file')} added. ${UI.plural(items.length, 'file')} in the list.`);
     });

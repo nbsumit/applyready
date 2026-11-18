@@ -106,11 +106,14 @@
 
   function validate(showErrors) {
     const p = plan(showErrors);
+    els.summary.classList.remove('is-invalid');
     if (p.error) { els.run.disabled = !tool.state; els.summary.textContent = tool.state ? p.error : ''; els.summary.classList.toggle('is-pending', !!tool.state); return p; }
     els.summary.classList.remove('is-pending');
     const pages = p.files.reduce((s, f) => s + f.indexes.length, 0);
-    els.run.disabled = false;
-    els.summary.textContent = p.files.length > K.LIMITS.outputs
+    const tooMany = p.files.length > K.LIMITS.outputs;
+    els.run.disabled = tooMany;
+    els.summary.classList.toggle('is-invalid', tooMany);
+    els.summary.textContent = tooMany
       ? `That would make ${p.files.length} files; the limit is ${K.LIMITS.outputs}. Choose larger parts.`
       : p.files.length === 1 ? `Creates 1 PDF with ${UI.plural(pages, 'page')}.` : `Creates ${p.files.length} PDFs, ${UI.plural(pages, 'page')} in all.`;
     // Selected thumbnails follow the typed list.

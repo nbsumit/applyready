@@ -1452,7 +1452,7 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
 .page-tile__placeholder { font-size: var(--fs-lg); font-weight: var(--fw-strong); color: var(--c-text-4); font-variant-numeric: tabular-nums; }
 /* The thumbnail always fits its box, whatever the page shape (a percentage max-height does not resolve against an aspect-ratio box) */
 .page-tile__img { position: relative; }
-.page-tile__img img { position: absolute; inset: var(--s-2); margin: auto; display: block; width: auto; height: auto; max-width: 100%; max-height: 100%; background: #fff; }
+.page-tile__img img { position: absolute; inset: var(--s-2); margin: auto; display: block; width: auto; height: auto; max-width: calc(100% - 2 * var(--s-2)); max-height: calc(100% - 2 * var(--s-2)); }
 .page-tile.is-selected .page-tile__label { color: var(--c-accent); font-weight: var(--fw-strong); }
 .page-tile.is-selected .page-tile__label::after { content: ''; flex: none; width: 12px; height: 12px; background: var(--c-accent); -webkit-mask: var(--mask-check) center/contain no-repeat; mask: var(--mask-check) center/contain no-repeat; }
 
@@ -1504,7 +1504,7 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
 /* Preview of the first changed page (page numbers, watermark) */
 .pdf-preview { display: grid; gap: var(--s-2); justify-items: center; margin: 0; }
 .pdf-preview__frame { display: grid; place-items: center; width: 100%; padding: var(--s-5); background: var(--c-desk); border: var(--bw) solid var(--c-line); border-radius: var(--r-md); }
-.pdf-preview__frame img { display: block; max-width: 100%; max-height: 560px; width: auto; height: auto; background: #fff; box-shadow: var(--sh-paper); }
+.pdf-preview__frame img { display: block; max-width: 100%; max-height: 560px; width: auto; height: auto; box-shadow: var(--sh-paper); }
 
 @media (max-width: 639px) {
   .merge-row { grid-template-columns: auto 40px minmax(0, 1fr); }
