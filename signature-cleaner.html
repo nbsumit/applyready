@@ -8,23 +8,22 @@
   <meta name="applyready-tool" content="signature-cleaner">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Online Signature Background Cleaner: Whiten Paper &amp; Darken Ink | ApplyReady</title>
-  <meta name="description" content="Turn a phone photo of a signature into dark ink on white paper, then download it as JPG or transparent PNG. Runs in your browser; the image is not uploaded.">
+  <title>Signature Cleaner: White Paper, Dark Ink | ApplyReady</title>
+  <meta name="description" content="Turn a phone photo of a signature into dark ink on white paper, free in your browser with nothing uploaded. Download it as JPG or transparent PNG.">
   <link rel="canonical" href="https://applyready.in/signature-cleaner.html">
 
   <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ApplyReady">
   <meta property="og:url" content="https://applyready.in/signature-cleaner.html">
-  <meta property="og:title" content="Online Signature Background Cleaner: Whiten Paper &amp; Darken Ink">
-  <meta property="og:description" content="Whiten the paper and darken the ink in a photographed signature for job portals and application forms, in your browser. Measured results included.">
+  <meta property="og:title" content="Signature Cleaner: White Paper, Dark Ink">
+  <meta property="og:description" content="Turn a phone photo of a signature into dark ink on white paper, free in your browser with nothing uploaded. Download it as JPG or transparent PNG.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-
-  <!-- Twitter Card -->
+  <meta property="og:image:alt" content="ApplyReady: free tools for job applications. Resume builder, photo and signature tools and PDF tools that run in your browser; nothing is uploaded.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://applyready.in/signature-cleaner.html">
-  <meta name="twitter:title" content="Online Signature Background Cleaner | ApplyReady">
-  <meta name="twitter:description" content="Whiten the paper and darken the ink in a photographed signature. Runs in your browser.">
+  <meta name="twitter:title" content="Signature Cleaner: White Paper, Dark Ink">
+  <meta name="twitter:description" content="Turn a phone photo of a signature into dark ink on white paper, free in your browser with nothing uploaded. Download it as JPG or transparent PNG.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -45,108 +44,101 @@
   <link rel="stylesheet" href="css/app.css?v=20261118">
   <!-- shell:styles:end -->
 
-  <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "ApplyReady Signature Background Cleaner",
-    "url": "https://applyready.in/signature-cleaner.html",
-    "description": "Free in-browser tool to clean paper signatures, whiten background shadows, and darken ink strokes for job portals and online application forms.",
-    "applicationCategory": "UtilitiesApplication",
-    "operatingSystem": "All",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "INR"
-    }
-  }
-  </script>
-
-  <!-- BreadcrumbList Schema -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
+    "@graph": [
       {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://applyready.in/"
+        "@type": "WebApplication",
+        "name": "ApplyReady Signature cleaner",
+        "url": "https://applyready.in/signature-cleaner.html",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any modern browser",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
       },
       {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Image tools",
-        "item": "https://applyready.in/tools.html#image"
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://applyready.in/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Image tools",
+            "item": "https://applyready.in/tools.html#image"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Signature cleaner",
+            "item": "https://applyready.in/signature-cleaner.html"
+          }
+        ]
       },
       {
-        "@type": "ListItem",
-        "position": 3,
-        "name": "Signature Background Cleaner",
-        "item": "https://applyready.in/signature-cleaner.html"
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Does this tool upload my signature to a server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The cleaning runs in your browser on your device. The image is not sent to ApplyReady or anyone else, and the tool keeps working offline once the page has loaded."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Should I choose JPEG or PNG for an application form?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Choose JPEG unless the form names another format. Forms that ask for a signature image usually want JPEG/JPG. Keep PNG and transparent PNG for placing your signature on your own documents."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I remove a shadow from the signature photo?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Raise Paper whiteness a little at a time until the grey patch turns white, then check that thin strokes are still visible. If they start to break up, retake the photo in daylight without your hand or phone over the page; that works better than any setting."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I turn blue ink into black?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Choose black in the Ink colour menu. Check your form first: some forms ask for black ink on the paper, which a colour change after the fact does not replace."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why is the cleaned file still too large for the form?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 46.7 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is a cleaned signature image a digital signature?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. It is a picture of your handwriting. A digital signature is created with a digital signature certificate and is tied to the content of a document; see the guide on signature images and digital signatures."
+            }
+          }
+        ]
       }
     ]
   }
-  </script>
-
-  <!-- FAQPage Schema -->
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Does this tool upload my signature to a server?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "No. The cleaning runs in your browser on your device. The image is not sent to ApplyReady or anyone else, and the tool keeps working offline once the page has loaded."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Should I choose JPEG or PNG for an application form?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Choose JPEG unless the form names another format. Forms that ask for a signature image usually want JPEG/JPG. Keep PNG and transparent PNG for placing your signature on your own documents."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How do I remove a shadow from the signature photo?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Raise Paper whiteness a little at a time until the grey patch turns white, then check that thin strokes are still visible. If they start to break up, retake the photo in daylight without your hand or phone over the page; that works better than any setting."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Can I turn blue ink into black?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes. Choose black in the Ink colour menu. Check your form first: some forms ask for black ink on the paper, which a colour change after the fact does not replace."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Why is the cleaned file still too large for the form?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 46.7 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Is a cleaned signature image a digital signature?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "No. It is a picture of your handwriting. A digital signature is created with a digital signature certificate and is tied to the content of a document; see the guide on signature images and digital signatures."
-      }
-    }
-  ]
-}
   </script>
 
 </head>
@@ -241,12 +233,12 @@
         <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
           <li class="breadcrumb-item"><a href="tools.html#image">Image tools</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Signature Cleaner</li>
+          <li class="breadcrumb-item active" aria-current="page">Signature cleaner</li>
         </ol>
       </nav>
 
       <header class="page-head">
-        <h1 class="page-title">Online Signature Background Cleaner: Whiten Paper &amp; Darken Ink</h1>
+        <h1 class="page-title">Signature cleaner</h1>
         <p class="page-lede">Remove the grey and yellow from a photographed signature so the ink is dark on white paper, then size it for your form. The image stays in your browser.</p>
       </header>
 
@@ -373,7 +365,7 @@
       <!-- Frequently Asked Questions (FAQ) Section -->
 
       <section class="faq-section">
-        <h2>Frequently Asked Questions</h2>
+        <h2>Questions</h2>
 
         <details class="faq-item">
           <summary class="faq-question">Does this tool upload my signature to a server?</summary>
@@ -422,17 +414,17 @@
         <h2 id="guidesHeading" class="related-guides-title">Guides that help with this tool</h2>
         <div class="related-guides-grid">
           <a href="guides/digital-signature-for-online-forms.html" class="guide-card">
-            <strong>How to Make a Clean Signature Image for Online Forms</strong>
+            <strong>Signature Images for Online Forms, and How They Differ from a Digital Signature</strong>
             <p class="text-muted">A signature file is rejected for being grey, crooked, too faint or too large. Almost all of that is fixed before you open any software.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="guides/phone-camera-tips-for-document-scans.html" class="guide-card">
-            <strong>Scanning Documents with a Phone Camera: Settings That Keep Text Sharp</strong>
+            <strong>How to Scan Documents with a Phone Camera So the Text Stays Readable</strong>
             <p class="text-muted">Most "unreadable document" rejections are decided in the first ten seconds, when you take the photo.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="guides/fix-common-photo-upload-errors.html" class="guide-card">
-            <strong>Twelve Common Photo and Document Upload Errors and How to Fix Each</strong>
+            <strong>Photo Upload Errors: What Each Message Means and How to Fix It</strong>
             <p class="text-muted">Match the message on your screen to its usual cause and the fastest fix.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
@@ -441,11 +433,11 @@
 
       <!-- Related Tools Navigation -->
       <section class="section related-tools" aria-labelledby="relatedToolsHeading">
-        <h2 class="section-title" id="relatedToolsHeading">Related Tools &amp; Guides</h2>
+        <h2 class="section-title" id="relatedToolsHeading">Related tools</h2>
         <div class="guide-card-grid">
-          <a href="image-resizer.html" class="guide-card"><strong>Image resizer</strong><p>Resize photos and signatures to exact dimensions and KB limits.</p></a>
-          <a href="resize-image-to-20kb.html" class="guide-card"><strong>Resize Image to 20 KB</strong><p>Bring a signature under a common application form limit.</p></a>
-          <a href="image-to-pdf.html" class="guide-card"><strong>Image to PDF</strong><p>Combine signed pages and scans into one PDF.</p></a>
+          <a href="signature-resizer.html" class="guide-card"><strong>Signature resizer</strong><p>Signature image at the exact size and KB limit.</p></a>
+          <a href="image-resizer.html" class="guide-card"><strong>Image resizer</strong><p>Exact pixel size and KB limit, with crop and rotate.</p></a>
+          <a href="image-to-pdf.html" class="guide-card"><strong>Image to PDF</strong><p>Combine photos and scans into one PDF.</p></a>
         </div>
       </section>
 

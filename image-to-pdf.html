@@ -8,23 +8,22 @@
   <meta name="applyready-tool" content="image-to-pdf">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Image to PDF Converter Online: Combine JPG, PNG &amp; WebP | ApplyReady</title>
-  <meta name="description" content="Combine JPG, PNG and WebP photos of certificates into one A4 or Letter PDF, in page order, with a choice of margins and quality. Runs in your browser; files are not uploaded.">
+  <title>Image to PDF: Combine JPG, PNG and WebP into One PDF | ApplyReady</title>
+  <meta name="description" content="Combine photos or scans of certificates into one A4 or Letter PDF, in the order you choose. Free, in your browser; nothing is uploaded.">
   <link rel="canonical" href="https://applyready.in/image-to-pdf.html">
 
   <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ApplyReady">
   <meta property="og:url" content="https://applyready.in/image-to-pdf.html">
-  <meta property="og:title" content="Image to PDF Converter Online: Combine JPG, PNG &amp; WebP">
-  <meta property="og:description" content="Combine photos of certificates and marksheets into one PDF, in your browser. Measured sizes at each quality setting.">
+  <meta property="og:title" content="Image to PDF: Combine JPG, PNG and WebP into One PDF">
+  <meta property="og:description" content="Combine photos or scans of certificates into one A4 or Letter PDF, in the order you choose. Free, in your browser; nothing is uploaded.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-
-  <!-- Twitter Card -->
+  <meta property="og:image:alt" content="ApplyReady: free tools for job applications. Resume builder, photo and signature tools and PDF tools that run in your browser; nothing is uploaded.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://applyready.in/image-to-pdf.html">
-  <meta name="twitter:title" content="Image to PDF Converter Online | ApplyReady">
-  <meta name="twitter:description" content="Combine JPG, PNG and WebP images into one PDF, in your browser.">
+  <meta name="twitter:title" content="Image to PDF: Combine JPG, PNG and WebP into One PDF">
+  <meta name="twitter:description" content="Combine photos or scans of certificates into one A4 or Letter PDF, in the order you choose. Free, in your browser; nothing is uploaded.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -45,108 +44,101 @@
   <link rel="stylesheet" href="css/app.css?v=20261118">
   <!-- shell:styles:end -->
 
-  <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "ApplyReady Image to PDF Converter",
-    "url": "https://applyready.in/image-to-pdf.html",
-    "description": "Free in-browser image to PDF converter. Combine JPG, PNG, and WebP images into standardized A4 or Letter PDF documents with zero server uploads.",
-    "applicationCategory": "UtilitiesApplication",
-    "operatingSystem": "All",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "INR"
-    }
-  }
-  </script>
-
-  <!-- BreadcrumbList Schema -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
+    "@graph": [
       {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://applyready.in/"
+        "@type": "WebApplication",
+        "name": "ApplyReady Image to PDF",
+        "url": "https://applyready.in/image-to-pdf.html",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any modern browser",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
       },
       {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Image Tools",
-        "item": "https://applyready.in/"
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://applyready.in/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "PDF tools",
+            "item": "https://applyready.in/tools.html#pdf"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Image to PDF",
+            "item": "https://applyready.in/image-to-pdf.html"
+          }
+        ]
       },
       {
-        "@type": "ListItem",
-        "position": 3,
-        "name": "Image to PDF",
-        "item": "https://applyready.in/image-to-pdf.html"
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I combine several certificates into one PDF?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Add all the photos or scans at once, put them in the order the portal asks for by dragging the handles or using the arrows, choose the page size, then select Create PDF. Each image becomes one page."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Are my documents uploaded to a server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. The PDF is built in your browser on your device. Your mark sheets, certificates and identity documents are not sent to ApplyReady or anyone else."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which page size should I choose?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A4 suits most uploads and prints cleanly. Choose Same as each image when the portal wants the page to match the photo's own proportions, and follow the portal's instructions if they name a size."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will landscape images be cropped?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. With Orientation set to Automatic, each page follows its image, so a wide photo gets a landscape page. Rotate any page that was photographed sideways before creating the PDF."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which image formats can I add?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "JPEG, PNG and WebP images. iPhone HEIC photos need to be shared or saved as JPEG first."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "The PDF is larger than the portal allows. What now?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Choose Compact quality and create the PDF again, or run it through the PDF compressor with the portal's limit. In our test, a two-page PDF went from 227.5 KB at Balanced to 136.3 KB at Compact, and to 77.3 KB with the compressor set to 100 KB."
+            }
+          }
+        ]
       }
     ]
   }
-  </script>
-
-  <!-- FAQPage Schema -->
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "How do I combine several certificates into one PDF?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Add all the photos or scans at once, put them in the order the portal asks for by dragging the handles or using the arrows, choose the page size, then select Create PDF. Each image becomes one page."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Are my documents uploaded to a server?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "No. The PDF is built in your browser on your device. Your mark sheets, certificates and identity documents are not sent to ApplyReady or anyone else."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Which page size should I choose?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "A4 suits most uploads and prints cleanly. Choose Same as each image when the portal wants the page to match the photo's own proportions, and follow the portal's instructions if they name a size."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Will landscape images be cropped?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "No. With Orientation set to Automatic, each page follows its image, so a wide photo gets a landscape page. Rotate any page that was photographed sideways before creating the PDF."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Which image formats can I add?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "JPEG, PNG and WebP images. iPhone HEIC photos need to be shared or saved as JPEG first."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "The PDF is larger than the portal allows. What now?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Choose Compact quality and create the PDF again, or run it through the PDF compressor with the portal's limit. In our test, a two-page PDF went from 227.5 KB at Balanced to 136.3 KB at Compact, and to 77.3 KB with the compressor set to 100 KB."
-      }
-    }
-  ]
-}
   </script>
 
 </head>
@@ -240,13 +232,13 @@
       <nav class="breadcrumb-nav" aria-label="Breadcrumb">
         <ol class="breadcrumb-list">
           <li class="breadcrumb-item"><a href="/">Home</a></li>
-          <li class="breadcrumb-item"><a href="/">Image tools</a></li>
+          <li class="breadcrumb-item"><a href="tools.html#pdf">PDF tools</a></li>
           <li class="breadcrumb-item active" aria-current="page">Image to PDF</li>
         </ol>
       </nav>
 
       <header class="page-head">
-        <h1 class="page-title">Image to PDF Converter Online: Combine JPG, PNG &amp; WebP to PDF</h1>
+        <h1 class="page-title">Image to PDF</h1>
         <p class="page-lede">Put photos or scans of your certificates into one PDF, in the order you choose, on A4 or Letter pages. The files stay in your browser.</p>
       </header>
 
@@ -377,7 +369,7 @@
 
         <h3>When not to use this tool</h3>
         <ul>
-          <li><strong>The document is already a PDF.</strong> Use the <a href="compress-pdf.html">PDF compressor</a> instead; turning a PDF into images and back loses text quality.</li>
+          <li><strong>Some of your documents are already PDFs.</strong> PDFs cannot be added here; if you choose one, the tool says so. Use <a href="merge-pdf.html">Merge PDF</a> to combine PDFs with photos or scans in one file, and the <a href="compress-pdf.html">PDF compressor</a> to make a PDF smaller. Turning a PDF into images and back loses text quality.</li>
           <li><strong>The PDF must stay searchable or digitally signed.</strong> A PDF built from photos contains pictures of text, not text, and a document's digital signature does not survive being photographed. Upload the original file you received.</li>
           <li><strong>The portal asks for separate files.</strong> Some forms have one upload slot per certificate, with a format and size given for each, for example a separate PDF of 50 to 300 KB for each certificate. Follow the slots, not one combined file; <a href="guides/combine-documents-into-one-pdf.html">combining scans into one PDF</a> explains when to merge and when not to.</li>
         </ul>
@@ -387,7 +379,7 @@
       <!-- Frequently Asked Questions (FAQ) Section -->
 
       <section class="faq-section">
-        <h2>Frequently Asked Questions</h2>
+        <h2>Questions</h2>
 
         <details class="faq-item">
           <summary class="faq-question">How do I combine several certificates into one PDF?</summary>
@@ -436,17 +428,17 @@
         <h2 id="guidesHeading" class="related-guides-title">Guides that help with this tool</h2>
         <div class="related-guides-grid">
           <a href="guides/combine-documents-into-one-pdf.html" class="guide-card">
-            <strong>How to Combine Certificates and Scans into One PDF for an Application</strong>
+            <strong>How to Combine Scans and Photos into One PDF in the Right Order</strong>
             <p class="text-muted">One tidy PDF in the right order is easier for a reviewer to read, and less likely to be rejected, than six loose files.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="guides/compress-pdf-for-upload-portals.html" class="guide-card">
-            <strong>How to Reduce a Scanned PDF to 200 KB Without Making It Unreadable</strong>
+            <strong>How to Get a Scanned PDF Under a Portal's Size Limit and Keep It Readable</strong>
             <p class="text-muted">A scan is a picture of a page. Making it smaller means choosing how much of that picture to keep.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
           <a href="guides/document-checklist-before-online-application.html" class="guide-card">
-            <strong>The Document Checklist to Finish Before You Start an Online Application</strong>
+            <strong>What to Prepare Before You Start an Online Application</strong>
             <p class="text-muted">Applications fail at the last hour, when the portal is slow and the file is wrong. Do the file work first.</p>
             <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
           </a>
@@ -455,11 +447,11 @@
 
       <!-- Related Tools Navigation -->
       <section class="section related-tools" aria-labelledby="relatedToolsHeading">
-        <h2 class="section-title" id="relatedToolsHeading">Related Tools &amp; Guides</h2>
+        <h2 class="section-title" id="relatedToolsHeading">Related tools</h2>
         <div class="guide-card-grid">
-          <a href="compress-pdf.html" class="guide-card"><strong>Compress PDF to Target KB</strong><p>Reduce scanned PDF certificate sizes to under 100 KB, 200 KB, or 500 KB.</p></a>
-          <a href="image-resizer.html" class="guide-card"><strong>Image resizer</strong><p>Resize photos and signatures to exact dimensions and KB limits.</p></a>
-          <a href="signature-cleaner.html" class="guide-card"><strong>Signature Background Cleaner</strong><p>Whiten paper shadows and darken ink lines on signature scans.</p></a>
+          <a href="merge-pdf.html" class="guide-card"><strong>Merge PDF</strong><p>Join several PDFs into one, in the order you choose.</p></a>
+          <a href="compress-pdf.html" class="guide-card"><strong>Compress PDF</strong><p>Make a PDF small enough for an upload limit.</p></a>
+          <a href="organize-pdf.html" class="guide-card"><strong>Organise PDF pages</strong><p>Reorder, rotate and delete pages.</p></a>
         </div>
       </section>
 
