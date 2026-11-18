@@ -51,6 +51,65 @@ covering its own buttons) was fixed before merging. Highlights:
   and every PDF tool page links its guide. README, CONTRIBUTING and Contribute list every tool and
   every test prerequisite. `build-tool-pages.js` gained the `--check` mode the README promised.
 
+## Verification of the final tree (18 Nov 2026)
+
+- `npm test`: 646 unit, 64 regression, 119 document-tool and 56 workspace-model checks; 10,722 content
+  assertions on 70 pages (titles, descriptions, canonicals, Open Graph, links, sitemap, offline cache,
+  no ads or exam content, one donation link, registry and every generator's `--check`, stylesheet
+  braces); 994 guide and tutorial assertions; 239 navigation and search checks. All pass.
+- `npm run test:browser` (Chromium, suites run one after another): browser tests 2,833 assertions,
+  image workflow 296, resume flow 96, resume library 144, UI suite 3,571 (every page at 32 widths,
+  axe in light and dark), robustness 81, PDF tools 222, batch images 283, document tools 153,
+  applicant workspaces 137, tutorials followed in the real tools 208, smoke 20. All pass.
+- Tutorial screenshots were retaken from the merged interface (35 desktop and 35 phone captures) and
+  checked by eye.
+- Not run here: the Firefox suites (`npm run test:firefox`, no Firefox in this environment), Safari
+  (no WebKit test), and the GitHub Actions workflow itself (nothing has been pushed to a pull request).
+
+Page weight, first visit with no cache, measured in Chromium at 360 px on a throttled "slow 4G" link
+(1.6 Mbps, 150 ms latency). The test server did not compress, so the times are pessimistic; GitHub
+Pages serves the text files gzipped (the gzip column).
+
+| Page | Requests | Raw KB | Gzip KB | First paint | Load |
+|---|---|---|---|---|---|
+| Home | 14 | 356 | 128 | 2.2 s | 2.4 s |
+| All tools | 12 | 345 | 122 | 2.1 s | 2.3 s |
+| Image resizer | 15 | 478 | 193 | 2.5 s | 2.9 s |
+| Resume builder | 22 | 734 | 226 | 3.7 s | 4.0 s |
+| Merge PDF | 15 | 431 | 153 | 2.5 s | 2.7 s |
+| Compress PDF | 14 | 414 | 147 | 1.8 s | 3.2 s |
+| Batch images | 16 | 412 | 147 | 2.4 s | 2.6 s |
+| Applicant workspaces | 18 | 506 | 175 | 2.9 s | 3.1 s |
+| File checker | 16 | 455 | 161 | 2.7 s | 2.8 s |
+| A tutorial | 10 | 328 | 143 | 1.8 s | 2.2 s |
+| About | 9 | 289 | 108 | 1.8 s | 2.0 s |
+
+pdf.js and pdf-lib (about 2.4 MB uncompressed, with the pdf.js worker) load only when a PDF is opened, and are then cached. After the first
+visit, the service worker serves every file it has seen from this device.
+
+## Known limitations (honest list)
+
+- **Resume PDF fonts:** the built-in PDF writer uses standard fonts. A ₹ sign, arrows, ticks or text in
+  an Indian script cannot be written; the builder names the character and field, offers a one-click
+  replacement where one exists, and otherwise uses the browser's Save as PDF.
+- **Compress PDF** turns pages into images to reach a size, so text in the result is not selectable
+  (the page says so). Word, Excel and PowerPoint files are not converted; a help section explains how
+  to export a PDF from Office, Google Docs or LibreOffice.
+- **HEIC photos** cannot be opened by most browsers; the tools explain how to get a JPEG instead.
+- **Per-job limits that protect the browser tab:** 500 images per batch, 50 files and 500 MB per merge,
+  100 MB per PDF, 50 MB and 50 megapixels per image, 2,000 pages per PDF job. Each tool states its own.
+- **Performance:** one stylesheet (161 KB, about 29 KB gzipped) is loaded by every page, and the
+  resume builder loads its PDF engine on page load because the live preview uses it. Both are
+  candidates for splitting.
+- **Applicant workspaces** keep nothing after "End session", including the size settings; an operator
+  enters them again for each session. This is deliberate.
+- **Phones:** inside the full-height My resumes dialog a message can briefly cover the text under the
+  save switch.
+- **A resume draft from a release before the resume library** is listed on Your data, where it can be
+  downloaded or deleted, but it is not deleted automatically when saving is switched off.
+- **Browsers:** tested automatically in Chromium only in this environment; Firefox suites exist but were
+  not run here, and Safari/iOS has not been tested.
+
 ## Phases 5 to 8 (complete, 18 Nov 2026)
 
 - **Phase 5, applicant workspaces (cyber cafe mode):** a separate, memory-only workspace per applicant,
@@ -159,3 +218,7 @@ resume builder 873 → 602 KB, home 256 KB, image resizer 387 KB.
    personal phone number; show ApplyReady's logo and name rather than the personal "nb" logo; optionally add
    suggested amounts. The page disables pinch-zoom, which is Razorpay's template and cannot be changed here.
 3. **AdSense account** (from the 15 Nov audit): remove applyready.in from the AdSense dashboard.
+4. **Logo.** The header and social card still use the personal "nb" mark. A designed ApplyReady mark is
+   an identity decision for the owner; replace `favicon/` and the header logo when one exists.
+5. **Publishing.** All of this is on the development branch. Review it, let the GitHub Actions workflow
+   run on a pull request, test on a real iPhone/Safari, then merge to `main` to publish on GitHub Pages.
