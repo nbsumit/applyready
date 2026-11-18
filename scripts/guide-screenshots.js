@@ -650,6 +650,22 @@ const SHOTS = {
   }
 };
 
+// A new capture can change an image's size: update width and height wherever a page shows it, so the
+// layout reserves the right space (tests/guides_tests.js checks that they match the manifest).
+function syncPages(manifest) {
+  const pages = [...fs.readdirSync(root).filter(f => f.endsWith('.html')), ...fs.readdirSync(path.join(root, 'guides')).filter(f => f.endsWith('.html')).map(f => 'guides/' + f)];
+  for (const page of pages) {
+    const file = path.join(root, page);
+    const html = fs.readFileSync(file, 'utf8');
+    const next = html.replace(/<img\b[^>]*\bsrc="(?:\.\.\/)?img\/guides\/([a-z0-9-]+)\.webp"[^>]*>/g, (tag, name) => {
+      const m = manifest[name];
+      if (!m) return tag;
+      return tag.replace(/\bwidth="\d+"/, `width="${m.width}"`).replace(/\bheight="\d+"/, `height="${m.height}"`);
+    });
+    if (next !== html) { fs.writeFileSync(file, next); console.log(`updated image sizes in ${page}`); }
+  }
+}
+
 (async () => {
   for (const f of ['photo-applicant-1.jpg', 'document-page-1.jpg', 'sample-marksheet.pdf', 'sample-certificate-locked.pdf']) {
     if (!fs.existsSync(guideSample(f))) throw new Error(`missing img/samples/guide/${f}: run python3 scripts/make-sample-images.py and node scripts/make-sample-pdfs.js`);
@@ -665,6 +681,10 @@ const SHOTS = {
   const manifestFile = path.join(out, 'manifest.json');
   const manifest = fs.existsSync(manifestFile) ? JSON.parse(fs.readFileSync(manifestFile, 'utf8')) : {};
   for (const name of Object.keys(manifest)) if (!SHOTS[name]) delete manifest[name];
+  const writeManifest = () => {
+    const sorted = Object.fromEntries(Object.keys(manifest).sort().map(k => [k, manifest[k]]));
+    fs.writeFileSync(manifestFile, JSON.stringify(sorted, null, 1) + '\n');
+  };
   for (const [name, shot] of Object.entries(SHOTS)) {
     if (wanted.length && !wanted.includes(name)) continue;
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: 'light', deviceScaleFactor: 1, acceptDownloads: true });
@@ -690,10 +710,11 @@ const SHOTS = {
     fs.writeFileSync(path.join(out, name + '.webp'), webp);
     manifest[name] = { file: `img/guides/${name}.webp`, width: clip.width, height: clip.height, alt: shot.alt, bytes: webp.length };
     console.log(`${name}.webp ${clip.width}x${clip.height} ${(webp.length / 1024).toFixed(1)} KB`);
+    // Written after every shot, so a later failure never leaves the manifest behind the files.
+    writeManifest();
     await context.close();
   }
-  const sorted = Object.fromEntries(Object.keys(manifest).sort().map(k => [k, manifest[k]]));
-  fs.writeFileSync(manifestFile, JSON.stringify(sorted, null, 1) + '\n');
+  syncPages(manifest);
   await browser.close();
   server.close();
   fs.rmSync(tmp, { recursive: true, force: true });

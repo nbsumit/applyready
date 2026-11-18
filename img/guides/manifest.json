@@ -25,7 +25,7 @@
   "width": 1202,
   "height": 656,
   "alt": "The ApplyReady crop frame over a test portrait, with the frame locked to the passport photo shape and the rotate and zoom buttons below it.",
-  "bytes": 21242
+  "bytes": 21246
  },
  "resizer-result-table": {
   "file": "img/guides/resizer-result-table.webp",
@@ -50,10 +50,10 @@
  },
  "resume-download": {
   "file": "img/guides/resume-download.webp",
-  "width": 594,
+  "width": 564,
   "height": 376,
   "alt": "The Download step of the ApplyReady resume builder offering PDF, Word and plain text versions of the same resume.",
-  "bytes": 18692
+  "bytes": 19478
  },
  "resume-job-match": {
   "file": "img/guides/resume-job-match.webp",
@@ -116,7 +116,7 @@
   "width": 842,
   "height": 155,
   "alt": "The batch image processor while it works: a progress bar with how many images are finished, an estimate of the time left and a Cancel button.",
-  "bytes": 9152
+  "bytes": 9160
  },
  "tut-compress-results": {
   "file": "img/guides/tut-compress-results.webp",
@@ -240,8 +240,8 @@
  "tut-yourdata-resumes": {
   "file": "img/guides/tut-yourdata-resumes.webp",
   "width": 1232,
-  "height": 337,
+  "height": 348,
   "alt": "The Saved resumes section of the ApplyReady Your data page listing two resumes kept in this browser, with buttons to export them all, import a backup and delete them.",
-  "bytes": 18368
+  "bytes": 21264
  }
 }
