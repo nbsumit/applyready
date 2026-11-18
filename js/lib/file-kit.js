@@ -7,7 +7,8 @@
    ApplyReadyFileKit.dropzone(root, options) -> { open(), reset() }
      root       element containing [data-dropzone], input[type=file] and a [data-browse] button
      options    { accept: ['image'] | ['pdf'] | ..., multiple, limitBytes, maxFiles,
-                  onFiles(files, infos), onReject(messages), paste: true }
+                  onFiles(files, infos), onReject(messages), paste: true,
+                  validate: false to accept any file unchecked (infos are then null) }
    ApplyReadyFileKit.thumbnail(file, size) -> Promise<objectURL|null>   small JPEG preview
    ApplyReadyFileKit.downloadZip(entries, name, { button, signal })      ZIP with progress
    ApplyReadyFileKit.guardUnload(() => boolean)                          warn before losing results
@@ -35,6 +36,12 @@
       if (files.length > opts.maxFiles) {
         messages.push(`Only the first ${opts.maxFiles} files were added. Process these, then add the rest.`);
         files = files.slice(0, opts.maxFiles);
+      }
+      // Tools that report on any file, even an empty or unknown one (the file checker), take them unvalidated.
+      if (opts.validate === false) {
+        if (messages.length && opts.onReject) opts.onReject(messages);
+        if (opts.onFiles) opts.onFiles(files, files.map(() => null));
+        return;
       }
       const results = await Promise.all(files.map(f => Files().validate(f, opts.accept, opts.limitBytes).then(r => ({ file: f, r }))));
       const good = results.filter(x => x.r.ok);

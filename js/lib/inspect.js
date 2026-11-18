@@ -777,8 +777,6 @@
     }
     const head = await reader.read(0, Math.min(size, 4096));
     const real = Files.sniff(head);
-    // A UTF-16 text file starts with a byte-order mark and contains zero bytes; sniff calls it unknown.
-    if (real.kind === 'unknown' && ((head[0] === 0xFF && head[1] === 0xFE) || (head[0] === 0xFE && head[1] === 0xFF))) Object.assign(real, { kind: 'text', ext: 'txt', mime: 'text/plain', label: 'Plain text (UTF-16)' });
     report.real = { kind: real.kind, label: real.label, mime: real.mime, ext: real.ext };
     report.key = real.kind === 'image' ? real.ext : real.kind === 'heic' ? 'heic' : real.kind === 'tiff' ? 'tif' : real.kind === 'ole' ? 'ole' : real.kind;
 
