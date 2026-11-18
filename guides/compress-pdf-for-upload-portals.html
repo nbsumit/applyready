@@ -52,13 +52,12 @@
       "description": "What makes a scanned PDF large, what to change first to fit a 100–500 KB limit, how ApplyReady's compressor works, and measured results from our own test files.",
       "image": "https://applyready.in/assets/social-card.png",
       "datePublished": "2026-10-11T00:00:00+05:30",
-      "dateModified": "2026-10-24T00:00:00+05:30",
+      "dateModified": "2026-11-18T00:00:00+05:30",
       "wordCount": 734,
       "author": {
-        "@type": "Person",
-        "@id": "https://applyready.in/author/sumit-sengar.html#person",
-        "name": "Sumit Sengar",
-        "url": "https://applyready.in/author/sumit-sengar.html"
+        "@type": "Organization",
+        "name": "ApplyReady",
+        "url": "https://applyready.in/"
       },
       "publisher": {
         "@type": "Organization",
@@ -171,12 +170,12 @@
         <span class="eyebrow">Documents</span>
         <h1 class="page-title">How to Get a Scanned PDF Under a Portal's Size Limit and Keep It Readable</h1>
         <p class="page-lede">A scanned PDF is a picture of each page. Remove what the form does not need, then reduce the pictures only as far as the limit requires.</p>
-        <p class="guide-meta">By <a href="../author/sumit-sengar.html" rel="author">Sumit Sengar</a> | Published <time datetime="2026-10-11">11 October 2026</time> | Last updated <time datetime="2026-10-24">24 October 2026</time></p>
+        <p class="guide-meta">ApplyReady guide | Published <time datetime="2026-10-11">11 October 2026</time> | Last updated <time datetime="2026-11-18">18 November 2026</time></p>
       </header>
 <section class="section prose">
 <h2>Why a scanned PDF is large</h2>
 <p>A PDF made from a scan or a phone photo holds a picture of each page, not text. An A4 page at 300 DPI is 2480 × 3508 pixels, about 8.7 million pixels; uncompressed, that is about 26 MB in colour. Fitting it into 100 or 300 KB means keeping far fewer pixels, compressing them harder, or both. A certificate is mostly white paper and dark text, which helps: it compresses much better than a photograph.</p>
-<p>Limits for certificates are often ranges. UPSC and NEET (UG) 2026 both ask for PDFs of 50 to 300 KB (<a href="https://upsconline.nic.in/caf/assets/PDF/Instructions%20for%20uploading%20documents-new-2.pdf">UPSC instructions</a>; <a href="https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf">NEET bulletin</a>, p. 16), IBPS for a 10th certificate up to 500 KB, and the PAN application for supporting documents of at most 300 KB per page at 200 DPI in black and white (<a href="https://tin.tin.proteantech.in/pan/form49Adsc.html">Protean guidelines</a>).</p>
+<p>Job portals and university application forms set their own limits, and they are often ranges: an illustrative portal might ask for each certificate as a PDF of 50 to 300 KB, a resume under 1 or 2 MB, and a combined "supporting documents" file under 500 KB. Read the limit printed next to each upload slot. A resume exported as text from a word processor or the <a href="../resume.html">resume builder</a> is usually well under any limit; the large files are almost always scans.</p>
 </section>
 
 <section class="section prose">
@@ -210,9 +209,9 @@
 <li>Check whether the form has more than one slot, and split the document across them.</li>
 <li>Rebuild the PDF from the original page images at a lower quality setting, rather than compressing a compressed file again.</li>
 <li>For black-and-white text, a greyscale page compresses better than a colour one; keep colour only where a stamp or seal must stay readable.</li>
-<li>If a file falls under a minimum (50 KB for UPSC and NEET (UG) certificates), rebuild it at a higher quality instead of compressing it.</li>
+<li>If a file falls under a minimum, for example a slot that accepts 50 to 300 KB, rebuild it at a higher quality instead of compressing it.</li>
 </ul>
-<p>Building the PDF in the first place is covered in <a href="combine-documents-into-one-pdf.html">combining certificates into one PDF</a>, and page capture in <a href="phone-camera-tips-for-document-scans.html">phone document scans</a>.</p>
+<p>Building the PDF in the first place is covered in <a href="combine-documents-into-one-pdf.html">combining documents into one PDF</a>, and page capture in <a href="phone-camera-tips-for-document-scans.html">phone document scans</a>.</p>
 </section>
 
 <section class="section prose">
@@ -220,7 +219,7 @@
 <h3>Will compression change the text?</h3>
 <p>In a scanned PDF the text is part of the picture, so heavy compression softens the letters. That is why you read the smallest text before uploading.</p>
 <h3>What is PDF/A?</h3>
-<p>A version of PDF for long-term archiving (<a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000318.shtml">Library of Congress</a>). The PAN application accepts "PDF/A or JPEG" for supporting documents. The compressor's output is a standard PDF, not certified PDF/A.</p>
+<p>A version of PDF for long-term archiving (<a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000318.shtml">Library of Congress</a>). A few portals ask for PDF/A for supporting documents; most accept any standard PDF. The compressor's output is a standard PDF, not certified PDF/A.</p>
 <h3>Does the compressor upload my documents?</h3>
 <p>No. It runs in your browser. <a href="staying-safe-with-document-uploads.html">Staying safe with document uploads</a> shows how to check that for any tool.</p>
 </section>
@@ -228,13 +227,11 @@
 <section class="section prose" aria-labelledby="sourcesHeading">
 <h2 id="sourcesHeading">Sources</h2>
 <ul class="sources-list">
-<li><a href="https://upsconline.nic.in/caf/assets/PDF/Instructions%20for%20uploading%20documents-new-2.pdf">UPSC: Instructions for uploading documents</a>, 50–300 KB PDF certificates</li>
-<li><a href="https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf">NTA: Information Bulletin NEET (UG)-2026</a>, p. 16</li>
-<li><a href="https://www.ibps.in/wp-content/uploads/Detailed-Notification_CRP-PO-XVI_Final_V1_30.06.2026.pdf">IBPS: CRP PO/MT-XVI notification</a>, Annexure III</li>
-<li><a href="https://tin.tin.proteantech.in/pan/form49Adsc.html">Protean: Guidelines for the DSC-based online PAN application</a>, supporting documents, 300 KB per page</li>
+<li><a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000030.shtml">Library of Congress: PDF (Portable Document Format) Family</a></li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types">MDN Web Docs: Image file type and format guide</a>, JPEG compression</li>
 <li><a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000318.shtml">Library of Congress: PDF/A family</a></li>
 </ul>
-<p>Measurements on this page come from running ApplyReady's own tools on the synthetic test images described in the <a href="../editorial-policy.html#measurements">editorial policy</a>. Found a mistake? <a href="mailto:hello@nbsumit.com?subject=Report%20a%20wrong%20spec&amp;body=Exam%20and%20page%20on%20ApplyReady%3A%20guides%2Fcompress-pdf-for-upload-portals.html%0AFigure%20shown%20on%20ApplyReady%3A%0AFigure%20in%20the%20official%20notice%3A%0ALink%20to%20the%20official%20notice%20%28PDF%20or%20page%29%3A%0A">Report an error</a>.</p>
+<p>Figures on this page were measured with ApplyReady's own tools in a current browser. Found a mistake? <a href="../contact.html">Report an error</a>.</p>
 </section>
 
       <section class="related-guides-section" aria-labelledby="relatedHeading">

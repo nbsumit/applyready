@@ -52,13 +52,12 @@
       "description": "Why pixel size, not quality, decides whether a photo stays sharp under a 20, 50 or 100 KB limit, with measurements from our resizer and a five-step method.",
       "image": "https://applyready.in/assets/social-card.png",
       "datePublished": "2026-10-11T00:00:00+05:30",
-      "dateModified": "2026-10-24T00:00:00+05:30",
+      "dateModified": "2026-11-18T00:00:00+05:30",
       "wordCount": 1247,
       "author": {
-        "@type": "Person",
-        "@id": "https://applyready.in/author/sumit-sengar.html#person",
-        "name": "Sumit Sengar",
-        "url": "https://applyready.in/author/sumit-sengar.html"
+        "@type": "Organization",
+        "name": "ApplyReady",
+        "url": "https://applyready.in/"
       },
       "publisher": {
         "@type": "Organization",
@@ -171,7 +170,7 @@
         <span class="eyebrow">Photo and file size</span>
         <h1 class="page-title">How to Get a Photo Under a KB Limit Without Blur</h1>
         <p class="page-lede">Crop first, set the pixel size second, compress last and only once. Measurements from our own resizer show why the order matters.</p>
-        <p class="guide-meta">By <a href="../author/sumit-sengar.html" rel="author">Sumit Sengar</a> | Published <time datetime="2026-10-11">11 October 2026</time> | Last updated <time datetime="2026-10-24">24 October 2026</time></p>
+        <p class="guide-meta">ApplyReady guide | Published <time datetime="2026-10-11">11 October 2026</time> | Last updated <time datetime="2026-11-18">18 November 2026</time></p>
       </header>
 <section class="section prose">
 <h2>The short answer</h2>
@@ -208,8 +207,8 @@
 <h2>The method, step by step</h2>
 <ol>
 <li><strong>Start from the original file.</strong> Every JPEG save throws away detail, and the losses add up. A photo forwarded through a chat app or already shrunk for another form has lost detail you cannot get back.</li>
-<li><strong>Crop to the subject.</strong> Head and shoulders for a photo, the ink for a signature. Exam rules also require this: UPSC asks for the face to cover at least 75% of the photo (<a href="https://upsconline.nic.in/caf/assets/PDF/instruction-photo-signature-upload-upsc.pdf">UPSC instructions</a>) and NEET (UG) 2026 for 80% (<a href="https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf">bulletin</a>, p. 16). Pixels spent on background are bytes not spent on the face.</li>
-<li><strong>Set the pixel size from the form.</strong> If the form gives one, use it exactly: IBPS asks for a 200 × 230 px photo (<a href="https://www.ibps.in/wp-content/uploads/Detailed-Notification_CRP-PO-XVI_Final_V1_30.06.2026.pdf">CRP PO/MT-XVI</a>, Annexure III). If it gives centimetres, convert with the DPI it states; see <a href="pixels-cm-inches-dpi-explained.html">pixels, cm, DPI and KB</a>. If it gives only a KB limit, choose a modest size such as 350 × 450 px for a portrait.</li>
+<li><strong>Crop to the subject.</strong> Head and shoulders for a photo, the ink for a signature. Many application forms ask for the face to fill most of the photo anyway, often three quarters or more. Pixels spent on background are bytes not spent on the face.</li>
+<li><strong>Set the pixel size from the form.</strong> If the form gives one, use it exactly, for example a portal that asks for a 200 × 230 px photo. If it gives centimetres, convert with the DPI it states; see <a href="pixels-cm-inches-dpi-explained.html">pixels, cm, DPI and KB</a>. If it gives only a KB limit, choose a modest size such as 350 × 450 px for a portrait.</li>
 <li><strong>Compress once, to the limit.</strong> Enter the maximum (and minimum, if there is one) and let the tool search for the highest quality that fits, instead of picking a quality number yourself.</li>
 <li><strong>Check at 100% zoom.</strong> Eyes, hairline and the edges of the face should be crisp. If they are not, go back to step 3 and choose fewer pixels.</li>
 </ol>
@@ -222,7 +221,7 @@
 <section class="section prose">
 <h2>How the resizer finds the highest quality that fits</h2>
 <p>After cropping and resizing to the exact pixel size, the tool encodes the image at quality 0.95. If that is within the limit, it stops. If not, it checks that quality 0.05 fits at all (if even that is too large, it says so and suggests fewer pixels), then runs a binary search between the two: seven more encodings, each time keeping the best result that is at or under the limit. The limit is counted in bytes, with 1 KB = 1,024 bytes, so a 50 KB limit means at most 51,200 bytes, and the result panel shows the exact byte count.</p>
-<p>When a range has a minimum and the image comes out smaller, the tool adds JPEG comment data to reach it. Comment data is ignored by image viewers, so the picture is unchanged. This matters for IBPS-style ranges: our 200 × 230 px portrait was 9.1 KB at quality 0.95, well under the 20 KB minimum, and was padded to 20.0 KB.</p>
+<p>When a range has a minimum and the image comes out smaller, the tool adds JPEG comment data to reach it. Comment data is ignored by image viewers, so the picture is unchanged. This matters for narrow ranges such as 20 to 50 KB: our 200 × 230 px portrait was 9.1 KB at quality 0.95, well under a 20 KB minimum, and was padded to 20.0 KB.</p>
 </section>
 
 <section class="section prose">
@@ -230,7 +229,7 @@
 <h3>The file must be PNG</h3>
 <p>PNG is lossless, so there is no quality setting to lower (<a href="https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types">MDN image format guide</a>). Our 350 × 450 px test portrait needed 196 KB as PNG, and the resizer reports that instead of producing a file that breaks the limit. If the form accepts JPEG, use it. If it requires PNG, the only lever is fewer pixels.</p>
 <h3>The form allows WebP</h3>
-<p>WebP usually stores a photo in fewer bytes than JPEG at a similar look: our portrait was 18.5 KB as WebP at 350 × 450 px against 26.5 KB as JPEG. None of the exam notices we checked (SSC, UPSC, IBPS, NEET) list WebP, so check the form first; see <a href="image-formats-guide.html">JPEG, PNG or WebP</a>.</p>
+<p>WebP usually stores a photo in fewer bytes than JPEG at a similar look: our portrait was 18.5 KB as WebP at 350 × 450 px against 26.5 KB as JPEG. Most application portals still list only JPEG for photos, so check the form first; see <a href="image-formats-guide.html">JPEG, PNG or WebP</a>.</p>
 <h3>Signatures</h3>
 <p>A signature is mostly flat white, which JPEG stores cheaply. Our 300 × 100 px test signature was 8.0 KB at quality 0.95; cleaned with the <a href="../signature-cleaner.html">signature cleaner</a> first, 6.3 KB. With signatures the usual problem is falling under a minimum, not exceeding a maximum.</p>
 <h3>The photo is still rejected</h3>
@@ -252,13 +251,11 @@
 <section class="section prose" aria-labelledby="sourcesHeading">
 <h2 id="sourcesHeading">Sources</h2>
 <ul class="sources-list">
-<li><a href="https://www.ibps.in/wp-content/uploads/Detailed-Notification_CRP-PO-XVI_Final_V1_30.06.2026.pdf">IBPS: CRP PO/MT-XVI notification</a>, 1 July 2026, Annexure III (photo 200 × 230 px, 20–50 KB)</li>
-<li><a href="https://upsconline.nic.in/caf/assets/PDF/instruction-photo-signature-upload-upsc.pdf">UPSC: Instructions for Uploading the Photo &amp; Signature</a>, face coverage, 20–200 KB</li>
-<li><a href="https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf">NTA: Information Bulletin NEET (UG)-2026</a>, p. 16</li>
+<li><a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000017.shtml">Library of Congress: JPEG Image Encoding Family</a>, lossy compression and quality</li>
 <li><a href="https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types">MDN Web Docs: Image file type and format guide</a>, JPEG is lossy, PNG lossless</li>
 <li><a href="https://jpeg.org/jpeg/">JPEG committee: JPEG 1 (ISO/IEC 10918)</a></li>
 </ul>
-<p>Measurements on this page come from running ApplyReady's own tools on the synthetic test images described in the <a href="../editorial-policy.html#measurements">editorial policy</a>. Found a mistake? <a href="mailto:hello@nbsumit.com?subject=Report%20a%20wrong%20spec&amp;body=Exam%20and%20page%20on%20ApplyReady%3A%20guides%2Fhow-to-reduce-photo-to-50kb-without-blur.html%0AFigure%20shown%20on%20ApplyReady%3A%0AFigure%20in%20the%20official%20notice%3A%0ALink%20to%20the%20official%20notice%20%28PDF%20or%20page%29%3A%0A">Report an error</a>.</p>
+<p>Figures on this page were measured with ApplyReady's own tools in a current browser. Found a mistake? <a href="../contact.html">Report an error</a>.</p>
 </section>
 
       <section class="related-guides-section" aria-labelledby="relatedHeading">

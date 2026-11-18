@@ -47,7 +47,7 @@
     "@type": "WebApplication",
     "name": "ApplyReady PDF Compressor",
     "url": "https://applyready.in/compress-pdf.html",
-    "description": "Free in-browser PDF compressor. Reduce document and scanned certificate PDF sizes to under 100 KB, 200 KB, 300 KB, or 500 KB with 100% client-side privacy.",
+    "description": "Free in-browser PDF compressor. Reduce scanned certificates and document PDFs to under 100 KB, 200 KB, 300 KB or 500 KB for job portals and application forms, without uploading the file.",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "All",
     "offers": {
@@ -94,26 +94,26 @@
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "Why do recruitment portals limit PDF certificate sizes to 200 KB or 300 KB?",
+        "name": "Why do job portals limit PDF sizes?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Portals like UPSC and state public service commissions receive hundreds of thousands of document uploads simultaneously. Capping PDFs to 200 KB or 300 KB ensures fast server processing and efficient database storage."
+          "text": "Smaller files upload faster on slow connections, take less storage, and open quickly for the person reviewing applications. The limit is set by each portal, so check the number printed next to the upload slot."
         }
       },
       {
         "@type": "Question",
-        "name": "Does this tool upload my sensitive certificates to external servers?",
+        "name": "Does this tool upload my certificates to a server?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "No. ApplyReady processes and recompresses PDF documents 100% inside your local web browser. Your marks, personal details, and certificates never touch any external server."
+          "text": "No. ApplyReady reads and recompresses the PDF inside your web browser. Your certificates, marks and personal details never leave your device."
         }
       },
       {
         "@type": "Question",
-        "name": "How does the tool ensure text on the compressed PDF remains readable?",
+        "name": "How does the tool keep text on the compressed PDF readable?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "This tool is designed specifically for scanned documents and image-based PDFs (e.g. photos of marksheets, certificates, Aadhaar scans). It uses selective JPEG stream quantization without altering page proportions. It calculates the minimum compression required to satisfy your exact KB target without discarding high-frequency text contours, ensuring dates, roll numbers, and grades stay legible."
+          "text": "It works on PDFs whose pages are images, such as scans and phone photos. Each page image is limited to 1,600 pixels on its longer side and re-encoded at the highest quality that fits that page's share of your limit. Always zoom in on the smallest text before you upload."
         }
       },
       {
@@ -126,10 +126,10 @@
       },
       {
         "@type": "Question",
-        "name": "What is the typical PDF size limit for UPSC Civil Services online application?",
+        "name": "What if my PDF is already under the limit?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "UPSC typically requires scanned document PDFs (such as photo identity proof and age relaxation certificates) to be between 20 KB and 300 KB."
+          "text": "The tool keeps your original file unchanged and says so. Compressing a file that already fits would only lose detail."
         }
       },
       {
@@ -137,7 +137,7 @@
         "name": "What should I do if my PDF file is still too large?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "If your original document was scanned at ultra-high 600 DPI, choose a lower target like 200 KB or 150 KB. The tool will automatically scale pixel dimensions to comfortably meet the limit."
+          "text": "Remove pages the form does not ask for, rebuild the PDF from the original page images at a lower quality in Image to PDF, or split the document across the upload slots the portal provides."
         }
       }
     ]
@@ -217,7 +217,7 @@
 
       <header class="page-head">
         <h1 class="page-title">Compress PDF to 100 KB, 200 KB, 300 KB, 500 KB Online</h1>
-        <p class="page-lede">Bring a scanned marksheet, certificate or identity proof under a portal's size limit. Set the limit, compress, and check the result in exact bytes. The file stays in your browser.</p>
+        <p class="page-lede">Bring a scanned certificate, mark sheet, experience letter or ID proof under a job portal's size limit. Set the limit, compress, and check the result in exact bytes. The file stays in your browser.</p>
       </header>
 
       <!-- PDF Compressor Grid -->
@@ -297,44 +297,9 @@
 
 <!-- Educational Content Section -->
       <section class="section prose">
-        <h2>PDF size limits in official notices</h2>
-        <p>These are the PDF upload limits printed in the current notices and portal instructions we have read. Each row names its source; the exam pages give the full list for each exam.</p>
-        <div class="table-wrap"><table>
-<thead>
-<tr>
-<th>Exam / Portal</th>
-<th>Document Type</th>
-<th>Required size</th>
-<th>Format and source</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>UPSC (Common Application Form)</td>
-<td>Certificates such as the board certificate, with fixed file names</td>
-<td>50 KB to 300 KB</td>
-<td>PDF (<a href="https://upsconline.nic.in/caf/assets/PDF/Instructions%20for%20uploading%20documents-new-2.pdf">Instructions for uploading documents</a>, pp. 1–2; the photo ID is a JPG of 20 to 200 KB)</td>
-</tr>
-<tr>
-<td>NEET (UG) 2026</td>
-<td>Class X certificate, category, PwBD and address proof</td>
-<td>50 KB to 300 KB</td>
-<td>PDF (<a href="https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2026/02/202602231394640855.pdf">Information Bulletin NEET (UG)-2026</a>, p. 16)</td>
-</tr>
-<tr>
-<td>IBPS (CRP PO/MT-XVI and the other 2026 notifications)</td>
-<td>SSC / SSLC / 10th standard certificate</td>
-<td>Up to 500 KB, A4 page</td>
-<td>PDF (<a href="https://www.ibps.in/wp-content/uploads/Detailed-Notification_CRP-PO-XVI_Final_V1_30.06.2026.pdf">CRP PO/MT-XVI notification</a>, Annexure III, pp. 41–42)</td>
-</tr>
-<tr>
-<td>SSC (CGL 2026)</td>
-<td>Certificate of disability, where applicable</td>
-<td>No size stated</td>
-<td>Upload required; the notice gives no format or size (<a href="https://ssc.gov.in/api/attachment/uploads/masterData/NoticeBoards/Notice_of_adv_cgl_2026.pdf">CGL 2026 notice</a>, para 9.7, p. 19)</td>
-</tr>
-</tbody>
-</table></div>
+        <h2>Typical portal limits</h2>
+        <p>Every job portal, university application form and employer onboarding system sets its own limit, and the number is printed next to the upload slot. As a rough guide, limits for a single certificate or ID scan are often a few hundred kilobytes, for example 200 KB, 300 KB or a range such as 50 to 300 KB, while a resume or a combined "supporting documents" file may be allowed 1 or 2 MB. These figures are illustrative: always use the limit on the form in front of you, and note whether it is a maximum or a range with a minimum as well.</p>
+        <p>A resume exported as text from a word processor or the <a href="resume.html">resume builder</a> is usually far below any limit. The large files are almost always scans and phone photos of paper documents, which is what this tool is for.</p>
       </section>
 
       <section class="section prose" id="before-you-compress">
@@ -343,15 +308,15 @@
         <ol>
           <li><strong>Read the portal's limit exactly.</strong> Note the unit (KB or MB), whether it is a maximum or a range, and whether the file must be a PDF. A portal that says "200 KB" means 200 KB or less, so aim a little under it.</li>
           <li><strong>Combine pages first, compress second.</strong> If the portal takes one file for several certificates, put them in one PDF with the <a href="image-to-pdf.html">image to PDF tool</a>, then compress the result. Compressing each page separately and then joining them can push the total over the limit again.</li>
-          <li><strong>Scan for the screen, not for print.</strong> A scan at 150 to 200 DPI is easy to read on a screen and far smaller than one at 600 DPI. Grayscale is enough for marksheets that have no coloured seals.</li>
+          <li><strong>Scan for the screen, not for print.</strong> A scan at 150 to 200 DPI is easy to read on a screen and far smaller than one at 600 DPI. Greyscale is enough for mark sheets and letters that have no coloured seals.</li>
           <li><strong>Pick the largest target that is allowed.</strong> A higher target keeps more detail. Choose the biggest preset that is still under the portal's limit, and only go lower if the result is still too large.</li>
-          <li><strong>Check the result before you upload.</strong> Open the download and zoom in on roll numbers, dates, signatures and stamps. If any of them is hard to read, a verifier will find it hard too, so try a higher target or rescan the page.</li>
-          <li><strong>Keep your original.</strong> Compression is meant for the upload copy. Store the untouched scan in a safe place for later applications and for the document verification round.</li>
+          <li><strong>Check the result before you upload.</strong> Open the download and zoom in on registration numbers, dates, signatures and stamps. If any of them is hard to read, the person checking your application will find it hard too, so try a higher target or rescan the page.</li>
+          <li><strong>Keep your original.</strong> Compression is meant for the upload copy. Store the untouched scan in a safe place for later applications and for document checks after an offer.</li>
         </ol>
         <h3>Why a PDF can stay large</h3>
-        <p>A PDF made from photos or scans is mostly picture data, and picture data can be reduced. Very large pages, many pages, or photographs taken at the full resolution of a modern phone camera are the usual causes of large files. If a file is still above the limit at the lowest target you can use, split the document into the sections the portal asks for, or retake the photos with the page filling the frame so that no pixels are wasted on the desk around it.</p>
+        <p>A PDF made from photos or scans is mostly picture data, and picture data can be reduced. Very large pages, many pages, or photographs taken at the full resolution of a modern phone camera are the usual causes of large files. If a file is still above the limit at the lowest target you can use, split the document into the sections the portal asks for, or retake the photos with the page filling the frame so that no pixels are wasted on the desk around it. <a href="guides/compress-pdf-for-upload-portals.html">Getting a scanned PDF under a portal's limit</a> explains the order of changes in more detail.</p>
         <h3>What happens to your file</h3>
-        <p>The document is read, compressed and rebuilt inside your browser tab. Nothing is sent to a server, so a marksheet or identity proof never leaves your device. Closing the tab clears it.</p>
+        <p>The document is read, compressed and rebuilt inside your browser tab. Nothing is sent to a server, so a mark sheet or ID proof never leaves your device. Closing the tab clears it.</p>
       </section>
 
       <!-- Frequently Asked Questions (FAQ) Section -->
@@ -360,23 +325,23 @@
         <h2>Frequently Asked Questions</h2>
 
         <details class="faq-item">
-          <summary class="faq-question">Why do recruitment portals limit PDF certificate sizes to 200 KB or 300 KB?</summary>
+          <summary class="faq-question">Why do job portals limit PDF sizes?</summary>
           <div class="faq-answer">
-            <p>Portals like UPSC and state public service commissions receive hundreds of thousands of document uploads simultaneously. Capping PDFs to 200 KB or 300 KB ensures fast server processing and efficient database storage.</p>
+            <p>Smaller files upload faster on slow connections, take less storage, and open quickly for the person reviewing applications. The limit is set by each portal, so check the number printed next to the upload slot.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">Does this tool upload my sensitive certificates to external servers?</summary>
+          <summary class="faq-question">Does this tool upload my certificates to a server?</summary>
           <div class="faq-answer">
-            <p>No. ApplyReady processes and recompresses PDF documents 100% inside your local web browser. Your marks, personal details, and certificates never touch any external server.</p>
+            <p>No. ApplyReady reads and recompresses the PDF inside your web browser. Your certificates, marks and personal details never leave your device.</p>
           </div>
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">How does the tool ensure text on the compressed PDF remains readable?</summary>
+          <summary class="faq-question">How does the tool keep text on the compressed PDF readable?</summary>
           <div class="faq-answer">
-            <p>The tool uses selective JPEG stream quantization. It calculates the minimum compression required to satisfy your exact KB target without discarding high-frequency text contours, ensuring dates, roll numbers, and grades stay legible.</p>
+            <p>It works on PDFs whose pages are images, such as scans and phone photos. Each page image is limited to 1,600 pixels on its longer side and re-encoded at the highest quality that fits that page's share of your limit. Always zoom in on the smallest text before you upload.</p>
           </div>
         </details>
 
@@ -388,21 +353,21 @@
         </details>
 
         <details class="faq-item">
-          <summary class="faq-question">What is the typical PDF size limit for UPSC Civil Services online application?</summary>
+          <summary class="faq-question">What if my PDF is already under the limit?</summary>
           <div class="faq-answer">
-            <p>UPSC typically requires scanned document PDFs (such as photo identity proof and age relaxation certificates) to be between 20 KB and 300 KB.</p>
+            <p>The tool keeps your original file unchanged and says so. Compressing a file that already fits would only lose detail.</p>
           </div>
         </details>
 
         <details class="faq-item">
           <summary class="faq-question">What should I do if my PDF file is still too large?</summary>
           <div class="faq-answer">
-            <p>If your original document was scanned at ultra-high 600 DPI, choose a lower target like 200 KB or 150 KB. The tool will automatically scale pixel dimensions to comfortably meet the limit.</p>
+            <p>Remove pages the form does not ask for, rebuild the PDF from the original page images at a lower quality in Image to PDF, or split the document across the upload slots the portal provides.</p>
           </div>
         </details>
       </section>
 
-      <section class="related-guides-section" aria-labelledby="guidesHeading">
+<section class="related-guides-section" aria-labelledby="guidesHeading">
         <h2 id="guidesHeading" class="related-guides-title">Guides that help with this tool</h2>
         <div class="related-guides-grid">
           <a href="guides/compress-pdf-for-upload-portals.html" class="guide-card">
@@ -428,8 +393,9 @@
         <h2 class="section-title" id="relatedToolsHeading">Related Tools &amp; Guides</h2>
         <div class="guide-card-grid">
           <a href="image-to-pdf.html" class="guide-card"><strong>Image to PDF Converter</strong><p>Combine JPG and PNG images into a clean standardized A4 PDF.</p></a>
-          <a href="resize-image-to-20kb.html" class="guide-card"><strong>Resize Image to 20 KB</strong><p>Fast client-side signature and photo compressor for online exams.</p></a>
+          <a href="resize-image-to-20kb.html" class="guide-card"><strong>Resize Image to 20 KB</strong><p>Compress a signature or small photo for an application form, in your browser.</p></a>
           <a href="signature-cleaner.html" class="guide-card"><strong>Signature Background Cleaner</strong><p>Whiten paper shadows and darken ink lines on signature scans.</p></a>
+
         </div>
       </section>
 
