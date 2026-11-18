@@ -172,6 +172,7 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     await page.setInputFiles('#wkDropInput', A.files.map(fx));
     await waitState(page, s => s.applicants[0].files === 5);
     await page.waitForFunction(() => document.querySelectorAll('#wkFiles .file-row__thumb img').length === 5);
+    ok(await page.locator('[role="tab"][aria-selected="true"] .wk-tab__meta').innerText() === '5 files · Not started', 'files with nothing run yet read "Not started", not "In progress"');
     ok(/1200 × 1600 px/.test(await row(page, 'ishaan-photo.jpg').locator('.file-row__meta').innerText()), 'file rows show pixel size');
     ok(await unloadWarns(page), 'reload warning once files are present');
 
@@ -233,6 +234,9 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     st = await state(page);
     ok(st.applicants[0].results === 3 && st.applicants[1].results === 3, 'each applicant has exactly its own three results');
     ok(/0 of 3 results downloaded/.test(await page.locator('#wkTally').innerText()), 'completion shows 0 of 3');
+    ok(!/downloaded/.test(await page.locator('#wkOutBar').innerText()), 'the count is shown once, not again above the ZIP button');
+    const bOrder = (await page.locator('#wkResults .file-row__name').allInnerTexts()).join(',');
+    ok(bOrder === 'noor-photo-100kb.png,noor-scan-500kb.pdf,noor-marks-merged.pdf', `results follow the file list, not the order they finished in (${bOrder})`);
     ok(await page.locator('#wkZip').evaluate(b => b.classList.contains('btn-primary')) && !(await page.locator('#wkFinish').evaluate(b => b.classList.contains('btn-primary'))), 'the ZIP is the primary action while results wait');
     await axe(page, 'applicant with files, jobs done and results');
 
@@ -240,8 +244,10 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     const zip = await download(page, () => page.click('#wkZip'));
     ok(zip.name === `Noor-Fatima-${today()}.zip`, `ZIP named from the pattern (${zip.name})`);
     ok(/No errors detected/.test(run('unzip', ['-t', zip.file])), 'the ZIP passes unzip -t');
-    const listed = run('unzip', ['-Z1', zip.file]).trim().split('\n').sort();
+    const zipOrder = run('unzip', ['-Z1', zip.file]).trim().split('\n');
+    const listed = zipOrder.slice().sort();
     ok(JSON.stringify(listed) === JSON.stringify(['noor-marks-merged.pdf', 'noor-photo-100kb.png', 'noor-scan-500kb.pdf']), `ZIP holds applicant 2’s results only: ${listed}`);
+    ok(zipOrder.join(',') === bOrder, `the ZIP lists the results in the same order as the page (${zipOrder})`);
     const out = path.join(tmp, 'zip-out');
     run('unzip', ['-o', '-q', zip.file, '-d', out]);
     ok(pdfPages(path.join(out, 'noor-scan-500kb.pdf')) === 2 && kb(path.join(out, 'noor-scan-500kb.pdf')) <= 500, `compressed PDF keeps 2 pages and is under 500 KB (${kb(path.join(out, 'noor-scan-500kb.pdf')).toFixed(1)} KB)`);
@@ -260,6 +266,8 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     dump = await page.locator('#wkPanel').evaluate(p => p.innerText + p.innerHTML);
     ok(!/noor/i.test(dump) && !dump.includes(B.name), 'applicant 1’s panel never shows applicant 2’s names or files');
     ok(await page.locator('#wkFiles .wk-file').count() === 5 && await page.locator('#wkResults .wk-result').count() === 3, 'applicant 1’s five files and three results');
+    const aOrder = (await page.locator('#wkResults .file-row__name').allInnerTexts()).join(',');
+    ok(aOrder === 'ishaan-photo-photo.jpg,ishaan-sign-signature.jpg,ishaan-cert-1-combined.pdf', `applicant 1’s results: photo, signature, then the combined scans (${aOrder})`);
     // Keyboard: arrow keys move between applicants
     await page.focus(`#wkTab-${aId}`);
     await page.keyboard.press('ArrowRight');
@@ -311,6 +319,8 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     ok(aUrls.every(u => !remaining.includes(u)), 'none of the finished applicant’s blob URLs is still on the page');
     ok((await fetchable(page, aUrls)).every(x => x === false), 'the finished applicant’s blob URLs no longer fetch');
     ok(/finished/i.test(await page.locator('#taskNotification').innerText()), 'a neutral confirmation without the name');
+    const told = await page.evaluate(() => Array.from(document.querySelectorAll('[aria-live]')).filter(n => /Applicant finished/.test(n.textContent)).length);
+    ok(told === 1, `the confirmation is announced once, not in two live regions (${told})`);
 
     // Storage: only the recently used tool id may be written, nothing about applicants
     const storage = await page.evaluate(async () => {
@@ -435,6 +445,31 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     ok(/same name/.test(await page.locator('#wkNameHint').innerText()), 'a second applicant with the same name gets a warning');
     await page.fill('#wkName', 'Ravi K');
     ok(!/same name/.test(await page.locator('#wkNameHint').innerText()), 'the warning goes once the names differ');
+
+    // A name with a slash (S/O, D/O, W/O) keeps the whole name in the ZIP name, and names that
+    // would give the same ZIP name are pointed out.
+    await page.fill('#wkName', 'Ravi S/O Ramesh');
+    await page.click('#wkNew');
+    await page.fill('#wkName', 'Ravi S-O Ramesh');
+    ok(/same name/.test(await page.locator('#wkNameHint').innerText()), 'names that differ only by a slash get the same-name warning');
+    await page.locator('[role="tab"]', { hasText: 'Ravi S/O Ramesh' }).click();
+    await page.setInputFiles('#wkDropInput', [fx('ishaan-photo.jpg')]);
+    await page.waitForFunction(() => document.querySelectorAll('#wkFiles .file-row__thumb img').length === 1);
+    // A limit the photo cannot meet: the message names settings this page has.
+    await page.locator('#wkSettings summary').click();
+    await page.fill('#wkPhotoW', '1200'); await page.fill('#wkPhotoH', '1600'); await page.fill('#wkPhotoKB', '5');
+    await page.locator('#wkSettings summary').click();
+    await row(page, 'ishaan-photo.jpg').locator('[data-act="run:photo"]').click();
+    await page.waitForFunction(() => /did not work/.test(document.getElementById('wkFiles').innerText), null, { timeout: 60000 });
+    const nofit = await row(page, 'ishaan-photo.jpg').locator('.file-row__error').innerText();
+    ok(/does not fit under 5 KB at 1200 × 1600 px/.test(nofit) && /In Session settings, raise the photo size limit or lower its width and height/.test(nofit) && !/Allow smaller dimensions/.test(nofit), `the error points to Session settings, not a switch this page lacks (${nofit})`);
+    await page.locator('#wkSettings summary').click();
+    await page.click('#wkSettingsReset');
+    await page.locator('#wkSettings summary').click();
+    await row(page, 'ishaan-photo.jpg').locator('[data-act="run:photo"]').click();
+    await page.waitForFunction(() => document.querySelectorAll('#wkResults .wk-result').length === 1, null, { timeout: 60000 });
+    const slashZip = await download(page, () => page.click('#wkZip'));
+    ok(slashZip.name === `Ravi-S-O-Ramesh-${today()}.zip`, `a slash in the name keeps the whole name in the ZIP name (${slashZip.name})`);
     ok(errors.length === 0, `no page errors: ${errors.join(' | ')}`);
     await context.close();
   }

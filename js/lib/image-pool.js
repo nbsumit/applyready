@@ -50,7 +50,14 @@
         if (!job || data.id !== job.id) return;
         if (data.type === 'progress') { if (job.onProgress) { try { job.onProgress(data.value); } catch (err) { /* ignore */ } } return; }
         finish(slot);
-        if (data.ok) job.resolve(data.result); else job.reject(new Error(data.error));
+        if (data.ok) job.resolve(data.result);
+        else {
+          // The error's code and detail survive the trip from the worker, so pages can reword it.
+          const err = new Error(data.error);
+          if (data.code) err.code = data.code;
+          if (data.detail) err.detail = data.detail;
+          job.reject(err);
+        }
       };
       w.onerror = (e) => {
         const job = slot.job;

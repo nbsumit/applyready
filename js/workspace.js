@@ -42,7 +42,7 @@
     selBar: $('wkSelBar'), selText: $('wkSelText'), combine: $('wkCombine'), combineLabel: $('wkCombineLabel'), selNone: $('wkSelNone'),
     files: $('wkFiles'),
     jobsBox: $('wkJobsBox'), jobs: $('wkJobs'),
-    resultsEmpty: $('wkResultsEmpty'), outBar: $('wkOutBar'), doneLine: $('wkDoneLine'), zip: $('wkZip'), zipLabel: $('wkZipLabel'),
+    resultsEmpty: $('wkResultsEmpty'), outBar: $('wkOutBar'), zip: $('wkZip'), zipLabel: $('wkZipLabel'),
     results: $('wkResults')
   };
 
@@ -56,9 +56,10 @@
   }
 
   const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + 's')}`;
-  const kb = bytes => `${(bytes / 1024).toFixed(1)} KB`;
+  // Exact KB under 1 MB, where sizes are compared with a form's limit; MB above, like the file list.
+  const size = bytes => (bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : Files.formatBytes(bytes));
   const FORMAT = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
-  const STATUS = { new: 'No files yet', working: 'In progress', ready: 'Ready', downloaded: 'Downloaded' };
+  const STATUS = { new: 'No files yet', added: 'Not started', working: 'In progress', ready: 'Ready', downloaded: 'Downloaded' };
   const stemOf = name => Files.stem(Files.safeFileName(name || 'file', 'file')) || 'file';
   const announce = message => Kit.announce(message);
   const notify = (message, error) => { if (UI().notify) UI().notify(message, error); };
@@ -240,7 +241,9 @@
 
   /** The hint under the name, with a warning when another applicant in the session has the same name. */
   function renderNameHint(a) {
-    const same = a.name.trim() && session.applicants.some(x => x !== a && x.label.toLowerCase() === a.label.toLowerCase());
+    // Compared as they appear in the ZIP name, so "Ravi S/O" and "Ravi S-O" count as the same.
+    const zipKey = x => Model.zipName('{applicant}', x).toLowerCase();
+    const same = a.name.trim() && session.applicants.some(x => x !== a && zipKey(x) === zipKey(a));
     el.nameHint.textContent = same
       ? 'Another applicant in this session has the same name, so their ZIP files would be named alike. Add an initial or a number to tell them apart.'
       : `Shown in the list and in the ZIP name. Leave it empty to keep “Applicant ${a.number}”.`;
@@ -254,7 +257,6 @@
     el.name.value = '';
     el.nameHint.textContent = '';
     el.tally.textContent = '';
-    el.doneLine.textContent = '';
     el.zipLabel.textContent = 'Download all (ZIP)';
     el.selText.textContent = '';
     el.panel.removeAttribute('aria-labelledby');
@@ -317,11 +319,10 @@
     // Results
     el.resultsEmpty.hidden = c.results > 0;
     el.outBar.hidden = !c.results;
-    el.doneLine.textContent = c.results ? `${c.downloaded} of ${plural(c.results, 'result')} downloaded` : '';
     el.zipLabel.textContent = a.zipping ? 'Preparing ZIP…' : `Download all for ${a.label} (ZIP)`;
     el.zip.disabled = !!a.zipping || !c.results;
     el.zip.classList.toggle('btn-primary', c.waiting > 0);
-    syncList(el.results, a.results, r => r.id, r => resultSig(a, r, s), r => resultRow(a, r, s));
+    syncList(el.results, a.orderedResults, r => r.id, r => resultSig(a, r, s), r => resultRow(a, r, s));
   }
 
   /**
@@ -377,7 +378,8 @@
   const returnKey = (list, key) => { const back = giveBack.get(list); return back && back.holder === key ? back.key : key; };
 
   const node = (tag, cls, text) => { const n = doc.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
-  const icon = name => { const i = doc.createElement('i'); i.className = `fa-solid fa-${name}`; i.setAttribute('aria-hidden', 'true'); return i; };
+  // Icons are named by their whole class ('fa-download'), so scripts/build-icons.py finds them.
+  const icon = cls => { const i = doc.createElement('i'); i.className = `fa-solid ${cls}`; i.setAttribute('aria-hidden', 'true'); return i; };
   function button(label, opts) {
     const o = opts || {};
     const b = doc.createElement('button');
@@ -400,7 +402,7 @@
     jpeg: () => 'Convert to JPEG',
     pdf: s => `Compress PDF to ${s.pdfKB} KB`
   };
-  const ACTION_ICON = { photo: 'id-badge', signature: 'signature', compress: 'compress', jpeg: 'arrows-rotate', pdf: 'file-zipper' };
+  const ACTION_ICON = { photo: 'fa-id-badge', signature: 'fa-signature', compress: 'fa-compress', jpeg: 'fa-arrows-rotate', pdf: 'fa-file-zipper' };
   const ACTION_VERB = { photo: 'Making the passport photo', signature: 'Making the signature', compress: 'Compressing', jpeg: 'Converting to JPEG', pdf: 'Compressing the PDF' };
 
   function fileFacts(f) {
@@ -437,7 +439,7 @@
 
     const thumb = node('span', 'file-row__thumb');
     if (f.thumb) { const img = doc.createElement('img'); img.src = f.thumb; img.alt = ''; img.decoding = 'async'; thumb.appendChild(img); }
-    else thumb.appendChild(icon(f.kind === 'pdf' ? 'file-pdf' : 'image'));
+    else thumb.appendChild(icon(f.kind === 'pdf' ? 'fa-file-pdf' : 'fa-image'));
 
     const text = node('div', 'file-row__text');
     const name = node('span', 'file-row__name', f.name);
@@ -445,14 +447,14 @@
     text.append(name, node('span', 'file-row__meta', fileFacts(f)));
     if (f.error) text.appendChild(node('span', 'file-row__error', f.error));
     else if (f.actionError) text.appendChild(node('span', 'file-row__error', f.actionError));
-    if (busy) { const st = node('span', 'file-status'); st.append(icon('clock'), ' Working…'); text.appendChild(st); }
+    if (busy) { const st = node('span', 'file-status'); st.append(icon('fa-clock'), ' Working…'); text.appendChild(st); }
 
     const tools = node('div', 'file-row__actions');
     const i = a.files.indexOf(f);
     tools.append(
-      button(`Move ${f.name} up`, { cls: 'btn btn-ghost btn-icon btn-sm', act: 'up', key: `up:${f.id}`, icon: 'arrow-up', iconOnly: true, disabled: i === 0 }),
-      button(`Move ${f.name} down`, { cls: 'btn btn-ghost btn-icon btn-sm', act: 'down', key: `down:${f.id}`, icon: 'arrow-down', iconOnly: true, disabled: i === a.files.length - 1 }),
-      button(`Remove ${f.name}`, { cls: 'btn btn-danger-ghost btn-icon btn-sm', act: 'remove', key: `rm:${f.id}`, icon: 'trash-can', iconOnly: true, disabled: busy })
+      button(`Move ${f.name} up`, { cls: 'btn btn-ghost btn-icon btn-sm', act: 'up', key: `up:${f.id}`, icon: 'fa-arrow-up', iconOnly: true, disabled: i === 0 }),
+      button(`Move ${f.name} down`, { cls: 'btn btn-ghost btn-icon btn-sm', act: 'down', key: `down:${f.id}`, icon: 'fa-arrow-down', iconOnly: true, disabled: i === a.files.length - 1 }),
+      button(`Remove ${f.name}`, { cls: 'btn btn-danger-ghost btn-icon btn-sm', act: 'remove', key: `rm:${f.id}`, icon: 'fa-trash-can', iconOnly: true, disabled: busy })
     );
 
     li.append(sel, thumb, text, tools);
@@ -491,7 +493,7 @@
     const head = node('div', 'wk-job__head');
     const text = node('p', 'wk-job__text', job.text);
     text.id = `wkJobText-${job.id}`;
-    head.append(text, button('Cancel', { cls: 'btn btn-sm', act: 'cancel', key: `cancel:${job.id}`, icon: 'ban' }));
+    head.append(text, button('Cancel', { cls: 'btn btn-sm', act: 'cancel', key: `cancel:${job.id}`, icon: 'fa-ban' }));
     const bar = node('div', 'progress');
     bar.setAttribute('role', 'progressbar');
     bar.setAttribute('aria-labelledby', text.id);
@@ -515,8 +517,8 @@
   /* ------------------------------------------------------------------ result rows */
   function resultFacts(r) {
     const f = r.facts;
-    if (r.kind === 'pdf') return [plural(f.pages || 0, 'page'), kb(f.bytes), f.limit ? (f.bytes <= f.limit ? `under ${f.limit / 1024} KB` : `over ${f.limit / 1024} KB`) : ''].filter(Boolean).join(' · ');
-    return [`${f.width} × ${f.height} px`, kb(f.bytes), FORMAT[f.mime] || f.mime, f.limit ? `under ${f.limit / 1024} KB` : ''].filter(Boolean).join(' · ');
+    if (r.kind === 'pdf') return [plural(f.pages || 0, 'page'), size(f.bytes), f.limit ? (f.bytes <= f.limit ? `under ${f.limit / 1024} KB` : `over ${f.limit / 1024} KB`) : ''].filter(Boolean).join(' · ');
+    return [`${f.width} × ${f.height} px`, size(f.bytes), FORMAT[f.mime] || f.mime, f.limit ? `under ${f.limit / 1024} KB` : ''].filter(Boolean).join(' · ');
   }
 
   function resultSig(a, r, s) {
@@ -528,7 +530,7 @@
     li.dataset.status = r.warning ? 'cancelled' : 'done';
     const thumb = node('span', 'file-row__thumb');
     if (r.kind === 'image') { const img = doc.createElement('img'); img.src = r.url; img.alt = ''; img.decoding = 'async'; thumb.appendChild(img); }
-    else thumb.appendChild(icon('file-pdf'));
+    else thumb.appendChild(icon('fa-file-pdf'));
     const text = node('div', 'file-row__text');
     const name = node('span', 'file-row__name', r.name);
     name.title = r.name;
@@ -537,7 +539,7 @@
     r.notes.forEach(n => text.appendChild(node('span', 'file-row__notes', n)));
     const st = node('span', 'file-status wk-result__status');
     st.dataset.downloaded = String(r.downloaded);
-    st.append(icon(r.downloaded ? 'check' : 'download'), r.downloaded ? ' Downloaded' : ' Not downloaded');
+    st.append(icon(r.downloaded ? 'fa-check' : 'fa-download'), r.downloaded ? ' Downloaded' : ' Not downloaded');
     text.appendChild(st);
 
     const tools = node('div', 'file-row__actions wk-result__actions');
@@ -547,13 +549,13 @@
     dl.download = Files.safeFileName(r.name, 'result');
     dl.dataset.act = 'download';
     dl.dataset.key = `dl:${r.id}`;
-    dl.append(icon('download'), ' Download');
+    dl.append(icon('fa-download'), ' Download');
     dl.setAttribute('aria-label', `Download ${r.name}`);
     const compressing = a.jobs.some(j => j.resultId === r.id);
     if (r.kind === 'pdf' && r.facts.limit && r.facts.bytes > s.pdfKB * 1024 && r.action === 'merge') {
-      tools.appendChild(button(`Compress to ${s.pdfKB} KB`, { act: 'compress-result', key: `cr:${r.id}`, icon: 'file-zipper', disabled: compressing }));
+      tools.appendChild(button(`Compress to ${s.pdfKB} KB`, { act: 'compress-result', key: `cr:${r.id}`, icon: 'fa-file-zipper', disabled: compressing }));
     }
-    tools.append(dl, button(`Remove ${r.name}`, { cls: 'btn btn-danger-ghost btn-icon btn-sm', act: 'remove-result', key: `rr:${r.id}`, icon: 'trash-can', iconOnly: true, disabled: compressing }));
+    tools.append(dl, button(`Remove ${r.name}`, { cls: 'btn btn-danger-ghost btn-icon btn-sm', act: 'remove-result', key: `rr:${r.id}`, icon: 'fa-trash-can', iconOnly: true, disabled: compressing }));
     li.append(thumb, text, tools);
     return li;
   }
@@ -635,13 +637,23 @@
     const stillHere = a.endJob(job);
     if (!stillHere) return;
     if (e && (e.name === 'AbortError' || (Pdf && Pdf.isAbort(e) && e.code !== 'cancelled'))) { if (a === session.active) announce(`${label} cancelled.`); return; }
-    const reason = e && e.message ? String(e.message) : 'Something went wrong.';
-    const text = `${label} did not work: ${reason}`;
+    const text = `${label} did not work: ${failReason(e, job.action)}`;
     if (file && alive(a, file)) file.actionError = text;
     else a.addError(text);
     if (a === session.active) announce(text);
     if (e && e.name !== 'PdfError' && window.console) console.warn(e);
     schedule();
+  }
+
+  /* Engine messages are written for the batch tools; some point to settings that live elsewhere
+     here. Those are reworded to name the session setting to change. */
+  function failReason(e, action) {
+    if (e && e.code === 'nofit' && e.detail && (action === 'photo' || action === 'signature')) {
+      const d = e.detail;
+      const what = action === 'photo' ? 'photo' : 'signature';
+      return `This image does not fit under ${Math.round(d.limit / 1024)} KB at ${d.width} × ${d.height} px${d.lossy ? ' even at the lowest quality' : ''}. In Session settings, raise the ${what} size limit or lower its width and height${d.lossy ? '' : ', or save it as JPEG'}.`;
+    }
+    return e && e.message ? String(e.message) : 'Something went wrong.';
   }
 
   function imageOptions(kind, s, f) {
@@ -865,7 +877,7 @@
     const a = session.active;
     if (!a || a.zipping || !a.results.length) return;
     const name = Model.zipName(settings().zip, a);
-    const included = a.results.slice();
+    const included = a.orderedResults;
     const entries = included.map(r => ({ name: r.name, data: r.blob }));
     const job = a.startJob({ label: 'ZIP', action: 'zip', text: `Preparing the ZIP: 0 of ${plural(entries.length, 'file')}…` });
     a.zipping = true;
@@ -939,7 +951,7 @@
     }
     if (t.dataset.act === 'compress-result') { runResultCompress(a, r); return; }
     if (t.dataset.act === 'remove-result') {
-      const i = a.results.indexOf(r);
+      const i = a.orderedResults.indexOf(r);
       a.removeResult(r.id);
       render();
       const nextRow = el.results.children[Math.min(i, el.results.children.length - 1)];
@@ -1033,9 +1045,7 @@
     if (pool && !session.applicants.some(x => x.jobs.length)) { pool.destroy(); pool = null; }
     render();
     const next = session.active;
-    const message = 'Applicant finished. Their files and results were removed from this tab.';
-    notify(message);
-    announce(message);
+    notify('Applicant finished. Their files and results were removed from this tab.');
     if (next) { const t = $(`wkTab-${next.id}`); if (t && t.offsetParent) t.focus(); else el.name.focus(); }
     else el.noneNew.focus();
   });
@@ -1052,9 +1062,7 @@
     if (!ok) return;
     endSession();
     el.startBtn.focus();
-    const done = 'Session ended. Everything was removed from this tab.';
-    notify(done);
-    announce(done);
+    notify('Session ended. Everything was removed from this tab.');
   });
 
   function endSession() {

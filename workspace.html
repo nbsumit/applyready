@@ -365,7 +365,7 @@
           <input type="file" id="wkDropInput" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif,application/pdf,.pdf" multiple class="hidden" tabindex="-1" aria-hidden="true">
           <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
           <p class="dropzone__title" id="wkDropTitle">Add this applicant’s photos, signatures and scans</p>
-          <p class="dropzone__text">Drag them here, or</p>
+          <p class="dropzone__text dropzone__drag">Drag them here<span class="dropzone__or">, or</span></p>
           <button type="button" class="btn btn-primary btn-lg" data-browse><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose files</button>
           <p class="dropzone__hint">JPG, PNG, WebP, GIF, BMP, AVIF or PDF. Up to 50 files per applicant, 50 MB per image and 100 MB per PDF. You can paste images too. Processed on your device, never uploaded.</p>
         </div>
@@ -386,7 +386,6 @@
               <h2 class="wk-h" id="wkResultsHeading">Ready to download</h2>
               <p class="wk-out-empty" id="wkResultsEmpty">Results appear here. Choose an action on a file, such as Passport photo or Compress PDF to limit.</p>
               <div class="wk-out-bar" id="wkOutBar" hidden>
-                <p class="wk-out-bar__text" id="wkDoneLine"></p>
                 <button type="button" class="btn btn-primary" id="wkZip"><i class="fa-solid fa-file-zipper" aria-hidden="true"></i> <span id="wkZipLabel">Download all (ZIP)</span></button>
               </div>
               <ul class="file-list wk-results" id="wkResults" aria-labelledby="wkResultsHeading"></ul>
