@@ -700,7 +700,8 @@ const server = http.createServer((req, res) => {
 
     // Resume: fold an entry, Fix focuses the exact field even inside a folded entry
     await page.goto(`${origin}/resume.html`);
-    await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    // Start from an empty library: saved resumes live in IndexedDB, not only localStorage.
+    await page.evaluate(() => new Promise(done => { try { localStorage.clear(); } catch (e) {} const r = indexedDB.deleteDatabase('applyready'); r.onsuccess = r.onerror = r.onblocked = () => done(); }));
     await page.reload();
     await page.locator('#sec-experience .accordion-header').click();
     await page.locator('#btnAddExperience').click();
