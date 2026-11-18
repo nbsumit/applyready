@@ -360,6 +360,8 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     await page.setInputFiles('#batchDropInput', [fix('photo_04.jpg'), fix('photo_00.jpg'), fix('photo_as_png.png'), fix('huge_60mp.png')]);
     await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 4);
     ok(await page.locator('#batchError').isHidden(), 'a clean add clears the old message');
+    await page.waitForFunction(() => [...document.querySelectorAll('#batchList .file-row')].filter(r => r.querySelector('.file-row__thumb img')).length >= 3, null, { timeout: 15000 });
+    ok(await page.locator('#batchList .file-row', { hasText: 'huge_60mp.png' }).locator('.file-row__thumb img').count() === 0, 'a 60-megapixel picture is not decoded just to draw its preview');
     await page.waitForFunction(() => /Compress 4 images/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 }).catch(() => {});
     ok(/Compress 4 images/.test(await page.locator('#btnBatchStart').textContent()), 'compressor wording');
     await page.click('#btnBatchStart');
@@ -400,8 +402,13 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     const browse = page.locator('#batchDrop [data-browse]');
     const box = await browse.boundingBox();
     ok(box && box.y + box.height <= 768, `empty state: the choose button is visible without scrolling (y ${box && Math.round(box.y)})`);
+    // Listen for the file chooser before focusing: Playwright turns on its interception asynchronously,
+    // and a click that lands first opens a native dialog that the test never sees.
+    const chooserOpened = page.waitForEvent('filechooser');
     await browse.focus();
-    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.keyboard.press('Enter')]);
+    await page.waitForTimeout(100);
+    await page.keyboard.press('Enter');
+    const chooser = await chooserOpened;
     await chooser.setFiles([fix('photo_05.jpg')]);
     await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'btnBatchStart', null, { timeout: 3000 }).catch(() => {});
     ok(await focusId() === 'btnBatchStart', 'after choosing files by keyboard, focus moves to the start button (the hidden choose button would drop it)');
