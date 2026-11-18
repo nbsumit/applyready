@@ -55,6 +55,7 @@
 .fa-xmark:before{content:"\f00d"}
 .fa-magnifying-glass-plus:before{content:"\f00e"}
 .fa-magnifying-glass-minus:before{content:"\f010"}
+.fa-clock:before{content:"\f017"}
 .fa-download:before{content:"\f019"}
 .fa-arrows-rotate:before{content:"\f021"}
 .fa-lock:before{content:"\f023"}
@@ -75,6 +76,7 @@
 .fa-chevron-down:before{content:"\f078"}
 .fa-arrows-up-down:before{content:"\f07d"}
 .fa-arrow-up-right-from-square:before{content:"\f08e"}
+.fa-users:before{content:"\f0c0"}
 .fa-copy:before{content:"\f0c5"}
 .fa-bars:before{content:"\f0c9"}
 .fa-arrow-rotate-back:before,.fa-arrow-rotate-left:before{content:"\f0e2"}
@@ -86,6 +88,7 @@
 .fa-file-image:before{content:"\f1c5"}
 .fa-file-zipper:before{content:"\f1c6"}
 .fa-paper-plane:before{content:"\f1d8"}
+.fa-id-badge:before{content:"\f2c1"}
 .fa-rotate-left:before{content:"\f2ea"}
 .fa-trash-can:before{content:"\f2ed"}
 .fa-rotate-right:before{content:"\f2f9"}
@@ -95,4 +98,5 @@
 .fa-file-export:before{content:"\f56e"}
 .fa-file-import:before{content:"\f56f"}
 .fa-pen-nib:before{content:"\f5ad"}
+.fa-signature:before{content:"\f5b7"}
 .fa-layer-group:before{content:"\f5fd"}

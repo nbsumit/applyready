@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- shell:csp:start -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="applyready-tool" content="signature-resizer">
+  <!-- shell:csp:end -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Signature Resizer: 300 × 100 px Under 30 KB for Forms | ApplyReady</title>
+  <meta name="description" content="Resize a signature image to the exact size and KB limit an online application asks for, such as 300 × 100 px under 30 KB. Crop close to the ink, check the result and download. Runs in your browser.">
+  <link rel="canonical" href="https://applyready.in/signature-resizer.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ApplyReady">
+  <meta property="og:url" content="https://applyready.in/signature-resizer.html">
+  <meta property="og:title" content="Signature Resizer: 300 × 100 px Under 30 KB for Forms | ApplyReady">
+  <meta property="og:description" content="Resize a signature image to the exact size and KB limit an online application asks for, such as 300 × 100 px under 30 KB. Crop close to the ink, check the result and download. Runs in your browser.">
+  <meta property="og:image" content="https://applyready.in/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ApplyReady: free, private tools for job applications">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Signature Resizer: 300 × 100 px Under 30 KB for Forms | ApplyReady">
+  <meta name="twitter:description" content="Resize a signature image to the exact size and KB limit an online application asks for, such as 300 × 100 px under 30 KB. Crop close to the ink, check the result and download. Runs in your browser.">
+  <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
+
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
+
+  <script src="js/theme.js?v=20261118"></script>
+
+  <!-- shell:styles:start -->
+  <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/vendor/icons.min.css?v=20261118">
+  <link rel="stylesheet" href="css/vendor/cropper.min.css">
+  <link rel="stylesheet" href="css/app.css?v=20261118">
+  <!-- shell:styles:end -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "ApplyReady Signature Resizer",
+        "url": "https://applyready.in/signature-resizer.html",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any modern browser",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://applyready.in/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Image tools",
+            "item": "https://applyready.in/tools.html#image"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Signature resizer",
+            "item": "https://applyready.in/signature-resizer.html"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What size should a signature image be?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Each portal sets its own size. 300 × 100 px under 30 KB is common and is selected here. Follow the numbers in your form’s instructions; choose Custom size to enter different ones."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Should the background be white or transparent?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "White, for application forms. Most portals ask for JPEG, which cannot be transparent. A transparent PNG is useful only for placing your signature on your own documents."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "My signature looks faint after resizing. What can I do?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Crop closer, so the ink fills most of the frame before it is reduced. If the paper looked grey, clean the photo first with the signature cleaner, which darkens the ink and whitens the paper."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my signature uploaded anywhere?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. It is cropped and compressed by your browser on this device. ApplyReady has no server that receives files."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I resize many signatures at once?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, with the batch image processor and its signature preset. It fits each signature inside 300 × 100 px and fills the rest with white, so no ink is cut off, then lets you download them all as one ZIP file."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body class="image-page">
+  <!-- shell:header:start -->
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="/" aria-label="ApplyReady home">
+        <img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span class="brand__name">ApplyReady</span>
+      </a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+              <div class="menu__cols menu__cols--4">
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
+                </ul>
+              </div>
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#image">Image tools</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="image-resizer.html"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixel size and KB limit, with crop and rotate</span></span></a></li>
+                  <li><a class="menu__item" href="passport-photo-resizer.html"><i class="fa-solid fa-id-badge menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo resizer</span><span class="menu__desc">Passport-size photo at the pixel size and KB a form asks for</span></span></a></li>
+                  <li><a class="menu__item" href="signature-resizer.html" aria-current="page"><i class="fa-solid fa-signature menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature resizer</span><span class="menu__desc">Signature image at the exact size and KB limit</span></span></a></li>
+                  <li><a class="menu__item" href="compress-image.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image compressor</span><span class="menu__desc">Make photos smaller in KB, one or many at once</span></span></a></li>
+                  <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
+                  <li><a class="menu__item" href="signature-cleaner.html"><i class="fa-solid fa-wand-magic-sparkles menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper and dark ink from a phone photo of a signature</span></span></a></li>
+                  <li><a class="menu__item" href="passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print sheet</span><span class="menu__desc">A printable A4 or 4x6 sheet of passport photos</span></span></a></li>
+                </ul>
+              </div>
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#pdf">PDF tools</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans into one PDF</span></span></a></li>
+                  <li><a class="menu__item" href="compress-pdf.html"><i class="fa-solid fa-file-zipper menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Make a PDF small enough for an upload limit</span></span></a></li>
+                </ul>
+              </div>
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#batch">Batch processing</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="batch-image.html"><i class="fa-solid fa-layer-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Batch image processor</span><span class="menu__desc">Resize, compress or convert many photos at once, download a ZIP</span></span></a></li>
+                </ul>
+              </div>
+              </div>
+              <div class="menu__foot"><a class="menu__all" href="tools.html">All tools <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><span class="menu__hint">Press <kbd>/</kbd> to search</span></div>
+            </div>
+          </li>
+          <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="guides/">Guides</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="searchOpen" class="search-trigger" aria-haspopup="dialog" aria-keyshortcuts="/ Control+K" aria-label="Search tools"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span class="search-trigger__label" aria-hidden="true">Search tools</span><kbd class="search-trigger__key" aria-hidden="true">/</kbd></button>
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  </header>
+  <!-- shell:header:end -->
+
+  <main id="mainContent" class="page">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <ol class="breadcrumb-list">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="tools.html#image">Image tools</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Signature resizer</li>
+      </ol>
+    </nav>
+    <header class="page-head">
+      <h1 class="page-title">Signature resizer</h1>
+      <p class="page-lede">Resize a photo or scan of your signature to the pixel size and file limit your form asks for. The common 300 × 100 px under 30 KB is chosen; change it if your form says otherwise. Your signature stays on this device.</p>
+    </header>
+    <!-- tool:start -->
+    <section class="tool-section" id="resize-tool" aria-label="Image resizer">
+    <section class="ws ws--linear" id="resizerApp" data-preset="signature" data-state="empty" data-settings="closed" data-req="chosen" data-ws-file="#fileInfoBox" data-ws-result="#resultArea" aria-label="Image resizer and compressor">
+      <div class="ws-req" id="reqPanel" data-open="false">
+        <div class="ws-req__bar">
+          <h2 class="ws-step" id="reqHeading"><span class="ws-step__n" aria-hidden="true">1</span><span class="ws-step__ask">What are you preparing?</span><span class="ws-step__done">Preparing</span></h2>
+          <p class="req-summary" aria-live="polite"><strong class="req-summary__name" id="reqSummaryName">Signature</strong> <span class="req-summary__spec" id="reqSummarySpec"></span></p>
+          <button type="button" class="btn btn-sm req-change" id="btnChangeReq" aria-expanded="false" aria-controls="reqGrid" data-label-change="Change" data-label-close="Close">Change</button>
+        </div>
+        <div class="req-grid req-grid--d4 req-grid--t2" id="reqGrid" role="group" aria-labelledby="reqHeading">
+          <button type="button" class="choice" data-preset="signature" aria-pressed="true"><span class="choice__name">Signature</span><span class="choice__spec">300 × 100 px · under 30 KB</span></button>
+          <button type="button" class="choice" data-preset="thumb" aria-pressed="false"><span class="choice__name">Thumb impression</span><span class="choice__spec">240 × 240 px · 20–50 KB</span></button>
+          <button type="button" class="choice" data-preset="declaration" aria-pressed="false"><span class="choice__name">Handwritten declaration</span><span class="choice__spec">800 × 400 px · 50–100 KB</span></button>
+          <button type="button" class="choice" data-preset="custom" aria-pressed="false"><span class="choice__name">Custom size</span><span class="choice__spec" data-custom-spec>Your own size and file limit</span></button>
+        </div>
+        <div hidden>
+          <label for="presetSelect">Requirement</label>
+          <select id="presetSelect" data-native>
+            <option value="custom" selected>Custom size</option>
+            <option value="signature">Signature (300 × 100 px, max 30 KB)</option>
+            <option value="thumb">Thumb Impression (240 × 240 px, 20–50 KB)</option>
+            <option value="declaration">Handwritten Declaration (800 × 400 px, 50–100 KB)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="ws-head">
+        <div id="fileInfoBox" class="filebar hidden" aria-live="polite">
+          <i class="fa-regular fa-file-image filebar__icon" aria-hidden="true"></i>
+          <span id="fileInfoText" class="filebar__name"></span>
+          <div class="filebar__actions">
+            <button type="button" id="btnReplaceFile" class="btn btn-sm" title="Choose a different image">Replace</button>
+            <button type="button" id="btnRemoveFile" class="btn btn-sm btn-danger-ghost" title="Remove this image">Remove</button>
+          </div>
+        </div>
+        <p class="ws-status" id="workspaceStatus" role="status">No image selected</p>
+      </div>
+
+      <div class="ws-stage image-stage">
+        <div id="processErrorBox" class="notice notice--error hidden" role="alert">
+          <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+          <span class="notice__body" id="processErrorMessage"></span>
+        </div>
+
+        <div id="cropperPlaceholder" class="ws-empty">
+          <h2 class="ws-step"><span class="ws-step__n" aria-hidden="true">2</span><span>Add your photo or signature</span></h2>
+          <div id="dropzone" class="dropzone" role="group" aria-label="Choose or drop an image">
+            <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg,image/bmp,image/avif,image/gif" class="hidden" tabindex="-1" aria-hidden="true">
+            <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+            <p class="dropzone__text">Drag it here, or</p>
+            <button type="button" id="btnBrowse" class="btn btn-primary btn-lg"><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose image</button>
+            <p class="dropzone__hint">JPG, PNG, WebP, GIF, BMP or AVIF up to 50 MB. Processed on your device, never uploaded.</p>
+          </div>
+        </div>
+
+        <div id="cropperActiveArea" class="ws-crop hidden">
+          <h2 class="ws-step"><span class="ws-step__n" aria-hidden="true">3</span><span>Position it in the frame</span></h2>
+          <div class="cropper-container-wrapper" tabindex="0" role="group" aria-label="Image crop. Arrow keys move the crop selection; plus and minus zoom.">
+            <img id="imageToCrop" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Image to crop">
+          </div>
+          <div class="ws-toolbar" role="toolbar" aria-label="Crop tools">
+            <div class="ws-toolbar__group">
+              <button type="button" id="btnRotateLeft" class="btn btn-sm btn-icon" title="Rotate left 90 degrees" aria-label="Rotate left 90 degrees"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i></button>
+              <button type="button" id="btnRotateRight" class="btn btn-sm btn-icon" title="Rotate right 90 degrees" aria-label="Rotate right 90 degrees"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+            </div>
+            <div class="ws-toolbar__group">
+              <button type="button" id="btnZoomOut" class="btn btn-sm btn-icon" title="Zoom out" aria-label="Zoom out"><i class="fa-solid fa-magnifying-glass-minus" aria-hidden="true"></i></button>
+              <button type="button" id="btnZoomIn" class="btn btn-sm btn-icon" title="Zoom in" aria-label="Zoom in"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i></button>
+            </div>
+            <p class="ws-hint">Drag the image to position it inside the frame. Arrow keys move it; + and − zoom.</p>
+            <button type="button" id="btnResetCrop" class="btn btn-sm btn-ghost" title="Reset crop"><i class="fa-solid fa-arrow-rotate-back" aria-hidden="true"></i> Reset</button>
+          </div>
+        </div>
+
+        <div id="resultArea" class="ws-result hidden" aria-live="polite">
+          <div class="ws-result__head">
+            <div class="verdict">
+              <i class="fa-solid fa-check" aria-hidden="true"></i>
+              <div>
+                <h2 class="ws-result__title">Ready to upload</h2>
+                <p class="ws-result__ok"><span id="resultStatus" class="meta-stat-val status-ok"></span></p>
+              </div>
+            </div>
+            <div class="ws-result__actions">
+              <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download image</a>
+              <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust again</button>
+            </div>
+          </div>
+          <div class="ws-result__body">
+            <div class="ws-result__view">
+              <div class="segmented" role="group" aria-label="Compare with the original">
+                <button type="button" id="btnViewProcessed" class="active" aria-pressed="true">Result <span id="compProcessedKB">-</span></button>
+                <button type="button" id="btnViewOriginal" aria-pressed="false">Original <span id="compOriginalKB">-</span></button>
+              </div>
+              <div class="ws-preview checkerboard">
+                <img id="resultImage" src="" alt="Processed result preview">
+                <img id="originalComparisonImage" src="" alt="Original image preview" class="hidden">
+              </div>
+            </div>
+            <div class="ws-result__facts">
+              <table class="check-table">
+                <caption class="sr-only">Your file compared with the requirement</caption>
+                <thead><tr><td></td><th scope="col">Required</th><th scope="col">Your file</th></tr></thead>
+                <tbody>
+                  <tr><th scope="row">File size</th><td id="resultTargetSize" data-label="Required"></td><td class="is-met" id="resultFileSize" data-label="Your file"></td></tr>
+                  <tr><th scope="row">Dimensions</th><td id="resultTargetDims" data-label="Required"></td><td class="is-met" id="resultDims" data-label="Your file"></td></tr>
+                  <tr><th scope="row">Format</th><td id="resultFormatRequired" data-label="Required"></td><td class="is-met" id="resultFormat" data-label="Your file"></td></tr>
+                </tbody>
+              </table>
+              <p class="ws-result__orig">Original: <span id="resultOrigDims"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ws-settings">
+        <button type="button" class="ws-customize" data-ws-toggle aria-expanded="false" aria-controls="wsCustom"><span>Size, file limit and format<span class="ws-customize__hint">Set by the requirement. Change only if your form asks for something else.</span></span></button>
+        <div class="ws-custom" id="wsCustom">
+          <div id="customControls" class="ws-group">
+            <h3 class="ws-group__title">Size</h3>
+            <div class="ws-dims">
+              <div class="field">
+                <label class="field-label" id="customWidthLabel" for="customWidth">Width (px)</label>
+                <input type="number" id="customWidth" class="input" aria-describedby="dimError" value="300" min="20" max="8000" step="1" inputmode="numeric">
+              </div>
+              <button type="button" id="btnLockAspect" class="btn btn-icon btn-lock active" title="Aspect ratio locked" aria-label="Keep aspect ratio" aria-pressed="true"><i class="fa-solid fa-lock" aria-hidden="true"></i></button>
+              <div class="field">
+                <label class="field-label" id="customHeightLabel" for="customHeight">Height (px)</label>
+                <input type="number" id="customHeight" class="input" aria-describedby="dimError" value="100" min="20" max="8000" step="1" inputmode="numeric">
+              </div>
+            </div>
+            <p id="dimError" class="field-error hidden" role="alert"></p>
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label" for="unitSelect">Unit</label>
+                <select id="unitSelect">
+                  <option value="px" selected>Pixels (px)</option>
+                  <option value="cm">Centimetres (cm)</option>
+                  <option value="inch">Inches (in)</option>
+                </select>
+              </div>
+              <div class="field" id="dpiGroup" style="display: none;">
+                <label class="field-label" for="dpiSelect">Print DPI</label>
+                <select id="dpiSelect">
+                  <option value="300" selected>300 DPI</option>
+                  <option value="200">200 DPI</option>
+                  <option value="150">150 DPI</option>
+                  <option value="72">72 DPI</option>
+                </select>
+              </div>
+            </div>
+            <button type="button" id="btnOriginalSize" class="btn btn-sm" disabled><i class="fa-solid fa-expand" aria-hidden="true"></i> Use original size</button>
+            <p class="field-hint">Keeps the whole image at its own dimensions. Available once an image is added.</p>
+          </div>
+
+          <div class="ws-group">
+            <h3 class="ws-group__title">File size</h3>
+            <div class="field-row">
+              <div class="field">
+                <label class="field-label" for="customMinKB">Minimum (KB) <span class="optional">(optional)</span></label>
+                <input type="number" id="customMinKB" class="input" aria-describedby="sizeError" value="" placeholder="0" min="0" max="20000" step="1" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label class="field-label" for="customMaxKB">Maximum (KB)</label>
+                <input type="number" id="customMaxKB" class="input" aria-describedby="sizeError" value="30" min="1" max="20000" step="1" inputmode="numeric">
+              </div>
+            </div>
+            <p id="sizeError" class="field-error hidden" role="alert"></p>
+          </div>
+
+          <div class="ws-group">
+            <h3 class="ws-group__title">Format and crop</h3>
+            <div class="field">
+              <label for="formatSelect" class="field-label">File format</label>
+              <select id="formatSelect" class="custom-select-source">
+                <option value="image/jpeg" selected>JPEG (.jpg)</option>
+                <option value="image/png">PNG (.png)</option>
+                <option value="image/webp">WebP (.webp)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="aspectRatioSelect" class="field-label">Crop shape</label>
+              <select id="aspectRatioSelect">
+                <option value="target" selected>Match the output size</option>
+                <option value="original">Original proportions</option>
+                <option value="1:1">Square (1:1)</option>
+                <option value="4:3">Standard (4:3)</option>
+                <option value="16:9">Widescreen (16:9)</option>
+                <option value="free">Free crop</option>
+              </select>
+            </div>
+          </div>
+
+          <details class="disclosure ws-advanced">
+            <summary>Background and name strip</summary>
+            <div class="disclosure__body">
+              <div class="field">
+                <label for="bgFillSelect" class="field-label">Background fill</label>
+                <select id="bgFillSelect">
+                <option value="white" selected>White (recommended)</option>
+                <option value="black">Black</option>
+                <option value="transparent" disabled>Transparent (PNG and WebP only)</option>
+                </select>
+                <p class="field-hint">JPEG cannot be transparent. Empty margins use this colour.</p>
+              </div>
+              <div id="dateOptionsBox" class="check-group">
+                <label class="switch" for="addDateCheckbox"><span>Add a name and date strip</span><input type="checkbox" id="addDateCheckbox" role="switch"></label>
+                <div id="dateInputGroup" class="check-group" style="display: none;">
+                  <div class="field">
+                    <label for="annotationDateInput" class="field-label">Printed date</label>
+                    <div class="input-group">
+                      <input type="date" id="annotationDateInput" class="input">
+                      <button type="button" id="btnTodayDate" class="btn">Today</button>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="candidateNameInput" class="field-label">Printed name or label <span class="optional">(optional)</span></label>
+                    <input type="text" id="candidateNameInput" class="input" placeholder="e.g. Priya Sharma">
+                    <p class="field-hint">Text scales to fit the strip. Very long labels may be shortened.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <div class="ws-action">
+        <p id="processSummary" class="process-summary" aria-live="polite" data-label-pending="Choose what you are preparing above." data-label-show="Show me"></p>
+        <button type="button" id="btnProcess" class="btn btn-primary btn-lg" aria-describedby="processSummary" data-busy-label="Processing…" disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> Resize and compress</button>
+      </div>
+    </section>
+    </section>
+    <!-- tool:end -->
+    <section class="section prose" aria-labelledby="howHeading">
+      <h2 id="howHeading">How to prepare a signature image</h2>
+      <ol>
+        <li><strong>Sign on plain white paper.</strong> Use a dark pen, black or blue, and your normal signature, a little larger than usual. Unlined paper gives the cleanest result.</li>
+        <li><strong>Photograph it flat.</strong> In daylight, from straight above, without your shadow across the page. If the paper looks grey or yellow in the photo, run it through the <a href="signature-cleaner.html">signature cleaner</a> first.</li>
+        <li><strong>Crop close to the ink.</strong> Add the photo here and drag it so the signature fills the frame with a small margin on every side. A signature with a lot of empty paper around it becomes tiny once it is shrunk to 300 × 100 px.</li>
+        <li><strong>Resize and check.</strong> The result shows the requirement beside your file, with the size in KB and exact bytes and the pixel size read back from the file. Download when every row has a tick.</li>
+      </ol>
+      <h3>Reading the result</h3>
+      <p>Signatures are mostly white paper, so they compress well: 300 × 100 px often comes to well under 30 KB at high quality. If your form gives a minimum as well, for example 10 to 20 KB, set it under Size, file limit and format, and a small JPEG is padded with empty bytes to reach it. If thin strokes look broken in the preview, crop closer so the signature is larger before it is reduced.</p>
+      <p>A picture of your signature is not a digital signature certificate; the guide to <a href="guides/digital-signature-for-online-forms.html">signature images and digital signatures</a> explains the difference. For forms that ask for a 20 KB file, the <a href="resize-image-to-20kb.html">resize to 20 KB</a> page has that limit ready. Preparing signatures for many applicants? The <a href="batch-image.html">batch image processor</a> has a signature preset that pads each one to the exact size without cutting off any ink. If a form wants PNG instead of JPEG, the <a href="convert-image.html">image converter</a> changes the format, and the <a href="passport-photo-resizer.html">passport photo resizer</a> prepares the photo that usually goes with the signature.</p>
+    </section>
+    <section class="faq-section" aria-labelledby="faqHeading">
+      <div class="faq-header">
+        <h2 id="faqHeading" class="faq-title">Questions</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary class="faq-question"><span>What size should a signature image be?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Each portal sets its own size. 300 × 100 px under 30 KB is common and is selected here. Follow the numbers in your form’s instructions; choose Custom size to enter different ones.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Should the background be white or transparent?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>White, for application forms. Most portals ask for JPEG, which cannot be transparent. A transparent PNG is useful only for placing your signature on your own documents.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>My signature looks faint after resizing. What can I do?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Crop closer, so the ink fills most of the frame before it is reduced. If the paper looked grey, clean the photo first with the signature cleaner, which darkens the ink and whitens the paper.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Is my signature uploaded anywhere?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>No. It is cropped and compressed by your browser on this device. ApplyReady has no server that receives files.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Can I resize many signatures at once?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Yes, with the batch image processor and its signature preset. It fits each signature inside 300 × 100 px and fills the rest with white, so no ink is cut off, then lets you download them all as one ZIP file.</p></div>
+        </details>
+      </div>
+    </section>
+    <p class="tool-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> Your images are processed in this browser and never leave your device. Nothing is saved after you close the tab.</p>
+  </main>
+
+  <!-- shell:footer:start -->
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__brand">
+        <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
+        <p>Free tools for job applications: resumes, photos, signatures and PDFs. Everything runs in your browser, and your files are never uploaded.</p>
+        <p class="site-footer__motto">Free. Open source. Forever.</p>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Resume and images</h2>
+        <ul class="site-footer__list">
+          <li><a href="resume.html">Resume builder</a></li>
+          <li><a href="image-resizer.html">Image resizer</a></li>
+          <li><a href="passport-photo-resizer.html">Passport photo resizer</a></li>
+          <li><a href="signature-resizer.html">Signature resizer</a></li>
+          <li><a href="compress-image.html">Image compressor</a></li>
+          <li><a href="convert-image.html">Image converter</a></li>
+          <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print sheet</a></li>
+          <li><a href="batch-image.html">Batch image processor</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">PDF and documents</h2>
+        <ul class="site-footer__list">
+          <li><a href="image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="compress-pdf.html">Compress PDF</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">Batch and help</h2>
+        <ul class="site-footer__list">
+          <li><a href="compress-image.html">Image compressor</a></li>
+          <li><a href="convert-image.html">Image converter</a></li>
+          <li><a href="batch-image.html">Batch image processor</a></li>
+          <li><a href="tools.html">All tools</a></li>
+          <li><a href="guides/">Guides</a></li>
+          <li><a href="how-to-use.html">How to use</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">ApplyReady</h2>
+        <ul class="site-footer__list">
+          <li><a href="about.html">About</a></li>
+          <li><a href="philosophy.html">Our philosophy</a></li>
+          <li><a href="privacy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms of use</a></li>
+          <li><a href="contact.html">Contact and support</a></li>
+          <li><a href="feedback.html">Feedback</a></li>
+          <li><a href="contribute.html">Contribute</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__base">
+      <span>No sign-up, no ads, no watermarks. Every feature is free for everyone.</span>
+      <span class="site-footer__ext"><a href="https://github.com/nbsumit/applyready" rel="noopener" target="_blank">Source code<span class="sr-only"> (opens in a new tab)</span></a><a class="site-footer__support" href="https://pages.razorpay.com/support-applyready" rel="noopener" target="_blank"><i class="fa-solid fa-heart" aria-hidden="true"></i> Support ApplyReady<span class="sr-only"> (voluntary contribution, opens in a new tab)</span></a></span>
+    </div>
+  </footer>
+  <!-- shell:footer:end -->
+
+  <script defer src="js/components.js?v=20261118"></script>
+  <script defer src="js/site.js?v=20261118"></script>
+  <script defer src="js/lib/files.js?v=20261118"></script>
+  <script defer src="js/presets.js?v=20261118"></script>
+  <script defer src="js/vendor/cropper.min.js"></script>
+  <script defer src="js/resizer.js?v=20261118"></script>
+</body>
+</html>

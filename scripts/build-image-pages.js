@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /* Writes the image resizer workspace into every page that hosts it, from
-   scripts/lib/image-workspace.js. Only the markup between <!-- tool:start --> and
+   scripts/lib/image-workspace.js, and the batch image workspace (scripts/lib/batch-workspace.js)
+   into the batch processor, image compressor and image converter. Only the markup between <!-- tool:start --> and
    <!-- tool:end --> is replaced; page copy (headings, explanations, FAQs) is left alone.
    Safe to re-run. `--check` exits 1 if any page would change. */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
 const { renderWorkspace, PRESETS } = require('./lib/image-workspace');
+const { renderBatchWorkspace } = require('./lib/batch-workspace');
 
 const root = path.resolve(__dirname, '..');
 const check = process.argv.includes('--check');
@@ -45,13 +47,28 @@ function section(cfg) {
       ${END}`;
 }
 
+/* The batch image engine (js/batch-image.js): one workspace, three pages with their own defaults
+   and copy (scripts/lib/batch-workspace.js). */
+const BATCH_PAGES = {
+  'batch-image.html': 'batch',
+  'compress-image.html': 'compress',
+  'convert-image.html': 'convert'
+};
+
+const batchSection = mode => `${START}\n    <section class="tool-section" id="batch-tool" aria-label="Image tool">\n    ${renderBatchWorkspace(mode)}\n    </section>\n    ${END}`;
+
+const jobs = [
+  ...Object.entries(PAGES).map(([page, cfg]) => [page, () => section(cfg)]),
+  ...Object.entries(BATCH_PAGES).map(([page, mode]) => [page, () => batchSection(mode)])
+];
+
 let changed = 0;
-for (const [page, cfg] of Object.entries(PAGES)) {
+for (const [page, render] of jobs) {
   const file = path.join(root, page);
   if (!fs.existsSync(file)) continue; // pages are created by hand (scripts/new-page.js), then filled here
   const html = read(page);
   if (!html.includes(START) || !html.includes(END)) throw new Error(`${page}: missing ${START} / ${END} markers`);
-  const next = html.slice(0, html.indexOf(START)) + section(cfg) + html.slice(html.indexOf(END) + END.length);
+  const next = html.slice(0, html.indexOf(START)) + render() + html.slice(html.indexOf(END) + END.length);
   if (next !== html) {
     changed++;
     if (check) console.error(`out of date: ${page}`);
@@ -61,4 +78,4 @@ for (const [page, cfg] of Object.entries(PAGES)) {
 if (check && changed) process.exit(1);
 if (check) console.log('image tool sections in sync');
 
-module.exports = { PAGES };
+module.exports = { PAGES, BATCH_PAGES };
