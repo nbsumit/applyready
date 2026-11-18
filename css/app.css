@@ -1409,7 +1409,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .page-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: var(--s-3); }
 .page-tile { position: relative; display: grid; gap: var(--s-2); padding: var(--s-2); background: var(--c-surface); border: var(--bw) solid var(--c-line); border-radius: var(--r-md); }
 .page-tile[aria-selected='true'], .page-tile.is-selected { border-color: var(--c-accent); box-shadow: 0 0 0 2px var(--c-accent-soft); }
-.page-tile.is-deleted { opacity: .45; }
+.page-tile.is-deleted .page-tile__img { opacity: .45; }
 .page-tile__img { display: grid; place-items: center; aspect-ratio: 3 / 4; background: var(--c-surface-2); border-radius: var(--r-xs); overflow: hidden; }
 .page-tile__img img, .page-tile__img canvas { max-width: 100%; max-height: 100%; box-shadow: var(--sh-paper); transition: transform var(--t-base) var(--ease); }
 .page-tile__label { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); font-size: var(--fs-sm); color: var(--c-text-3); font-variant-numeric: tabular-nums; }
@@ -1484,6 +1484,7 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 }
 @media print {
   .resume-page .breadcrumb-nav, .resume-page .tool-privacy, .rb-notice, .rl-backdrop { display: none !important; }
+}
 
 /* ================================================================== 19. PDF TOOLS */
 /* Merge, split, organise, PDF to images, extract text, page numbers, watermark and compress.
@@ -1526,7 +1527,7 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
 .pdf-output { grid-template-columns: 48px minmax(0, 1fr) auto; }
 
 /* Organise: tiles with a drag handle, their position and five actions */
-.org-grid { grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); }
+.page-grid.org-grid { grid-template-columns: repeat(auto-fill, minmax(184px, 1fr)); }
 .org-tile { align-content: start; }
 .org-tile__top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
 .org-tile__handle { touch-action: none; cursor: grab; color: var(--c-text-3); }
@@ -1539,7 +1540,7 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
 .org-tile__state:empty { display: none; }
 .org-tile.is-deleted .org-tile__state { color: var(--c-danger); }
 .org-tile.is-deleted .page-tile__img { opacity: .35; }
-.org-tile.is-deleted { opacity: 1; border-style: dashed; }
+.org-tile.is-deleted { border-style: dashed; }
 .org-tile.is-inserted { border-color: var(--c-accent-line); }
 .org-tile .page-tile__actions { flex-wrap: wrap; justify-content: space-between; padding-top: var(--s-2); border-top: var(--bw) solid var(--c-line); }
 .org-tile.is-dragging { z-index: 5; box-shadow: var(--sh-pop); cursor: grabbing; }

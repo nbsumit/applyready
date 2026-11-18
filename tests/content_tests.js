@@ -260,6 +260,13 @@ for (const f of pages) {
   problems.push(...stack.map(t => `unclosed <${t}>`));
   ok(problems.length === 0, `${f}: unbalanced markup (${problems.slice(0, 3).join(', ')})`);
 }
+// Every stylesheet has balanced braces: one missing "}" silently nests everything after it in a media query.
+for (const f of fs.readdirSync(path.join(root, 'css')).filter(x => x.endsWith('.css')).map(x => 'css/' + x)) {
+  const t = read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/"[^"]*"|'[^']*'/g, '');
+  let depth = 0, negative = false;
+  for (const ch of t) { if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth < 0) negative = true; } }
+  ok(depth === 0 && !negative, `${f}: unbalanced braces (depth ${depth})`);
+}
 // The resume sheet, templates and print layout are the output format: change them on purpose, then update this hash.
 ok(require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, 'css/document.css'))).digest('hex') === '3c8498458a76e604f88736b6b98a31d0468d77ef1d07af44970661ea153eb6bd', 'css/document.css (resume sheet and print layout) changed; confirm the exported resume is meant to change, then update the hash');
 ok(!fs.existsSync(path.join(root, 'css/style.css')) && !fs.existsSync(path.join(root, 'css/workspace.css')), 'retired stylesheets are deleted');
