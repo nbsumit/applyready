@@ -257,6 +257,25 @@ check('Links written as host:port keep their link; unsafe schemes are still refu
   const rels = new TextDecoder().decode(docx.generateResumeDOCX(d).files.find(f => f.name === 'word/_rels/document.xml.rels').data);
   assert(rels.includes('Target="https://www.example.com:8080/work"'), 'Word file links the host:port website');
 });
+check('A phone number without + is linked as tel: in the PDF and preview, never as a host (SEC-05)', () => {
+  const { sanitizeHref } = require('../js/resume-render');
+  for (const sanitize of [pdf.sanitizeUrl, sanitizeHref]) {
+    assert.equal(sanitize('tel:9876543210'), 'tel:9876543210');
+    assert.equal(sanitize('tel:33331'), 'tel:33331');
+    assert.equal(sanitize('tel:+919876543210'), 'tel:+919876543210');
+    assert.equal(sanitize('mailto:12345'), 'mailto:12345');
+  }
+  for (const phone of ['98765 43210', '33331', '+91 98765 43210']) {
+    const d = resumeFixture();
+    d.personal.phone = phone;
+    const digits = phone.replace(/[^\d+]/g, '');
+    const uris = [...pdf.generateResumePDF(d).build().matchAll(/\/URI \(([^)]*)\)/g)].map(m => m[1]);
+    assert(uris.includes('tel:' + digits), `the PDF links ${phone} as tel:${digits} (links: ${uris.join(', ')})`);
+    assert(!uris.some(u => /^https?:\/\/tel/i.test(u)), 'no https://tel: link');
+    const rels = new TextDecoder().decode(docx.generateResumeDOCX(d).files.find(f => f.name === 'word/_rels/document.xml.rels').data);
+    assert(!/https?:\/\/tel/i.test(rels), `the Word file never links ${phone} as a host`);
+  }
+});
 check('Icon classes in scripts are written whole, so the icon subset includes every icon a page can show', () => {
   // scripts/build-icons.py finds icons by their "fa-name" class in the source. A class built from a
   // fragment ("fa-" + name) is invisible to it, which once left the Organise PDF Restore button blank.

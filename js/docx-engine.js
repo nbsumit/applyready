@@ -256,7 +256,8 @@
       if (!targetUrl) return null;
       let safeUrl = targetUrl.trim();
       // host:port (example.com:8080/x) is not a scheme, so it is given https:// like any bare host.
-      const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(safeUrl) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(safeUrl);
+      // mailto: and tel: are always schemes, even before digits only (tel:9876543210).
+      const hasScheme = /^(mailto|tel):/i.test(safeUrl) || (/^[a-z][a-z0-9+.-]*:/i.test(safeUrl) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(safeUrl));
       if (/[\u0000-\u001f\s]/.test(safeUrl) || (hasScheme && !/^(https?:|mailto:|tel:)/i.test(safeUrl))) return null;
       if (!/^https?:\/\//i.test(safeUrl) && !/^(mailto:|tel:)/i.test(safeUrl)) {
         safeUrl = 'https://' + safeUrl;

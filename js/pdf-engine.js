@@ -262,7 +262,8 @@
     const clean = String(raw).trim();
     try {
       // host:port (example.com:8080/x) is not a scheme, so it is given https:// like any bare host.
-      const hasProtocol = /^[a-z][a-z0-9+.-]*:/i.test(clean) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(clean);
+      // mailto: and tel: are always schemes, even before digits only (tel:9876543210).
+      const hasProtocol = /^(mailto|tel):/i.test(clean) || (/^[a-z][a-z0-9+.-]*:/i.test(clean) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(clean));
       const url = new URL(hasProtocol ? clean : 'https://' + clean);
       return ['http:', 'https:', 'mailto:', 'tel:'].includes(url.protocol) ? url.href : '';
     } catch (e) { return ''; }
