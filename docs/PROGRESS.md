@@ -5,9 +5,12 @@ It is updated at the end of each phase.
 
 ## Current state (18 Nov 2026)
 
-All nine phases of the roadmap are implemented, reviewed and merged on the development branch. Nothing
-has been deployed: publishing is an owner decision (see "Owner actions" below). Known limitations are
-listed at the end of this file.
+All nine phases of the roadmap are implemented and reviewed. The work was merged into `main` as pull
+request #16 (commit 92f7ef0) and is what https://applyready.in serves from GitHub Pages. The GitHub
+Actions workflow (`.github/workflows/quality.yml`) runs on every pull request to `main` and every push
+to it. An independent audit of the live site followed the release; its verified findings are being
+fixed on separate branches. Remaining owner actions and known limitations are listed at the end of
+this file.
 
 ## Phase 9: final review by persona, and fixes (complete, 18 Nov 2026)
 
@@ -63,8 +66,9 @@ covering its own buttons) was fixed before merging. Highlights:
   applicant workspaces 137, tutorials followed in the real tools 208, smoke 20. All pass.
 - Tutorial screenshots were retaken from the merged interface (35 desktop and 35 phone captures) and
   checked by eye.
-- Not run here: the Firefox suites (`npm run test:firefox`, no Firefox in this environment), Safari
-  (no WebKit test), and the GitHub Actions workflow itself (nothing has been pushed to a pull request).
+- Not run here: the Firefox suites (`npm run test:firefox`, no Firefox in this environment) and Safari
+  (no WebKit test). The GitHub Actions workflow was not run before this record was written; it now runs
+  on pull requests to `main` and on `main` itself.
 
 Page weight, first visit with no cache, measured in Chromium at 360 px on a throttled "slow 4G" link
 (1.6 Mbps, 150 ms latency). The test server did not compress, so the times are pessimistic; GitHub
@@ -206,7 +210,8 @@ resume builder 873 → 602 KB, home 256 KB, image resizer 387 KB.
   Smoke-tested in Node (ZIP verified with `unzip -t`, CRC-32 check value) and in Chromium under the site CSP
   (pdf.js render and text, pdf-lib write, worker resize, padding, conversion and cancellation).
 - Vendored `@cantoo/pdf-lib` 2.11.1 (MIT) and pdf.js 6.5.438 legacy build (Apache-2.0).
-- Icon subset build (`scripts/build-icons.py`): 156 KB of icon fonts reduced to 5 KB.
+- Icon subset build (`scripts/build-icons.py`): 156 KB of icon fonts reduced to 5 KB at the time. The
+  subset grows with the icons the site uses; at release (92f7ef0) the two fonts were 12.4 KB together.
 
 ## Owner actions (need someone with account access)
 
@@ -220,5 +225,5 @@ resume builder 873 → 602 KB, home 256 KB, image resizer 387 KB.
 3. **AdSense account** (from the 15 Nov audit): remove applyready.in from the AdSense dashboard.
 4. **Logo.** The header and social card still use the personal "nb" mark. A designed ApplyReady mark is
    an identity decision for the owner; replace `favicon/` and the header logo when one exists.
-5. **Publishing.** All of this is on the development branch. Review it, let the GitHub Actions workflow
-   run on a pull request, test on a real iPhone/Safari, then merge to `main` to publish on GitHub Pages.
+5. **Publishing: done.** Merged into `main` as pull request #16 (commit 92f7ef0) and published on GitHub
+   Pages. Still worth doing: a test on a real iPhone with Safari, which no automated suite here covers.
