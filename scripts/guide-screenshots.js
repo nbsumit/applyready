@@ -644,22 +644,30 @@ const SHOTS = {
     alt: 'The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the failed and cancelled images.',
     phone: { maxHeight: 1400 },
     async run(page, origin) {
-      await page.goto(origin + '/batch-image.html');
-      await page.setInputFiles('#batchApp input[type=file]', photoSet(6));
-      await page.waitForFunction(() => document.querySelectorAll('#batchList li').length === 6);
-      await setValue(page, 'bPreset', 'passport');
-      await page.click('#btnBatchStart');
-      // Cancel from inside the page as soon as four are done: a click from here can arrive after the rest
-      // have finished (on the phone layout it first scrolls the button into view), leaving nothing to cancel.
-      await page.waitForFunction(() => {
-        if (window.ApplyReadyBatchImage.summary().done < 4) return false;
-        document.getElementById('btnBatchCancel').click();
-        return true;
-      }, null, { timeout: 60000, polling: 10 });
-      await batchIdle(page);
-      const s = await page.evaluate(() => window.ApplyReadyBatchImage.summary());
-      // The tutorial's caption describes four finished and two cancelled.
-      if (s.done !== 4 || s.total - s.done !== 2) throw new Error(`cancelled batch has ${s.done} done of ${s.total}; the caption expects 4 of 6`);
+      // The tutorial's caption describes four finished and two cancelled. Photos are processed in
+      // parallel, so the last two can finish in the same instant as the fourth, leaving nothing to cancel;
+      // the run is repeated until the picture matches the caption (never the other way round).
+      let s = null;
+      for (let attempt = 1; attempt <= 6; attempt++) {
+        await page.goto(origin + '/batch-image.html');
+        await page.setInputFiles('#batchApp input[type=file]', photoSet(6));
+        await page.waitForFunction(() => document.querySelectorAll('#batchList li').length === 6);
+        await setValue(page, 'bPreset', 'passport');
+        await page.click('#btnBatchStart');
+        // Cancel from inside the page as soon as four are done: a click from here can arrive after the rest
+        // have finished (on the phone layout it first scrolls the button into view), leaving nothing to cancel.
+        await page.waitForFunction(() => {
+          if (window.ApplyReadyBatchImage.summary().done < 4) return false;
+          // A pointer press (detail 1): a keyboard-style click (detail 0) right after Start is ignored on
+          // purpose, so that Enter held down on Start cannot cancel the run it just began.
+          document.getElementById('btnBatchCancel').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
+          return true;
+        }, null, { timeout: 60000, polling: 10 });
+        await batchIdle(page);
+        s = await page.evaluate(() => window.ApplyReadyBatchImage.summary());
+        if (s.done === 4 && s.total - s.done === 2) break;
+      }
+      if (s.done !== 4 || s.total - s.done !== 2) throw new Error(`cancelled batch has ${s.done} done of ${s.total} after 6 attempts; the caption expects 4 of 6`);
       await settle(page, 600);
       await top(page);
       await annotate(page, [['#btnBatchZip', 'Finished ones are kept', 'corner'], ['#btnBatchRetry', 'Run the rest again', 'corner'], ['#batchList [data-status="cancelled"]', 'Not processed', 'corner']]);
