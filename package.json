@@ -4,7 +4,7 @@
   "private": true,
   "description": "Free, open-source, privacy-first tools for job applications that run in the browser",
   "scripts": {
-    "test": "node tests/run_tests.js && node tests/regression_tests.js && node tests/doc_tools_unit_tests.js && node tests/workspace_unit_tests.js && node tests/content_tests.js && node tests/guides_tests.js",
+    "test": "node tests/run_tests.js && node tests/regression_tests.js && node tests/doc_tools_unit_tests.js && node tests/workspace_unit_tests.js && node tests/content_tests.js && node tests/guides_tests.js && node tests/navigation_tests.js",
     "test:browser": "node tests/browser_tests.js && node tests/image_workflow_tests.js && node tests/resume_flow_tests.js && node tests/resume_library_tests.js && node tests/ui_tests.js && node tests/robustness_tests.js && node tests/pdf_tools_tests.js && node tests/batch_image_tests.js && node tests/doc_tools_tests.js && node tests/workspace_tests.js && node tests/tutorial_tests.js && node tests/browser_smoke.js",
     "test:ui": "node tests/ui_tests.js",
     "test:smoke": "node tests/browser_smoke.js",
