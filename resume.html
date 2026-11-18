@@ -262,6 +262,7 @@
       </div>
     </header>
     <div id="saveNotice" class="notice rb-notice" hidden></div>
+    <p id="rbAnnounce" class="sr-only" role="status" aria-live="polite"></p>
 
     <div id="resumeAppLayout" class="resume-app-layout rb view-edit" data-view="edit" aria-busy="true">
 
@@ -320,16 +321,16 @@
                 <div class="field-row">
                   <div class="field">
                     <label class="field-label" for="linkedin">LinkedIn profile <span class="optional">(optional)</span></label>
-                    <input type="text" id="linkedin" class="input" placeholder="e.g. linkedin.com/in/alexmorgan">
+                    <input type="text" id="linkedin" class="input" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. linkedin.com/in/alexmorgan">
                   </div>
                   <div class="field">
                     <label class="field-label" for="github">GitHub profile <span class="optional">(optional)</span></label>
-                    <input type="text" id="github" class="input" placeholder="e.g. github.com/alexmorgan">
+                    <input type="text" id="github" class="input" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. github.com/alexmorgan">
                   </div>
                 </div>
                 <div class="field">
                   <label class="field-label" for="website">Portfolio or personal website <span class="optional">(optional)</span></label>
-                  <input type="text" id="website" class="input" placeholder="e.g. alexmorgan.com">
+                  <input type="text" id="website" class="input" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. alexmorgan.com">
                 </div>
               </div>
             </div>
@@ -670,14 +671,14 @@
                   <p class="export-row__name"><i class="fa-solid fa-file-word" aria-hidden="true"></i> Word (.docx)</p>
                   <p class="export-row__desc">Editable. Use it when an employer asks for a Word file. Lines may wrap differently.</p>
                 </div>
-                <button type="button" id="btnDownloadDOCX" class="btn" title="Download an editable Word document"><i class="fa-solid fa-download" aria-hidden="true"></i> Download</button>
+                <button type="button" id="btnDownloadDOCX" class="btn" title="Download an editable Word document"><i class="fa-solid fa-download" aria-hidden="true"></i> Download Word</button>
               </div>
               <div class="export-row">
                 <div>
                   <p class="export-row__name"><i class="fa-solid fa-file-lines" aria-hidden="true"></i> Plain text (.txt)</p>
                   <p class="export-row__desc">For pasting into the text boxes of an online application form.</p>
                 </div>
-                <button type="button" id="btnDownloadText" class="btn" title="Download a plain-text resume"><i class="fa-solid fa-download" aria-hidden="true"></i> Download</button>
+                <button type="button" id="btnDownloadText" class="btn" title="Download a plain-text resume"><i class="fa-solid fa-download" aria-hidden="true"></i> Download text</button>
               </div>
             </div>
             <button type="button" id="btnPrintPDF" class="btn btn-sm btn-ghost export-print" title="Print or save through the browser"><i class="fa-solid fa-print" aria-hidden="true"></i> Print, or save as PDF with the browser</button>
@@ -713,6 +714,7 @@
             <span class="rb-pages" id="pageCountPill">Page 1 of 1</span>
           </div>
           <div class="rb-preview__tools">
+            <button type="button" id="btnLibraryPreview" class="btn btn-sm rb-preview__library"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> My resumes</button>
             <div class="segmented" role="group" aria-label="Zoom">
               <button type="button" id="btnZoomFit" aria-pressed="true" title="Fit the page to the width">Fit</button>
               <button type="button" id="btnZoom100" aria-pressed="false" title="Actual size">100%</button>
@@ -1059,7 +1061,7 @@
         <h2 class="dialog__title" id="tmplModalTitle">Template preview</h2>
         <button type="button" id="btnCloseTmplModal" class="btn btn-ghost btn-icon" aria-label="Close template preview"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
       </div>
-      <div class="dialog__body template-preview-modal-body"><p class="modal-sample-label">Sample content for illustration. Your resume is preserved.</p>
+      <div class="dialog__body template-preview-modal-body" tabindex="0" role="region" aria-label="Template preview"><p class="modal-sample-label" id="tmplModalNote">Sample content, for illustration. Choosing a template keeps everything you wrote.</p>
         <div id="tmplModalPreviewSheet" class="ats-resume-sheet">
           <!-- Dynamically populated with SAMPLE_DATA rendered in the selected template -->
         </div>
@@ -1081,8 +1083,7 @@
   <!-- Vector Text PDF Generator Engine -->
   <script src="js/pdf-engine.js?v=20261118" defer></script>
 
-  <!-- Pure Client-Side OOXML DOCX Generator Engine -->
-  <script src="js/docx-engine.js?v=20261118" defer></script>
+  <!-- The Word engine (js/docx-engine.js) loads on the way to the first Word download. -->
 
   <!-- On-device job description keyword matching -->
   <script src="js/keywords.js?v=20261118" defer></script>

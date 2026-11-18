@@ -35,12 +35,21 @@
   /* ----------------------------------------------------- On-screen keyboard */
   // Sticky bars (the resume Edit/Preview bar, a tool's action bar) step aside only while the on-screen
   // keyboard is actually open, so they never cover the field being typed in.
+  // Two ways a keyboard shows: the visual viewport shrinks inside the page (most browsers), or the
+  // page itself shrinks (in-app browsers, interactive-widget=resizes-content). The second is seen
+  // as the window becoming much shorter than its full height at the same width, on a touch screen.
   if (window.visualViewport) {
     const vv = window.visualViewport;
+    const touch = window.matchMedia('(pointer: coarse)');
+    let fullHeight = window.innerHeight, fullWidth = window.innerWidth;
     const sync = () => {
-      const field = doc.activeElement && /^(INPUT|TEXTAREA)$/.test(doc.activeElement.tagName);
-      doc.body.classList.toggle('is-typing', !!field && window.innerHeight - vv.height > 150);
+      if (window.innerWidth !== fullWidth) { fullWidth = window.innerWidth; fullHeight = window.innerHeight; }
+      const field = doc.activeElement && /^(INPUT|TEXTAREA)$/.test(doc.activeElement.tagName) && !/^(checkbox|radio|range|color|file|button|submit|reset|image)$/.test(doc.activeElement.type);
+      if (!field) fullHeight = Math.max(fullHeight, window.innerHeight);
+      const keyboard = window.innerHeight - vv.height > 150 || (touch.matches && fullHeight - window.innerHeight > 150);
+      doc.body.classList.toggle('is-typing', !!field && keyboard);
     };
+    window.addEventListener('resize', sync);
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
     doc.addEventListener('focusin', () => setTimeout(sync, 150));

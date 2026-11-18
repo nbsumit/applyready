@@ -288,6 +288,98 @@ check('Scrolling from script respects reduced motion (the CSS rule cannot stop a
     }
   }
 });
+// A long history: seven roles of five two-line bullets, then projects of two bullets each.
+function longResume(template) {
+  const long = n => `Additional result number ${n}: coordinated a cross-team reporting change that cut turnaround and kept the work on schedule across several teams and quarters while keeping costs flat`;
+  const d = schema.migrate({ template, design: { templateId: template, density: TEMPLATES[template].density || 'standard', fontFamily: TEMPLATES[template].fontFamily }, personal: { fullName: 'Long Case' },
+    experience: Array.from({ length: 7 }, (_, r) => ({ role: `Role ${r + 1}`, company: 'Company', duration: '2019 - 2020', bulletsText: [1, 2, 3, 4, 5].map(long).join('\n') })),
+    projects: Array.from({ length: 4 }, (_, p) => ({ name: `Project ${p + 1}`, tech: 'Python, Pandas, Power BI, Tableau, SQL Server, Airflow', link: 'github.com/someone/project-' + p, bulletsText: `First bullet of project ${p + 1}\nHandled 3,000 bookings in project ${p + 1}` })),
+    education: [{ degree: 'B.Tech', institution: 'College', duration: '2015 - 2019' }] });
+  d.design.sectionOrder = schema.normalizeSectionOrder(['experience', 'projects', 'education'], d);
+  return d;
+}
+check('Page breaks never split a bullet or leave a last bullet alone at the top of a page', () => {
+  for (const template of Object.keys(TEMPLATES)) {
+    const doc = pdf.generateResumePDF(longResume(template));
+    assert(doc.getPageCount() > 1, `${template}: the long case spans pages`);
+    doc.pages.slice(1).forEach((page, i) => {
+      const texts = page.elements.filter(e => e.type === 'text');
+      const first = texts[0];
+      // A page starts with a heading, a bullet sign, or an entry title, never with the middle of a bullet.
+      assert(first.text === '•' || first.fontStyle === 'bold', `${template} page ${i + 2} starts inside a bullet: "${first.text}"`);
+      if (first.text === '•') {
+        // ...and a bullet at the top of a page is never the last of its list: another bullet follows it.
+        const bulletYs = texts.filter(e => e.text === '•').map(e => e.y);
+        const after = texts.find(e => e.y > first.y && e.x < first.x + 4);
+        assert(bulletYs.length > 1 && after && after.text === '•', `${template} page ${i + 2} starts with a lone last bullet`);
+      }
+    });
+  }
+});
+check('Project tools start without a separator when they sit on their own line', () => {
+  for (const template of Object.keys(TEMPLATES)) {
+    const d = schema.migrate(require('../js/resume').SAMPLE_DATA);
+    d.template = template; d.design.templateId = template;
+    const texts = pdf.generateResumePDF(d).pages.flatMap(p => p.elements.filter(e => e.type === 'text'));
+    const tools = texts.find(e => e.text.includes('Jira, Smartsheet'));
+    const name = texts.find(e => e.text.includes('Enterprise Supply Chain'));
+    if (Math.abs(tools.y - name.y) < 1) assert(tools.text.startsWith('|'), `${template}: tools on the name line follow a separator`);
+    else assert(!tools.text.trim().startsWith('|'), `${template}: tools on their own line start with "${tools.text.slice(0, 3)}"`);
+  }
+});
+check('Dates sit in one place per section, with the same spacing either way', () => {
+  const d = schema.migrate({ template: 'classic-professional', personal: { fullName: 'Date Case' }, education: [
+    { degree: 'B.Tech in Computer Science and Engineering', institution: 'RV College of Engineering', duration: '2022 - 2026', location: 'Bengaluru', score: 'CGPA 8.9 / 10' },
+    { degree: 'Class XII (PCM), CBSE', institution: 'Kendriya Vidyalaya', duration: '2022', location: 'Bengaluru', score: '94.2%' }] });
+  const texts = pdf.generateResumePDF(d).pages[0].elements.filter(e => e.type === 'text');
+  const metas = texts.filter(e => /Bengaluru/.test(e.text));
+  assert.equal(metas.length, 2);
+  assert(metas.every(e => Math.abs(e.x - metas[0].x) < 0.5), 'both entries place their details the same way');
+  assert(metas.every(e => e.text.includes('  •  ')), 'details keep their spaced separators');
+  assert(texts.some(e => e.text === 'Class XII (PCM), CBSE  —  Kendriya Vidyalaya'), 'a title that fits keeps its spaced dash');
+});
+check('Characters the PDF fonts cannot write are named', () => {
+  assert.deepEqual(pdf.unsupportedCharacters('Closed ₹12 lakh → done 😀, café – “ok” €5'), ['₹', '→', '😀']);
+  assert.deepEqual(pdf.unsupportedCharacters('Plain​ text'), []);
+});
+check('The review names the character and the field that keep the PDF from downloading', () => {
+  const { generateReviewReport } = require('../js/resume');
+  const d = schema.migrate({ personal: { fullName: 'Asha Verma', email: 'asha@example.com', phone: '+91 98765 43210' },
+    experience: [{ id: 'exp-a', role: 'Analyst', company: 'Firm', duration: '2024', bulletsText: 'Did a thing' }, { id: 'exp-b', role: 'Sales Associate', company: 'Shop', duration: '2023', bulletsText: 'Closed deals worth ₹12 lakh in three months' }] });
+  const item = generateReviewReport(d, null).find(x => x.targetField === 'exp-bul-exp-b');
+  assert(item, 'a finding points at the bullet field that holds ₹');
+  assert(item.message.includes('“₹”'), item.message);
+  assert.equal(item.where, 'Work experience, role 2');
+  assert.deepEqual(item.replace, ['₹']);
+  d.sectionVisibility.experience = false;
+  assert(!generateReviewReport(d, 1).some(x => /built-in fonts/.test(x.message)), 'a hidden section does not print, so it is not reported');
+});
+check('An Indian-script name is named as a script, and only replaceable characters are offered a replacement', () => {
+  const { generateReviewReport, unsupportedDownloadMessage } = require('../js/resume');
+  const d = schema.migrate({ personal: { fullName: 'प्रिया शर्मा', email: 'priya@example.com' },
+    experience: [{ id: 'exp-a', role: 'Analyst', company: 'Firm', duration: '2024', bulletsText: 'Closed deals worth ₹12 lakh' }] });
+  const item = generateReviewReport(d, null).find(x => /built-in fonts/.test(x.message));
+  assert(item.message.startsWith('Devanagari text and “₹” cannot'), item.message);
+  for (const mark of ['्', 'ि', '“प”']) assert(!item.message.includes(mark), `no lone "${mark}" in: ${item.message}`);
+  assert.deepEqual(item.replace, ['₹']);
+  const odd = [{ chars: pdf.unsupportedCharacters('प्रिया शर्मा'), where: 'Contact details, name' }, { chars: ['₹'], where: 'Work experience, role 1' }];
+  const toast = unsupportedDownloadMessage(odd);
+  assert(toast.startsWith('Devanagari text in Contact details, name (and 1 more place) cannot go into this PDF'), toast);
+  assert(toast.endsWith('The Review step shows where the rest is and can replace ₹ with Rs.'), toast);
+  assert(!/replace it\b/.test(toast), toast);
+  assert(unsupportedDownloadMessage([{ chars: ['😀'], where: 'Professional summary' }]).startsWith('Emoji in Professional summary'));
+  assert(unsupportedDownloadMessage([{ chars: ['😀'], where: 'Professional summary' }]).endsWith('The Review step shows where.'));
+  assert(unsupportedDownloadMessage([{ chars: ['₹', '✓'], where: 'Skills, row 1' }]).endsWith('can replace ₹ with Rs. and remove ✓.'));
+});
+check('Job keywords split a title line, skip degree words and match British and American spellings', () => {
+  const keywords = require('../js/keywords');
+  const job = 'Business Analyst - Graduate Programme\nYou will gather requirements from senior stakeholders and own data visualization in Power BI. A degree in any field is required. Organise workshops.';
+  const result = keywords.matchKeywords(job, 'Business Analyst | B.Tech. Visualising sales data in Power BI; organised workshops for stakeholders.');
+  assert(result.found.includes('Business Analyst'), 'the role in the title line is found on its own');
+  assert(!result.keywords.some(term => /graduate programme/i.test(term) && /analyst/i.test(term)), 'the title line is not one long term');
+  for (const filler of ['degree', 'field', 'senior', 'gather']) assert(!result.keywords.includes(filler), filler);
+  for (const term of ['visualization', 'organise']) assert(result.found.some(found => found.toLowerCase() === term), `${term} matches the other spelling`);
+});
 (async () => {
   const { ensureMinKB } = require('../js/resizer');
   // A tiny JFIF JPEG header: SOI, APP0 (16 bytes), then the rest of an image.

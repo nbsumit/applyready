@@ -222,7 +222,13 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
   await renameInput.press('Escape');
   ok(await page.locator('#libraryDialog').isVisible() && await page.locator('#libList .rl-rename').count() === 0, 'Escape cancels renaming without closing the dialog');
   await copyRow.locator('[data-act="rename"]').click();
+  // An empty name is refused with a message under the field, linked to it.
+  await page.locator('#libList .rl-rename .input').fill('   ');
+  await page.locator('#libList .rl-rename .input').press('Enter');
+  const emptyName = await page.locator('#libList .rl-rename .input').evaluate(el => ({ invalid: el.getAttribute('aria-invalid'), error: (document.getElementById(el.getAttribute('aria-describedby') || 'none') || {}).textContent, focused: el === document.activeElement }));
+  ok(emptyName.invalid === 'true' && emptyName.error === 'Enter a name for this resume.' && emptyName.focused, 'An empty name is explained under the field');
   await page.locator('#libList .rl-rename .input').fill('  Analyst  version   for retail ');
+  ok(await page.locator('#libRenameError').count() === 0, 'Typing a name clears the message');
   await page.locator('#libList .rl-rename .input').press('Enter');
   await page.waitForFunction(() => [...document.querySelectorAll('#libList .rl-row__name')].some(n => n.textContent === 'Analyst version for retail'));
   ok((await records(page)).some(r => r.name === 'Analyst version for retail'), 'Rename is saved with tidy spacing');
