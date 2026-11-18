@@ -285,6 +285,17 @@ ok(!fs.existsSync(path.join(root, 'css/style.css')) && !fs.existsSync(path.join(
     ok(read('scripts/' + f).includes("'--check'"), `scripts/${f}: has no --check mode`);
   }
 }
+// Every PDF and document tool page leads to the guides that help with it, and the PDF tool pages
+// answer common requests with worked steps (they had neither, unlike the image tool pages).
+{
+  const { PAGES: pdfPages } = require('../scripts/build-pdf-pages');
+  for (const f of [...pdfPages.map(p => p.page), 'text-to-pdf.html']) {
+    const main = (read(f).match(/<main[\s\S]*?<\/main>/) || [''])[0];
+    const guideLinks = [...main.matchAll(/<a href="guides\/([a-z0-9-]+\.html)" class="guide-card">/g)].map(m => m[1]);
+    ok(guideLinks.length >= 3 && guideLinks.every(g => fs.existsSync(path.join(root, 'guides', g))), `${f}: links to at least three existing guides in "Guides that help with this tool" (${guideLinks.join(', ')})`);
+    if (f !== 'text-to-pdf.html') ok((main.match(/<h2 id="examplesHeading">Common requests<\/h2>[\s\S]*?<\/section>/) || [''])[0].split('<h3>').length - 1 >= 2, `${f}: a "Common requests" section with at least two worked requests`);
+  }
+}
 // Contributor docs agree with the code: the README's tool table names every live tool page in the
 // registry, and the setup notes name everything CI installs to run the tests.
 {
