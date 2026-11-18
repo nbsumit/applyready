@@ -61,6 +61,11 @@ npm run test:browser   # Playwright suites in Chromium (set BROWSER_EXECUTABLE_P
 Use the issue templates on GitHub, or email hello@nbsumit.com. Never attach personal documents: describe
 the file (type and approximate size) instead. Security problems: see [`SECURITY.md`](SECURITY.md).
 
+## Licence of contributions
+
+ApplyReady is licensed under the [GNU AGPL-3.0](LICENSE). By submitting a contribution you agree that it
+is your own work (or you have the right to submit it) and that it is licensed under the same terms.
+
 ## Code of conduct
 
 Everyone taking part is expected to follow the [code of conduct](CODE_OF_CONDUCT.md).

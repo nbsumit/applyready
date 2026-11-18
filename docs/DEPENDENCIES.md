@@ -35,9 +35,10 @@ never executed.
 ## Compatibility
 
 All shipped components are permissive (MIT, BSD, Apache-2.0, OFL, CC BY) except the Liberation fonts,
-which are GPL-2.0 with a font exception and are distributed as separate, unmodified files. None of them
-restricts the licence ApplyReady's own code can use: MIT, Apache-2.0, GPL-3.0 and AGPL-3.0 are all
-possible. (Apache-2.0 components are compatible with GPL-3.0 and AGPL-3.0, not with GPL-2.0-only.)
+which are GPL-2.0 with a font exception and are distributed as separate, unmodified files. All are
+compatible with ApplyReady's own licence, AGPL-3.0-only (chosen by the owner on 18 November 2026).
+Apache-2.0 components are compatible with the AGPL-3.0; the GPL-2.0 Liberation fonts are separate files
+under their own licence (aggregation).
 
 Requirements to keep meeting:
 

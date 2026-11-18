@@ -54,8 +54,9 @@ resume builder 873 → 602 KB, home 256 KB, image resizer 387 KB.
 
 ## Owner actions (need someone with account access)
 
-1. **Licence.** The repository has no LICENSE file, so it is not yet legally open source. The owner must choose
-   one (for example MIT or AGPL-3.0); see ROADMAP.md and the final report.
+1. **Licence: decided.** The owner chose the GNU AGPL-3.0 on 18 Nov 2026; `LICENSE` holds the official text
+   (gnu.org, SHA-256 0d96a4ff…abcb0) and `package.json` declares `AGPL-3.0-only`. If "or later" is preferred,
+   change the SPDX id and the README wording.
 2. **Donation page (Razorpay).** Its text matches the philosophy. Suggested changes in the Razorpay dashboard:
    page title (currently the default "Pay for Support ApplyReady ❤️ by Sumit Sengar"); consider removing the
    personal phone number; show ApplyReady's logo and name rather than the personal "nb" logo; optionally add
