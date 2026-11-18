@@ -352,6 +352,10 @@
               <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust again</button>
             </div>
           </div>
+          <div id="resultWarning" class="notice notice--warning hidden">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            <span class="notice__body" id="resultWarningText"></span>
+          </div>
           <div class="ws-result__body">
             <div class="ws-result__view">
               <div class="segmented" role="group" aria-label="Compare with the original">
@@ -389,7 +393,7 @@
                 <label class="field-label" id="customWidthLabel" for="customWidth">Width (px)</label>
                 <input type="number" id="customWidth" class="input" aria-describedby="dimError" value="350" min="20" max="8000" step="1" inputmode="numeric">
               </div>
-              <button type="button" id="btnLockAspect" class="btn btn-icon btn-lock active" title="Aspect ratio locked" aria-label="Keep aspect ratio" aria-pressed="true"><i class="fa-solid fa-lock" aria-hidden="true"></i></button>
+              <button type="button" id="btnLockAspect" class="btn btn-icon btn-lock" title="Aspect ratio unlocked" aria-label="Keep aspect ratio" aria-pressed="false"><i class="fa-solid fa-lock-open" aria-hidden="true"></i></button>
               <div class="field">
                 <label class="field-label" id="customHeightLabel" for="customHeight">Height (px)</label>
                 <input type="number" id="customHeight" class="input" aria-describedby="dimError" value="350" min="20" max="8000" step="1" inputmode="numeric">
@@ -531,7 +535,7 @@
             <tr><td>Portrait</td><td>1000 × 1333</td><td>320.9 KB</td><td>19.3 KB</td><td>0.40</td></tr>
           </tbody>
         </table></div>
-        <p>Two things stand out. First, at the pixel sizes forms usually ask for (140 × 60, 300 × 100, 400 × 200) a signature fits under 20 KB without any loss of quality at all. Second, the same 20 KB spread over a large image forces the quality down to 0.35–0.40, where edges turn blocky. If a 20 KB file looks poor, the pixel size is almost always the reason, not the limit. Cleaning the signature first helps too: our cleaned test signature was 6.3 KB at 300 × 100 px instead of 8.0 KB, using the <a href="signature-cleaner.html">signature cleaner</a>.</p>
+        <p>Two things stand out. First, at the pixel sizes forms usually ask for (140 × 60, 300 × 100, 400 × 200) a signature fits under 20 KB without any loss of quality at all. Second, the same 20 KB spread over a large image forces the quality down to 0.35–0.40, where edges turn blocky. If a 20 KB file looks poor, the pixel size is almost always the reason, not the limit. Cleaning the signature first helps too: our cleaned test signature was 6.4 KB at 300 × 100 px instead of 8.0 KB, using the <a href="signature-cleaner.html">signature cleaner</a>.</p>
       </section>
 
       <section class="section prose" aria-labelledby="kb20FixHeading">
@@ -700,6 +704,7 @@
   <script src="js/vendor/cropper.min.js"></script>
   <script src="js/presets.js?v=20261118"></script>
   <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/resizer.js?v=20261118"></script>
 </body>
 </html>
