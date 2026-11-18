@@ -60,9 +60,12 @@
         if (neverStarted) {
           // The worker script could not load: keep going on the main thread.
           useWorkers = false;
-          workers.splice(0).forEach(s => { try { s.worker.terminate(); } catch (err) { /* ignore */ } });
-          if (job) runOnMainThread(job);
-          waiting.splice(0).forEach(runOnMainThread);
+          const orphans = job ? [job] : [];
+          workers.splice(0).forEach(s => {
+            try { s.worker.terminate(); } catch (err) { /* ignore */ }
+            if (s.job) { if (s.job.cleanup) s.job.cleanup(); orphans.push(s.job); s.job = null; }
+          });
+          orphans.concat(waiting.splice(0)).forEach(runOnMainThread);
           return;
         }
         if (job) job.reject(new Error('The image worker stopped unexpectedly. The file may be too large for this device.'));

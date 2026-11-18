@@ -617,6 +617,9 @@
       shownNames = names;
       rowsDirty = false;
       renderedKey = currentKey;
+    } else {
+      // Cancel, retry and requeue change many items at once without an event per item.
+      items.forEach(item => { const li = rows.get(item.id); if (li && li.dataset.status !== item.status) updateRow(item, shownNames); });
     }
 
     const total = items.length;

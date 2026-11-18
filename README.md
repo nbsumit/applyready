@@ -14,6 +14,8 @@ there are no accounts, no cookies, no analytics and no advertising, and every fe
 |---|---|---|
 | Resume builder: templates, live preview, PDF / Word / text export, JSON backup, review checks, job-description keyword match | `resume.html` | `js/resume.js` (+ `templates.js`, `pdf-engine.js`, `docx-engine.js`, `keywords.js`, `resume-schema.js`) |
 | Image resizer: exact pixels and KB limits, crop, rotate, format, minimum-size padding | `image-resizer.html`, `resize-image-to-*.html` | `js/resizer.js`, `js/presets.js` |
+| Passport photo and signature resizers (the image resizer with a preset chosen) | `passport-photo-resizer.html`, `signature-resizer.html` | `js/resizer.js` |
+| Batch image processor, image compressor, image converter: one engine, many files, per-file status, cancel, retry, ZIP | `batch-image.html`, `compress-image.html`, `convert-image.html` | `js/batch-image.js` (+ `js/lib/batch.js`, `image-ops.js`, `image-pool.js`, `js/workers/image-worker.js`) |
 | Signature cleaner | `signature-cleaner.html` | `js/signature-cleaner.js` |
 | Passport photo print sheet | `passport-photo-print.html` | `js/passport-photo-print.js` |
 | Image to PDF | `image-to-pdf.html` | `js/image-to-pdf.js` |
@@ -78,7 +80,7 @@ Edit the generator, not the generated markup:
 |---|---|
 | `node scripts/sync-shell.js` | Header, footer, stylesheets, CSP and asset versions on every page; the search index `js/tool-index.js`; the service worker precache list and cache name in `sw.js` |
 | `node scripts/build-directory.js` | Tool listings on the home page and `tools.html` |
-| `node scripts/build-image-pages.js` | The resizer workspace on the image resizer pages |
+| `node scripts/build-image-pages.js` | The resizer workspace on the image resizer pages, and the batch workspace on the batch, compressor and converter pages (`scripts/lib/batch-workspace.js`) |
 | `node scripts/build-tool-pages.js` | The workspace of the signature cleaner, passport print, image to PDF and compress PDF pages |
 | `node scripts/build-sitemap.js` | `sitemap.xml` |
 | `python3 scripts/build-icons.py` | The Font Awesome subset (`css/vendor/icons.min.css`, `css/webfonts/`) |
