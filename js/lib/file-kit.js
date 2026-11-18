@@ -7,10 +7,13 @@
    ApplyReadyFileKit.dropzone(root, options) -> { open(), reset() }
      root       element containing [data-dropzone], input[type=file] and a [data-browse] button
      options    { accept: ['image'] | ['pdf'] | ..., multiple, limitBytes, maxFiles,
-                  onFiles(files, infos), onReject(messages), paste: true,
-                  validate: false to accept any file unchecked (infos are then null) }
+                  onFiles(files, infos, context), onReject(messages, context), paste: true,
+                  validate: false to accept any file unchecked (infos are then null),
+                  context: () => value, read when files arrive and passed back after checking,
+                  so a tool can deliver them where they were dropped (applicant workspaces) }
    ApplyReadyFileKit.thumbnail(file, size) -> Promise<objectURL|null>   small JPEG preview
-   ApplyReadyFileKit.downloadZip(entries, name, { button, signal })      ZIP with progress
+   ApplyReadyFileKit.downloadZip(entries, name, { button, signal, save })  ZIP with progress;
+                  save(blob, name) replaces the default download (the caller owns the object URL)
    ApplyReadyFileKit.guardUnload(() => boolean)                          warn before losing results
    ApplyReadyFileKit.announce(message)                                   polite screen-reader update
 
@@ -31,6 +34,7 @@
     async function take(fileList) {
       let files = Array.from(fileList || []).filter(f => f && typeof f.size === 'number');
       if (!files.length) return;
+      const context = typeof opts.context === 'function' ? opts.context() : undefined;
       if (!opts.multiple) files = files.slice(0, 1);
       const messages = [];
       if (files.length > opts.maxFiles) {
@@ -39,15 +43,15 @@
       }
       // Tools that report on any file, even an empty or unknown one (the file checker), take them unvalidated.
       if (opts.validate === false) {
-        if (messages.length && opts.onReject) opts.onReject(messages);
-        if (opts.onFiles) opts.onFiles(files, files.map(() => null));
+        if (messages.length && opts.onReject) opts.onReject(messages, context);
+        if (opts.onFiles) opts.onFiles(files, files.map(() => null), context);
         return;
       }
       const results = await Promise.all(files.map(f => Files().validate(f, opts.accept, opts.limitBytes).then(r => ({ file: f, r }))));
       const good = results.filter(x => x.r.ok);
       results.filter(x => !x.r.ok).forEach(x => messages.push(x.r.error));
-      if (messages.length && opts.onReject) opts.onReject(messages);
-      if (good.length && opts.onFiles) opts.onFiles(good.map(x => x.file), good.map(x => x.r.info));
+      if (messages.length && opts.onReject) opts.onReject(messages, context);
+      if (good.length && opts.onFiles) opts.onFiles(good.map(x => x.file), good.map(x => x.r.info), context);
     }
 
     const open = () => { input.value = ''; input.click(); };
@@ -123,7 +127,8 @@
         signal: opts.signal,
         onProgress: (done, total) => { if (opts.button) opts.button.textContent = `Preparing ZIP… ${done} of ${total}`; }
       });
-      Files().download(zip, name);
+      if (typeof opts.save === 'function') { if (opts.save(zip, name) === false) return false; }
+      else Files().download(zip, name);
       announce(`ZIP file with ${entries.length} file${entries.length === 1 ? '' : 's'} downloaded.`);
       return true;
     } catch (e) {

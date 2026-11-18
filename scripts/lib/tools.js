@@ -109,7 +109,7 @@ const TOOLS = [
     keywords: ['batch', 'bulk', 'multiple images', 'many photos', 'batch resize', 'bulk resize', 'resize all', 'zip', 'mass resize', 'batch processing', 'multiple signatures'] },
 
   // Cyber cafe
-  { id: 'workspace', name: 'Applicant workspaces', path: 'workspace.html', category: 'cafe', also: ['batch'], icon: 'users', live: false,
+  { id: 'workspace', name: 'Applicant workspaces', path: 'workspace.html', category: 'cafe', also: ['batch'], icon: 'users',
     summary: 'A separate, temporary space for each applicant’s files',
     keywords: ['cyber cafe', 'operator', 'applicant', 'workspace', 'customer', 'shared computer', 'computer centre', 'placement office', 'session', 'multiple applicants'] }
 ];

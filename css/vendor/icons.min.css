@@ -58,6 +58,7 @@
 .fa-xmark:before{content:"\f00d"}
 .fa-magnifying-glass-plus:before{content:"\f00e"}
 .fa-magnifying-glass-minus:before{content:"\f010"}
+.fa-power-off:before{content:"\f011"}
 .fa-clock:before{content:"\f017"}
 .fa-download:before{content:"\f019"}
 .fa-arrows-rotate:before{content:"\f021"}
@@ -105,6 +106,7 @@
 .fa-paper-plane:before{content:"\f1d8"}
 .fa-clock-rotate-left:before{content:"\f1da"}
 .fa-wifi:before{content:"\f1eb"}
+.fa-user-plus:before{content:"\f234"}
 .fa-object-group:before{content:"\f247"}
 .fa-hourglass-half:before{content:"\f252"}
 .fa-circle-pause:before{content:"\f28b"}
@@ -118,6 +120,7 @@
 .fa-lock-open:before{content:"\f3c1"}
 .fa-location-dot:before{content:"\f3c5"}
 .fa-shield-halved:before{content:"\f3ed"}
+.fa-user-check:before{content:"\f4fc"}
 .fa-user-shield:before{content:"\f505"}
 .fa-book-open:before{content:"\f518"}
 .fa-crop-simple:before{content:"\f565"}
