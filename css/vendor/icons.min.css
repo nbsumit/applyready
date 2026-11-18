@@ -73,6 +73,7 @@
 .fa-eye:before{content:"\f06e"}
 .fa-triangle-exclamation:before{content:"\f071"}
 .fa-chevron-down:before{content:"\f078"}
+.fa-folder-open:before{content:"\f07c"}
 .fa-arrows-up-down:before{content:"\f07d"}
 .fa-arrow-up-right-from-square:before{content:"\f08e"}
 .fa-copy:before{content:"\f0c5"}
@@ -86,9 +87,13 @@
 .fa-file-image:before{content:"\f1c5"}
 .fa-file-zipper:before{content:"\f1c6"}
 .fa-paper-plane:before{content:"\f1d8"}
+.fa-hourglass-half:before{content:"\f252"}
+.fa-circle-pause:before{content:"\f28b"}
 .fa-rotate-left:before{content:"\f2ea"}
 .fa-trash-can:before{content:"\f2ed"}
+.fa-rotate:before{content:"\f2f1"}
 .fa-rotate-right:before{content:"\f2f9"}
+.fa-pen:before{content:"\f304"}
 .fa-lock-open:before{content:"\f3c1"}
 .fa-book-open:before{content:"\f518"}
 .fa-crop-simple:before{content:"\f565"}

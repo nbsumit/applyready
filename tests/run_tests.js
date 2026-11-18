@@ -732,11 +732,13 @@ const legacyV1Data = {
 };
 
 const migratedV2 = migrateResumeSchema(legacyV1Data);
-assert(migratedV2.schemaVersion === 2, 'migrateResumeSchema upgrades legacy data to schemaVersion 2');
+assert(migratedV2.schemaVersion === 3, 'migrateResumeSchema upgrades legacy data to schemaVersion 3');
 assert(migratedV2.design && migratedV2.design.templateId === 'classic-professional', 'migrated schema defaults templateId to "classic-professional"');
 assert(migratedV2.design.pageSize === 'a4', 'migrated schema defaults pageSize to "a4"');
 assert(migratedV2.design.density === 'standard', 'migrated schema defaults density to "standard"');
-assert(Array.isArray(migratedV2.design.sectionOrder) && migratedV2.design.sectionOrder.length === 10, 'migrated schema initializes 10-section order array');
+assert(Array.isArray(migratedV2.design.sectionOrder) && migratedV2.design.sectionOrder.length === 12, 'migrated schema initializes the 12-section order array');
+assert(migratedV2.design.sectionOrder.indexOf('publications') === migratedV2.design.sectionOrder.indexOf('academic') - 1, 'migrated order places Publications just before Academic, where they used to print');
+assert(Array.isArray(migratedV2.references) && migratedV2.referencesOnRequest === false && Array.isArray(migratedV2.customSections), 'migrated schema adds references and custom sections');
 assert(migratedV2.sectionVisibility && migratedV2.sectionVisibility.summary === true, 'migrated schema initializes sectionVisibility map');
 assert(Array.isArray(migratedV2.certifications), 'migrated schema adds certifications array');
 assert(Array.isArray(migratedV2.achievements), 'migrated schema adds achievements array');
@@ -748,7 +750,7 @@ assert(migratedV2.experience[0].company === 'TechWorks', 'migrated schema preser
 
 // Empty / invalid input migration test
 const emptyMigrated = migrateResumeSchema(null);
-assert(emptyMigrated.schemaVersion === 2, 'migrateResumeSchema handles null input gracefully');
+assert(emptyMigrated.schemaVersion === 3, 'migrateResumeSchema handles null input gracefully');
 assert(emptyMigrated.personal && emptyMigrated.personal.fullName === '', 'migrateResumeSchema defaults empty personal fields');
 
 // Idempotent v2 migration test
@@ -889,7 +891,9 @@ assert(resumeJsContent.includes('isDocumentEmpty'), 'resume.js defines isDocumen
 // SUITE 15: Security & Platform Reliability Hardening
 // ------------------------------------------------------------------
 console.log('SUITE 15: Security & Platform Reliability Hardening');
-assert(resumeJsContent.includes('reader.onerror = () =>'), 'resume.js defines reader.onerror handler for backup import resilience');
+const libraryUiContent = fs.readFileSync(path.join(repoRoot, 'js', 'resume-library-ui.js'), 'utf8');
+assert(/try \{ text = await file\.text\(\); \} catch/.test(libraryUiContent), 'Backup import handles a file that cannot be read from disk');
+assert(!resumeJsContent.includes('localStorage'), 'resume.js no longer keeps a draft in localStorage (the library uses IndexedDB)');
 const testMigration = migrateResumeSchema({ data: { personal: { fullName: 'Jane Doe', untrustedField: 'exploit' } } });
 assert(testMigration.personal && testMigration.personal.fullName === 'Jane Doe' && testMigration.personal.untrustedField === undefined, 'migrateResumeSchema enforces schema filtering and discards arbitrary untrusted fields');
 
@@ -994,6 +998,80 @@ assert(!xmlNoName.includes('<w:t xml:space="preserve">Resume</w:t>') && xmlNoNam
 const dNodeOptional = { personal: { fullName: 'A' }, certifications: [{ name: 'AWS Solutions Architect', issuer: 'Amazon' }], sectionVisibility: { certifications: true } };
 const htmlNodeOptional = renderResumeDataToHTML(dNodeOptional, 'classic-professional');
 assert(htmlNodeOptional.includes('AWS Solutions Architect'), 'renderResumeDataToHTML retains optional sections in Node.js environment');
+
+// ------------------------------------------------------------------
+// SUITE 17: Schema version 3, references, custom sections and the resume library formats
+// ------------------------------------------------------------------
+console.log('SUITE 17: Schema version 3 and the resume library');
+{
+  const SCHEMA = require('../js/resume-schema.js');
+  const LIB = require('../js/resume-library.js');
+  const { optionalEntries } = require('../js/pdf-engine.js');
+  const v3 = SCHEMA.migrate({
+    personal: { fullName: 'Asha Rao' }, experience: [], education: [], projects: [],
+    sectionVisibility: { references: true, academic: false },
+    references: [{ id: 'r1', name: 'REF_NAME_MARKER', title: 'Head of Data', organization: 'Example Labs', contact: 'ref@example.com' }],
+    customSections: [
+      { id: 'cs-1', title: 'CUSTOM_HEADING', mode: 'entries', entries: [{ id: 'e1', title: 'CUSTOM_ENTRY_MARKER', subtitle: 'Coursera', date: '2024', bulletsText: 'CUSTOM_BULLET_MARKER' }] },
+      { id: 'cs-2', title: 'Interests', mode: 'text', text: 'CUSTOM_TEXT_MARKER' },
+      { id: 'cs-3', title: 'Hidden part', mode: 'text', text: 'HIDDEN_CUSTOM_MARKER', visible: false }
+    ],
+    design: { sectionOrder: ['custom:cs-2', 'references', 'summary'] }
+  });
+  assert(SCHEMA.validate({ version: 3, data: v3 }), 'A version 3 resume with references and custom sections validates');
+  assert(v3.design.sectionOrder[0] === 'custom:cs-2' && v3.design.sectionOrder[1] === 'references' && v3.design.sectionOrder.includes('custom:cs-1'), 'Custom sections and references keep their place in the section order');
+  const text = generateResumeText(v3);
+  const pdfText = generateResumePDF(v3).build();
+  const docXml = Buffer.from(generateResumeDOCX(v3).files.find(f => f.name === 'word/document.xml').data).toString('utf8');
+  const html = renderResumeDataToHTML(v3, v3.template);
+  for (const [label, out] of [['text', text], ['PDF', pdfText], ['Word', docXml], ['preview', html]]) {
+    for (const mark of ['REF_NAME_MARKER', 'CUSTOM_ENTRY_MARKER', 'CUSTOM_BULLET_MARKER', 'CUSTOM_TEXT_MARKER']) assert(out.includes(mark), `${label} export includes ${mark}`);
+    assert(!out.includes('HIDDEN_CUSTOM_MARKER'), `${label} export leaves out a hidden custom section`);
+  }
+  assert(text.indexOf('INTERESTS') < text.indexOf('REFERENCES'), 'Text export follows the custom section order');
+  const onRequest = SCHEMA.migrate(Object.assign({}, v3, { referencesOnRequest: true }));
+  const onRequestText = generateResumeText(onRequest);
+  assert(onRequestText.includes('Available on request.') && !onRequestText.includes('REF_NAME_MARKER'), '"Available on request" replaces the referee list in every format');
+  // Publications move out of Academic losslessly, keeping the old visibility.
+  const v2 = { version: 2, data: { personal: { fullName: 'B' }, experience: [], education: [], projects: [], sectionVisibility: { academic: true }, academic: { publications: [{ title: 'PUB_MARKER' }], teaching: [{ role: 'TA' }] } } };
+  const fromV2 = SCHEMA.migrate(v2);
+  assert(fromV2.publications.length === 1 && fromV2.publications[0].title === 'PUB_MARKER' && fromV2.sectionVisibility.publications === true, 'Version 2 publications become the Publications section and stay visible');
+  assert(!('publications' in fromV2.academic) && fromV2.academic.teaching[0].role === 'TA', 'Academic keeps teaching, presentations and grants');
+  assert(optionalEntries(fromV2, 'publications')[0] === 'PUB_MARKER', 'Publications print from their own section');
+  assert(SCHEMA.validate({ version: 1, data: { personal: {}, experience: [], education: [], projects: [] } }) && !SCHEMA.validate({ version: 4, data: v3 }), 'Versions 1 to 3 are accepted; a newer version is refused');
+  assert(!SCHEMA.validate({ data: Object.assign({}, v3, { customSections: [{ mode: 'video' }] }) }), 'An unknown custom section type is refused');
+  assert(!SCHEMA.validate({ data: Object.assign({}, v3, { design: { sectionOrder: ['custom:bad id"'] } }) }), 'A custom key that is not a safe id is refused');
+  const hostile = SCHEMA.migrate({ customSections: [{ id: 'x" onclick="1', title: '<b>t</b>', entries: [{ id: '"><img>', title: 'a' }] }] });
+  assert(SCHEMA.ID_PATTERN.test(hostile.customSections[0].id) && SCHEMA.ID_PATTERN.test(hostile.customSections[0].entries[0].id), 'Custom section and entry ids are always safe for HTML attributes');
+  // The single-resume backup still imports into the version 2 importer of earlier releases.
+  const legacy = SCHEMA.toLegacyCompatible(v3);
+  assert(legacy.version === 2 && legacy.design.sectionOrder.every(k => SCHEMA.legacySections.includes(k)), 'Single backups keep the version 2 envelope earlier releases accept');
+  assert(JSON.stringify(SCHEMA.migrate(legacy)) === JSON.stringify(v3), 'Reading a single backup back gives exactly the same resume');
+  // Library record and backup formats
+  const rec = LIB.createRecord(v3, { now: 1763452800000 });
+  assert(LIB.ID_PATTERN.test(rec.id) && rec.id.startsWith('r_') && rec.name === 'Asha Rao' && rec.schemaVersion === 3 && rec.createdAt === 1763452800000, 'A new record follows the documented record format');
+  const sorted = LIB.sortOut([rec, { id: 'bad id', data: {} }, null, { id: 'r_ok', name: 'Broken', data: { personal: 'x' } }]);
+  assert(sorted.records.length === 1 && sorted.damaged.length === 3, 'Damaged records are separated instead of failing the whole list');
+  const single = LIB.parseBackup(JSON.stringify(LIB.singleBackup(rec)));
+  assert(single.kind === 'single' && single.resumes[0].name === 'Asha Rao' && JSON.stringify(single.resumes[0].data) === JSON.stringify(rec.data), 'A single backup round-trips with its name');
+  const all = LIB.parseBackup(JSON.stringify(LIB.libraryBackup([rec, rec])));
+  assert(all.kind === 'library' && all.resumes.length === 2, 'A library backup round-trips every resume');
+  const refuse = (input, pattern, label) => { try { LIB.parseBackup(input); assert(false, label); } catch (e) { assert(e instanceof LIB.ImportError && pattern.test(e.message), `${label} (${e.message})`); } };
+  refuse('{not json', /not valid JSON/, 'Invalid JSON is refused with a plain message');
+  refuse(JSON.stringify({ app: 'OtherApp', version: 2, data: v3 }), /different app/, 'A file from another app is refused');
+  refuse(JSON.stringify({ app: 'ApplyReady', version: 9, data: v3 }), /newer version/, 'A newer single backup is refused');
+  refuse(JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 2, resumes: [] }), /newer version/, 'A newer library backup is refused');
+  refuse(JSON.stringify({ app: 'ApplyReady', version: 2, data: { personal: [] } }), /not an ApplyReady resume backup/, 'A malformed resume is refused');
+  refuse('', /empty/, 'An empty file is refused');
+  try { LIB.parseBackup('x'.repeat(10), 6 * 1024 * 1024); assert(false, 'Over 5 MB is refused'); } catch (e) { assert(/larger than 5 MB/.test(e.message), 'A file over 5 MB is refused'); }
+  const partial = LIB.parseBackup(JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 1, resumes: [{ name: 'Good', data: v3 }, { name: 'Bad', data: { personal: 7 } }] }));
+  assert(partial.resumes.length === 1 && partial.skipped === 1, 'A library backup with one damaged resume imports the rest and counts what it skipped');
+  const draft = LIB.readLegacyDraft(JSON.stringify({ version: 2, app: 'ApplyReady', savedAt: '2026-11-01T10:00:00.000Z', data: { personal: { fullName: 'Old Draft' }, experience: [], education: [], projects: [] } }));
+  assert(draft.data.personal.fullName === 'Old Draft' && draft.savedAt === Date.parse('2026-11-01T10:00:00.000Z'), 'The old localStorage draft is read for the one-time move into the library');
+  assert(LIB.readLegacyDraft('{oops').raw === '{oops', 'An unreadable old draft is kept raw rather than dropped');
+  assert(LIB.relativeTime(1000000, 1000000 + 10000) === 'just now' && LIB.relativeTime(1000000, 1000000 + 120000) === '2 min ago' && LIB.relativeTime(1000000, 1000000 + 7200000) === '2 hours ago', 'Relative times read naturally');
+  assert(LIB.cleanName('  A\u0000  very\n long ') === 'A very long' && LIB.cleanName('x'.repeat(300)).length === 120, 'Names are cleaned and limited to 120 characters');
+}
 
 console.log('');
 console.log('====================================================');

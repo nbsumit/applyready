@@ -137,7 +137,8 @@
 
     <section class="home-continue" id="homeContinue" hidden aria-labelledby="homeContinueTitle">
       <h2 class="home-section__title" id="homeContinueTitle">Pick up where you left off</h2>
-      <ul class="tool-grid tool-grid--compact" id="homeRecent"></ul>
+      <ul class="tool-grid tool-grid--compact" id="homeResumes" aria-label="Saved resumes" hidden></ul>
+      <ul class="tool-grid tool-grid--compact" id="homeRecent" aria-label="Recently used tools"></ul>
     </section>
 
     <section class="home-section" aria-labelledby="homeCatsTitle">
@@ -269,6 +270,8 @@
   <script defer src="js/site.js?v=20261118"></script>
   <script defer src="js/tool-index.js?v=20261118"></script>
   <script defer src="js/search.js?v=20261118"></script>
+  <script defer src="js/lib/store.js?v=20261118"></script>
+  <script defer src="js/resume-library.js?v=20261118"></script>
   <script defer src="js/home.js?v=20261118"></script>
 </body>
 </html>
