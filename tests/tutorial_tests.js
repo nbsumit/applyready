@@ -466,8 +466,10 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await batchIdle(page);
     const s = await page.evaluate(() => window.ApplyReadyBatchImage.summary());
     ok(s.done >= 2 && s.cancelled > 0, `cancel keeps finished images (${JSON.stringify(s)})`);
-    ok(/Retry \d+ failed and cancelled images?/.test(await page.textContent('#btnBatchRetry')), 'retry offers the failed and cancelled images');
-    says(T, 'Retry 2 failed and cancelled images');
+    // Only cancelled here, nothing failed: the button says so (it said "failed and cancelled" before).
+    ok(new RegExp(`Retry ${s.cancelled} cancelled images?$`).test((await page.textContent('#btnBatchRetry')).trim()), `retry offers the cancelled images (${await page.textContent('#btnBatchRetry')})`);
+    says(T, 'Retry 2 cancelled images');
+    says(T, 'Retry 3 failed and cancelled images');
     await page.click('#btnBatchRetry');
     await batchIdle(page);
     ok((await page.evaluate(() => window.ApplyReadyBatchImage.summary())).done === 12, 'retry finishes the rest');

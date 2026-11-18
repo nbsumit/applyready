@@ -6,7 +6,9 @@
 
    ApplyReadyFileKit.dropzone(root, options) -> { open(), reset() }
      root       element containing [data-dropzone], input[type=file] and a [data-browse] button
-     options    { accept: ['image'] | ['pdf'] | ..., multiple, limitBytes, maxFiles,
+     options    { accept: ['image'] | ['pdf'] | ..., multiple, limitBytes,
+                  maxFiles: a number, or (context) => the room left, for a tool whose list already
+                  holds files; tooMany(room, offered, context) => the message when more are offered,
                   onFiles(files, infos, context), onReject(messages, context), paste: true,
                   validate: false to accept any file unchecked (infos are then null),
                   context: () => value, read when files arrive and passed back after checking,
@@ -59,9 +61,12 @@
       const context = typeof opts.context === 'function' ? opts.context() : undefined;
       if (!opts.multiple) files = files.slice(0, 1);
       const messages = [];
-      if (files.length > opts.maxFiles) {
-        messages.push(`Only the first ${opts.maxFiles} files were added. Process these, then add the rest.`);
-        files = files.slice(0, opts.maxFiles);
+      // The room is read when the files arrive, so a list that already holds files gets one message
+      // with the real count, not "the first 50" from here and a different number from the tool.
+      const room = Math.max(0, typeof opts.maxFiles === 'function' ? opts.maxFiles(context) : opts.maxFiles);
+      if (files.length > room) {
+        messages.push(typeof opts.tooMany === 'function' ? opts.tooMany(room, files.length, context) : `Only the first ${room} files were added. Process these, then add the rest.`);
+        files = files.slice(0, room);
       }
       // Tools that report on any file, even an empty or unknown one (the file checker), take them unvalidated.
       if (opts.validate === false) {
@@ -177,7 +182,11 @@
         onProgress: (done, total) => { if (opts.button) opts.button.textContent = `Preparing ZIP… ${done} of ${total}`; }
       });
       Files().download(zip, name);
-      announce(`ZIP file with ${entries.length} file${entries.length === 1 ? '' : 's'} downloaded.`);
+      // The page hands the file to the browser but cannot see whether it was saved: a browser can
+      // block or ask about a download (several in a row, for example). So the message says the ZIP
+      // is ready, visibly as well as for screen readers, and what to do if nothing arrives.
+      const ready = `ZIP file with ${entries.length} file${entries.length === 1 ? '' : 's'} ready: ${Files().safeFileName(name, 'download')}. If no download starts, allow downloads for this site in your browser and try again.`;
+      if (ui().notify) ui().notify(ready); else announce(ready);
       return true;
     } catch (e) {
       if (ui().notify) ui().notify(e && e.name === 'AbortError' ? 'ZIP cancelled.' : (e && e.message) || 'The ZIP file could not be created.', true);
@@ -197,7 +206,10 @@
     });
   }
 
+  // An empty message clears the region (applicant workspaces do this when a person is finished, so
+  // nothing about them stays in the page); a newer message replaces one still waiting to be written.
   let liveNode = null;
+  let liveTimer = 0;
   function announce(message) {
     if (!liveNode) {
       liveNode = document.createElement('div');
@@ -205,8 +217,9 @@
       liveNode.setAttribute('aria-live', 'polite');
       document.body.appendChild(liveNode);
     }
+    clearTimeout(liveTimer);
     liveNode.textContent = '';
-    setTimeout(() => { liveNode.textContent = message; }, 40);
+    if (message) liveTimer = setTimeout(() => { liveNode.textContent = message; }, 40);
   }
 
   root.ApplyReadyFileKit = { dropzone, thumbnail, tooManyPixels, downloadZip, guardUnload, announce, setButtonBusy };

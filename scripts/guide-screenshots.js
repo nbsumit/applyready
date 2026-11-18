@@ -641,7 +641,7 @@ const SHOTS = {
     }
   },
   'tut-batch-cancelled': {
-    alt: 'The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the failed and cancelled images.',
+    alt: 'The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the cancelled images.',
     phone: { maxHeight: 1400 },
     async run(page, origin) {
       // The tutorial's caption describes four finished and two cancelled. Photos are processed in

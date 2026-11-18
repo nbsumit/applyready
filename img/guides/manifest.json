@@ -185,8 +185,8 @@
   "file": "img/guides/tut-batch-cancelled.webp",
   "width": 857,
   "height": 711,
-  "alt": "The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the failed and cancelled images.",
-  "bytes": 43406,
+  "alt": "The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the cancelled images.",
+  "bytes": 42858,
   "phone": {
    "file": "img/guides/phone/tut-batch-cancelled.webp",
    "width": 682,
