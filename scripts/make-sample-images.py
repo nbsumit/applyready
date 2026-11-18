@@ -30,21 +30,21 @@ def add_noise(img, sigma):
     return img
 
 
-def portrait():
+def portrait(name='test-portrait.jpg', wall=(226, 232, 238), shirt=(38, 52, 84), skin=(214, 168, 136), hair=(34, 26, 22), out=None):
     w, h = 1200, 1600
     img = Image.new('RGB', (w, h))
     d = ImageDraw.Draw(img)
     for y in range(h):  # plain, slightly uneven wall
         t = y / h
-        d.line([(0, y), (w, y)], fill=(int(226 - 18 * t), int(232 - 16 * t), int(238 - 10 * t)))
+        d.line([(0, y), (w, y)], fill=(int(wall[0] - 18 * t), int(wall[1] - 16 * t), int(wall[2] - 10 * t)))
     layer = Image.new('RGBA', (w, h), (0, 0, 0, 0))
     ld = ImageDraw.Draw(layer)
-    ld.ellipse([110, 1180, 1090, 2100], fill=(38, 52, 84, 255))       # shoulders, dark shirt
+    ld.ellipse([110, 1180, 1090, 2100], fill=shirt + (255,))       # shoulders, dark shirt
     ld.polygon([(520, 1180), (600, 1330), (680, 1180)], fill=(236, 236, 240, 255))  # collar
     ld.rectangle([520, 1010, 680, 1220], fill=(196, 150, 120, 255))   # neck
-    ld.ellipse([380, 420, 820, 1080], fill=(214, 168, 136, 255))      # face
-    ld.ellipse([360, 330, 840, 720], fill=(34, 26, 22, 255))          # hair
-    ld.ellipse([400, 520, 800, 760], fill=(214, 168, 136, 255))       # forehead over hair
+    ld.ellipse([380, 420, 820, 1080], fill=skin + (255,))      # face
+    ld.ellipse([360, 330, 840, 720], fill=hair + (255,))          # hair
+    ld.ellipse([400, 520, 800, 760], fill=skin + (255,))       # forehead over hair
     for ex in (500, 700):                                             # eyes and brows
         ld.ellipse([ex - 42, 700, ex + 42, 740], fill=(250, 248, 246, 255))
         ld.ellipse([ex - 17, 703, ex + 17, 737], fill=(58, 40, 30, 255))
@@ -61,7 +61,7 @@ def portrait():
     img.paste(layer, (0, 0), layer)
     img = Image.composite(Image.new('RGB', (w, h), (0, 0, 0)), img, shade.point(lambda v: v // 2))
     img = add_noise(img, 4.0)
-    img.save(OUT / 'test-portrait.jpg', 'JPEG', quality=92)
+    img.save((out or OUT) / name, 'JPEG', quality=92)
 
 
 def signature():
@@ -90,10 +90,42 @@ def signature():
     img.save(OUT / 'test-signature.jpg', 'JPEG', quality=92)
 
 
+def document_page(name, lines, seed_shift=0):
+    """A phone photo of a printed A4 page: off-white paper on a darker desk, a heading band and
+    rows of grey bars standing in for typed text. No real document is shown."""
+    w, h = 1240, 1754
+    img = Image.new('RGB', (w, h), (92, 84, 74))                      # desk around the page
+    d = ImageDraw.Draw(img)
+    d.rectangle([40, 50, w - 40, h - 40], fill=(244, 241, 232))       # the sheet
+    d.rectangle([140, 150, w - 140, 230], fill=(60, 72, 110))         # heading band
+    y = 300
+    for i in range(lines):
+        width = random.randint(560, 960)
+        d.rectangle([140, y, 140 + width, y + 16], fill=(84, 84, 90))
+        y += 46 if (i + 1) % 6 else 92
+    d.ellipse([w - 360, h - 380, w - 160, h - 180], outline=(150, 40, 40), width=8)  # a round seal
+    d.line([(160, h - 220), (520, h - 250)], fill=(24, 34, 92), width=6)            # a signature stroke
+    img = img.filter(ImageFilter.GaussianBlur(0.8))
+    img = add_noise(img, 3.0)
+    img.save(OUT / 'guide' / name, 'JPEG', quality=90)
+
+
+def guide_samples():
+    """Extra inputs for the step-by-step tutorials (scripts/guide-screenshots.js). They live in
+    img/samples/guide/, which the offline cache does not include."""
+    (OUT / 'guide').mkdir(parents=True, exist_ok=True)
+    portrait('photo-applicant-1.jpg', wall=(236, 236, 230), shirt=(120, 40, 46), out=OUT / 'guide')
+    portrait('photo-applicant-2.jpg', wall=(214, 226, 240), shirt=(30, 90, 80), skin=(180, 130, 100), out=OUT / 'guide')
+    portrait('photo-applicant-3.jpg', wall=(240, 238, 244), shirt=(70, 70, 76), hair=(60, 40, 30), out=OUT / 'guide')
+    document_page('document-page-1.jpg', 22)
+    document_page('document-page-2.jpg', 30)
+
+
 if __name__ == '__main__':
     OUT.mkdir(parents=True, exist_ok=True)
     portrait()
     signature()
-    for f in sorted(OUT.glob('test-*.jpg')):
+    guide_samples()
+    for f in sorted(list(OUT.glob('test-*.jpg')) + list((OUT / 'guide').glob('*.jpg'))):
         im = Image.open(f)
-        print(f.name, im.size, f.stat().st_size, 'bytes')
+        print(f.relative_to(OUT), im.size, f.stat().st_size, 'bytes')
