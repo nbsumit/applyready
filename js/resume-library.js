@@ -139,9 +139,10 @@
           resumes.push({ name: cleanName(item.name) || suggestName(data), createdAt: time(item.createdAt), updatedAt: time(item.updatedAt), data });
         } else skipped++;
       });
-      skipped += Math.max(0, payload.resumes.length - MAX_IMPORT_RESUMES);
+      // Resumes beyond the limit are counted apart from damaged ones, so the message can say which.
+      const overLimit = Math.max(0, payload.resumes.length - MAX_IMPORT_RESUMES);
       if (!resumes.length) throw new ImportError(payload.resumes.length ? 'None of the resumes in this file could be read. The file may be damaged.' : 'This backup contains no resumes.');
-      return { kind: 'library', resumes, skipped };
+      return { kind: 'library', resumes, skipped, overLimit };
     }
     if (payload.kind !== undefined) throw new ImportError(NOT_RESUME);
     if (typeof payload.version === 'number' && payload.version > SCHEMA.CURRENT_VERSION) throw new ImportError(NEWER);
@@ -149,7 +150,7 @@
     if (inner && typeof inner.schemaVersion === 'number' && inner.schemaVersion > SCHEMA.CURRENT_VERSION) throw new ImportError(NEWER);
     if (!SCHEMA.validate(payload)) throw new ImportError(NOT_RESUME);
     const data = SCHEMA.migrate(payload);
-    return { kind: 'single', resumes: [{ name: cleanName(payload.name) || suggestName(data), createdAt: time(payload.createdAt), updatedAt: time(payload.updatedAt), data }], skipped: 0 };
+    return { kind: 'single', resumes: [{ name: cleanName(payload.name) || suggestName(data), createdAt: time(payload.createdAt), updatedAt: time(payload.updatedAt), data }], skipped: 0, overLimit: 0 };
   }
 
   // The resume saved in this browser by releases before the library (localStorage), if any.
@@ -189,7 +190,7 @@
   }
 
   return {
-    ID_PATTERN, MAX_IMPORT_BYTES, MAX_NAME, DEFAULT_NAME, LIBRARY_VERSION, ImportError,
+    ID_PATTERN, MAX_IMPORT_BYTES, MAX_NAME, MAX_IMPORT_RESUMES, DEFAULT_NAME, LIBRARY_VERSION, ImportError,
     newId, cleanName, suggestName, createRecord, inspect, sortOut, singleBackup, libraryBackup, parseBackup,
     readLegacyDraft, relativeTime, absoluteTime, fileName
   };

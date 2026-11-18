@@ -1066,6 +1066,8 @@ console.log('SUITE 17: Schema version 3 and the resume library');
   try { LIB.parseBackup('x'.repeat(10), 6 * 1024 * 1024); assert(false, 'Over 5 MB is refused'); } catch (e) { assert(/larger than 5 MB/.test(e.message), 'A file over 5 MB is refused'); }
   const partial = LIB.parseBackup(JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 1, resumes: [{ name: 'Good', data: v3 }, { name: 'Bad', data: { personal: 7 } }] }));
   assert(partial.resumes.length === 1 && partial.skipped === 1, 'A library backup with one damaged resume imports the rest and counts what it skipped');
+  const many = LIB.parseBackup(JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 1, resumes: Array.from({ length: LIB.MAX_IMPORT_RESUMES + 5 }, (_, i) => ({ name: 'R' + i, data: { personal: { fullName: 'R' + i }, experience: [], education: [], projects: [] } })) }));
+  assert(many.resumes.length === LIB.MAX_IMPORT_RESUMES && many.overLimit === 5 && many.skipped === 0, 'Resumes beyond the import limit are counted apart from damaged ones');
   const draft = LIB.readLegacyDraft(JSON.stringify({ version: 2, app: 'ApplyReady', savedAt: '2026-11-01T10:00:00.000Z', data: { personal: { fullName: 'Old Draft' }, experience: [], education: [], projects: [] } }));
   assert(draft.data.personal.fullName === 'Old Draft' && draft.savedAt === Date.parse('2026-11-01T10:00:00.000Z'), 'The old localStorage draft is read for the one-time move into the library');
   assert(LIB.readLegacyDraft('{oops').raw === '{oops', 'An unreadable old draft is kept raw rather than dropped');

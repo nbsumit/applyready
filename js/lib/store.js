@@ -52,6 +52,8 @@
         const db = request.result;
         // Another tab upgraded the database: close so it can proceed, reopen on next use.
         db.onversionchange = () => { db.close(); dbPromise = null; };
+        // The browser closed the connection (site data cleared while the page is open): reopen on next use.
+        db.onclose = () => { dbPromise = null; };
         resolve(db);
       };
       request.onerror = () => { clearTimeout(timer); resolve(useMemory(request.error)); };

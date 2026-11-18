@@ -50,7 +50,8 @@
     renaming: -1,
     importError: '',
     notFound: '',
-    announcedSave: false
+    announcedSave: false,
+    busy: false
   };
 
   /* ------------------------------------------------------------------ Storage helpers */
@@ -72,6 +73,15 @@
   const editorJSON = () => JSON.stringify(state.editor.getData());
   const hasUnsaved = () => state.loaded && editorJSON() !== state.lastSavedJSON;
   const canWrite = () => state.savingOn && !state.conflict;
+  /* One library action at a time: a double click on New, Open, Import or Delete must not run the
+     action twice (two blank resumes, two confirmations). Later clicks while one runs are ignored. */
+  function exclusive(fn) {
+    return async (...args) => {
+      if (state.busy) return undefined;
+      state.busy = true;
+      try { return await fn(...args); } finally { state.busy = false; }
+    };
+  }
 
   // Releases before the library kept one draft in localStorage. Move it into the library once.
   async function migrateLegacyDraft() {
@@ -152,8 +162,11 @@
       html = `<p><strong>This resume was deleted in another tab.</strong> What you see here is not saved.</p>
         <div class="rb-notice__actions"><button type="button" class="btn btn-sm btn-primary" data-notice="copy">Save it as a new resume</button></div>`;
     } else if (!state.savingOn) {
-      html = `<p><strong>Saving is off on this device.</strong> Nothing you type is stored in this browser, and it is lost when you close the tab. Download a backup file to keep a copy.</p>
-        <div class="rb-notice__actions">${backup}<button type="button" class="btn btn-sm btn-ghost" data-notice="saving-on">Turn saving on</button></div>`;
+      // On a shared computer, resumes saved before saving was turned off are still there for the next person.
+      const n = state.records.length;
+      const left = n ? ` ${n === 1 ? '1 resume saved earlier is' : `${n} resumes saved earlier are`} still in this browser; delete ${n === 1 ? 'it' : 'them'} in My resumes before you leave a shared computer.` : '';
+      html = `<p><strong>Saving is off on this device.</strong> Nothing you type is stored in this browser, and it is lost when you close the tab. Download a backup file to keep a copy.${left}</p>
+        <div class="rb-notice__actions">${backup}${n ? '<button type="button" class="btn btn-sm" data-notice="library"><i class="fa-solid fa-folder-open" aria-hidden="true"></i> My resumes</button>' : ''}<button type="button" class="btn btn-sm btn-ghost" data-notice="saving-on">Turn saving on</button></div>`;
       tone = 'info';
     } else if (!state.persistent) {
       html = `<p><strong>This browser is not keeping data for ApplyReady</strong> (for example in a private window, or when site data is blocked). Your work is lost when you close this tab. Download a backup file to keep a copy.</p>
@@ -302,6 +315,8 @@
     if (!state.current || msg.id !== state.current.id) return;
     if (msg.type === 'saved' && typeof msg.updatedAt === 'number' && msg.updatedAt > state.baseUpdatedAt) {
       clearTimeout(state.timer);
+      // Nothing here is unsaved, so taking the newer version loses nothing: no question to answer.
+      if (!state.conflict && !state.writing && !hasUnsaved() && (await reloadQuietly())) return;
       state.conflict = { kind: 'changed', updatedAt: msg.updatedAt };
       refreshStatus();
       notify('This resume was just changed in another tab. Choose which version to keep before you continue.', true);
@@ -315,6 +330,21 @@
       state.current.name = state.current.nameBase = LIB.cleanName(msg.name) || state.current.name;
       refreshStatus();
     }
+  }
+
+  // Show the stored version of the open resume, keeping keyboard focus on the same field.
+  async function reloadQuietly() {
+    const cur = state.current;
+    let raw = null;
+    try { raw = await STORE.get('resumes', cur.id); } catch (e) { raw = null; }
+    const result = raw ? LIB.inspect(raw) : null;
+    if (!result || !result.ok || state.current !== cur || hasUnsaved()) return false;
+    const focusedId = doc.activeElement && doc.activeElement.id;
+    useResume(result.record, { stored: true });
+    const again = focusedId && $(focusedId);
+    if (again && typeof again.focus === 'function') again.focus({ preventScroll: true });
+    notify('This resume now shows the changes saved in another tab.');
+    return true;
   }
 
   async function resolveConflict(choice) {
@@ -375,7 +405,7 @@
   }
 
   // Import a backup file: every resume in it becomes a new entry; the first one opens.
-  async function importFile(file) {
+  const importFile = exclusive(async function importFileNow(file) {
     state.importError = '';
     if (!file) return;
     let result;
@@ -392,24 +422,42 @@
       return;
     }
     if (!(await leaveCurrent('Import and open'))) return;
-    const created = result.resumes.map(item => LIB.createRecord(item.data, { name: item.name, createdAt: item.createdAt || undefined }));
+    // Each resume becomes a new entry with a new id, but keeps the edit dates it had in the backup
+    // (never later than now), so the list shows how old each version really is.
+    const now = Date.now();
+    const created = result.resumes.map((item, i) => LIB.createRecord(item.data, {
+      name: item.name,
+      createdAt: Math.min(item.createdAt || now, now) || undefined,
+      updatedAt: Math.min(item.updatedAt || now - i, now) || undefined
+    }));
     let saved = 0;
     if (state.savingOn) {
       for (const rec of created) {
         try { await STORE.put('resumes', rec); saved++; post({ type: 'saved', id: rec.id, updatedAt: rec.updatedAt }); } catch (e) { break; }
       }
     }
-    const first = created[0];
+    // Open the most recently edited resume of the file (of those stored): it is the one at the top of the list.
+    const usable = state.savingOn && saved ? created.slice(0, saved) : created;
+    const first = usable.reduce((a, b) => (b.updatedAt > a.updatedAt ? b : a));
     useResume(first, { stored: saved > 0 });
     if (!saved) state.lastSavedJSON = '';
     refreshStatus();
-    const skipped = result.skipped ? ` ${result.skipped} could not be read and ${result.skipped === 1 ? 'was' : 'were'} skipped.` : '';
-    const count = created.length === 1 ? 'Imported 1 resume' : `Imported ${created.length} resumes`;
-    const where = state.savingOn ? '' : ' Saving is off, so it is not stored on this device.';
-    notify(`${count} and opened “${first.name}”.${skipped}${where}`);
+    const plural = (n, one, many) => (n === 1 ? one : many);
+    let message;
+    if (!state.savingOn) {
+      message = created.length === 1
+        ? `Opened “${first.name}” from the backup. Saving is off, so it is not stored on this device.`
+        : `Opened “${first.name}”, one of the ${created.length} resumes in the backup. Saving is off, so none of them is stored on this device.`;
+    } else {
+      message = `${saved === 1 ? 'Imported 1 resume' : `Imported ${saved} resumes`} and opened “${first.name}”.`;
+      if (saved < created.length) message += ` ${created.length - saved} could not be stored: this browser's storage for the site may be full.`;
+    }
+    if (result.skipped) message += ` ${result.skipped} could not be read and ${plural(result.skipped, 'was', 'were')} skipped.`;
+    if (result.overLimit) message += ` One import holds at most ${LIB.MAX_IMPORT_RESUMES} resumes, so the last ${result.overLimit} in the file ${plural(result.overLimit, 'was', 'were')} not imported.`;
+    notify(message, saved < created.length && state.savingOn);
     if (state.dialogOpen) closeDialog(false);
     showContactDetails();
-  }
+  });
 
   // After opening or importing, show the resume from its start (the Write step, contact details).
   function showContactDetails() {
@@ -430,7 +478,7 @@
   }
 
   /* ------------------------------------------------------------------ Library actions */
-  async function openById(id) {
+  const openById = exclusive(async function openByIdNow(id) {
     const rec = findRecord(id);
     if (!rec) return;
     if (state.current && state.current.id === id && state.stored) { closeDialog(true); return; }
@@ -441,24 +489,30 @@
     notify(`Opened “${fresh.name}”.`);
     closeDialog(false);
     showContactDetails();
-  }
+  });
 
-  async function createNew(kind, fromToolbar) {
+  const createNew = exclusive(async function createNewNow(kind, fromToolbar) {
     if (!(await leaveCurrent(kind === 'sample' ? 'Open the sample' : 'Start a new resume'))) return;
     const previous = state.current && state.stored ? state.current.name : '';
     const data = kind === 'sample' ? state.editor.sample() : state.editor.blank();
     const rec = newRecordFor(data, kind === 'sample' ? 'Sample resume' : LIB.DEFAULT_NAME);
-    useResume(rec, { stored: false });
-    if (state.savingOn) await flush(true);
-    else state.lastSavedJSON = editorJSON();
+    if (kind === 'sample') {
+      useResume(rec, { stored: false });
+      if (state.savingOn) await flush(true);
+      else state.lastSavedJSON = editorJSON();
+    } else {
+      // Like a first visit, an empty resume is stored only once something is typed into it, so
+      // clicking New and changing one's mind leaves no blank entry behind.
+      useResume(rec, { stored: false, unsavedBaseline: true });
+    }
     refreshStatus();
     const kept = fromToolbar && previous ? ` “${previous}” is kept in My resumes.` : '';
-    notify(kind === 'sample' ? `Opened a new resume filled with sample content.${kept}` : 'Started a new, empty resume.');
+    notify(kind === 'sample' ? `Opened a new resume filled with sample content.${kept}` : `Started a new, empty resume.${state.savingOn ? ' It is saved once you type something.' : ''}`);
     closeDialog(false);
     showContactDetails();
-  }
+  });
 
-  async function duplicate(index) {
+  const duplicate = exclusive(async function duplicateNow(index) {
     const rec = state.records[index];
     if (!rec || !state.savingOn) return;
     if (state.current && state.current.id === rec.id) await flush();
@@ -470,9 +524,9 @@
     renderList();
     notify(`Created “${copy.name}”.`);
     focusRow(copy.id, 'open');
-  }
+  });
 
-  async function remove(index, damaged) {
+  const remove = exclusive(async function removeNow(index, damaged) {
     const entry = damaged ? state.damaged[index] : state.records[index];
     if (!entry) return;
     const name = entry.name;
@@ -489,10 +543,11 @@
       else useResume(newRecordFor(state.editor.blank(), LIB.DEFAULT_NAME), { stored: false, unsavedBaseline: true });
     }
     renderList();
+    refreshStatus();
     const rows = doc.querySelectorAll('#libList [data-act="open"], #libList [data-act="delete-damaged"]');
     const target = rows[Math.min(index, rows.length - 1)] || $('libNew');
     if (target) target.focus();
-  }
+  });
 
   async function rename(index, value) {
     const rec = state.records[index];
@@ -522,13 +577,13 @@
     notify('The damaged entry was downloaded as it is stored. It cannot be imported as a resume, but its text can be copied from the file.');
   }
 
-  async function exportAll() {
+  const exportAll = exclusive(async function exportAllNow() {
     await flush();
     await loadList();
     if (!state.records.length) { notify('There are no saved resumes to export yet.', true); return; }
     downloadJSON(LIB.fileName('ApplyReady', `resumes_backup_${new Date().toISOString().slice(0, 10)}.json`), LIB.libraryBackup(state.records));
     notify(`Backup of ${state.records.length} ${state.records.length === 1 ? 'resume' : 'resumes'} downloaded.`);
-  }
+  });
 
   async function setSaving(on) {
     if (on === state.savingOn) return;
@@ -540,6 +595,7 @@
     } else {
       clearTimeout(state.timer);
       await setMeta('resumeSaving', 'off');
+      await loadList();
       notify('Saving on this device is off. Nothing new is stored in this browser.');
     }
     syncSwitches();
@@ -604,6 +660,12 @@
     if (target) target.focus();
   }
 
+  /* A row action: an icon button on wide screens. On phones, where there is no hover title, the
+     short word shows under the icon (the button's accessible name already starts with it). */
+  function rowAction(act, index, label, word, icon, tone, attrs) {
+    return `<button type="button" class="btn btn-sm btn-icon rl-act ${tone}" data-act="${act}" data-index="${index}" aria-label="${label}" title="${word}"${attrs}><i class="${icon}" aria-hidden="true"></i><span class="rl-act__word" aria-hidden="true">${word}</span></button>`;
+  }
+
   function renderList() {
     const list = $('libList');
     if (!list) return;
@@ -630,10 +692,10 @@
         </div>
         <div class="rl-row__actions">
           <button type="button" class="btn btn-sm${isCurrent ? '' : ' btn-primary'}" data-act="open" data-index="${i}" aria-label="${isCurrent ? 'Continue editing' : 'Open'} ${esc(rec.name)}">${isCurrent ? 'Continue' : 'Open'}</button>
-          <button type="button" class="btn btn-sm btn-ghost btn-icon" data-act="rename" data-index="${i}" aria-label="Rename ${esc(rec.name)}" title="Rename"${writes}><i class="fa-solid fa-pen" aria-hidden="true"></i></button>
-          <button type="button" class="btn btn-sm btn-ghost btn-icon" data-act="duplicate" data-index="${i}" aria-label="Duplicate ${esc(rec.name)}" title="Duplicate"${writes}><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
-          <button type="button" class="btn btn-sm btn-ghost btn-icon" data-act="export" data-index="${i}" aria-label="Export a backup of ${esc(rec.name)}" title="Export backup"><i class="fa-solid fa-download" aria-hidden="true"></i></button>
-          <button type="button" class="btn btn-sm btn-icon btn-danger-ghost" data-act="delete" data-index="${i}" aria-label="Delete ${esc(rec.name)}" title="Delete"><i class="fa-regular fa-trash-can" aria-hidden="true"></i></button>
+          ${rowAction('rename', i, `Rename ${esc(rec.name)}`, 'Rename', 'fa-solid fa-pen', 'btn-ghost', writes)}
+          ${rowAction('duplicate', i, `Duplicate ${esc(rec.name)}`, 'Duplicate', 'fa-regular fa-copy', 'btn-ghost', writes)}
+          ${rowAction('export', i, `Export a backup of ${esc(rec.name)}`, 'Export', 'fa-solid fa-download', 'btn-ghost', '')}
+          ${rowAction('delete', i, `Delete ${esc(rec.name)}`, 'Delete', 'fa-regular fa-trash-can', 'btn-danger-ghost', '')}
         </div>
       </li>`;
     });
@@ -773,6 +835,7 @@
       else if (act === 'saving-on') setSaving(true);
       else if (act === 'retry') { state.phase = 'saved'; flush(true); }
       else if (act === 'dismiss') { state.notFound = ''; refreshStatus(); }
+      else if (act === 'library') openDialog();
       else resolveConflict(act);
     });
     // Save about 600 ms after typing stops, and at once when the page is hidden or closed.

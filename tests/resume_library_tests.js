@@ -360,11 +360,24 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
   const other = watch(await context.newPage());
   await other.goto(`${origin}/resume.html?id=${sharedId}`);
   await ready(other);
-  await other.locator('#targetTitle').fill('OTHER_TAB_TITLE');
+  // With nothing unsaved in the first tab, the newer version simply appears there: nothing to choose.
+  await other.locator('#targetTitle').fill('QUIET_UPDATE_TITLE');
   await waitSaved(other);
-  await page.locator('#saveNotice').filter({ hasText: 'changed in another tab' }).waitFor({ timeout: 5000 });
-  ok(true, 'The first tab is told that another tab changed the same resume');
+  await page.waitForFunction(() => document.getElementById('targetTitle').value === 'QUIET_UPDATE_TITLE', null, { timeout: 5000 });
+  ok(await page.locator('#saveNotice').isHidden() && /^Saved on this device/.test(await statusText(page)), 'A tab with no unsaved changes takes the version saved in another tab without asking');
+  // With an unsaved edit here, a save from another tab pauses saving and asks.
   await page.locator('#targetTitle').fill('FIRST_TAB_TITLE');
+  await other.evaluate(async id => {
+    const rec = await window.ApplyReadyStore.get('resumes', id);
+    rec.data.personal.targetTitle = 'OTHER_TAB_TITLE';
+    rec.updatedAt = Date.now() + 5;
+    await window.ApplyReadyStore.put('resumes', rec);
+    const channel = new BroadcastChannel('applyready-resumes');
+    channel.postMessage({ from: 'another-tab', type: 'saved', id, updatedAt: rec.updatedAt });
+    channel.close();
+  }, sharedId);
+  await page.locator('#saveNotice').filter({ hasText: 'changed in another tab' }).waitFor({ timeout: 5000 });
+  ok(true, 'The first tab is told that another tab changed the same resume while it had unsaved changes');
   await page.waitForTimeout(1200);
   ok((await records(page)).find(r => r.id === sharedId).data.personal.targetTitle === 'OTHER_TAB_TITLE', 'The first tab does not silently overwrite the other tab');
   ok(/changed in another tab/.test(await statusText(page)), 'The status says saving is paused');
@@ -378,14 +391,18 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
   await other.close();
 
   /* ---------------------------------------------------------------- 10. Undo stays with its resume */
+  const beforeNew = (await records(page)).length;
   await openLibrary(page);
-  await page.locator('#libraryDialog [data-act="new"]').click();
+  await page.locator('#libraryDialog [data-act="new"]').dblclick();
   await page.locator('#libraryDialog').waitFor({ state: 'hidden' });
+  await page.waitForTimeout(900);
+  ok((await records(page)).length === beforeNew, 'New resume, even double-clicked, stores no blank entry until something is typed');
   ok(await page.locator('#fullName').inputValue() === '' && await page.locator('#btnUndo').isDisabled(), 'A new resume starts empty with no undo history');
   ok((await page.locator('#resumeName').textContent()) === 'Untitled resume', 'A new resume is called Untitled resume until it has a name');
   await page.locator('#fullName').fill('Beta Person');
   ok(await page.locator('#btnUndo').isEnabled(), 'Typing in the new resume can be undone');
   await waitSaved(page);
+  ok((await records(page)).length === beforeNew + 1, 'Typing into the new resume stores it once');
   ok((await page.locator('#resumeName').textContent()) === 'Beta Person', 'The new resume takes its name from the person once saved');
   await openLibrary(page);
   await page.locator('#libList .rl-row').filter({ hasText: 'Analyst version for retail' }).locator('[data-act="open"]').click();
@@ -447,6 +464,17 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     await again.locator('#fullName').fill('Now Saved');
     await waitSaved(again);
     ok((await records(again)).length === 1, 'Turning saving back on saves the open resume');
+    // Switching off again on a shared computer: the note says what is still stored and where to delete it.
+    await again.locator('#tabDownload').click();
+    await again.locator('#chkSaveDevice').uncheck();
+    await again.locator('#saveNotice').filter({ hasText: '1 resume saved earlier is still in this browser' }).waitFor();
+    await again.locator('#saveNotice [data-notice="library"]').click();
+    await again.locator('#libraryDialog').waitFor({ state: 'visible' });
+    await again.locator('#libList [data-act="delete"]').first().click();
+    await confirmDialog(again).locator('[data-act="ok"]').click();
+    await again.waitForFunction(() => document.querySelectorAll('#libList [data-act="delete"]').length === 0);
+    await closeLibrary(again);
+    ok((await records(again)).length === 0 && !(await again.locator('#saveNotice').textContent()).includes('saved earlier'), 'After deleting from My resumes, nothing is left and the note no longer mentions saved resumes');
     await ctx.close();
   }
 
