@@ -119,8 +119,9 @@ unknown `app`, or with a newer version than the code understands are refused wit
 ## 4. Processing
 
 - **Images**: `image-ops.js` decodes with `createImageBitmap` (EXIF orientation applied), draws with
-  stepped downscaling, and encodes with a quality search to meet a KB limit, shrinking pixels only when
-  allowed. Re-encoding drops EXIF, GPS and other metadata. Before decoding it reads the pixel size and
+  stepped downscaling, and encodes with a quality search to meet a KB limit. When shrinking is allowed,
+  quality stops at 50% and the largest pixel size that fits is found by bisection instead; otherwise
+  quality may go down to 5% and the pixel size never changes. Re-encoding drops EXIF, GPS and other metadata. Before decoding it reads the pixel size and
   EXIF orientation from the file header and refuses images over 50 megapixels; after encoding it decodes
   the result again and checks type, pixel size and byte limit (`verified: true`). `image-pool.js` runs it
   in workers, forwards per-item progress, and terminates the worker on cancel; if the worker script
