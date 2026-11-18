@@ -1,8 +1,9 @@
 /**
- * ApplyReady.in - ATS-Friendly Resume Template Catalogue
- * Shared configuration, metadata, visual hierarchy definitions,
- * and precomputed thumbnail SVGs.
- * 100% Client-Side & Node.js Compatible.
+ * ApplyReady resume template catalogue: names, descriptions, section order and the visual rules
+ * (alignment, case, rules, colours, date placement) shared by the preview, PDF, Word and text
+ * exports. Every template is a single column of real text. Each one differs from every other in
+ * at least one visible rule; tests/regression_tests.js checks that no two render the same.
+ * Works in the browser and in Node.
  */
 
 (function (root, factory) {
@@ -158,7 +159,7 @@
       name: 'Graduate / Early Career',
       category: 'Students & Entry Level',
       badge: 'Entry Level',
-      description: 'Education, academic projects, internships, and activities prominent; no mandatory work-experience requirement.',
+      description: 'Education, projects and internships first. Name in normal case without a rule under it, and deep red headings over thin red lines.',
       fontFamily: 'sans',
       headerAlign: 'left',
       headingAccent: 'bottom-rule',
@@ -177,53 +178,8 @@
         languages: false,
         academic: false
       },
-      style: {},
-      cssClass: 'template-graduate-early-career',
-      svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Graduate Early Career template thumbnail">
-        <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
-        <!-- Header -->
-        <rect x="16" y="14" width="85" height="7.5" rx="1" fill="#0F172A"/>
-        <rect x="16" y="24" width="60" height="4" rx="1" fill="#475569"/>
-        <rect x="16" y="31" width="128" height="3" rx="0.5" fill="#94A3B8"/>
-        <line x1="16" y1="38" x2="144" y2="38" stroke="#0F172A" stroke-width="1"/>
-        <!-- 1. Education Prominent at Top -->
-        <rect x="16" y="44" width="40" height="5" fill="#0F172A"/>
-        <line x1="16" y1="51" x2="144" y2="51" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="56" width="85" height="3.5" fill="#1E293B"/>
-        <rect x="114" y="56" width="30" height="3" fill="#64748B"/>
-        <rect x="16" y="62" width="100" height="3" fill="#64748B"/>
-        <circle cx="20" cy="69" r="1.2" fill="#475569"/>
-        <rect x="25" y="67.5" width="90" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- 2. Projects Prominent -->
-        <rect x="16" y="77" width="50" height="5" fill="#0F172A"/>
-        <line x1="16" y1="84" x2="144" y2="84" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="89" width="75" height="3.5" fill="#1E293B"/>
-        <rect x="105" y="89" width="39" height="3" fill="#2563EB"/>
-        <circle cx="20" cy="97" r="1.2" fill="#475569"/>
-        <rect x="25" y="95.5" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <circle cx="20" cy="103" r="1.2" fill="#475569"/>
-        <rect x="25" y="101.5" width="112" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="16" y="111" width="70" height="3.5" fill="#1E293B"/>
-        <circle cx="20" cy="119" r="1.2" fill="#475569"/>
-        <rect x="25" y="117.5" width="116" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- 3. Internships / Experience -->
-        <rect x="16" y="129" width="60" height="5" fill="#0F172A"/>
-        <line x1="16" y1="136" x2="144" y2="136" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="141" width="75" height="3.5" fill="#1E293B"/>
-        <rect x="114" y="141" width="30" height="3" fill="#64748B"/>
-        <circle cx="20" cy="149" r="1.2" fill="#475569"/>
-        <rect x="25" y="147.5" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- 4. Technical Skills -->
-        <rect x="16" y="159" width="32" height="5" fill="#0F172A"/>
-        <line x1="16" y1="166" x2="144" y2="166" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="170" width="128" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="16" y="176" width="115" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- 5. Achievements / Honors -->
-        <rect x="16" y="187" width="55" height="5" fill="#0F172A"/>
-        <line x1="16" y1="194" x2="144" y2="194" stroke="#E2E8F0" stroke-width="0.75"/>
-        <circle cx="20" cy="201" r="1.2" fill="#475569"/>
-        <rect x="25" y="199.5" width="112" height="3" rx="0.5" fill="#94A3B8"/>
-      </svg>`
+      style: { nameCase: 'asis', headerRule: 'none', headingColor: [0.36, 0.12, 0.2], ruleColor: [0.36, 0.12, 0.2], ruleWidth: 0.8, docxRule: { val: 'single', sz: 6, color: '5C1F33' } },
+      cssClass: 'template-graduate-early-career'
     },
 
     'experienced-professional': {
@@ -305,7 +261,7 @@
       name: 'Project Focused',
       category: 'Technical & Portfolio',
       badge: 'Portfolio',
-      description: 'Projects and case studies prominent with readable links and clear contribution descriptions for technical disciplines.',
+      description: 'Projects straight after the summary, with their links on the right. A thick blue rule under the header and blue headings without lines.',
       fontFamily: 'sans',
       headerAlign: 'left',
       headingAccent: 'bottom-rule',
@@ -324,49 +280,8 @@
         languages: false,
         academic: false
       },
-      style: {},
-      cssClass: 'template-project-focused',
-      svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Project Focused template thumbnail">
-        <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
-        <!-- Left Header -->
-        <rect x="16" y="14" width="80" height="7.5" rx="1" fill="#0F172A"/>
-        <rect x="16" y="24" width="60" height="4" rx="1" fill="#2563EB"/>
-        <rect x="16" y="31" width="128" height="3" rx="0.5" fill="#94A3B8"/>
-        <line x1="16" y1="38" x2="144" y2="38" stroke="#0F172A" stroke-width="1"/>
-        <!-- Summary -->
-        <rect x="16" y="44" width="35" height="4.5" fill="#0F172A"/>
-        <rect x="16" y="51" width="128" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Projects Section Prominent (Position #2) -->
-        <rect x="16" y="62" width="65" height="5" fill="#0F172A"/>
-        <line x1="16" y1="69" x2="144" y2="69" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="74" width="75" height="3.5" fill="#1E293B"/>
-        <rect x="95" y="74" width="49" height="3" fill="#2563EB"/>
-        <circle cx="20" cy="82" r="1.2" fill="#475569"/>
-        <rect x="25" y="80.5" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <circle cx="20" cy="88" r="1.2" fill="#475569"/>
-        <rect x="25" y="86.5" width="112" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="16" y="96" width="70" height="3.5" fill="#1E293B"/>
-        <rect x="92" y="96" width="52" height="3" fill="#2563EB"/>
-        <circle cx="20" cy="104" r="1.2" fill="#475569"/>
-        <rect x="25" y="102.5" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Work Experience -->
-        <rect x="16" y="116" width="45" height="4.5" fill="#0F172A"/>
-        <line x1="16" y1="123" x2="144" y2="123" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="128" width="75" height="3.5" fill="#1E293B"/>
-        <rect x="114" y="128" width="30" height="3" fill="#64748B"/>
-        <circle cx="20" cy="136" r="1.2" fill="#475569"/>
-        <rect x="25" y="134.5" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Skills -->
-        <rect x="16" y="148" width="35" height="4.5" fill="#0F172A"/>
-        <line x1="16" y1="155" x2="144" y2="155" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="160" width="128" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="16" y="166" width="115" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Education -->
-        <rect x="16" y="178" width="30" height="4.5" fill="#0F172A"/>
-        <line x1="16" y1="185" x2="144" y2="185" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="190" width="85" height="3.5" fill="#1E293B"/>
-        <rect x="115" y="190" width="29" height="3" fill="#64748B"/>
-      </svg>`
+      style: { headingRule: 'none', headingColor: [0.11, 0.3, 0.6], headerRuleColor: [0.11, 0.3, 0.6], headerRuleWidth: 2, contactSeparator: '|', docxRule: null },
+      cssClass: 'template-project-focused'
     },
 
     'career-transition': {
@@ -375,7 +290,7 @@
       name: 'Career Transition',
       category: 'Career Change',
       badge: 'Pivot',
-      description: 'Short summary and transferable skills prominent at the top, supported by a complete dated work-history section.',
+      description: 'A short summary and transferable skills before the dated work history. Green headings and rules.',
       fontFamily: 'sans',
       headerAlign: 'left',
       headingAccent: 'bottom-rule',
@@ -394,47 +309,8 @@
         languages: false,
         academic: false
       },
-      style: { docxRule: { val: 'single', sz: 6, color: '047857' } },
-      cssClass: 'template-career-transition',
-      svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Career Transition template thumbnail">
-        <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
-        <!-- Left Header -->
-        <rect x="16" y="14" width="80" height="7.5" rx="1" fill="#0F172A"/>
-        <rect x="16" y="24" width="65" height="4" rx="1" fill="#047857"/>
-        <rect x="16" y="31" width="128" height="3" rx="0.5" fill="#94A3B8"/>
-        <line x1="16" y1="38" x2="144" y2="38" stroke="#0F172A" stroke-width="1"/>
-        <!-- Targeted Career Transition Summary -->
-        <rect x="16" y="44" width="55" height="5" fill="#0F172A"/>
-        <line x1="16" y1="51" x2="144" y2="51" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="55" width="128" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="16" y="60" width="124" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Transferable Core Competencies (Position #2) -->
-        <rect x="16" y="70" width="65" height="5" fill="#0F172A"/>
-        <line x1="16" y1="77" x2="144" y2="77" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="82" width="128" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="16" y="88" width="124" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="16" y="94" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Chronological Work History -->
-        <rect x="16" y="106" width="50" height="5" fill="#0F172A"/>
-        <line x1="16" y1="113" x2="144" y2="113" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="118" width="75" height="3.5" fill="#1E293B"/>
-        <rect x="112" y="118" width="32" height="3" fill="#64748B"/>
-        <circle cx="20" cy="126" r="1.2" fill="#475569"/>
-        <rect x="25" y="124.5" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <circle cx="20" cy="132" r="1.2" fill="#475569"/>
-        <rect x="25" y="130.5" width="110" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="16" y="140" width="70" height="3.5" fill="#1E293B"/>
-        <rect x="114" y="140" width="30" height="3" fill="#64748B"/>
-        <circle cx="20" cy="148" r="1.2" fill="#475569"/>
-        <rect x="25" y="146.5" width="116" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Projects & Education -->
-        <rect x="16" y="160" width="40" height="4.5" fill="#0F172A"/>
-        <line x1="16" y1="167" x2="144" y2="167" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="172" width="75" height="3.5" fill="#1E293B"/>
-        <rect x="16" y="184" width="30" height="4.5" fill="#0F172A"/>
-        <line x1="16" y1="191" x2="144" y2="191" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="196" width="85" height="3.5" fill="#1E293B"/>
-      </svg>`
+      style: { headingColor: [0.02, 0.37, 0.27], ruleColor: [0.02, 0.37, 0.27], ruleWidth: 0.8, headerRuleColor: [0.02, 0.37, 0.27], docxRule: { val: 'single', sz: 6, color: '047857' } },
+      cssClass: 'template-career-transition'
     },
 
     'compact-professional': {
@@ -519,13 +395,13 @@
       name: 'Academic / Research CV',
       category: 'Academia & Research',
       badge: 'Multi-Page CV',
-      description: 'Structured for scholarly curriculum vitae. Includes publications, teaching, research appointments, grants, and awards.',
+      description: 'For a scholarly CV over several pages: education, publications, teaching, talks and grants. Left-aligned serif, headings in normal case, dates under each entry.',
       fontFamily: 'serif',
-      headerAlign: 'center',
-      headingAccent: 'classic-uppercase',
+      headerAlign: 'left',
+      headingAccent: 'title-case',
       density: 'standard',
       isAcademicCV: true,
-      recommendedOrder: ['summary', 'education', 'academic', 'experience', 'projects', 'skills'],
+      recommendedOrder: ['summary', 'education', 'publications', 'academic', 'experience', 'projects', 'skills'],
       defaultVisibility: {
         summary: true,
         experience: true,
@@ -536,52 +412,11 @@
         achievements: true,
         volunteering: false,
         languages: true,
+        publications: true,
         academic: true
       },
-      style: { headerAlign: 'center' },
-      cssClass: 'template-academic-cv',
-      svgThumbnail: `<svg viewBox="0 0 160 220" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Academic Research CV template thumbnail">
-        <rect width="160" height="220" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" rx="4"/>
-        <!-- Formal Academic Header -->
-        <rect x="30" y="14" width="100" height="8" rx="1" fill="#0F172A"/>
-        <rect x="42" y="24" width="76" height="4" rx="1" fill="#475569"/>
-        <rect x="26" y="31" width="108" height="3" rx="0.5" fill="#94A3B8"/>
-        <line x1="16" y1="38" x2="144" y2="38" stroke="#0F172A" stroke-width="1"/>
-        <!-- Research Interests / Summary -->
-        <rect x="16" y="44" width="55" height="4.5" fill="#0F172A"/>
-        <rect x="16" y="51" width="128" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Academic Appointments & Education -->
-        <rect x="16" y="60" width="40" height="4.5" fill="#0F172A"/>
-        <rect x="16" y="67" width="95" height="3.5" fill="#1E293B"/>
-        <rect x="118" y="67" width="26" height="3" fill="#64748B"/>
-        <circle cx="20" cy="74" r="1.2" fill="#475569"/>
-        <rect x="25" y="72.5" width="115" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="16" y="80" width="90" height="3.5" fill="#1E293B"/>
-        <rect x="118" y="80" width="26" height="3" fill="#64748B"/>
-        <!-- Peer-Reviewed Publications -->
-        <rect x="16" y="91" width="68" height="4.5" fill="#0F172A"/>
-        <line x1="16" y1="97" x2="144" y2="97" stroke="#E2E8F0" stroke-width="0.75"/>
-        <circle cx="20" cy="103" r="1.2" fill="#475569"/>
-        <rect x="25" y="101.5" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <rect x="25" y="106" width="105" height="3" rx="0.5" fill="#94A3B8"/>
-        <circle cx="20" cy="114" r="1.2" fill="#475569"/>
-        <rect x="25" y="112.5" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Teaching Experience -->
-        <rect x="16" y="125" width="55" height="4.5" fill="#0F172A"/>
-        <line x1="16" y1="131" x2="144" y2="131" stroke="#E2E8F0" stroke-width="0.75"/>
-        <rect x="16" y="136" width="80" height="3.5" fill="#1E293B"/>
-        <rect x="116" y="136" width="28" height="3" fill="#64748B"/>
-        <circle cx="20" cy="144" r="1.2" fill="#475569"/>
-        <rect x="25" y="142.5" width="115" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Conference Presentations -->
-        <rect x="16" y="155" width="60" height="4.5" fill="#0F172A"/>
-        <circle cx="20" cy="163" r="1.2" fill="#475569"/>
-        <rect x="25" y="161.5" width="118" height="3" rx="0.5" fill="#94A3B8"/>
-        <!-- Awards & Grants -->
-        <rect x="16" y="174" width="48" height="4.5" fill="#0F172A"/>
-        <circle cx="20" cy="182" r="1.2" fill="#475569"/>
-        <rect x="25" y="180.5" width="110" height="3" rx="0.5" fill="#94A3B8"/>
-      </svg>`
+      style: { headerAlign: 'left', nameCase: 'asis', headingCase: 'asis', datePlacement: 'below', ruleColor: [0.3, 0.3, 0.3], ruleWidth: 0.5, headerRuleWidth: 0.8, docxRule: { val: 'single', sz: 4, color: '4D4D4D' } },
+      cssClass: 'template-academic-cv'
     },
 
     'ivy-classic': {
@@ -646,10 +481,10 @@
     'ats-strict': {
       id: 'ats-strict',
       group: 'general',
-      name: 'ATS Plain (Maximum Compatibility)',
-      category: 'Maximum Compatibility',
-      badge: 'Safest',
-      description: 'No lines, colours, or right-aligned dates. Every detail reads top to bottom for older applicant tracking systems and government or bank job portals.',
+      name: 'Plain (No Lines)',
+      category: 'Plain',
+      badge: 'Plainest',
+      description: 'No lines, colours or right-aligned dates: every detail reads top to bottom. Use it when a portal asks for the plainest possible file.',
       fontFamily: 'sans',
       headerAlign: 'left',
       headingAccent: 'none',
@@ -762,10 +597,12 @@
     achievements: 'Honors & Achievements',
     volunteering: 'Community & Leadership',
     languages: 'Languages',
-    publications: 'Peer-Reviewed Publications',
+    publications: 'Publications',
     teaching: 'Teaching Experience',
     presentations: 'Conference Presentations',
-    grants: 'Research Grants'
+    grants: 'Research Grants',
+    references: 'References',
+    referencesOnRequest: 'Available on request.'
   };
 
   const SKILL_LABELS = {

@@ -1,8 +1,9 @@
 /**
- * ApplyReady.in - Rebuilt ATS-Friendly Resume Builder
- * 8 Distinct Templates, 3-Tab Workspace (Content, Design, Review & Export),
- * True Vector PDF, Editable OOXML DOCX, and Plain Text Exports.
- * 100% Client-Side Processing, Privacy-Preserving Draft Storage, and Zero Support Popups.
+ * ApplyReady resume builder: the editor (Write, Style, Review, Download) for the open resume.
+ * Saving, the library of saved resumes and backups live in js/resume-library-ui.js; references
+ * and custom sections in js/resume-sections.js; the HTML document in js/resume-render.js.
+ * They talk to this file through window.ApplyReadyResumeEditor (see exposeEditor below).
+ * Everything runs in the browser; nothing is uploaded.
  */
 
 (function () {
@@ -19,6 +20,11 @@
   const TPL = typeof ApplyReadyTemplates !== 'undefined' ? ApplyReadyTemplates
     : (typeof require === 'function' ? require('./templates.js') : null);
   const TEMPLATES = TPL.TEMPLATES;
+  const RENDER = typeof ApplyReadyResumeRender !== 'undefined' ? ApplyReadyResumeRender
+    : (typeof require === 'function' ? require('./resume-render.js') : null);
+  const { escapeHTML, sanitizeHref, renderResumeDataToHTML, renderTemplateIntoContainer } = RENDER;
+  // References and custom sections (js/resume-sections.js), when the page loads them.
+  const EXTRA = () => (typeof window !== 'undefined' && window.ApplyReadyResumeSections) || null;
 
   // Demonstration Sample Data
   const SAMPLE_DATA = {
@@ -179,18 +185,22 @@
     achievements: [],
     volunteering: [],
     languages: [],
+    publications: [],
     academic: {
-      publications: [],
       teaching: [],
-      presentations: []
-    }
+      presentations: [],
+      grants: []
+    },
+    references: [],
+    referencesOnRequest: false,
+    customSections: []
   };
 
   // Active Resume State
-  let resumeData = JSON.parse(JSON.stringify(EMPTY_DATA));
+  let resumeData = SCHEMA.migrate(EMPTY_DATA);
   let isDirty = false;
-  let autoSaveDraft = false;
   let currentZoom = 'fit';
+  const changeListeners = [];
 
   // Bounded Undo / Redo History Stack (up to 30 snapshots)
   const undoStack = [];
@@ -205,33 +215,17 @@
     updateUndoRedoButtons();
   }
 
-  function performUndo() {
-    if (undoStack.length === 0) return;
-    redoStack.push(JSON.stringify(resumeData));
-    const previous = undoStack.pop();
-    resumeData = JSON.parse(previous);
-    populateAllFormFields();
-    renderAllDynamicLists();
-    renderResumePreview();
-    updateDesignControlsFromState();
-    setupTemplateGallery();
-    runResumeReview();
+  // Undo and redo swap whole snapshots of this resume. setResume() empties both stacks, so history
+  // never crosses from one saved resume into another.
+  function stepHistory(from, to) {
+    if (from.length === 0) return;
+    to.push(JSON.stringify(resumeData));
+    resumeData = JSON.parse(from.pop());
+    refreshWholeEditor();
     updateUndoRedoButtons();
   }
-
-  function performRedo() {
-    if (redoStack.length === 0) return;
-    undoStack.push(JSON.stringify(resumeData));
-    const next = redoStack.pop();
-    resumeData = JSON.parse(next);
-    populateAllFormFields();
-    renderAllDynamicLists();
-    renderResumePreview();
-    updateDesignControlsFromState();
-    setupTemplateGallery();
-    runResumeReview();
-    updateUndoRedoButtons();
-  }
+  const performUndo = () => stepHistory(undoStack, redoStack);
+  const performRedo = () => stepHistory(redoStack, undoStack);
 
   function updateUndoRedoButtons() {
     const btnUndo = getEl('btnUndo');
@@ -243,34 +237,6 @@
   // DOM Helpers
   const doc = typeof document !== 'undefined' ? document : null;
   const getEl = (id) => doc ? doc.getElementById(id) : null;
-
-  /**
-   * Escape HTML safely to prevent XSS
-   */
-  function escapeHTML(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  /**
-   * Sanitize URL for safe href
-   */
-  function sanitizeHref(url) {
-    if (!url || typeof url !== 'string') return '#';
-    const clean = url.trim();
-    if (/[\u0000-\u001f]/.test(clean)) return '#';
-    try {
-      // host:port (example.com:8080/x) is not a scheme, so it is given https:// like any bare host.
-      const hasProtocol = /^[a-z][a-z0-9+.-]*:/i.test(clean) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(clean);
-      const parsed = new URL(hasProtocol ? clean : 'https://' + clean);
-      return ['https:', 'http:', 'mailto:', 'tel:'].includes(parsed.protocol) ? parsed.href : '#';
-    } catch (e) { return '#'; }
-  }
 
   /**
    * Validate URL format
@@ -289,23 +255,15 @@
     }
   }
 
-  /**
-   * Validate Backup Schema (v1 or v2)
-   */
-  function validateResumeSchema(payload) { return SCHEMA.validate(payload); }
+  // Backups and saved records of versions 1 to 3 (js/resume-schema.js).
+  const validateResumeSchema = payload => SCHEMA.validate(payload);
+  const migrateResumeSchema = raw => SCHEMA.migrate(raw);
 
   /**
-   * Migrate any v1 or partial data safely into v2
-   */
-  function migrateResumeSchema(raw) {
-    return SCHEMA.migrate(raw);
-  }
-
-  /**
-   * Initialize Builder on DOM Ready
+   * Initialize Builder on DOM Ready. The resume itself arrives from the library through setResume().
    */
   function init() {
-    loadDraftFromStorage();
+    if (EXTRA()) EXTRA().mount(editorApi);
     setupEditorTabs();
     setupTemplateGallery();
     setupTemplatePreviewModal();
@@ -320,90 +278,56 @@
     updateUndoRedoButtons();
     runResumeReview();
 
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const sheet = getEl('resumeSheet'); if (sheet) visualPageCount = renderPaginatedPreview(sheet, pdfPageCount); updatePreviewScale(); });
+    // The vector preview does not depend on web fonts; only the HTML fallback pages are re-measured.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const sheet = getEl('resumeSheet'); if (sheet && pdfPageCount === null) visualPageCount = renderPaginatedPreview(sheet); updatePreviewScale(); });
     window.addEventListener('resize', () => { updatePreviewScale(); scaleTemplateModal(); });
-    // Without device saving, a reload or closed tab would silently discard
-    // the resume. Warn only when there is unsaved, non-sample work.
-    window.addEventListener('beforeunload', e => {
-      if (autoSaveDraft || !isDirty || isDocumentEmpty()) return;
-      e.preventDefault();
-      e.returnValue = '';
-    });
     window.addEventListener('orientationchange', () => setTimeout(updatePreviewScale, 150));
   }
 
-  /**
-   * Load Draft from Local Storage (consented draft takes precedence)
-   */
-  function loadDraftFromStorage() {
-    try {
-      const enabled = localStorage.getItem('applyready_draft_enabled');
-      const chkSaveDraft = getEl('chkSaveDraft');
-      const draftStatusText = getEl('draftStatusText');
-
-      if (enabled === 'true') {
-        autoSaveDraft = true;
-        if (chkSaveDraft) chkSaveDraft.checked = true;
-        const saved = localStorage.getItem('applyready_resume_draft');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (validateResumeSchema(parsed)) {
-            resumeData = migrateResumeSchema(parsed);
-            if (draftStatusText && parsed.savedAt) {
-              const d = new Date(parsed.savedAt);
-              draftStatusText.textContent = `Draft restored: ${d.toLocaleDateString()} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-            }
-            return;
-          }
-          throw new Error('Saved draft is invalid');
-        }
-      } else {
-        autoSaveDraft = false;
-        if (chkSaveDraft) chkSaveDraft.checked = false;
-        if (draftStatusText) draftStatusText.textContent = 'Local saving disabled';
-      }
-    } catch (e) {
-      autoSaveDraft = false;
-      const saveCheckbox = getEl('chkSaveDraft');
-      if (saveCheckbox) saveCheckbox.checked = false;
-      const draftStatusText = getEl('draftStatusText');
-      if (draftStatusText) draftStatusText.textContent = 'Draft could not be restored. Import a backup or start a new resume.';
-    }
-
-    // Default start with clean EMPTY_DATA (placeholders will guide the user)
-    resumeData = JSON.parse(JSON.stringify(EMPTY_DATA));
+  /* ------------------------------------------------ Editor interface for the library and sections */
+  // Load another resume: migrate it, clear undo history, folded entries and the dirty flag, redraw.
+  function setResume(data) {
+    clearTimeout(renderTimer);
+    resumeData = SCHEMA.migrate(data);
+    undoStack.length = 0;
+    redoStack.length = 0;
+    isDirty = false;
+    collapsedEntries.clear();
+    const apply = getEl('btnApplyRecommendedOrder');
+    if (apply) apply.classList.add('hidden');
+    refreshWholeEditor();
+    updateUndoRedoButtons();
   }
+  const emitChange = () => changeListeners.forEach(fn => { try { fn(resumeData); } catch (e) { /* a listener must not break editing */ } });
+  const editorApi = {
+    getData: () => resumeData,
+    setResume,
+    isEmpty: () => isDocumentEmpty(),
+    hasUserChanges: () => isDirty || undoStack.length > 0,
+    onChange: fn => { changeListeners.push(fn); },
+    pushHistory: () => pushHistoryState(),
+    render: () => renderResumePreview(),
+    scheduleRender: () => scheduleRender(),
+    refreshOrder: () => renderSectionOrderControls(),
+    refresh: () => refreshWholeEditor(),
+    sample: () => withCurrentDesign(SCHEMA.migrate(SAMPLE_DATA), SAMPLE_DATA.sectionVisibility),
+    blank: () => withCurrentDesign(SCHEMA.migrate(EMPTY_DATA), EMPTY_DATA.sectionVisibility),
+    templateName: id => (TEMPLATES[id] || TEMPLATES['classic-professional']).name,
+    newEntryId: prefix => newEntryId(prefix),
+    focusNewEntry: id => focusNewEntry(id),
+    restoreRemoveFocus: (listId, idx, addId) => restoreRemoveFocus(listId, idx, addId),
+    escapeHTML,
+    confirm: askConfirm,
+    downloadName: suffix => downloadName(suffix),
+    openSection: id => openAccordion(getEl(id))
+  };
+  if (typeof window !== 'undefined') window.ApplyReadyResumeEditor = editorApi;
 
-  function saveDraftToStorage() {
-    if (!autoSaveDraft) return;
-    try {
-      const payload = {
-        version: 2,
-        app: 'ApplyReady',
-        savedAt: new Date().toISOString(),
-        data: resumeData
-      };
-      localStorage.setItem('applyready_resume_draft', JSON.stringify(payload));
-      const draftStatusText = getEl('draftStatusText');
-      if (draftStatusText) {
-        const now = new Date();
-        draftStatusText.textContent = `Draft saved: Just now (${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
-      }
-    } catch (e) {
-      // Storage can be blocked or full; keep the current in-memory draft.
-      const draftStatusText = getEl('draftStatusText');
-      if (draftStatusText) draftStatusText.textContent = 'Error saving to local storage (quota exceeded)';
-    }
-  }
-
-  function deleteDraftFromStorage() {
-    try {
-      localStorage.removeItem('applyready_resume_draft');
-      const draftStatusText = getEl('draftStatusText');
-      if (draftStatusText) {
-        draftStatusText.textContent = autoSaveDraft ? 'No draft saved yet' : 'Local saving disabled';
-      }
-    } catch (e) {}
+  function openAccordion(section) {
+    if (!section || !section.classList.contains('accordion-section')) return;
+    section.classList.add('open');
+    const header = section.querySelector('.accordion-header');
+    if (header) header.setAttribute('aria-expanded', 'true');
   }
 
   /**
@@ -457,126 +381,12 @@
     const hasText = value => typeof value === 'string' ? !!value.trim()
       : Array.isArray(value) ? value.some(hasText)
       : value && typeof value === 'object' ? Object.keys(value).some(key => key !== 'id' && hasText(value[key])) : false;
-    return !hasText({ personal: resumeData.personal, summary: resumeData.summary, experience: resumeData.experience, education: resumeData.education, projects: resumeData.projects, skills: resumeData.skills, certifications: resumeData.certifications, achievements: resumeData.achievements, volunteering: resumeData.volunteering, languages: resumeData.languages, academic: resumeData.academic });
+    const custom = (resumeData.customSections || []).map(s => ({ text: s.text, entries: s.entries }));
+    return !hasText({ personal: resumeData.personal, summary: resumeData.summary, experience: resumeData.experience, education: resumeData.education, projects: resumeData.projects, skills: resumeData.skills, certifications: resumeData.certifications, achievements: resumeData.achievements, volunteering: resumeData.volunteering, languages: resumeData.languages, publications: resumeData.publications, academic: resumeData.academic, references: resumeData.references, custom });
   }
 
   function newEntryId(prefix) {
     return prefix + '-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
-  }
-
-  function renderResumeDataToHTML(data, templateId) {
-    const p = data.personal || {};
-    const style = TPL.getTemplateStyle(templateId);
-    const pdfApi = (typeof window !== 'undefined' && window.ApplyReadyPDF) || (typeof require === 'function' ? require('./pdf-engine.js') : null);
-    const bulletLines = pdfApi ? pdfApi.bulletLines : text => String(text || '').split(/\r?\n|\r/).map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
-    const optionalEntries = pdfApi ? pdfApi.optionalEntries : () => [];
-    const vis = data.sectionVisibility || {};
-    const visible = key => vis[key] !== false;
-    const t = value => (typeof value === 'string' ? value.trim() : '');
-    const heading = text => `<h3 class="resume-section-title">${escapeHTML(text)}</h3>`;
-    const bulletList = items => items.length ? `<ul class="resume-bullets">${items.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>` : '';
-    const entryHeader = (left, right) => {
-      if (!left && !right) return '';
-      return `<div class="resume-entry-header">${left ? `<span>${left}</span>` : ''}${right ? `<span class="resume-entry-meta">${right}</span>` : ''}</div>`;
-    };
-
-    const contactItems = [];
-    if (t(p.phone)) contactItems.push({ text: t(p.phone), href: 'tel:' + t(p.phone).replace(/[^\d+]/g, '') });
-    if (t(p.email)) contactItems.push({ text: t(p.email), href: 'mailto:' + t(p.email) });
-    if (t(p.location)) contactItems.push({ text: t(p.location) });
-    for (const key of ['linkedin', 'github', 'website']) if (t(p[key])) contactItems.push({ text: t(p[key]), href: sanitizeHref(t(p[key])) });
-
-    const contactHtml = contactItems.map((item, idx) => {
-      const inner = item.href && item.href !== '#' ? `<a href="${escapeHTML(item.href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.text)}</a>` : escapeHTML(item.text);
-      return `<span class="resume-contact-item">${inner}</span>` + (idx < contactItems.length - 1 ? `<span class="resume-contact-sep" aria-hidden="true">${escapeHTML(style.contactSeparator)}</span>` : '');
-    }).join('');
-
-    const sections = {};
-    const summaryText = t(data.summary);
-    if (summaryText && visible('summary')) {
-      sections.summary = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'summary'))}<p class="resume-summary">${escapeHTML(summaryText)}</p></section>`;
-    }
-
-    const exp = (data.experience || []).filter(x => x && (t(x.role) || t(x.company) || t(x.duration) || t(x.location) || bulletLines(x.bulletsText).length));
-    if (exp.length && visible('experience')) {
-      const items = exp.map(item => `<div class="resume-entry">${entryHeader(escapeHTML([t(item.role), t(item.company)].filter(Boolean).join(' | ')), escapeHTML([t(item.duration), t(item.location)].filter(Boolean).join(' • ')))}${bulletList(bulletLines(item.bulletsText))}</div>`).join('');
-      sections.experience = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'experience'))}<div>${items}</div></section>`;
-    }
-
-    const edu = (data.education || []).filter(x => x && (t(x.degree) || t(x.institution) || t(x.duration) || t(x.location) || t(x.score)));
-    if (edu.length && visible('education')) {
-      const items = edu.map(item => `<div class="resume-entry">${entryHeader(escapeHTML([t(item.degree), t(item.institution)].filter(Boolean).join(' — ')), escapeHTML([t(item.duration), t(item.location), t(item.score)].filter(Boolean).join(' • ')))}</div>`).join('');
-      sections.education = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'education'))}<div>${items}</div></section>`;
-    }
-
-    const proj = (data.projects || []).filter(x => x && (t(x.name) || t(x.tech) || t(x.link) || bulletLines(x.bulletsText).length));
-    if (proj.length && visible('projects')) {
-      const items = proj.map(item => {
-        const href = sanitizeHref(t(item.link));
-        const link = t(item.link) ? (href !== '#' ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(t(item.link))}</a>` : escapeHTML(t(item.link))) : '';
-        const name = t(item.name);
-        const tech = t(item.tech);
-        const titleHtml = name
-          ? escapeHTML(name) + (tech ? ` <span class="resume-entry-tech">| ${escapeHTML(tech)}</span>` : '')
-          : (tech ? escapeHTML(tech) : '');
-        return `<div class="resume-entry">${entryHeader(titleHtml, link)}${bulletList(bulletLines(item.bulletsText))}</div>`;
-      }).join('');
-      sections.projects = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'projects'))}<div>${items}</div></section>`;
-    }
-
-    const s = data.skills || {};
-    const skillLabels = TPL.getSkillLabels(templateId, data);
-    const skillRows = Array.isArray(s.categories)
-      ? s.categories.filter(c => c && t(c.name) && t(c.items)).map(c => ({ label: t(c.name).replace(/:\s*$/, ''), val: t(c.items) }))
-      : ['languages', 'frameworks', 'tools', 'other'].filter(key => t(s[key])).map(key => ({ label: String(skillLabels[key] || '').replace(/:\s*$/, ''), val: t(s[key]) }));
-    if (skillRows.length && visible('skills')) {
-      sections.skills = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'skills'))}<div>${skillRows.map(r => `<div class="resume-skills-row"><span class="skills-category">${escapeHTML(r.label)}: </span><span>${escapeHTML(r.val)}</span></div>`).join('')}</div></section>`;
-    }
-
-    for (const key of ['certifications', 'achievements', 'volunteering']) {
-      const lines = optionalEntries(data, key);
-      if (lines.length && visible(key)) sections[key] = `<section class="resume-section">${heading(TPL.getSectionLabel(templateId, key))}<div>${lines.map(line => `<div class="resume-entry resume-list-entry">${escapeHTML(line)}</div>`).join('')}</div></section>`;
-    }
-    const langs = optionalEntries(data, 'languages');
-    if (langs.length && visible('languages')) sections.languages = `<section class="resume-section">${heading(TPL.getSectionLabel(templateId, 'languages'))}<p class="resume-summary">${escapeHTML(langs.join(' • '))}</p></section>`;
-    if (visible('academic')) {
-      sections.academic = ['publications', 'teaching', 'presentations', 'grants'].map(key => {
-        const lines = optionalEntries(data, key);
-        return lines.length ? `<section class="resume-section">${heading(TPL.getSectionLabel(templateId, key))}<div>${lines.map(line => `<div class="resume-entry resume-list-entry">${escapeHTML(line)}</div>`).join('')}</div></section>` : '';
-      }).join('');
-    }
-
-    const order = SCHEMA.normalizeSectionOrder(data.design && data.design.sectionOrder);
-    const orderedHtml = order.map(k => sections[k] || '').join('');
-    const name = t(p.fullName) || 'YOUR NAME';
-
-    return `
-      <header class="resume-header">
-        <div class="resume-name">${escapeHTML(style.nameCase === 'upper' ? name.toUpperCase() : name)}</div>
-        ${t(p.targetTitle) ? `<div class="resume-target-title">${escapeHTML(t(p.targetTitle))}</div>` : ''}
-        ${contactHtml ? `<div class="resume-contact-line">${contactHtml}</div>` : ''}
-      </header>
-      <div>${orderedHtml}</div>
-    `;
-  }
-
-  function renderTemplateIntoContainer(sheet, templateId, data) {
-    const tmpl = TEMPLATES[templateId] || TEMPLATES['classic-professional'];
-    const style = TPL.getTemplateStyle(templateId);
-    const fontClass = ((data.design && data.design.fontFamily) || tmpl.fontFamily) === 'sans' ? 'font-sans' : 'font-serif';
-    const density = (data.design && data.design.density) || tmpl.density || 'standard';
-    const fontSize = (data.design && data.design.fontSize) || 'standard';
-    const pageSize = (data.design && data.design.pageSize) || 'a4';
-    const sourceClass = sheet.id === 'resumeSheet' ? ' resume-source-sheet' : '';
-    const styleClasses = [`header-${style.headerAlign}`, `header-rule-${style.headerRule}`, `heading-rule-${style.headingRule}`, `dates-${style.datePlacement}`].join(' ');
-
-    sheet.className = `ats-resume-sheet template-${templateId} page-${pageSize} density-${density} font-size-${fontSize} ${fontClass} ${styleClasses}${sourceClass}`;
-    sheet.style.setProperty('--resume-heading-color', '#' + style.headingHex);
-    sheet.style.setProperty('--resume-rule-color', '#' + style.ruleHex);
-    sheet.style.setProperty('--resume-header-rule-color', '#' + style.headerRuleHex);
-    sheet.style.setProperty('--resume-link-color', '#' + style.linkHex);
-    sheet.style.setProperty('--resume-meta-color', '#' + style.metaHex);
-    sheet.innerHTML = renderResumeDataToHTML(data, templateId);
   }
 
   // Share PDF line positions and page breaks with the live preview. SVG text
@@ -768,7 +578,7 @@
     sample.design.fontFamily = tmpl.fontFamily;
     sample.design.density = tmpl.density || 'standard';
     sample.design.pageSize = resumeData.design.pageSize || 'a4';
-    sample.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
+    sample.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, sample);
     Object.assign(sample.sectionVisibility, tmpl.defaultVisibility || {});
     // Draw the first page with the export engine so the preview is the download.
     try {
@@ -1009,19 +819,19 @@
     if (tmpl.recommendedOrder && Array.isArray(tmpl.recommendedOrder)) {
       if (isDocumentEmpty()) {
         // Automatically apply recommended order for new empty documents
-        resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
+        resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData);
         if (btnApplyRecommended) btnApplyRecommended.classList.add('hidden');
       } else {
         // Document has content: do not overwrite user's section order silently.
         const currentOrder = resumeData.design.sectionOrder || [];
-        const isDifferent = JSON.stringify(currentOrder) !== JSON.stringify(tmpl.recommendedOrder);
+        const isDifferent = JSON.stringify(SCHEMA.normalizeSectionOrder(currentOrder, resumeData)) !== JSON.stringify(SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData));
         if (btnApplyRecommended) {
           if (isDifferent) {
             btnApplyRecommended.classList.remove('hidden');
             btnApplyRecommended.innerHTML = `<i aria-hidden="true" class="fa-solid fa-arrows-rotate"></i> Apply ${escapeHTML(tmpl.name)}'s Recommended Section Order`;
             btnApplyRecommended.onclick = () => {
               pushHistoryState();
-              resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
+              resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder, resumeData);
               renderSectionOrderControls();
               renderResumePreview();
               btnApplyRecommended.classList.add('hidden');
@@ -1081,7 +891,7 @@
       input.value = TPL.getSectionTitle(resumeData, resumeData.template, key);
       input.placeholder = TPL.getSectionLabel(resumeData.template, key);
     });
-    ['certifications', 'achievements', 'volunteering', 'languages'].forEach(key => {
+    ['certifications', 'achievements', 'volunteering', 'languages', 'publications', 'references'].forEach(key => {
       const text = TPL.getSectionLabel(resumeData.template, key);
       const header = document.querySelector(`#sec-${key} .accordion-header > span`);
       if (header && header.lastChild && header.lastChild.nodeType === 3) header.lastChild.textContent = text;
@@ -1323,12 +1133,14 @@
           </div>`);
       });
     }
+    if (show('sec-publications', vis.publications)) {
+      fill('publicationsList', resumeData.publications || [], (p, idx) => optionalItem(`Publication ${idx + 1}`, 'remove-pub', idx, `<div class="field">
+            <label class="field-label" for="pub-text-${idx}">Full citation</label>
+            <textarea id="pub-text-${idx}" class="textarea item-pub-text" data-index="${idx}" rows="3" placeholder="Authors, title, journal or publisher, year">${escapeHTML(p.title || p.citation)}</textarea>
+          </div>`));
+    }
     if (show('sec-academic', vis.academic)) {
       const academic = resumeData.academic || {};
-      fill('academicPubsList', academic.publications || [], (p, idx) => optionalItem(`Publication ${idx + 1}`, 'remove-pub', idx, `<div class="field">
-            <label class="field-label" for="pub-text-${idx}">Full citation</label>
-            <textarea id="pub-text-${idx}" class="textarea item-pub-text" data-index="${idx}" rows="3" placeholder="Authors, title, journal, year">${escapeHTML(p.title || p.citation)}</textarea>
-          </div>`));
       fill('academicTeachingList', academic.teaching || [], (t, idx) => optionalItem(t.role || t.course || `Teaching entry ${idx + 1}`, 'remove-teach', idx, `
           <div class="field-row">
             ${optField('teach-role', idx, 'Role or course', 'item-teach-role', t.role || t.course, 'e.g. Teaching assistant, Statistics')}
@@ -1354,6 +1166,7 @@
           ${optField('grant-year', idx, 'Year', 'item-grant-year', rest.year, 'e.g. 2024')}`);
       });
     }
+    if (EXTRA()) EXTRA().render();
     labelOptionalFields();
   }
 
@@ -1430,17 +1243,16 @@
     if (!container) return;
     container.innerHTML = '';
 
-    const order = (resumeData.design && Array.isArray(resumeData.design.sectionOrder))
-      ? resumeData.design.sectionOrder
-      : ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
-
+    const order = SCHEMA.sectionKeys(resumeData);
     const labels = { academic: 'Academic & Research (CV)' };
     ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => { labels[key] = TPL.getSectionTitle(resumeData, resumeData.template, key); });
-    ['certifications', 'achievements', 'volunteering', 'languages'].forEach(key => { labels[key] = TPL.getSectionLabel(resumeData.template, key); });
+    ['certifications', 'achievements', 'volunteering', 'languages', 'publications', 'references'].forEach(key => { labels[key] = TPL.getSectionLabel(resumeData.template, key); });
+    (resumeData.customSections || []).forEach(s => { labels[SCHEMA.customKey(s.id)] = s.title.trim() || 'Custom section'; });
 
     order.forEach((key, index) => {
       if (!labels[key]) return;
-      const isVis = resumeData.sectionVisibility[key] !== false;
+      const custom = SCHEMA.isCustomKey(key) ? (resumeData.customSections || []).find(s => SCHEMA.customKey(s.id) === key) : null;
+      const isVis = custom ? custom.visible !== false : resumeData.sectionVisibility[key] !== false;
 
       const row = document.createElement('div');
       row.className = 'dynamic-item section-order-row';
@@ -1461,7 +1273,8 @@
 
       row.querySelector('.chk-section-vis').addEventListener('change', (e) => {
         pushHistoryState();
-        resumeData.sectionVisibility[key] = e.target.checked;
+        if (custom) custom.visible = e.target.checked;
+        else resumeData.sectionVisibility[key] = e.target.checked;
         renderOptionalSections();
         renderResumePreview();
         runResumeReview();
@@ -1515,7 +1328,7 @@
     const skills = resumeData.skills || {};
     const skillCount = ['languages', 'frameworks', 'tools', 'other'].reduce((n, k) => n + t(skills[k]).split(',').filter(x => x.trim()).length, 0);
     const academic = resumeData.academic || {};
-    const academicCount = ['publications', 'teaching', 'presentations', 'grants'].reduce((n, k) => n + (academic[k] || []).length, 0);
+    const academicCount = ['teaching', 'presentations', 'grants'].reduce((n, k) => n + (academic[k] || []).length, 0);
     const meta = {
       personal: t(p.fullName) || '',
       summary: words ? `${words} words` : '',
@@ -1527,8 +1340,10 @@
       achievements: count(resumeData.achievements, 'item', 'items'),
       volunteering: count(resumeData.volunteering, 'entry', 'entries'),
       languages: count(resumeData.languages, 'language', 'languages'),
+      publications: count(resumeData.publications, 'publication', 'publications'),
       academic: academicCount ? `${academicCount} items` : ''
     };
+    if (EXTRA()) Object.assign(meta, EXTRA().meta());
     document.querySelectorAll('.accordion-meta[data-meta]').forEach(el => {
       const text = meta[el.dataset.meta] || '';
       el.textContent = text || 'Empty';
@@ -1541,7 +1356,17 @@
    */
   let pdfPageCount = 1;
   let visualPageCount = 1;
+  // Typing redraws once the person pauses (layout of every page costs tens of milliseconds on a slow
+  // computer). The data itself is updated on every keystroke, so exports never lag behind.
+  const RENDER_DELAY = 180;
+  let renderTimer = null;
+  function scheduleRender() {
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(renderResumePreview, RENDER_DELAY);
+  }
   function renderResumePreview() {
+    clearTimeout(renderTimer);
+    renderTimer = null;
     const sheet = getEl('resumeSheet');
     if (!sheet) return;
     renderTemplateIntoContainer(sheet, resumeData.template, resumeData);
@@ -1557,7 +1382,7 @@
       pdfPageCount = null;
       visualPageCount = renderPaginatedPreview(sheet);
     }
-    saveDraftToStorage();
+    emitChange();
     updatePreviewScale();
     updateSectionMeta();
   }
@@ -1795,7 +1620,7 @@
   function withCurrentDesign(next, sectionVisibility) {
     next.template = resumeData.template;
     next.design = Object.assign({}, JSON.parse(JSON.stringify(resumeData.design)), { templateId: resumeData.template });
-    next.design.sectionOrder = SCHEMA.normalizeSectionOrder((TEMPLATES[resumeData.template] || {}).recommendedOrder || next.design.sectionOrder);
+    next.design.sectionOrder = SCHEMA.normalizeSectionOrder((TEMPLATES[resumeData.template] || {}).recommendedOrder || next.design.sectionOrder, next);
     next.sectionVisibility = Object.assign({}, sectionVisibility);
     return next;
   }
@@ -1921,7 +1746,7 @@
       if (el) {
         el.addEventListener('input', (e) => {
           setter(e.target.value);
-          renderResumePreview();
+          scheduleRender();
         });
       }
     };
@@ -1946,7 +1771,7 @@
       input.addEventListener('input', () => {
         if (!resumeData.skillLabels || typeof resumeData.skillLabels !== 'object') resumeData.skillLabels = {};
         resumeData.skillLabels[input.dataset.skill] = input.value;
-        renderResumePreview();
+        scheduleRender();
       });
       input.addEventListener('blur', updateTemplateFieldLabels);
     });
@@ -1996,7 +1821,7 @@
       langList.addEventListener('input', handleLangInput);
       langList.addEventListener('click', handleLangAction);
     }
-    const pubsList = getEl('academicPubsList');
+    const pubsList = getEl('publicationsList');
     if (pubsList) {
       pubsList.addEventListener('input', handlePubInput);
       pubsList.addEventListener('click', handlePubAction);
@@ -2091,6 +1916,7 @@
       btnAddOptional.addEventListener('click', () => {
         const val = selectOptional.value;
         if (!val) return;
+        if ((val === 'references' || val === 'custom') && EXTRA()) { EXTRA().add(val); return; }
         pushHistoryState();
         resumeData.sectionVisibility[val] = true;
 
@@ -2100,12 +1926,14 @@
         } else if (val === 'achievements' && (!resumeData.achievements || resumeData.achievements.length === 0)) {
           resumeData.achievements = [''];
         } else if (val === 'volunteering' && (!resumeData.volunteering || resumeData.volunteering.length === 0)) {
-          resumeData.volunteering = [{ role: '', organization: '', duration: '' }];
+          resumeData.volunteering = [{ id: newEntryId('vol'), role: '', organization: '', duration: '' }];
         } else if (val === 'languages' && (!resumeData.languages || resumeData.languages.length === 0)) {
-          resumeData.languages = [{ name: '', proficiency: '' }];
+          resumeData.languages = [{ id: newEntryId('lang'), name: '', proficiency: '' }];
+        } else if (val === 'publications' && (!resumeData.publications || resumeData.publications.length === 0)) {
+          resumeData.publications = [{ id: newEntryId('pub'), title: '' }];
         } else if (val === 'academic') {
           if (!resumeData.academic) resumeData.academic = {};
-          if (!resumeData.academic.publications) resumeData.academic.publications = [{ title: '' }];
+          if (!resumeData.academic.teaching || !resumeData.academic.teaching.length) resumeData.academic.teaching = [{ id: newEntryId('teach'), role: '', institution: '', term: '' }];
         }
 
         renderOptionalSections();
@@ -2158,7 +1986,7 @@
       btnAddVol.addEventListener('click', () => {
         pushHistoryState();
         if (!resumeData.volunteering) resumeData.volunteering = [];
-        resumeData.volunteering.push({ role: '', organization: '', duration: '' });
+        resumeData.volunteering.push({ id: newEntryId('vol'), role: '', organization: '', duration: '' });
         renderOptionalSections();
         renderResumePreview();
         focusNewEntry('volunteeringList');
@@ -2169,7 +1997,7 @@
       btnAddLang.addEventListener('click', () => {
         pushHistoryState();
         if (!resumeData.languages) resumeData.languages = [];
-        resumeData.languages.push({ name: '', proficiency: '' });
+        resumeData.languages.push({ id: newEntryId('lang'), name: '', proficiency: '' });
         renderOptionalSections();
         renderResumePreview();
         focusNewEntry('languagesList');
@@ -2179,12 +2007,11 @@
     if (btnAddPub) {
       btnAddPub.addEventListener('click', () => {
         pushHistoryState();
-        if (!resumeData.academic) resumeData.academic = {};
-        if (!resumeData.academic.publications) resumeData.academic.publications = [];
-        resumeData.academic.publications.push({ title: '' });
+        if (!Array.isArray(resumeData.publications)) resumeData.publications = [];
+        resumeData.publications.push({ id: newEntryId('pub'), title: '' });
         renderOptionalSections();
         renderResumePreview();
-        focusNewEntry('academicPubsList');
+        focusNewEntry('publicationsList');
       });
     }
     const btnAddTeach = getEl('btnAddTeaching');
@@ -2193,7 +2020,7 @@
         pushHistoryState();
         if (!resumeData.academic) resumeData.academic = {};
         if (!resumeData.academic.teaching) resumeData.academic.teaching = [];
-        resumeData.academic.teaching.push({ role: '', institution: '', term: '' });
+        resumeData.academic.teaching.push({ id: newEntryId('teach'), role: '', institution: '', term: '' });
         renderOptionalSections();
         renderResumePreview();
         focusNewEntry('academicTeachingList');
@@ -2225,115 +2052,6 @@
         resumeData = withCurrentDesign(SCHEMA.migrate(EMPTY_DATA), EMPTY_DATA.sectionVisibility);
         isDirty = false;
         refreshWholeEditor();
-      });
-    }
-
-    // Draft Persistence
-    const chkSaveDraft = getEl('chkSaveDraft');
-    if (chkSaveDraft) {
-      chkSaveDraft.addEventListener('change', () => {
-        autoSaveDraft = chkSaveDraft.checked;
-        try {
-          localStorage.setItem('applyready_draft_enabled', String(autoSaveDraft));
-        } catch (e) {}
-        if (autoSaveDraft) saveDraftToStorage();
-        else deleteDraftFromStorage();
-      });
-    }
-
-    const btnDeleteDraft = getEl('btnDeleteDraft');
-    if (btnDeleteDraft) {
-      btnDeleteDraft.addEventListener('click', async () => {
-        const ok = await askConfirm({ title: 'Delete the saved draft?', message: 'The draft stored in this browser is removed. The resume on screen is not affected.', confirmLabel: 'Delete draft', danger: true });
-        if (!ok) return;
-        autoSaveDraft = false;
-        deleteDraftFromStorage();
-        if (chkSaveDraft) chkSaveDraft.checked = false;
-        autoSaveDraft = false;
-        try {
-          localStorage.setItem('applyready_draft_enabled', 'false');
-        } catch (e) {}
-      });
-    }
-
-    // Export JSON Backup
-    const btnExportJSON = getEl('btnExportJSON');
-    if (btnExportJSON) {
-      btnExportJSON.addEventListener('click', () => {
-        const payload = {
-          version: 2,
-          app: 'ApplyReady',
-          exportedAt: new Date().toISOString(),
-          data: resumeData
-        };
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = downloadName('Resume_Backup.json');
-        isDirty = false;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      });
-    }
-
-    // Import JSON Backup
-    const btnImportJSON = getEl('btnImportJSON');
-    const fileImportInput = getEl('fileImportInput');
-    if (btnImportJSON && fileImportInput) {
-      btnImportJSON.addEventListener('click', () => fileImportInput.click());
-      fileImportInput.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-
-        if (file.size > 2 * 1024 * 1024) {
-          notify('This backup exceeds 2 MB. Your resume is preserved.', true);
-          fileImportInput.value = '';
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onerror = () => {
-          notify('Could not read the backup file from disk.', true);
-          fileImportInput.value = '';
-        };
-        reader.onload = async (event) => {
-          try {
-            const parsed = JSON.parse(event.target.result);
-            if (!validateResumeSchema(parsed)) {
-              throw new Error('Invalid resume schema');
-            }
-            if (!isDocumentEmpty()) {
-              const ok = await askConfirm({ title: 'Replace your current resume?', message: 'Importing this backup replaces what is on screen. You can undo this straight afterwards.', confirmLabel: 'Import backup' });
-              if (!ok) {
-                fileImportInput.value = '';
-                return;
-              }
-            }
-            // Migrate before touching the editor, so a backup that fails here leaves the resume as it was.
-            const restored = migrateResumeSchema(parsed);
-            pushHistoryState();
-            resumeData = restored;
-            isDirty = false;
-            refreshWholeEditor();
-            notify('Resume backup restored.');
-            // Restored sections can change the page height substantially. Show the
-            // restored identity instead of leaving a field beneath the sticky header.
-            // Backups are imported from the Download step; show the restored resume from its start.
-            const tabContent = getEl('tabContent');
-            if (tabContent) tabContent.click();
-            const contactSection = getEl('sec-personal');
-            contactSection.classList.add('open');
-            contactSection.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
-            contactSection.scrollIntoView({ block: 'start', behavior: 'auto' });
-            getEl('fullName').focus({ preventScroll: true });
-          } catch (err) {
-            notify('Could not import this backup. Your current resume is preserved.', true);
-          }
-          fileImportInput.value = '';
-        };
-        reader.onerror = () => { notify('Could not read this backup. Please choose it again.', true); fileImportInput.value = ''; };
-        reader.readAsText(file);
       });
     }
 
@@ -2389,7 +2107,7 @@
     if (e.target.classList.contains('item-location')) item.location = e.target.value;
     if (e.target.classList.contains('item-bullets')) item.bulletsText = e.target.value;
     refreshEntryTitle(parent, 'exp', item);
-    renderResumePreview();
+    scheduleRender();
   }
 
   function handleExperienceAction(e) {
@@ -2449,7 +2167,7 @@
     if (e.target.classList.contains('item-location')) item.location = e.target.value;
     if (e.target.classList.contains('item-score')) item.score = e.target.value;
     refreshEntryTitle(parent, 'edu', item);
-    renderResumePreview();
+    scheduleRender();
   }
 
   function handleEducationAction(e) {
@@ -2508,7 +2226,7 @@
     if (e.target.classList.contains('item-link')) item.link = e.target.value;
     if (e.target.classList.contains('item-bullets')) item.bulletsText = e.target.value;
     refreshEntryTitle(parent, 'proj', item);
-    renderResumePreview();
+    scheduleRender();
   }
 
   function handleProjectAction(e) {
@@ -2563,7 +2281,7 @@
     if (e.target.classList.contains('item-cert-name')) resumeData.certifications[idx].name = e.target.value;
     if (e.target.classList.contains('item-cert-issuer')) resumeData.certifications[idx].issuer = e.target.value;
     if (e.target.classList.contains('item-cert-year')) resumeData.certifications[idx].year = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleCertAction(e) {
     const btn = e.target.closest('button[data-action="remove-cert"]');
@@ -2580,7 +2298,7 @@
     const idx = parseInt(e.target.dataset.index, 10);
     if (!resumeData.achievements) return;
     resumeData.achievements[idx] = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleAchAction(e) {
     const btn = e.target.closest('button[data-action="remove-ach"]');
@@ -2599,7 +2317,7 @@
     if (e.target.classList.contains('item-vol-role')) resumeData.volunteering[idx].role = e.target.value;
     if (e.target.classList.contains('item-vol-org')) resumeData.volunteering[idx].organization = e.target.value;
     if (e.target.classList.contains('item-vol-dur')) resumeData.volunteering[idx].duration = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleVolAction(e) {
     const btn = e.target.closest('button[data-action="remove-vol"]');
@@ -2617,7 +2335,7 @@
     if (!resumeData.languages || !resumeData.languages[idx]) return;
     if (e.target.classList.contains('item-lang-name')) resumeData.languages[idx].name = e.target.value;
     if (e.target.classList.contains('item-lang-prof')) resumeData.languages[idx].proficiency = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleLangAction(e) {
     const btn = e.target.closest('button[data-action="remove-lang"]');
@@ -2632,19 +2350,19 @@
 
   function handlePubInput(e) {
     const idx = parseInt(e.target.dataset.index, 10);
-    if (!resumeData.academic || !resumeData.academic.publications || !resumeData.academic.publications[idx]) return;
-    resumeData.academic.publications[idx].title = e.target.value;
-    renderResumePreview();
+    if (!resumeData.publications || !resumeData.publications[idx]) return;
+    resumeData.publications[idx].title = e.target.value;
+    scheduleRender();
   }
   function handlePubAction(e) {
     const btn = e.target.closest('button[data-action="remove-pub"]');
     if (!btn) return;
     const idx = parseInt(btn.dataset.index, 10);
     pushHistoryState();
-    resumeData.academic.publications.splice(idx, 1);
+    resumeData.publications.splice(idx, 1);
     renderOptionalSections();
     renderResumePreview();
-    restoreRemoveFocus('academicPubsList', idx, 'btnAddPublication');
+    restoreRemoveFocus('publicationsList', idx, 'btnAddPublication');
   }
 
   function handleTeachInput(e) {
@@ -2653,7 +2371,7 @@
     if (e.target.classList.contains('item-teach-role')) resumeData.academic.teaching[idx].role = e.target.value;
     if (e.target.classList.contains('item-teach-inst')) resumeData.academic.teaching[idx].institution = e.target.value;
     if (e.target.classList.contains('item-teach-term')) resumeData.academic.teaching[idx].term = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleTeachAction(e) {
     const btn = e.target.closest('button[data-action="remove-teach"]');
@@ -2674,7 +2392,7 @@
     const cls = Object.keys(fields).find(name => e.target.classList.contains(name));
     if (!cls) return;
     list[idx][fields[cls]] = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleAcademicRemove(e, key, action, listId, addBtnId) {
     const btn = e.target.closest(`button[data-action="${action}"]`);
@@ -2687,14 +2405,16 @@
     restoreRemoveFocus(listId, idx, addBtnId);
   }
 
+  // One delegated listener, so sections drawn later (custom sections) fold the same way.
   function setupAccordions() {
-    document.querySelectorAll('.accordion-header').forEach(header => {
-      header.addEventListener('click', () => {
-        const sec = header.parentElement;
-        const isOpen = sec.classList.contains('open');
-        sec.classList.toggle('open');
-        header.setAttribute('aria-expanded', String(!isOpen));
-      });
+    const panel = getEl('formPanel');
+    if (panel) panel.addEventListener('click', e => {
+      const header = e.target.closest('.accordion-header');
+      if (!header) return;
+      const sec = header.parentElement;
+      const isOpen = sec.classList.contains('open');
+      sec.classList.toggle('open');
+      header.setAttribute('aria-expanded', String(!isOpen));
     });
   }
 
@@ -2712,7 +2432,7 @@
     document.fonts.ready.then(() => window.print());
   }
 
-  function exportToVectorPDF() {
+  function exportToVectorPDF(event) {
     if (!window.ApplyReadyPDF) {
       notify('PDF export is unavailable. Reload or use Browser Print.', true);
       return;
@@ -2733,7 +2453,8 @@
       return;
     }
 
-    const btn = getEl('btnDownloadPDF') || getEl('btnQuickPDF');
+    // Show progress on the button that was pressed (Download step or the Quick PDF button).
+    const btn = (event && event.currentTarget && event.currentTarget.tagName === 'BUTTON') ? event.currentTarget : getEl('btnDownloadPDF');
     const originalHtml = btn ? btn.innerHTML : '';
     if (btn) {
       btn.disabled = true;

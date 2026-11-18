@@ -452,6 +452,12 @@
     }
   }
 
+  function schemaApi() {
+    if (typeof ApplyReadySchema !== 'undefined') return ApplyReadySchema;
+    if (typeof require === 'function') { try { return require('./resume-schema.js'); } catch (e) { /* standalone use */ } }
+    return null;
+  }
+
   function templatesApi() {
     if (typeof ApplyReadyTemplates !== 'undefined') return ApplyReadyTemplates;
     if (typeof require === 'function') { try { return require('./templates.js'); } catch (e) { /* standalone use */ } }
@@ -463,13 +469,13 @@
     const api = templatesApi();
     const templateId = api ? api.resolveTemplateId(resumeData, options) : (options.template || resumeData.template || 'classic-professional');
     const fallbackStyle = {
-      headerAlign: ['classic-professional', 'experienced-professional', 'academic-cv'].includes(templateId) ? 'center' : 'left',
+      headerAlign: ['classic-professional', 'experienced-professional'].includes(templateId) ? 'center' : 'left',
       nameCase: 'upper', nameSize: null, headerRule: templateId === 'experienced-professional' ? 'double' : 'single',
       headerRuleColor: [0.1, 0.1, 0.1], headerRuleWidth: 1.2, headingRule: templateId === 'modern-minimal' ? 'none' : 'line',
       headingColor: [0, 0, 0], ruleColor: [0.65, 0.7, 0.75], ruleWidth: 0.6, datePlacement: 'right', contactSeparator: '•',
       linkColor: [0.05, 0.35, 0.75], metaColor: [0.35, 0.4, 0.45]
     };
-    const fallbackLabels = { summary: 'Professional Summary', experience: 'Work Experience', education: 'Education', projects: 'Key Projects', skills: 'Skills & Competencies', certifications: 'Certifications & Credentials', achievements: 'Honors & Achievements', volunteering: 'Community & Leadership', languages: 'Languages', publications: 'Peer-Reviewed Publications', teaching: 'Teaching Experience', presentations: 'Conference Presentations', grants: 'Research Grants' };
+    const fallbackLabels = { summary: 'Professional Summary', experience: 'Work Experience', education: 'Education', projects: 'Key Projects', skills: 'Skills & Competencies', certifications: 'Certifications & Credentials', achievements: 'Honors & Achievements', volunteering: 'Community & Leadership', languages: 'Languages', publications: 'Publications', teaching: 'Teaching Experience', presentations: 'Conference Presentations', grants: 'Research Grants', references: 'References', referencesOnRequest: 'Available on request.' };
     const tmpl = api ? api.getTemplate(templateId) : {};
     return {
       templateId,
@@ -481,12 +487,51 @@
     };
   }
 
-  const ALL_SECTIONS = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
+  const ALL_SECTIONS = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'publications', 'academic', 'references'];
+  const CUSTOM_PREFIX = 'custom:';
 
+  // Print order: the saved order, every fixed section once, then every custom section ("custom:<id>").
   function orderedSections(resumeData, options) {
     const order = (resumeData.design && Array.isArray(resumeData.design.sectionOrder)) ? resumeData.design.sectionOrder
       : (Array.isArray(options.sectionOrder) ? options.sectionOrder : []);
-    return [...new Set([...order.filter(key => ALL_SECTIONS.includes(key)), ...ALL_SECTIONS])];
+    const schema = schemaApi();
+    if (schema) return schema.normalizeSectionOrder(order, resumeData);
+    const customs = (Array.isArray(resumeData.customSections) ? resumeData.customSections : []).map(s => CUSTOM_PREFIX + (s && s.id));
+    return [...new Set([...order.filter(key => ALL_SECTIONS.includes(key) || customs.includes(key)), ...ALL_SECTIONS, ...customs])];
+  }
+
+  // Whether a section prints. Data saved before version 3 kept publications inside Academic, so
+  // without its own switch Publications follows Academic. Custom sections carry their own switch.
+  function sectionShown(resumeData, vis, key) {
+    if (key.startsWith(CUSTOM_PREFIX)) { const section = customSectionFor(resumeData, key); return !!section && section.visible !== false; }
+    if (key === 'publications' && typeof vis.publications !== 'boolean') return vis.academic !== false;
+    return vis[key] !== false;
+  }
+
+  function customSectionFor(resumeData, key) {
+    const id = String(key).slice(CUSTOM_PREFIX.length);
+    return (Array.isArray(resumeData.customSections) ? resumeData.customSections : []).find(s => s && s.id === id) || null;
+  }
+
+  // A custom section with something to print: { title, mode, paragraphs, entries }, or null.
+  function customContent(section) {
+    if (!section) return null;
+    const title = clean(section.title) || 'Additional information';
+    if (section.mode === 'text') {
+      const paragraphs = String(section.text || '').split(/\r?\n+/).map(clean).filter(Boolean);
+      return paragraphs.length ? { title, mode: 'text', paragraphs, entries: [] } : null;
+    }
+    const entries = (Array.isArray(section.entries) ? section.entries : []).filter(e => e && (clean(e.title) || clean(e.subtitle) || clean(e.date) || bulletLines(e.bulletsText).length))
+      .map(e => ({ heading: [clean(e.title), clean(e.subtitle)].filter(Boolean).join('  |  '), date: clean(e.date), bullets: bulletLines(e.bulletsText) }));
+    return entries.length ? { title, mode: 'entries', paragraphs: [], entries } : null;
+  }
+
+  // References: the "available on request" line, or one block per referee.
+  function referenceContent(resumeData, labelFor) {
+    if (resumeData.referencesOnRequest === true) return { onRequest: labelFor('referencesOnRequest'), items: [] };
+    const items = (Array.isArray(resumeData.references) ? resumeData.references : []).filter(r => r && clean(r.name))
+      .map(r => ({ name: clean(r.name), details: [clean(r.title), clean(r.organization)].filter(Boolean).join(', '), contact: clean(r.contact) }));
+    return items.length ? { onRequest: '', items } : null;
   }
 
   function visibility(resumeData, options) {
@@ -511,7 +556,7 @@
     if (key === 'volunteering') return (resumeData.volunteering || []).map(v => typeof v === 'string' ? text(v) : join([v.role, v.organization || v.org, v.duration])).filter(Boolean);
     if (key === 'languages') return (resumeData.languages || []).map(l => typeof l === 'string' ? text(l) : (clean(l.name) ? join([l.name, l.proficiency]) : '')).filter(Boolean);
     const acad = resumeData.academic || {};
-    if (key === 'publications') return (acad.publications || []).map(p => typeof p === 'string' ? text(p) : clean(p.title || p.citation)).filter(Boolean);
+    if (key === 'publications') return (Array.isArray(resumeData.publications) ? resumeData.publications : (acad.publications || [])).map(p => typeof p === 'string' ? text(p) : clean(p.title || p.citation)).filter(Boolean);
     if (key === 'teaching') return (acad.teaching || []).map(t => typeof t === 'string' ? text(t) : join([t.role || t.course, t.institution, t.term])).filter(Boolean);
     if (key === 'presentations') return (acad.presentations || []).map(p => typeof p === 'string' ? text(p) : join([p.title, p.event])).filter(Boolean);
     if (key === 'grants') return (acad.grants || []).map(g => typeof g === 'string' ? text(g) : join([g.title || g.name, g.funder, g.year])).filter(Boolean);
@@ -943,13 +988,53 @@
       pendingGap = sectionGap;
     }
     function renderAcademic() {
-      for (const key of ['publications', 'teaching', 'presentations', 'grants']) renderBulletSection(key);
+      for (const key of ['teaching', 'presentations', 'grants']) renderBulletSection(key);
+    }
+    function renderParagraphs(paragraphs) {
+      for (const paragraph of paragraphs) {
+        for (const line of splitTextToLines(paragraph, baseFontSize, contentWidth, fontKey)) {
+          ensureSpace(baseFontSize + 3.5);
+          doc.drawText(line, marginLeft, currentY + baseFontSize, { fontSize: baseFontSize, fontStyle: 'normal', color: [0.1, 0.1, 0.1] });
+          currentY += baseFontSize + (isCompact ? 2.5 : 3.5);
+        }
+        currentY += isCompact ? 2 : 3;
+      }
+      currentY += isCompact ? 2 : 3;
+    }
+    function renderReferences() {
+      const refs = referenceContent(resumeData, layout.label);
+      if (!refs) return;
+      renderSectionHeader(layout.label('references'), 1);
+      if (refs.onRequest) { drawWrapped(refs.onRequest, baseFontSize, 'normal', [0.1, 0.1, 0.1]); pendingGap = sectionGap; return; }
+      for (const ref of refs.items) {
+        ensureSpace(isCompact ? 20 : 26);
+        renderEntryHeading(ref.name, '', isCompact ? 2 : 3);
+        if (ref.details) drawWrapped(ref.details, baseFontSize - 0.5, 'normal', [0.2, 0.2, 0.2]);
+        if (ref.contact) drawWrapped(ref.contact, baseFontSize - 0.5, 'normal', [0.2, 0.2, 0.2]);
+        currentY += isCompact ? 3 : 4;
+      }
+      pendingGap = sectionGap;
+    }
+    function renderCustom(key) {
+      const content = customContent(customSectionFor(resumeData, key));
+      if (!content) return;
+      renderSectionHeader(content.title);
+      if (content.mode === 'text') { renderParagraphs(content.paragraphs); return; }
+      for (const entry of content.entries) {
+        ensureSpace(isCompact ? 20 : 28);
+        if (entry.heading || entry.date) renderEntryHeading(entry.heading, entry.date, isCompact ? 3 : 4);
+        renderBullets(entry.bullets.join('\n'));
+        currentY += isCompact ? 3 : 4;
+      }
+      currentY += isCompact ? 2 : 4;
     }
 
     // Render sections in configured order
     for (const secKey of sectionOrder) {
-      if (vis[secKey] === false) continue;
-      if (secKey === 'summary') renderSummary();
+      if (!sectionShown(resumeData, vis, secKey)) continue;
+      if (secKey.startsWith(CUSTOM_PREFIX)) renderCustom(secKey);
+      else if (secKey === 'references') renderReferences();
+      else if (secKey === 'summary') renderSummary();
       else if (secKey === 'experience') renderExperience();
       else if (secKey === 'education') renderEducation();
       else if (secKey === 'projects') renderProjects();
@@ -1002,12 +1087,42 @@
     }
 
     for (const secKey of sectionOrder) {
-      if (vis[secKey] === false) continue;
+      if (!sectionShown(resumeData, vis, secKey)) continue;
 
       if (secKey === 'summary' && clean(resumeData.summary)) {
         addHeader(layout.title('summary'));
         lines.push(clean(resumeData.summary));
       }
+
+      if (secKey.startsWith(CUSTOM_PREFIX)) {
+        const content = customContent(customSectionFor(resumeData, secKey));
+        if (content) {
+          addHeader(content.title);
+          if (content.mode === 'text') content.paragraphs.forEach((paragraph, index) => { if (index) lines.push(''); lines.push(paragraph); });
+          else content.entries.forEach((entry, index) => {
+            if (index) lines.push('');
+            if (entry.heading) lines.push(entry.heading.replace(/\s+\|\s+/g, ' | '));
+            if (entry.date) lines.push(entry.date);
+            entry.bullets.forEach(b => lines.push(`* ${b}`));
+          });
+        }
+      }
+
+      if (secKey === 'references') {
+        const refs = referenceContent(resumeData, layout.label);
+        if (refs) {
+          addHeader(layout.label('references'));
+          if (refs.onRequest) lines.push(refs.onRequest);
+          refs.items.forEach((ref, index) => {
+            if (index) lines.push('');
+            lines.push(ref.name);
+            if (ref.details) lines.push(ref.details);
+            if (ref.contact) lines.push(ref.contact);
+          });
+        }
+      }
+
+      if (secKey === 'publications') addBulletSection(layout.label('publications'), optionalEntries(resumeData, 'publications'));
 
       if (secKey === 'experience') {
         const entries = (resumeData.experience || []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || clean(exp.duration) || clean(exp.location) || bulletLines(exp.bulletsText).length));
@@ -1073,7 +1188,7 @@
       }
 
       if (secKey === 'academic') {
-        for (const key of ['publications', 'teaching', 'presentations', 'grants']) addBulletSection(layout.label(key), optionalEntries(resumeData, key));
+        for (const key of ['teaching', 'presentations', 'grants']) addBulletSection(layout.label(key), optionalEntries(resumeData, key));
       }
     }
 
@@ -1090,6 +1205,11 @@
     sanitizeUrl,
     bulletLines,
     optionalEntries,
+    orderedSections,
+    sectionShown,
+    customSectionFor,
+    customContent,
+    referenceContent,
     cleanInvisible,
     A4_WIDTH,
     A4_HEIGHT,
