@@ -1,5 +1,5 @@
 /**
- * ApplyReady.in - Comprehensive Verification & Test Suite
+ * ApplyReady - Comprehensive Verification & Test Suite
  * Runs automated regression checks across PDF engine, Resizer validator,
  * Resume backup schema, SEO metadata, sitemap validity, asset links,
  * and WCAG AA contrast ratios.
@@ -1088,6 +1088,22 @@ console.log('SUITE 17: Schema version 3 and the resume library');
   assert(opened.ok && opened.record.trimmed === true && opened.record.data.summary.length === SCHEMA.MAX_TEXT, 'The library opens a record over the limits, shortened and marked as such');
   assert(LIB.inspect({ id: 'r_fit', data: shortened }).record.trimmed === undefined, 'A record within the limits is not marked as shortened');
   assert(!LIB.inspect({ id: 'r_bad', data: { personal: 7 } }).ok, 'A malformed record is still damaged');
+  // Branding (SEO-03): file properties name the brand, "ApplyReady", not the old "ApplyReady.in".
+  const pdfInfo = generateResumePDF(v3).build();
+  const pdfString = value => '<FEFF' + [...value].map(c => c.charCodeAt(0).toString(16).padStart(4, '0').toUpperCase()).join('') + '>';
+  assert(pdfInfo.includes(`/Creator ${pdfString('ApplyReady Resume Builder')}`) && pdfInfo.includes(`/Producer ${pdfString('ApplyReady')}`), 'The resume PDF names its creator "ApplyReady Resume Builder" and producer "ApplyReady"');
+  const appXml = Buffer.from(generateResumeDOCX(v3).files.find(f => f.name === 'docProps/app.xml').data).toString('utf8');
+  assert(appXml.includes('<Application>ApplyReady Resume Builder</Application>'), 'The Word file names its application "ApplyReady Resume Builder"');
+  const oldBrand = [];
+  for (const dir of ['js', 'js/lib', 'js/workers', 'scripts', 'scripts/lib', 'docs', 'tests']) {
+    const full = path.join(repoRoot, dir);
+    if (!fs.existsSync(full)) continue;
+    for (const file of fs.readdirSync(full).filter(f => /\.(js|md|py)$/.test(f))) {
+      const content = fs.readFileSync(path.join(full, file), 'utf8').replace(/\/ApplyReady\\\.in\//g, '').replace(/"ApplyReady\.in"/g, '');
+      if (/ApplyReady\.in/.test(content)) oldBrand.push(`${dir}/${file}`);
+    }
+  }
+  assert(oldBrand.length === 0, oldBrand.length ? `The old brand "ApplyReady.in" is still in ${oldBrand.join(', ')}` : 'No script, test or doc uses the old brand "ApplyReady.in"');
 }
 
 console.log('');

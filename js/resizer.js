@@ -1,5 +1,5 @@
 /**
- * ApplyReady.in - General-Purpose Image Resizer & Strict Compressor
+ * ApplyReady - General-Purpose Image Resizer & Strict Compressor
  * 100% Client-Side Processing (HTML5 Canvas, Cropper.js)
  * Zero server uploads.
  */

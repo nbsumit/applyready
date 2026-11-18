@@ -1,5 +1,5 @@
 /**
- * ApplyReady.in - Vector Text PDF Engine
+ * ApplyReady - Vector Text PDF Engine
  * Pure client-side PDF 1.4 Generator with true selectable/searchable text,
  * clickable hyperlinks, deliberate pagination, A4 & US Letter support,
  * and support for all 8 ATS-friendly resume templates.
@@ -434,7 +434,7 @@
       const infoEntries = [['Title', this.metadata.title], ['Author', this.metadata.author], ['Subject', this.metadata.subject], ['Keywords', this.metadata.keywords]]
         .filter(([, value]) => typeof value === 'string' && value.trim())
         .map(([key, value]) => `/${key} ${pdfTextString(value.trim())}`);
-      infoEntries.push(`/Creator ${pdfTextString('ApplyReady.in Resume Builder')}`, `/Producer ${pdfTextString('ApplyReady.in')}`);
+      infoEntries.push(`/Creator ${pdfTextString('ApplyReady Resume Builder')}`, `/Producer ${pdfTextString('ApplyReady')}`);
       const infoId = addObject(`<< ${infoEntries.join(' ')} >>`);
 
       // Construct final output with xref table

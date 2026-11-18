@@ -1,5 +1,5 @@
 /**
- * ApplyReady.in - Pure Client-Side OOXML DOCX Generator
+ * ApplyReady - Pure Client-Side OOXML DOCX Generator
  * Generates true, editable Microsoft Word (.docx) files client-side
  * with zero external dependencies. Compatible with browsers and Node.js.
  */
@@ -309,7 +309,7 @@
 </cp:coreProperties>`);
     zip.addFile('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-  <Application>ApplyReady.in Resume Builder</Application>
+  <Application>ApplyReady Resume Builder</Application>
 </Properties>`);
 
     // 4. word/styles.xml

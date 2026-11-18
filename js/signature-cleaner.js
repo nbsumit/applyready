@@ -1,5 +1,5 @@
 /**
- * ApplyReady.in - Signature Background Cleaner
+ * ApplyReady - Signature Background Cleaner
  * 100% Client-Side In-Browser Tool
  * Whitens paper background, removes shadows, darkens ink lines,
  * and outputs clean JPEG (white bg) or transparent PNG.

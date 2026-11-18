@@ -1,4 +1,4 @@
-# ApplyReady.in - SEO & Search Console Setup Guide
+# ApplyReady - SEO & Search Console Setup Guide
 
 This document outlines the step-by-step instructions for the website owner to verify domain ownership, submit sitemaps, configure IndexNow, and monitor search indexing across Google and Bing.
 
