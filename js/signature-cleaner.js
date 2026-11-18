@@ -44,6 +44,8 @@
   let originalImageData = null;
   let processedBlobUrl = null;
   let debounceTimer = null;
+  let loadToken = 0;      // a photo that finishes loading after Remove or Replace is ignored
+  let encodeToken = 0;    // an encode that finishes after a newer one, or after Remove, is ignored
 
   function init() {
     if (!dropzone || !fileInput) return;
@@ -83,9 +85,10 @@
     });
 
     fileInput.addEventListener('change', () => {
-      if (fileInput.files && fileInput.files.length) {
-        handleFile(fileInput.files[0]);
-      }
+      const file = fileInput.files && fileInput.files[0];
+      // Cleared at once, so choosing the same file again (after Remove or Replace) still works.
+      fileInput.value = '';
+      if (file) handleFile(file);
     });
 
     if (btnRemoveFile) {
@@ -94,6 +97,10 @@
 
     if (btnReplaceFile) {
       btnReplaceFile.addEventListener('click', () => fileInput.click());
+    }
+
+    if (btnDownload) {
+      btnDownload.addEventListener('click', e => { if (!processedBlobUrl || !originalImageData) e.preventDefault(); });
     }
 
     // Sliders & controls
@@ -129,18 +136,25 @@
     }
   }
 
-  function handleFile(file) {
-    if (!file || !file.type.startsWith('image/')) {
+  async function handleFile(file) {
+    if (!file) return;
+    // Identify the file by its content, not its name or the type the browser reports.
+    if (window.ApplyReadyFiles) {
+      const check = await window.ApplyReadyFiles.validate(file, ['image'], 50 * 1024 * 1024);
+      if (!check.ok) { notifyError(check.error); return; }
+    } else if (!file.type.startsWith('image/')) {
       notifyError('That file is not a JPG, PNG or WebP image. Choose a photo of your signature.');
       return;
     }
 
+    const token = ++loadToken;
     originalFile = file;
     const reader = new FileReader();
     reader.onerror = () => { originalFile = null; notifyError('That file could not be read. Choose it again, or save a copy to your device first.'); };
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
+        if (token !== loadToken) return;
         originalImage = img;
         if (fileInfoBox) fileInfoBox.classList.remove('hidden');
         if (fileInfoText) fileInfoText.textContent = `${file.name} (${img.naturalWidth} × ${img.naturalHeight} px, ${(file.size / 1024).toFixed(1)} KB)`;
@@ -306,8 +320,10 @@
     const mimeType = isTransparent || (formatSelect && formatSelect.value === 'image/png') ? 'image/png' : 'image/jpeg';
     const quality = mimeType === 'image/jpeg' ? 0.92 : undefined;
 
+    const token = ++encodeToken;
     canvas.toBlob(blob => {
-      if (!blob) return;
+      if (token !== encodeToken || !originalImageData) return;
+      if (!blob) { notifyError('The cleaned signature could not be saved. The device may be low on memory; try a smaller photo.'); return; }
 
       if (processedBlobUrl) URL.revokeObjectURL(processedBlobUrl);
       processedBlobUrl = URL.createObjectURL(blob);
@@ -325,7 +341,12 @@
     }, mimeType, quality);
   }
 
+  // Remove leaves nothing of the signature behind: on a shared computer the next person must not
+  // be able to see or download it.
   function resetAll() {
+    loadToken++;
+    encodeToken++;
+    clearTimeout(debounceTimer);
     originalImage = null;
     originalFile = null;
     originalImageData = null;
@@ -333,6 +354,16 @@
       URL.revokeObjectURL(processedBlobUrl);
       processedBlobUrl = null;
     }
+    [canvas, originalCanvas].forEach(c => {
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, c.width, c.height);
+      c.width = 0;
+      c.height = 0;
+    });
+    if (btnDownload) { btnDownload.setAttribute('href', '#'); btnDownload.setAttribute('download', 'Cleaned_Signature.jpg'); }
+    if (statDimensions) statDimensions.textContent = '--';
+    if (statFileSize) statFileSize.textContent = '--';
     if (fileInput) fileInput.value = '';
     if (fileInfoBox) fileInfoBox.classList.add('hidden');
     if (previewArea) previewArea.classList.add('hidden');

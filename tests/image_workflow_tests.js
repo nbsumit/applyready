@@ -365,7 +365,7 @@ const EXPECTED = {
  },
  "remove:processDisabled": true,
  "invalidType": {
-  "err": "Unsupported format. Please select a JPG, PNG, WebP, GIF, BMP or AVIF image.",
+  "err": "doc.txt is a plain text file. This tool needs an image (JPEG, PNG, WebP).",
   "hasCropper": false
  }
 };
