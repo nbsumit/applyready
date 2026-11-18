@@ -87,49 +87,81 @@
   }
 
   /**
-   * True when an image file is a single still picture with no hidden details: no EXIF (camera,
-   * location, orientation), XMP, IPTC or text comments, and no animation. Such a file can be handed
-   * back as it is instead of a re-encoded copy without losing anything a new copy would remove.
-   * Anything not recognised, or not parsed to the end, counts as not plain.
+   * What an image file holds besides one still picture, as a sorted list of kinds:
+   *   'animation'   more than one frame (animated PNG or WebP)
+   *   'camera'      EXIF, which can include the camera, date, location and orientation
+   *   'description' XMP or IPTC description and editing data
+   *   'text'        text notes or comments (PNG text chunks, JPEG comments)
+   *   'date'        a PNG "last changed" time
+   *   'other'       other embedded data (unknown JPEG application segments, extra pictures)
+   * An empty list means a plain still picture: it can be handed back as it is instead of a re-encoded
+   * copy without losing anything a new copy would remove. null means the file is not a JPEG, PNG or
+   * WebP, or could not be read to the end, so nothing can be said about it.
    */
-  function plainStill(bytes) {
+  function hiddenParts(bytes) {
     const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
     const n = b.length;
+    const found = new Set();
+    const done = () => Array.from(found).sort();
     const u32 = i => ((b[i] << 24) >>> 0) + (b[i + 1] << 16) + (b[i + 2] << 8) + b[i + 3];
     const le32 = i => b[i] + (b[i + 1] << 8) + (b[i + 2] << 16) + ((b[i + 3] << 24) >>> 0);
     if (startsWith(b, [0xFF, 0xD8, 0xFF])) {
-      // Segments up to the image data. Kept: APP0 (JFIF), APP2 (colour profile), APP14 (Adobe colour).
+      // Segments up to the image data. Plain: APP0 (JFIF), APP2 colour profile, APP14 (Adobe colour).
       for (let i = 2; i + 4 <= n;) {
-        if (b[i] !== 0xFF) return false;
+        if (b[i] !== 0xFF) return null;
         const m = b[i + 1];
         if (m === 0xFF) { i++; continue; }
         if (m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { i += 2; continue; }
-        if (m === 0xDA) return true;
-        if (m === 0xD9) return false;
-        if (m === 0xFE || (m >= 0xE1 && m <= 0xEF && m !== 0xE2 && m !== 0xEE)) return false;
-        i += 2 + ((b[i + 2] << 8) | b[i + 3]);
+        if (m === 0xDA) return done();
+        if (m === 0xD9) return null;
+        const len = (b[i + 2] << 8) | b[i + 3];
+        const sig = ascii(b, i + 4, Math.min(n, i + 4 + Math.min(len - 2, 32)));
+        if (m === 0xFE) found.add('text');
+        else if (m === 0xE1) found.add(sig.startsWith('Exif') ? 'camera' : /^http:\/\/ns\.adobe\.com\/(xap|xmp)/.test(sig) ? 'description' : 'other');
+        else if (m === 0xED) found.add('description');
+        else if (m === 0xE2) { if (!sig.startsWith('ICC_PROFILE')) found.add('other'); }  // MPF: more pictures after this one
+        else if (m >= 0xE3 && m <= 0xEF && m !== 0xEE) found.add('other');
+        i += 2 + len;
       }
-      return false;
+      return null;
     }
     if (startsWith(b, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) {
       for (let i = 8; i + 8 <= n;) {
         const len = u32(i), type = ascii(b, i + 4, i + 8);
-        if (/^(tEXt|zTXt|iTXt|eXIf|tIME|acTL)$/.test(type)) return false;
-        if (type === 'IEND') return true;
+        if (type === 'IEND') return done();
+        if (type === 'acTL') found.add('animation');
+        else if (type === 'eXIf') found.add('camera');
+        else if (type === 'tIME') found.add('date');
+        else if (/^(tEXt|zTXt|iTXt)$/.test(type)) {
+          const key = ascii(b, i + 8, Math.min(n, i + 8 + Math.min(len, 80))).split('\0')[0];
+          found.add(key === 'XML:com.adobe.xmp' ? 'description' : 'text');
+        }
         i += 12 + len;
       }
-      return false;
+      return null;
     }
     if (ascii(b, 0, 4) === 'RIFF' && ascii(b, 8, 12) === 'WEBP') {
       for (let i = 12; i + 8 <= n;) {
         const type = ascii(b, i, i + 4), len = le32(i + 4);
-        if (type === 'VP8X' && (b[i + 8] & 0x0E)) return false;   // animation, EXIF or XMP flag
-        if (/^(EXIF|XMP |ANIM|ANMF)$/.test(type)) return false;
+        if (type === 'VP8X') {
+          if (b[i + 8] & 0x02) found.add('animation');
+          if (b[i + 8] & 0x04) found.add('description');
+          if (b[i + 8] & 0x08) found.add('camera');
+        }
+        if (type === 'ANIM' || type === 'ANMF') found.add('animation');
+        else if (type === 'EXIF') found.add('camera');
+        else if (type === 'XMP ') found.add('description');
         i += 8 + len + (len & 1);
       }
-      return true;
+      return done();
     }
-    return false;
+    return null;
+  }
+
+  /** True when an image file is a single still picture with no hidden details (see hiddenParts). */
+  function plainStill(bytes) {
+    const parts = hiddenParts(bytes);
+    return !!parts && parts.length === 0;
   }
 
   function stem(name) {
@@ -203,5 +235,5 @@
     return { ok: true, info };
   }
 
-  return { sniff, sniffFile, plainStill, safeFileName, withoutHiddenDirection, withExtension, stem, formatBytes, formatOver, download, validate, LIMITS };
+  return { sniff, sniffFile, hiddenParts, plainStill, safeFileName, withoutHiddenDirection, withExtension, stem, formatBytes, formatOver, download, validate, LIMITS };
 });

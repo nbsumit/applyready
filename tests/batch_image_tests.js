@@ -146,6 +146,12 @@ noisy.save(f'{d}/small_plain.jpg', quality=20)
 # The same small photo with EXIF and GPS: the original is not handed back, its details would go with it.
 ex = Image.Exif(); ex[0x010F] = 'TestCam'; ex[0x8825] = {1: 'N', 2: (28.0, 36.0, 50.0), 3: 'E', 4: (77.0, 12.0, 30.0)}
 noisy.save(f'{d}/small_exif.jpg', quality=20, exif=ex.tobytes())
+# An animated WebP (the copy is its first frame) and a PNG with only a text note: each note names its own reason.
+frames = [Image.new('RGB', (24, 24), c) for c in [(200, 0, 0), (0, 200, 0), (0, 0, 200)]]
+frames[0].save(f'{d}/anim.webp', save_all=True, append_images=frames[1:], duration=100, loop=0, lossless=True)
+from PIL import PngImagePlugin
+info = PngImagePlugin.PngInfo(); info.add_text('Software', 'Shot 1.0')
+Image.new('RGB', (40, 30), (30, 90, 160)).save(f'{d}/shot.png', optimize=True, pnginfo=info)
 `, FIX);
 const fix = f => path.join(FIX, f);
 const payload = (file, name, mimeType) => ({ name: name || path.basename(file), mimeType: mimeType || 'application/octet-stream', buffer: fs.readFileSync(file) });
@@ -657,8 +663,8 @@ im = Image.open(sys.argv[1]); print(json.dumps({'fmt': im.format, 'size': im.siz
     // The compressor never hands back a bigger file when the original already met the settings and
     // has no hidden details; a photo with EXIF and GPS gets a clean copy and a note instead.
     const { context, page } = await open('compress-image.html');
-    await page.setInputFiles('#batchDropInput', [fix('small_alpha.png'), fix('small_plain.jpg'), fix('small_exif.jpg')]);
-    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 3);
+    await page.setInputFiles('#batchDropInput', [fix('small_alpha.png'), fix('small_plain.jpg'), fix('small_exif.jpg'), fix('anim.webp'), fix('shot.png')]);
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 5);
     await page.click('#btnBatchStart');
     await waitIdle(page);
     const res = await page.evaluate(() => Object.fromEntries(window.ApplyReadyBatchImage.items.map(i => [i.name, { kept: !!i.result.kept, bytes: i.result.bytes, notes: i.result.notes.join(' ') }])));
@@ -668,7 +674,11 @@ im = Image.open(sys.argv[1]); print(json.dumps({'fmt': im.format, 'size': im.siz
     }
     ok(res['small_plain.jpg'].kept && /original \([^)]+\) is kept as it is/.test(res['small_plain.jpg'].notes), `a small plain JPEG is kept as it was, and the row says so (${res['small_plain.jpg'].notes})`);
     ok(!res['small_exif.jpg'].kept, 'the photo with EXIF and GPS is never handed back as it is');
-    if (res['small_exif.jpg'].bytes >= fs.statSync(fix('small_exif.jpg')).size) ok(/hidden details, such as camera or location data/.test(res['small_exif.jpg'].notes), `a larger clean copy says why the smaller original was not used (${res['small_exif.jpg'].notes})`);
+    if (res['small_exif.jpg'].bytes >= fs.statSync(fix('small_exif.jpg')).size) ok(/hidden details that this copy leaves out: photo data \(EXIF\), which can include the camera, date and location\./.test(res['small_exif.jpg'].notes), `a larger clean copy says why the smaller original was not used (${res['small_exif.jpg'].notes})`);
+    // The note names the real reason: an animation is not "camera or location data".
+    for (const n of ['anim.webp', 'shot.png']) ok(!res[n].kept && res[n].bytes >= fs.statSync(fix(n)).size, `${n}: a larger clean copy, not the original (${res[n].bytes} of ${fs.statSync(fix(n)).size} bytes)`);
+    ok(/is animated, and this copy is a still picture of its first frame\./.test(res['anim.webp'].notes) && /accepts animated pictures\./.test(res['anim.webp'].notes) && !/camera|location|hidden details/.test(res['anim.webp'].notes), `animated WebP: the note says the copy is its first frame (${res['anim.webp'].notes})`);
+    ok(/hidden details that this copy leaves out: text notes or comments, such as the program that made it\./.test(res['shot.png'].notes) && !/camera|location|animated/.test(res['shot.png'].notes), `PNG with a text note: the note names text notes, not camera data (${res['shot.png'].notes})`);
     const zip = await saveDownload(page, () => page.click('#btnBatchZip'), 'compressed-small.zip');
     const out = fs.mkdtempSync(path.join(tmp, 'small-'));
     sh('unzip', ['-q', '-o', zip.file, '-d', out]);
@@ -680,6 +690,10 @@ print(json.dumps(len(Image.open(sys.argv[1]).getexif())))
 `, path.join(out, 'small_exif.jpg')));
     ok(exifLeft === 0, 'the copy of the EXIF photo in the ZIP has no EXIF');
     ok(/already met the settings and (is|are) kept as/.test(await page.locator('#batchVerdictText').textContent()), 'the verdict says how many originals were kept');
+    // The title does not call a kept original "compressed".
+    const keptN = Object.values(res).filter(r => r.kept).length;
+    const title = (await page.locator('#batchVerdictTitle').textContent()).trim();
+    ok(keptN >= 1 && title === `${5 - keptN} images compressed, ${keptN} kept as ${keptN === 1 ? 'it was' : 'they were'}`, `the verdict title counts kept originals on their own (${title})`);
     await context.close();
   }
   {

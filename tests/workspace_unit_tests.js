@@ -226,6 +226,16 @@ const blob = (type) => ({ type: type || 'image/jpeg', size: 10 });
     ok(Files.plainStill(riff(wchunk('VP8 ', [1, 2, 3, 4]))), 'a simple WebP is plain');
     ok(!Files.plainStill(riff(wchunk('VP8X', [0x08, 0, 0, 0, 0, 0, 0, 0, 0, 0]), wchunk('VP8 ', [1, 2]), wchunk('EXIF', [1, 2, 3]))) && !Files.plainStill(riff(wchunk('VP8X', [0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0]))), 'WebP with EXIF or animation is not plain');
     ok(!Files.plainStill(bytes('GIF89a')) && !Files.plainStill(new Uint8Array(0)), 'other types and nothing at all are not plain');
+    // What is hidden, so a note can name the real reason (animation is not "camera or location data").
+    const parts = b => JSON.stringify(Files.hiddenParts(b));
+    ok(parts(jpeg(jfif, seg(0xE1, bytes('Exif\0\0MM')))) === '["camera"]' && parts(jpeg(jfif, seg(0xE1, bytes('http://ns.adobe.com/xap/1.0/\0')))) === '["description"]', 'JPEG: EXIF is camera data, XMP is description data');
+    ok(parts(jpeg(jfif, seg(0xFE, bytes('hi')), seg(0xED, bytes('Photoshop 3.0\0')))) === '["description","text"]', 'JPEG: a comment is text, IPTC is description; every kind is listed');
+    ok(parts(jpeg(jfif, seg(0xE2, bytes('MPF\0II*\0')))) === '["other"]' && parts(jpeg(jfif, seg(0xE2, bytes('ICC_PROFILE\0')))) === '[]', 'JPEG: extra pictures (MPF) are hidden data, a colour profile is not');
+    ok(parts(png(chunk('tEXt', bytes('Software\0Shot 1.0')))) === '["text"]' && parts(png(chunk('iTXt', bytes('XML:com.adobe.xmp\0\0\0\0\0<x/>')))) === '["description"]', 'PNG: a text note is text, XMP in iTXt is description');
+    ok(parts(png(chunk('acTL', [0, 0, 0, 3, 0, 0, 0, 0]))) === '["animation"]' && parts(png(chunk('tIME', [7, 234, 1, 1, 0, 0, 0]), chunk('eXIf', [1]))) === '["camera","date"]', 'PNG: animation, a saved time and EXIF');
+    ok(parts(riff(wchunk('VP8X', [0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0]), wchunk('ANIM', [0, 0, 0, 0, 0, 0]), wchunk('ANMF', [1, 2]))) === '["animation"]', 'WebP: an animation is only animation');
+    ok(parts(riff(wchunk('VP8X', [0x0C, 0, 0, 0, 0, 0, 0, 0, 0, 0]), wchunk('VP8 ', [1, 2]))) === '["camera","description"]', 'WebP: the EXIF and XMP flags');
+    ok(Files.hiddenParts(bytes('GIF89a')) === null && Files.hiddenParts(new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0, 0, 16, 1, 2])) === null, 'unknown types and cut-off files say nothing (null)');
   }
 
   console.log(`✓ applicant workspace model: ${checks} checks passed`);

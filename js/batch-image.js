@@ -218,6 +218,21 @@
     return { s, errors };
   }
 
+  const keptCount = done => done.filter(i => i.result && i.result.kept).length;
+
+  /**
+   * "6 images compressed": an original kept as it was is not compressed or converted, so those are
+   * counted on their own ("4 compressed, 2 kept as they were"). "Ready" is true of both, so the batch
+   * tool keeps one count. With `of`, the count is out of that many ("4 of 7 images compressed, …").
+   */
+  function doneTitle(count, kept, of) {
+    const asWas = n => `kept as ${n === 1 ? 'it was' : 'they were'}`;
+    const head = n => (of ? `${n} of ${of} images` : plural(n, 'image'));
+    if (!kept || DONE_WORD === 'ready') return `${head(count)} ${DONE_WORD}`;
+    if (kept === count) return `${head(kept)} ${asWas(kept)}`;
+    return `${head(count - kept)} ${DONE_WORD}, ${kept} ${asWas(kept)}`;
+  }
+
   function settingsChanged() {
     renderSettings();
     rowsDirty = true;
@@ -269,9 +284,9 @@
     }
     if (result.bytes >= item.size) {
       const kept = await keepOriginal(item, settings, opts, result);
-      if (kept) return Object.assign(kept, { key });
-      if (kept === false) {
-        notes.push(`The original (${fmt(item.size)}) is smaller, but it holds hidden details, such as camera or location data, that this copy leaves out. Upload the original instead only if those details do not matter.`);
+      if (kept && kept.kept) return Object.assign(kept, { key });
+      if (kept) {
+        notes.push(hiddenNote(item.size, kept.hidden));
       } else if (settings.resize === 'none' && settings.format === 'keep') {
         notes.push(opts.maxBytes && item.size <= opts.maxBytes
           ? `The original (${fmt(item.size)}) was already under the limit and is smaller than this copy. You can upload the original instead.`
@@ -281,11 +296,39 @@
     return { blob: result.blob, mime: result.mime, width: result.width, height: result.height, bytes: result.bytes, notes, key };
   }
 
+  // What each kind of hidden content (Files.hiddenParts) is, in a row note.
+  const HIDDEN_WORDS = {
+    camera: 'photo data (EXIF), which can include the camera, date and location',
+    description: 'description or editing data (XMP or IPTC)',
+    text: 'text notes or comments, such as the program that made it',
+    date: 'the date it was last changed',
+    other: 'other embedded data'
+  };
+
+  /**
+   * Why a smaller original was not kept, by cause: an animation becomes a still copy of its first
+   * frame, which is not the same as leaving out hidden details. `hidden` is a hiddenParts list, or
+   * null when the original could not be read to the end.
+   */
+  function hiddenNote(size, hidden) {
+    const was = `The original (${fmt(size)}) is smaller`;
+    if (!hidden) return `${was}, but parts of it could not be read, so it may hold hidden details that this copy leaves out. Upload the original instead only if that does not matter.`;
+    const details = hidden.filter(k => k !== 'animation').map(k => HIDDEN_WORDS[k] || HIDDEN_WORDS.other);
+    const list = details.join('; ');
+    if (hidden.includes('animation')) {
+      return `${was}, but it is animated, and this copy is a still picture of its first frame.`
+        + (details.length ? ` The original also holds hidden details that this copy leaves out: ${list}.` : '')
+        + ` Upload the original instead only if the place you are sending it to accepts animated pictures${details.length ? ' and those details do not matter' : ''}.`;
+    }
+    return `${was}, but it holds hidden details that this copy leaves out: ${list}. Upload the original instead only if those details do not matter.`;
+  }
+
   /**
    * A new copy came out no smaller than the original. When the original already meets every setting
    * (same format, same pixel size, within the KB limits) and holds nothing a new copy would remove
    * (EXIF, location, comments, animation), the original is the better file: it is kept as the result.
-   * Returns that result, false when only hidden details stand in the way, or null when it does not apply.
+   * Returns that result (with kept: true), { hidden } when only what the original holds stands in the
+   * way (a hiddenParts list, or null when it could not be read), or null when it does not apply.
    */
   async function keepOriginal(item, settings, opts, result) {
     const mime = item.meta.mime || item.file.type;
@@ -295,7 +338,8 @@
     try { bytes = new Uint8Array(await item.file.arrayBuffer()); } catch (e) { return null; }
     const head = Ops.readHeader(bytes);
     if (!head || head.width !== result.width || head.height !== result.height) return null;
-    if (!Files.plainStill(bytes)) return false;
+    const hidden = Files.hiddenParts(bytes);
+    if (!hidden || hidden.length) return { hidden };
     return {
       blob: item.file, mime, width: head.width, height: head.height, bytes: item.size, kept: true,
       notes: [`A new copy would have been larger (${fmt(result.bytes)}), so the original (${fmt(item.size)}) is kept as it is. It already meets these settings and holds no hidden photo details.`]
@@ -561,7 +605,8 @@
     refresh();
     if (!finishedRun || finishedRun.cancelled) return;
     const done = summary.done, failed = summary.error + summary.cancelled;
-    Kit.announce(failed ? `Finished. ${done} of ${summary.total} images ${DONE_WORD}; ${plural(failed, 'image')} failed or cancelled.` : `Finished. ${plural(done, 'image')} ${DONE_WORD}.`);
+    const kept = keptCount(queue.items.filter(i => i.status === 'done'));
+    Kit.announce(failed ? `Finished. ${doneTitle(done, kept, summary.total)}; ${plural(failed, 'image')} failed or cancelled.` : `Finished. ${doneTitle(done, kept)}.`);
   }
 
   function cancel() {
@@ -777,18 +822,18 @@
     if (showResult) {
       const outBytes = done.reduce((sum, i) => sum + (i.result ? i.result.bytes : 0), 0);
       const inBytes = done.reduce((sum, i) => sum + i.size, 0);
+      const kept = keptCount(done);
       if (!failed) {
         el.verdictIcon.className = 'fa-solid fa-check';
         el.verdict.classList.remove('is-warning');
-        el.verdictTitle.textContent = `${plural(done.length, 'image')} ${DONE_WORD}`;
+        el.verdictTitle.textContent = doneTitle(done.length, kept);
       } else {
         el.verdictIcon.className = 'fa-solid fa-triangle-exclamation';
         el.verdict.classList.add('is-warning');
-        el.verdictTitle.textContent = done.length ? `${done.length} of ${summary.done + failed} images ${DONE_WORD}` : 'No images could be processed';
+        el.verdictTitle.textContent = done.length ? doneTitle(done.length, kept, summary.done + failed) : 'No images could be processed';
       }
       const facts = [];
       if (done.length) facts.push(`${fmt(outBytes)} in total, from ${fmt(inBytes)}.`);
-      const kept = done.filter(i => i.result && i.result.kept).length;
       if (kept) facts.push(`${kept === done.length && kept > 1 ? `All ${kept}` : plural(kept, 'image')} already met the settings and ${kept === 1 ? 'is' : 'are'} kept as ${kept === 1 ? 'it was' : 'they were'}, because a new copy would have been larger.`);
       if (summary.error) facts.push(`${plural(summary.error, 'image')} failed; each row says why.`);
       if (summary.cancelled) facts.push(`${plural(summary.cancelled, 'image')} cancelled.`);
@@ -825,7 +870,7 @@
       // The download is the result's own button; the bar does not repeat it, it only says where things stand.
       label = 'All images processed';
       note = toDownload && done.length
-        ? `${describe(s)}. ${plural(done.length, 'image')} ${DONE_WORD}; download ${done.length === 1 ? 'it' : 'them'} from the result.`
+        ? `${describe(s)}. ${doneTitle(done.length, keptCount(done))}; download ${done.length === 1 ? 'it' : 'them'} from the result.`
         : `${describe(s)}. Change a setting or add images to process more.`;
     }
     else label = `${VERB} images`;
