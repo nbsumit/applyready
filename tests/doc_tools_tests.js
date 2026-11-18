@@ -423,6 +423,12 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     ok(await page.locator('#ydResumeCount').innerText() === '1 earlier draft' && await page.locator('#ydResumeEmpty').isHidden(), 'your data: an earlier draft is counted');
     const draftRow = await page.locator('#ydResumeList [data-legacy]').innerText();
     ok(/Draft from an earlier version: Previous Person/.test(draftRow) && /1 Jun 2026/.test(draftRow), `your data: the earlier draft is listed with its name and date (${draftRow})`);
+    // On a phone the name wraps instead of being cut off: it is how a shared-computer user tells whose draft it is.
+    const wideView = page.viewportSize();
+    await page.setViewportSize({ width: 360, height: 740 });
+    const draftName = await page.locator('#ydResumeList [data-legacy] .file-row__name').evaluate(el => ({ fits: el.scrollWidth <= el.clientWidth + 1, text: el.textContent, pageFits: document.documentElement.scrollWidth <= 360 }));
+    ok(draftName.fits && draftName.pageFits && /: Previous Person/.test(draftName.text), `your data at 360px: the earlier draft's name is shown in full, not cut off (${JSON.stringify(draftName)})`);
+    await page.setViewportSize(wideView);
     await axe(page, 'your data, earlier draft');
     const draftFile = await download(page, () => page.click('[data-act="legacy-download"]'));
     const draftBody = JSON.parse(fs.readFileSync(draftFile.file, 'utf8'));
