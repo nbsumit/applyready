@@ -128,13 +128,13 @@
   let skippedNotice = null;
   const isPdf = f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
   const nameList = files => files.slice(0, 3).map(f => '"' + f.name + '"').join(', ') + (files.length > 3 ? ' and ' + (files.length - 3) + ' more' : '');
-  function showSkipped(pdfs, others) {
+  function showSkipped(pdfs, others, announce) {
     // A new element each time: an alert is announced when it is added, not when it is unhidden.
     hideSkipped();
     skippedNotice = doc.createElement('div');
     skippedNotice.className = 'notice notice--warning';
     skippedNotice.id = 'imgPdfSkipped';
-    skippedNotice.setAttribute('role', 'alert');
+    if (announce) skippedNotice.setAttribute('role', 'alert');
     const icon = doc.createElement('i');
     icon.className = 'fa-solid fa-triangle-exclamation';
     icon.setAttribute('aria-hidden', 'true');
@@ -167,9 +167,14 @@
     const all = Array.from(fileList);
     const validFiles = all.filter(f => f.type.startsWith('image/'));
     const skipped = all.filter(f => !f.type.startsWith('image/'));
-    if (skipped.length) showSkipped(skipped.filter(isPdf), skipped.filter(f => !isPdf(f)));
+    // With nothing usable, the site's notification says so (and is announced); the notice keeps the
+    // details on the page. Otherwise the notice itself is the announcement.
+    if (skipped.length) showSkipped(skipped.filter(isPdf), skipped.filter(f => !isPdf(f)), validFiles.length > 0);
     else hideSkipped();
-    if (!validFiles.length) return;
+    if (!validFiles.length) {
+      notifyError(skipped.some(isPdf) ? 'No images were added. This tool takes JPG, PNG or WebP images; choose Merge PDF to combine PDFs.' : 'Those files could not be used. Choose JPG, PNG or WebP images.');
+      return;
+    }
 
     // Files finish loading in any order; keep the order they were chosen in.
     const loadedItems = new Array(validFiles.length).fill(null);

@@ -129,6 +129,8 @@ function mixedPdf(jpeg) {
   await page.setInputFiles('#imgPdfFileInput', [{ name: 'only.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF\n') }, { name: 'notes.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: Buffer.from('PK') }]);
   const onlyPdf = await page.evaluate(() => { const n = document.getElementById('imgPdfSkipped'); return n && { text: n.textContent, visible: !!n.offsetParent }; });
   ok(onlyPdf && onlyPdf.visible && /only\.pdf/.test(onlyPdf.text) && /notes\.docx/.test(onlyPdf.text) && /JPG, PNG or WebP/.test(onlyPdf.text), `with no image chosen, the notice still explains every file (${JSON.stringify(onlyPdf)})`);
+  await page.locator('#taskNotification.is-visible').waitFor({ state: 'visible', timeout: 6000 });
+  ok(/Merge PDF/.test(await page.locator('#taskNotification').innerText()), 'with no image chosen, the notification says so and names Merge PDF');
   console.log('✓ Image to PDF names skipped PDFs and points to Merge PDF');
 
   // 5. The contact form explains an empty message instead of opening a blank email.
