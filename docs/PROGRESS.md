@@ -5,9 +5,47 @@ It is updated at the end of each phase.
 
 ## Current phase
 
-Phases 2 to 4 (resume library, PDF tools, batch images, document tools) are being built in parallel
-branches, each followed by an independent review. Phase 6 and 7 work that does not depend on them
-(trust pages, open-source files) is under way on the main branch.
+Phase 5 (applicant workspaces) and the Phase 6 tutorials with genuine screenshots are being built,
+each followed by an independent review. Privacy policy, terms and changelog are rewritten.
+
+## Phases 2 to 4: resume library, PDF tools, batch images, document tools (complete, 18 Nov 2026)
+
+Each feature was built on its own branch and then reviewed by a second, independent engineer who
+used it as real people would, tried to break it, verified outputs with outside tools and fixed what
+they found. Reviews caught real defects that the builders' own tests missed, among them: double clicks
+creating duplicate resumes; Compress PDF's main button doing nothing; files swapped mid-job mixing
+results; the image compressor sending 12 MP photos at 8% quality instead of shrinking them; deleted
+resumes being written back by an open builder tab; keyboard focus lost after actions.
+
+- **Resume builder (Phase 2):** IndexedDB library with autosave (debounced, flushed on tab hide/close),
+  save status, multiple resumes (open, rename, duplicate, delete, delete all), last-opened and `?id=`
+  reopening, one-time migration of the old draft, JSON export of one or all and import of both formats
+  and old backups, damaged-record handling, cross-tab conflict handling, "Save on this device" switch
+  for shared computers, memory-only warning. Schema v3 with References, Custom sections and a separate
+  Publications section, in preview, PDF, Word and text. All 15 templates render differently; unverified
+  ATS claims removed. Home page "Continue editing" cards.
+- **PDF tools (Phase 3):** Merge, Split (4 modes), Organise (reorder, rotate, delete, insert), PDF to
+  images, Extract text, Add page numbers, Watermark; Compress PDF rebuilt on page rendering (keeps
+  every page, order, size and rotation; says pages become images). Password-protected PDFs open with
+  the password in an accessible dialog. Every output is reopened and checked before download.
+- **Images and batch (Phases 3 and 4):** one batch engine behind the batch image processor, image
+  compressor and image converter: Web Worker pool, per-file status and progress, cancel, retry,
+  stale-result detection, individual or ZIP download, duplicate names, 500-file cap, unload guard.
+  Passport photo and signature resizer pages. Privacy fixes in passport print and signature cleaner;
+  EXIF rotation fix in the resizer.
+- **Document tools:** File checker (real type, sizes, image DPI/EXIF/GPS, PDF and Office metadata,
+  requirement check, lossless metadata removal verified pixel by pixel), Text to PDF (WinAnsi
+  character check with replacements and a print fallback), Your data (everything stored, export,
+  import, delete all, persistence, offline copy).
+
+Integration: four merges, with conflicts only in generated files (regenerated) and CSS section
+boundaries. Two merges dropped a closing brace at a section seam, nesting later sections inside a
+media query; caught by tests, fixed, and a stylesheet brace-balance check added to the content tests.
+
+Verification on the merged tree (18 Nov): `npm test` 635 unit, 55 regression, 88 document-tool and
+7,955 content assertions; browser suites: browser tests, image workflow 279, resume flow 67, resume
+library 142, UI suite (55 pages at 32 widths, axe light and dark), robustness 14, PDF tools 191,
+batch images, document tools 135, smoke: all pass.
 
 ## Phase 1: cleanup and identity (complete, 18 Nov 2026)
 
