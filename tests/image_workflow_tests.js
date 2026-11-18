@@ -174,16 +174,17 @@ const EXPECTED = {
   "resultShown": true,
   "error": null,
   "w": 413,
-  "h": 354,
+  "h": 350,
   "type": "image/jpeg",
-  "dl": "src_Custom_413x354.jpg",
+  "dl": "src_Custom_413x350.jpg",
   "status": "Under the 60 KB limit, at the exact size requested.",
-  "dims": "413 × 354 px, verified",
+  "dims": "413 × 350 px, verified",
   "fmt": "JPEG",
   "limit": "Under 60 KB (61,440 bytes)",
   "bytesOk": true
  },
- "unit:in:afterW": "1.18",
+ "unit:cm:label": "413 × 350 px (3.5 × 2.96 cm at 300 DPI)",
+ "unit:in:afterW": "1.17",
  "unit:in:fields": {
   "w": "2",
   "h": "2",
@@ -428,7 +429,9 @@ const EXPECTED = {
   rec['unit:cm:labels'] = [await page.locator('#customWidthLabel').textContent(), await page.locator('#customHeightLabel').textContent()].map(s => s.trim());
   await setSel('dpiSelect', '300'); await setNum('customWidth', 3.5); await setNum('customMaxKB', 60);
   rec['unit:cm:fields'] = { w: await val('customWidth'), h: await val('customHeight') };
+  // The height was not typed: it shows 350 px as 3.0 cm and keeps its 350 px (2.96 cm), not 354.
   await runProc('unit:cm:result');
+  rec['unit:cm:label'] = (await page.locator('#resultTargetDims').textContent()).trim();
   await again(); await setSel('unitSelect', 'inch'); await setSel('dpiSelect', '150'); await setNum('customWidth', 2); rec['unit:in:afterW'] = await val('customHeight'); await setNum('customHeight', 2); await setNum('customMaxKB', 40);
   rec['unit:in:fields'] = { w: await val('customWidth'), h: await val('customHeight'), dpi: await val('dpiSelect') };
   await runProc('unit:in:result');
@@ -533,6 +536,9 @@ const EXPECTED = {
     const photo = canvas(640, 480, (x, w, h) => { const g = x.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#2a6f97'); g.addColorStop(1, '#f4a261'); x.fillStyle = g; x.fillRect(0, 0, w, h); x.fillStyle = '#fff'; x.beginPath(); x.arc(320, 200, 120, 0, 7); x.fill(); });
     const jpeg = await enc(photo, 'image/jpeg', 0.9);
     const small = await enc(canvas(24, 24, x => { x.fillStyle = '#334455'; x.fillRect(0, 0, 24, 24); }), 'image/png');
+    // 20 × 20 px (the smallest picture accepted) and 40 × 40 px: crops that are not whole pixels.
+    const small20 = await enc(canvas(20, 20, x => { x.fillStyle = '#334455'; x.fillRect(0, 0, 20, 20); }), 'image/png');
+    const small40 = await enc(canvas(40, 40, x => { x.fillStyle = '#334455'; x.fillRect(0, 0, 40, 40); }), 'image/png');
     const tiny = await enc(canvas(1, 1, x => { x.fillStyle = '#334455'; x.fillRect(0, 0, 1, 1); }), 'image/png');
     // A signature photographed indoors: grey paper getting darker to the right (a shadow), navy ink,
     // and one faint pencil-like stroke that must survive the default settings.
@@ -547,7 +553,7 @@ const EXPECTED = {
       x.strokeStyle = 'rgba(60,60,90,0.35)'; x.lineWidth = 3;
       x.beginPath(); x.moveTo(100, 300); x.lineTo(400, 300); x.stroke();
     });
-    return { jpeg, truncated: jpeg.slice(0, Math.floor(jpeg.length / 3)), small, tiny, sig: await enc(sig, 'image/jpeg', 0.92) };
+    return { jpeg, truncated: jpeg.slice(0, Math.floor(jpeg.length / 3)), small, small20, small40, tiny, sig: await enc(sig, 'image/jpeg', 0.92) };
   });
   const buf = a => Buffer.from(a);
   // A PNG whose header says 20000 × 20000 px; nothing past the header is needed to refuse it.
@@ -575,21 +581,26 @@ const EXPECTED = {
   await page.waitForFunction(() => !document.getElementById('processErrorBox').classList.contains('hidden'), null, { timeout: 15000 });
   yes(await page.evaluate(() => document.getElementById('fileInfoText').textContent.includes('good.jpg')) && await page.locator('#btnProcess').isEnabled(), 'resizer: after a refused file the previous photo is still there and can be processed');
 
-  // A very small picture is enlarged only with a warning, and fills the output without white bars.
-  await page.goto(`${origin}/passport-photo-resizer.html`);
-  await page.locator('#fileInput').setInputFiles({ name: 'small.png', mimeType: 'image/png', buffer: buf(made.small) });
-  await ready('small.png');
-  await runProc('small:result');
-  const smallOut = await page.evaluate(async () => {
-    const bm = await createImageBitmap(await fetch(document.getElementById('btnDownload').href).then(r => r.blob()));
-    const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; const x = c.getContext('2d'); x.drawImage(bm, 0, 0);
-    const edge = (sx, sy, w, h) => { const d = x.getImageData(sx, sy, w, h).data; let white = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 240 && d[i + 1] > 240 && d[i + 2] > 240) white++; return white; };
-    const w = document.getElementById('resultWarning');
-    return { whiteEdges: edge(0, 0, 2, bm.height) + edge(bm.width - 2, 0, 2, bm.height) + edge(0, 0, bm.width, 2) + edge(0, bm.height - 2, bm.width, 2), warning: w.classList.contains('hidden') ? '' : w.textContent.trim().replace(/\s+/g, ' ') };
-  });
-  yes(rec['small:result'].w === 350 && rec['small:result'].h === 450, 'a 24 × 24 px picture still gives the requested 350 × 450 px');
-  yes(/enlarged \d+ times to make 350 × 450 px\. It will look blurred or blocky/.test(smallOut.warning), `the result says the small picture was enlarged (${smallOut.warning})`);
-  yes(smallOut.whiteEdges === 0, `the enlarged picture fills the output with no white bars (${smallOut.whiteEdges} white edge pixels)`);
+  // A very small picture is enlarged only with a warning, and fills the output without white bars,
+  // also when the selection is not a whole number of pixels (20 × 20 px for a 35:45 photo is a
+  // 15.6 × 20 px selection; 40 × 40 px for a 3:1 signature is 40 × 13.3 px).
+  for (const [pageName, file, bytes, w, h] of [['passport-photo-resizer', 'small.png', made.small, 350, 450], ['passport-photo-resizer', 'small20.png', made.small20, 350, 450], ['signature-resizer', 'small40.png', made.small40, 300, 100]]) {
+    await page.goto(`${origin}/${pageName}.html`);
+    await page.locator('#fileInput').setInputFiles({ name: file, mimeType: 'image/png', buffer: buf(bytes) });
+    await ready(file);
+    await runProc(file + ':result');
+    const smallOut = await page.evaluate(async () => {
+      const bm = await createImageBitmap(await fetch(document.getElementById('btnDownload').href).then(r => r.blob()));
+      const c = document.createElement('canvas'); c.width = bm.width; c.height = bm.height; const x = c.getContext('2d'); x.drawImage(bm, 0, 0);
+      const edge = (sx, sy, w, h) => { const d = x.getImageData(sx, sy, w, h).data; let white = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 240 && d[i + 1] > 240 && d[i + 2] > 240) white++; return white; };
+      const w = document.getElementById('resultWarning');
+      return { whiteEdges: edge(0, 0, 2, bm.height) + edge(bm.width - 2, 0, 2, bm.height) + edge(0, 0, bm.width, 2) + edge(0, bm.height - 2, bm.width, 2), warning: w.classList.contains('hidden') ? '' : w.textContent.trim().replace(/\s+/g, ' ') };
+    });
+    const out = rec[file + ':result'];
+    yes(out.w === w && out.h === h, `${file} still gives the requested ${w} × ${h} px (${out.w} × ${out.h})`);
+    yes(new RegExp(`enlarged [\\d.]+ times to make ${w} × ${h} px\\. It will look blurred or blocky`).test(smallOut.warning), `the result says ${file} was enlarged (${smallOut.warning})`);
+    yes(smallOut.whiteEdges === 0, `${file}: the enlarged picture fills the output with no white bars (${smallOut.whiteEdges} white edge pixels)`);
+  }
   await page.goto(`${origin}/passport-photo-resizer.html`);
   await page.locator('#fileInput').setInputFiles({ name: 'good.jpg', mimeType: 'image/jpeg', buffer: buf(made.jpeg) });
   await ready('good.jpg');
@@ -624,7 +635,8 @@ const EXPECTED = {
   await setSel('unitSelect', 'inch');
   yes(await val('customWidth') === '2.36' && await val('customHeight') === '1.57', `cm to inches converts the size (${await val('customWidth')} × ${await val('customHeight')})`);
   await setSel('unitSelect', 'px');
-  yes(await val('customWidth') === '708' && await val('customHeight') === '471', `inches back to pixels converts the size (${await val('customWidth')} × ${await val('customHeight')})`);
+  // 6 × 4 cm at 300 DPI is 708.7 × 472.4 px: converted from the exact size, not from the rounded 2.36 × 1.57 in.
+  yes(await val('customWidth') === '709' && await val('customHeight') === '472', `inches back to pixels converts the size (${await val('customWidth')} × ${await val('customHeight')})`);
 
   // 14. A size in cm or inches is recorded in the file at the chosen DPI (JPEG JFIF density, PNG pHYs).
   await page.locator('#btnLockAspect').click();
@@ -645,6 +657,47 @@ const EXPECTED = {
   await runProc('px:nodpi');
   h = await head();
   yes(h[13] === 0, 'a size in pixels records no DPI');
+  // Changing the unit never drifts: 3.5 × 4.5 cm shows as 1.38 × 1.77 in but stays 413 × 531 px,
+  // in the file made in inches and back in pixels and centimetres.
+  await again();
+  await setSel('unitSelect', 'cm'); await setSel('dpiSelect', '300');
+  await typeInto('customWidth', '3.5'); await typeInto('customHeight', '4.5');
+  await setSel('unitSelect', 'inch');
+  yes(await val('customWidth') === '1.38' && await val('customHeight') === '1.77', `3.5 × 4.5 cm shows as 1.38 × 1.77 in (${await val('customWidth')} × ${await val('customHeight')})`);
+  await runProc('inch:exact');
+  yes(rec['inch:exact'].w === 413 && rec['inch:exact'].h === 531 && /1\.38 × 1\.77 in at 300 DPI/.test(await page.locator('#resultTargetDims').textContent()), `made in inches after cm, the file is still 413 × 531 px (${rec['inch:exact'].w} × ${rec['inch:exact'].h})`);
+  await again();
+  await setSel('unitSelect', 'px');
+  yes(await val('customWidth') === '413' && await val('customHeight') === '531', `cm → in → px keeps 413 × 531 px (${await val('customWidth')} × ${await val('customHeight')})`);
+  await setSel('unitSelect', 'cm');
+  yes(await val('customWidth') === '3.5' && await val('customHeight') === '4.5', `and back in cm it is 3.5 × 4.5 again (${await val('customWidth')} × ${await val('customHeight')})`);
+  // A PNG's DPI chunk adds 21 bytes; that room is kept under the limit. The PNG encoder is made to give
+  // a file exactly 21 bytes, then 10 bytes, under a 2,000 KB limit.
+  await setSel('formatSelect', 'image/png'); await setNum('customMaxKB', 2000);
+  await page.evaluate(() => {
+    const crc32 = bytes => { let c = -1; for (const b of bytes) { c ^= b; for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xEDB88320 & -(c & 1)); } return (c ^ -1) >>> 0; };
+    const toBlob = HTMLCanvasElement.prototype.toBlob;
+    HTMLCanvasElement.prototype.toBlob = function (done, type, quality) {
+      toBlob.call(this, async blob => {
+        if (!blob || type !== 'image/png' || !window.__padPngTo) return done(blob);
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        const len = window.__padPngTo - bytes.length - 12;
+        if (len < 8) return done(blob);
+        const chunk = new Uint8Array(12 + len), view = new DataView(chunk.buffer);
+        view.setUint32(0, len); chunk.set([0x74, 0x45, 0x58, 0x74], 4); chunk.set([0x43, 0x6F, 0x6D, 0x6D, 0x65, 0x6E, 0x74, 0], 8); chunk.fill(0x20, 16, 8 + len);
+        view.setUint32(8 + len, crc32(chunk.subarray(4, 8 + len)));
+        done(new Blob([bytes.subarray(0, bytes.length - 12), chunk, bytes.subarray(bytes.length - 12)], { type: 'image/png' }));
+      }, type, quality);
+    };
+    window.__padPngTo = 2000 * 1024 - 21;
+  });
+  await runProc('png:dpiRoom');
+  yes(rec['png:dpiRoom'].resultShown && rec['png:dpiRoom'].bytes === 2000 * 1024, `a PNG 21 bytes under the limit, with its DPI chunk, is exactly at the limit (${rec['png:dpiRoom'].bytes} bytes, ${rec['png:dpiRoom'].error})`);
+  await again();
+  await page.evaluate(() => { window.__padPngTo = 2000 * 1024 - 10; });
+  await runProc('png:dpiOver');
+  yes(!rec['png:dpiOver'].resultShown && /PNG needs 2000\.1 KB at this size\. Increase the file limit/.test(rec['png:dpiOver'].error) && !/exceeds limit/.test(rec['png:dpiOver'].error), `a PNG that would go over the limit with its DPI chunk is explained, not failed on the final check (${rec['png:dpiOver'].error})`);
+  await page.evaluate(() => { window.__padPngTo = 0; });
 
   // 15. Size and limit from the address: shared and bookmarked links open with their numbers.
   await page.goto(`${origin}/resize-image-to-kb-limit.html?targetKB=15&width=300&height=400`);
@@ -661,8 +714,12 @@ const EXPECTED = {
   // 16. Keyboard: after a photo is chosen from the hidden drop zone, focus moves to the crop area.
   await page.goto(`${origin}/image-resizer.html`);
   await page.locator('.choice[data-preset="passport"]').click();
+  // The file chooser is watched for before the key is pressed: started together, the key could open
+  // the chooser before Playwright was ready to catch it (an intermittent 30 s timeout).
+  const chooserOpened = page.waitForEvent('filechooser');
   await page.locator('#btnBrowse').focus();
-  const [chooser] = await Promise.all([page.waitForEvent('filechooser'), page.keyboard.press('Enter')]);
+  await page.keyboard.press('Enter');
+  const chooser = await chooserOpened;
   await chooser.setFiles({ name: 'kb.jpg', mimeType: 'image/jpeg', buffer: buf(made.jpeg) });
   await ready('kb.jpg');
   await page.waitForFunction(() => document.activeElement && document.activeElement.classList.contains('cropper-container-wrapper'), null, { timeout: 5000 }).catch(() => {});

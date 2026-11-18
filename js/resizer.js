@@ -205,6 +205,16 @@
   }
   // The unit the width and height fields are in now, so a change of unit converts from it.
   let fieldUnit = 'px';
+  // A unit change shows each converted size rounded (1.38 in), but keeps the exact value behind it
+  // (1.3767 in for 413 px at 300 DPI). While a field still shows the value the tool wrote, the exact
+  // value is used, so going px → cm → in → px, or making the file in inches, never drifts a pixel.
+  const exactFields = new Map();
+  function fieldNumber(input, unit) {
+    if (!input) return NaN;
+    const exact = exactFields.get(input);
+    if (exact && exact.unit === unit && exact.shown === input.value) return exact.value;
+    return parseFloat(input.value);
+  }
 
   // Cropper Elements
   const cropperPlaceholder = getEl('cropperPlaceholder');
@@ -283,6 +293,7 @@
         if (customMaxKBInput && (urlKB || pageKB)) customMaxKBInput.value = urlKB || pageKB;
         if (urlWidth && customWidthInput) customWidthInput.value = urlWidth;
         if (urlHeight && customHeightInput) customHeightInput.value = urlHeight;
+        exactFields.clear();
         markCustom();
         const w = Number(customWidthInput ? customWidthInput.value : 0), h = Number(customHeightInput ? customHeightInput.value : 0);
         lockTo(w, h);
@@ -350,6 +361,7 @@
       const preset = PRESETS[key];
       if (unitSelect) unitSelect.value = 'px';
       fieldUnit = 'px';
+      exactFields.clear();
       if (dpiGroup) dpiGroup.style.display = 'none';
       const wLabel = getEl('customWidthLabel');
       const hLabel = getEl('customHeightLabel');
@@ -430,6 +442,7 @@
     }
     if (customWidthInput) customWidthInput.value = width;
     if (customHeightInput) customHeightInput.value = height;
+    exactFields.clear();
     lockTo(width, height);
     markCustom();
     if (addDateCheckbox) addDateCheckbox.checked = false;
@@ -672,7 +685,7 @@
     let prefix = 'ApplyReady_Custom';
     let isValid = true;
     let printDpi = 0;          // set when the size was given in cm or inches: recorded in the file
-    let printSize = '';        // the size as given, e.g. "3.5 × 4.5 cm at 300 DPI"
+    let printSize = '';        // the size the file prints at, e.g. "3.5 × 4.5 cm at 300 DPI"
 
     if (isCustom) {
       let rawWStr = customWidthInput ? customWidthInput.value : '';
@@ -684,19 +697,17 @@
       const dpi = dpiSelect ? (parseInt(dpiSelect.value, 10) || 300) : 300;
 
       if (unit === 'cm') {
-        const numW = parseFloat(rawWStr);
-        const numH = parseFloat(rawHStr);
+        const numW = fieldNumber(customWidthInput, unit);
+        const numH = fieldNumber(customHeightInput, unit);
         if (!isNaN(numW) && numW > 0) rawWStr = String(Math.round((numW / 2.54) * dpi));
         if (!isNaN(numH) && numH > 0) rawHStr = String(Math.round((numH / 2.54) * dpi));
         printDpi = dpi;
-        printSize = `${numW} × ${numH} cm at ${dpi} DPI`;
       } else if (unit === 'inch') {
-        const numW = parseFloat(rawWStr);
-        const numH = parseFloat(rawHStr);
+        const numW = fieldNumber(customWidthInput, unit);
+        const numH = fieldNumber(customHeightInput, unit);
         if (!isNaN(numW) && numW > 0) rawWStr = String(Math.round(numW * dpi));
         if (!isNaN(numH) && numH > 0) rawHStr = String(Math.round(numH * dpi));
         printDpi = dpi;
-        printSize = `${numW} × ${numH} in at ${dpi} DPI`;
       }
 
       const validation = validateDimensionSpecs(rawWStr, rawHStr, rawKBStr, addDate, rawMinKBStr);
@@ -705,6 +716,12 @@
       maxKB = validation.maxKB;
       minKB = validation.minKB || 0;
       isValid = validation.isValid;
+      // Worked out from the whole pixels the file has, so it is the size it really prints at
+      // (a field left at 3.0 cm after a change of unit can stand for 350 px, which is 2.96 cm).
+      if (printDpi && width > 0 && height > 0) {
+        const inUnit = px => Number((unit === 'cm' ? px / dpi * 2.54 : px / dpi).toFixed(2));
+        printSize = `${inUnit(width)} × ${inUnit(height)} ${unit === 'cm' ? 'cm' : 'in'} at ${dpi} DPI`;
+      }
 
       if (validation.dimErrorMsg) {
         showDimError(validation.dimErrorMsg, validation.wErrorMsg, validation.hErrorMsg);
@@ -971,17 +988,20 @@
         btnLockAspect.innerHTML = isAspectLocked ? '<i aria-hidden="true" class="fa-solid fa-lock"></i>' : '<i aria-hidden="true" class="fa-solid fa-lock-open"></i>';
       }
       if (isAspectLocked) {
-        const w = customWidthInput ? (parseFloat(customWidthInput.value) || 350) : 350;
-        const h = customHeightInput ? (parseFloat(customHeightInput.value) || 350) : 350;
+        const unit = unitSelect ? unitSelect.value : 'px';
+        const w = fieldNumber(customWidthInput, unit) || 350;
+        const h = fieldNumber(customHeightInput, unit) || 350;
         lockTo(w, h);
       }
     });
 
+    // A typed number, or one the lock works out, replaces the exact value kept for that field.
     on(customWidthInput, 'input', () => {
       markCustom();
+      exactFields.delete(customWidthInput);
       if (isAspectLocked && !typed.height && lockedRatio > 0 && customWidthInput && doc && doc.activeElement === customWidthInput) {
         const height = scaleLockedDimension(customWidthInput.value, lockedRatio, 'width', unitSelect ? unitSelect.value : 'px');
-        if (height !== null && customHeightInput) customHeightInput.value = height;
+        if (height !== null && customHeightInput) { customHeightInput.value = height; exactFields.delete(customHeightInput); }
       }
       if (doc && doc.activeElement === customWidthInput) typed.width = true;
       updatePresetUI();
@@ -989,9 +1009,10 @@
 
     on(customHeightInput, 'input', () => {
       markCustom();
+      exactFields.delete(customHeightInput);
       if (isAspectLocked && !typed.width && lockedRatio > 0 && customHeightInput && doc && doc.activeElement === customHeightInput) {
         const width = scaleLockedDimension(customHeightInput.value, lockedRatio, 'height', unitSelect ? unitSelect.value : 'px');
-        if (width !== null && customWidthInput) customWidthInput.value = width;
+        if (width !== null && customWidthInput) { customWidthInput.value = width; exactFields.delete(customWidthInput); }
       }
       if (doc && doc.activeElement === customHeightInput) typed.height = true;
       updatePresetUI();
@@ -1018,17 +1039,20 @@
       const label = { px: 'px', cm: 'cm', inch: 'in' }[unit] || 'px';
       if (wLabel) wLabel.textContent = `Width (${label})`;
       if (hLabel) hLabel.textContent = `Height (${label})`;
-      const toPx = v => { const n = parseFloat(v); if (!(n > 0)) return 350; return fieldUnit === 'cm' ? n / 2.54 * dpi : fieldUnit === 'inch' ? n * dpi : n; };
-      const fromPx = px => (unit === 'cm' ? (px / dpi * 2.54).toFixed(1) : unit === 'inch' ? (px / dpi).toFixed(2) : String(Math.round(px)));
-      [customWidthInput, customHeightInput].forEach(input => {
-        if (!input) return;
+      const toPx = n => { if (!(n > 0)) return 350; return fieldUnit === 'cm' ? n / 2.54 * dpi : fieldUnit === 'inch' ? n * dpi : n; };
+      const fromPx = px => (unit === 'cm' ? px / dpi * 2.54 : unit === 'inch' ? px / dpi : px);
+      const show = v => (unit === 'cm' ? v.toFixed(1) : unit === 'inch' ? v.toFixed(2) : String(Math.round(v)));
+      const exact = [customWidthInput, customHeightInput].map(input => {
+        if (!input) return 0;
         input.step = unit === 'cm' ? '0.1' : unit === 'inch' ? '0.05' : '1';
-        input.value = fromPx(toPx(input.value));
+        const value = fromPx(toPx(fieldNumber(input, fieldUnit)));
+        input.value = show(value);
+        exactFields.set(input, { unit, shown: input.value, value });
+        return value;
       });
       fieldUnit = unit;
       markCustom();
-      const w = Number(customWidthInput ? customWidthInput.value : 0), h = Number(customHeightInput ? customHeightInput.value : 0);
-      lockTo(w, h);
+      lockTo(exact[0], exact[1]);
       updatePresetUI();
     });
 
@@ -1469,7 +1493,7 @@
   /**
    * Draw target canvas with exact dimensions and optional distortion-free annotation strip
    */
-  function generateTargetCanvas(specs, addDate) {
+  function generateTargetCanvas(specs, addDate, picture) {
     const targetWidth = specs.width;
     const targetHeight = specs.height;
 
@@ -1494,16 +1518,8 @@
       const stripHeight = Math.max(34, Math.round(targetHeight * 0.16));
       const photoHeight = Math.max(1, targetHeight - stripHeight);
 
-      // Cropped canvas without forcing aspect distortion
-      const croppedCanvas = cropper.getCroppedCanvas({
-        width: targetWidth, maxWidth: 8000, maxHeight: Math.min(8000, Math.floor(32000000 / targetWidth)),
-        imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'high'
-      });
-
-      checkCropped(croppedCanvas);
-
-      drawCropped(ctx, croppedCanvas, targetWidth, photoHeight);
+      // The selection above the strip, without distortion
+      drawCropped(ctx, targetWidth, photoHeight, picture);
 
       // Draw white annotation strip at bottom
       ctx.fillStyle = '#FFFFFF';
@@ -1588,53 +1604,77 @@
       }
     } else {
       // Full canvas without strip
-      const croppedCanvas = cropper.getCroppedCanvas({
-        width: targetWidth, maxWidth: 8000, maxHeight: Math.min(8000, Math.floor(32000000 / targetWidth)),
-        imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'high'
-      });
-
-      checkCropped(croppedCanvas);
-
-      drawCropped(ctx, croppedCanvas, targetWidth, targetHeight);
+      drawCropped(ctx, targetWidth, targetHeight, picture);
     }
 
     return canvas;
   }
 
-  // A selection so small that nothing is left of it (a few pixels at a non-matching shape) cannot be
-  // drawn; say so instead of passing on the browser's own error.
-  function checkCropped(croppedCanvas) {
-    if (!croppedCanvas || !croppedCanvas.width || !croppedCanvas.height) {
+  /**
+   * Draw the selection into a boxW × boxH area without distorting it, straight from the picture at
+   * its full resolution, with its rotation and flips. The selection is used exactly as Cropper
+   * reports it, in fractions of a pixel. (Cropper's getCroppedCanvas rounds the area down to whole
+   * source pixels, and from a small picture that left white bars up to 9 px wide in the enlarged
+   * output.) When the selection has the output's shape, to within 3%, it fills the area and any
+   * sliver over is trimmed from the centre; a different shape chosen on purpose (Square, Free crop
+   * and so on) is fitted inside, and the margins keep the background fill.
+   * picture: what to draw from (see pictureSource), at the picture's natural size.
+   */
+  function drawCropped(ctx, boxW, boxH, picture) {
+    const d = cropper.getData();
+    const image = picture || cropper.image;
+    const natural = cropper.getImageData();
+    const bounds = cropper.getCanvasData();
+    let { x, y, width: w, height: h } = d;
+    // A selection so small that nothing is left of it cannot be drawn; say so instead of drawing a
+    // single smeared pixel.
+    if (!image || !(w >= 1 && h >= 1) || !(natural.naturalWidth > 0) || !(bounds.naturalWidth > 0)) {
       throw new Error('The selected area is too small to resize. Select Reset to use the whole image, or choose a larger image.');
     }
+    const destAspect = boxW / boxH;
+    const off = (w / h) / destAspect;
+    let dx = 0, dy = 0, dw = boxW, dh = boxH;
+    if (Math.abs(off - 1) < 0.03) {
+      if (off > 1) { const fitW = h * destAspect; x += (w - fitW) / 2; w = fitW; }
+      else { const fitH = w / destAspect; y += (h - fitH) / 2; h = fitH; }
+    } else {
+      dh = boxW / (w / h);
+      if (dh > boxH) { dh = boxH; dw = dh * (w / h); }
+      dw = Math.max(1, Math.round(dw)); dh = Math.max(1, Math.round(dh));
+      dx = Math.round((boxW - dw) / 2); dy = Math.round((boxH - dh) / 2);
+    }
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(dx, dy, dw, dh);
+    ctx.clip();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    // Selection (in the turned picture's pixels) onto the area, then the picture turned and flipped
+    // about its centre, the way Cropper shows it.
+    ctx.translate(dx, dy);
+    ctx.scale(dw / w, dh / h);
+    ctx.translate(bounds.naturalWidth / 2 - x, bounds.naturalHeight / 2 - y);
+    ctx.rotate(((d.rotate || 0) * Math.PI) / 180);
+    ctx.scale(d.scaleX || 1, d.scaleY || 1);
+    ctx.drawImage(image, -natural.naturalWidth / 2, -natural.naturalHeight / 2, natural.naturalWidth, natural.naturalHeight);
+    ctx.restore();
   }
 
   /**
-   * Draw the selection into a boxW × boxH area without distorting it. The crop box has the output's
-   * shape, but the selection is made of whole source pixels, so from a small image its shape can be
-   * a few per cent off. Within 3% the selection fills the area (a sliver is trimmed from the centre)
-   * rather than leaving thin white bars; a different crop shape chosen on purpose (Square, Free crop
-   * and so on) is fitted inside, and the margins keep the background fill.
+   * The picture the output is drawn from: an ImageBitmap copy of the one in the crop area, closed
+   * as soon as the output is drawn. When it is made smaller, Chrome resamples an ImageBitmap (or a
+   * canvas) more sharply than the <img> itself, which came out slightly soft. Without
+   * createImageBitmap the <img> is used.
    */
-  function drawCropped(ctx, cropped, boxW, boxH) {
-    const cropAspect = cropped.width / cropped.height;
-    const destAspect = boxW / boxH;
-    const off = cropAspect / destAspect;
-    if (Math.abs(off - 1) < 0.03) {
-      let sx = 0, sy = 0, sw = cropped.width, sh = cropped.height;
-      if (off > 1) { sw = cropped.height * destAspect; sx = (cropped.width - sw) / 2; }
-      else { sh = cropped.width / destAspect; sy = (cropped.height - sh) / 2; }
-      ctx.drawImage(cropped, sx, sy, sw, sh, 0, 0, boxW, boxH);
-      return;
+  async function pictureSource() {
+    const image = cropper && cropper.image;
+    if (image && typeof createImageBitmap === 'function') {
+      try {
+        const bitmap = await createImageBitmap(image);
+        return { image: bitmap, close: () => bitmap.close() };
+      } catch (e) { /* draw from the <img> instead */ }
     }
-    let drawW = boxW;
-    let drawH = drawW / cropAspect;
-    if (drawH > boxH) {
-      drawH = boxH;
-      drawW = drawH * cropAspect;
-    }
-    ctx.drawImage(cropped, Math.round((boxW - drawW) / 2), Math.round((boxH - drawH) / 2), Math.round(drawW), Math.round(drawH));
+    return { image, close: () => {} };
   }
 
   /**
@@ -1704,8 +1744,10 @@
    * Never resolves oversized images as success!
    * Clearly handles PNG lossless limitation honestly.
    */
-  async function compressStrictly(canvas, maxKB, mimeType, isCancelled) {
-    const maxBytes = maxKB * 1024;
+  async function compressStrictly(canvas, maxKB, mimeType, isCancelled, reserveBytes) {
+    // reserveBytes: room kept for what is added to the file afterwards (a PNG's pHYs chunk).
+    const reserve = reserveBytes > 0 ? reserveBytes : 0;
+    const maxBytes = maxKB * 1024 - reserve;
     const encode = quality => new Promise((resolve, reject) => {
       try {
         canvas.toBlob(blob => {
@@ -1718,7 +1760,8 @@
     let best = await encode(0.95);
     if (isCancelled && isCancelled()) return best;
     if (best.size <= maxBytes) return best;
-    if (mimeType === 'image/png') throw new Error(`PNG needs ${(best.size / 1024).toFixed(1)} KB at this size. Increase the file limit, reduce dimensions, or choose WebP or JPEG.`);
+    // Rounded up, so a file just over the limit never reads as "needs 50.0 KB" under a 50 KB limit.
+    if (mimeType === 'image/png') throw new Error(`PNG needs ${(Math.ceil((best.size + reserve) / 102.4) / 10).toFixed(1)} KB at this size. Increase the file limit, reduce dimensions, or choose WebP or JPEG.`);
     best = await encode(0.05);
     if (isCancelled && isCancelled()) return best;
     if (best.size > maxBytes) throw new Error(`The smallest result is ${(best.size / 1024).toFixed(1)} KB. Increase the file limit or reduce the dimensions to preserve a usable image.`);
@@ -1774,11 +1817,22 @@
       if (addDate && document.fonts) await document.fonts.ready;
 
       // 1. Generate Target Canvas
-      const canvas = generateTargetCanvas(specs, addDate);
+      const picture = await pictureSource();
+      if (opId !== currentOpId || revision !== configRevision) { picture.close(); return; }
+      let canvas;
+      try { canvas = generateTargetCanvas(specs, addDate, picture.image); }
+      finally { picture.close(); }
       if (opId !== currentOpId || revision !== configRevision) return;
 
+      // A size given in cm or inches is recorded in the file at the chosen DPI (step 3). In a JPEG
+      // that only changes bytes already in the header; a PNG gets a 21-byte pHYs chunk, so that much
+      // room is kept under the limit when the PNG is made.
+      const Ops = window.ApplyReadyImageOps;
+      const recordDpi = Boolean(specs.printDpi && Ops && Ops.setDensity);
+      const densityBytes = recordDpi && specs.mimeType === 'image/png' ? 21 : 0;
+
       // 2. Strict Compression
-      let compressedBlob = await compressStrictly(canvas, specs.maxKB, specs.mimeType, () => (opId !== currentOpId || revision !== configRevision));
+      let compressedBlob = await compressStrictly(canvas, specs.maxKB, specs.mimeType, () => (opId !== currentOpId || revision !== configRevision), densityBytes);
       if (opId !== currentOpId || revision !== configRevision) return;
 
       // The minimum, or a higher pad target when a preset sets one, so a file does not sit exactly on the limit.
@@ -1788,15 +1842,13 @@
         if (opId !== currentOpId || revision !== configRevision) return;
       }
 
-      // A size given in cm or inches is recorded in the file at the chosen DPI, so it prints and opens
-      // in a document at that size. Only the header changes; the byte count stays the same.
-      const Ops = window.ApplyReadyImageOps;
-      if (specs.printDpi && Ops && Ops.setDensity) {
+      // 3. The DPI is recorded, so the file prints and opens in a document at the size given.
+      if (recordDpi) {
         compressedBlob = await Ops.setDensity(compressedBlob, specs.printDpi);
         if (opId !== currentOpId || revision !== configRevision) return;
       }
 
-      // 3. Post-Compression Validation: Decode blob and check dimensions, bytes, and MIME
+      // 4. Post-Compression Validation: Decode blob and check dimensions, bytes, and MIME
       if (compressedBlob.size > specs.maxKB * 1024) {
         throw new Error(`Output file size (${compressedBlob.size} bytes) exceeds limit.`);
       }
