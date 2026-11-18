@@ -380,15 +380,7 @@
 
   /* ------------------------------------------------------------------ Files */
   function downloadJSON(name, payload) {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = doc.createElement('a');
-    a.href = url;
-    a.download = name;
-    doc.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    window.ApplyReadyFiles.download(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), name);
   }
   function currentAsRecord() {
     const cur = state.current;
