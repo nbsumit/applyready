@@ -118,17 +118,17 @@
           When you select an image file to resize or type your career history into the resume builder, that data remains strictly inside your web browser’s memory space. <strong>We do not transmit, upload, process, store, or view your uploaded images, signatures, or resume content on any external web server.</strong> All canvas processing, image cropping, and PDF/DOCX generation are performed 100% locally.
         </p>
 
-        <h2>2. Data Stored on Your Device (localStorage)</h2>
-        <p>ApplyReady stores two kinds of small settings in your browser's local storage (<code>localStorage</code>). They stay on your device and are never sent to us.</p>
+        <h2>2. Data Stored on Your Device</h2>
+        <p>ApplyReady keeps a few things in your browser's own storage on this device: small settings in local storage (<code>localStorage</code>) and saved resumes in the browser's database (IndexedDB). They stay on your device and are never sent to us.</p>
         <ul>
           <li><strong>Theme preference:</strong> if you switch between the light and dark theme, your choice is saved under the key <code>applyready_theme</code> so the next page opens in the same theme.</li>
-          <li><strong>Resume draft (optional):</strong> in the Resume Builder, the <em>“Save a draft on this device”</em> switch is off by default. If you turn it on, your resume text is saved under <code>applyready_resume_draft</code> (and the setting under <code>applyready_draft_enabled</code>) so you can continue after closing the tab. It is never synchronised to the cloud or to other devices.</li>
-          <li><strong>Shared devices:</strong> on a shared computer, cyber caf&eacute; or public terminal, keep the draft switch off, or use <strong>“Delete draft”</strong> before you leave. Clearing your browser's site data also removes both settings.</li>
-          <li><strong>Backup files:</strong> <em>“Save backup file”</em> downloads a JSON copy of your resume to your own downloads folder; we do not receive a copy.</li>
+          <li><strong>Saved resumes:</strong> the <a href="resume.html">resume builder</a> saves the resumes you write in the browser's database (IndexedDB, database <code>applyready</code>) as you type, so you can close the tab and continue later. Each saved resume holds what you typed, its name and when it was created and last edited. It is never synchronised to the cloud or to other devices, and you can rename, export or delete each one under <em>My resumes</em>.</li>
+          <li><strong>Shared devices:</strong> on a shared computer, cyber caf&eacute; or public terminal, turn off <em>“Save on this device”</em> in the resume builder before you type; only that choice is then remembered. If you saved a resume earlier, delete it under <em>My resumes</em> before you leave. Clearing your browser's site data also removes everything listed here.</li>
+          <li><strong>Backup files:</strong> <em>“Download backup file”</em> and <em>“Export all”</em> download a JSON copy of your resumes to your own downloads folder; we do not receive a copy.</li>
         </ul>
 
         <h2 id="cookies">3. Cookies and advertising</h2>
-        <p>ApplyReady sets no cookies. The theme setting and the optional resume draft use your browser's local storage, described in Section 2, and none of that is sent to us.</p>
+        <p>ApplyReady sets no cookies. The theme setting and your saved resumes use your browser's local storage and database, described in Section 2, and none of that is sent to us.</p>
         <p>ApplyReady shows no advertisements and loads no advertising or tracking scripts. Every page loads its scripts, styles, fonts and images from applyready.in only, and the pages carry a Content Security Policy that stops the browser from loading scripts from any other site.</p>
 
         <h2>4. Analytics and Server Logs</h2>
