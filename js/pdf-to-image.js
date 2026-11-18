@@ -80,7 +80,7 @@
     const n = list.pages.length;
     const est = n * w * h * BYTES_PER_PX[format];
     els.estimate.textContent = `Page 1 becomes ${w} × ${h} pixels${capped ? ' (lowered to stay within what browsers can draw)' : ''}. ${UI.plural(n, 'image')}, roughly ${Files.formatBytes(est)} in all.`;
-    if (n > K.LIMITS.renderPages) { els.run.disabled = true; els.summary.textContent = `That is ${n} pages; up to ${K.LIMITS.renderPages} can be converted at a time. Type a smaller range.`; els.summary.classList.add('is-invalid'); return null; }
+    if (n > K.LIMITS.renderPages) { els.run.disabled = true; els.summary.textContent = `That is ${K.grouped(n)} pages; up to ${K.grouped(K.LIMITS.renderPages)} can be converted at a time. Type a smaller range.`; els.summary.classList.add('is-invalid'); return null; }
     if (est > MAX_OUTPUT_BYTES) { els.run.disabled = true; els.summary.textContent = 'These images would take more memory than a browser tab can safely hold. Choose fewer pages or a lower resolution.'; els.summary.classList.add('is-invalid'); return null; }
     els.summary.classList.remove('is-invalid');
     els.run.disabled = false;

@@ -81,7 +81,7 @@
         if (!sup.render) throw new K.PdfError('unsupported', 'This browser cannot draw PDF pages, which the compressor needs. Update it, or use a recent Chrome, Edge, Firefox or Safari.');
         const opened = await UI.openPdf(file, { lib: true, js: true });
         if (!opened.jsDoc) throw opened.previewError || new K.PdfError('damaged', `${file.name} could not be drawn. It may be damaged.`);
-        if (opened.pageCount > K.LIMITS.compressPages) { K.closeJs(opened.jsDoc); throw new K.PdfError('toolarge', `${file.name} has ${opened.pageCount} pages. The compressor redraws every page, so it works on up to ${K.LIMITS.compressPages} pages at a time. Split the PDF first, compress each part, then merge them.`); }
+        if (opened.pageCount > K.LIMITS.compressPages) { K.closeJs(opened.jsDoc); throw new K.PdfError('toolarge', `${file.name} has ${K.grouped(opened.pageCount)} pages. ${K.compressAdvice(opened.pageCount)}`); }
         next = Object.assign({ file, kind: 'pdf', info }, opened);
       }
       if (ticket !== opening) { if (next.jsDoc) K.closeJs(next.jsDoc); return; }

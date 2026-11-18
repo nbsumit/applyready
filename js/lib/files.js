@@ -58,12 +58,20 @@
   }
 
   const RESERVED = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+  // Invisible characters that change the direction of text. In a name they can disguise the real
+  // extension: "invoice\u202Efdp.exe" is displayed as "invoiceexe.pdf".
+  const HIDDEN_DIRECTION = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
+  /** The name without hidden direction characters, so it reads as it really is. */
+  function withoutHiddenDirection(name) {
+    return String(name == null ? '' : name).replace(HIDDEN_DIRECTION, '');
+  }
 
   /** A file name that is safe on Windows, macOS, Linux and Android. Keeps the extension. */
   function safeFileName(name, fallback) {
     let s = String(name || '').normalize('NFC');
     s = s.replace(/^.*[\\/]/, '');                       // drop any path
-    s = s.replace(/[\u0000-\u001f\u007f<>:"/\\|?*‪-‮⁦-⁩]/g, '_'); // reserved and bidi-override characters
+    s = s.replace(HIDDEN_DIRECTION, '_');                 // characters that disguise the extension
+    s = s.replace(/[\u0000-\u001f\u007f<>:"/\\|?*]/g, '_'); // reserved characters
     s = s.replace(/\s+/g, ' ').trim().replace(/^[.\s]+|[.\s]+$/g, '');
     const dot = s.lastIndexOf('.');
     let stem = dot > 0 ? s.slice(0, dot) : s;
@@ -128,5 +136,5 @@
     return { ok: true, info };
   }
 
-  return { sniff, sniffFile, safeFileName, withExtension, stem, formatBytes, download, validate, LIMITS };
+  return { sniff, sniffFile, safeFileName, withoutHiddenDirection, withExtension, stem, formatBytes, download, validate, LIMITS };
 });

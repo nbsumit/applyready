@@ -15,6 +15,9 @@
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const fmtDate = ms => { const d = new Date(ms); return isNaN(d) || !ms ? 'unknown' : `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   const KEY = { theme: 'applyready_theme', recent: 'applyready_recent_tools', recentOff: 'applyready_recent_off' };
+  // Releases before the resume library kept one draft in localStorage. The resume builder moves it
+  // into the library when it opens with saving on; until then it is listed here like a resume.
+  const LEGACY = { draft: 'applyready_resume_draft', flag: 'applyready_draft_enabled' };
 
   const ls = {
     get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -25,6 +28,17 @@
 
   let wiped = false;   // after "Delete everything" the database is not opened (and so not recreated) again
   let records = [];
+  let legacy = null;   // { data, savedAt } or { raw } from LEGACY.draft, or null
+
+  // Opening the database creates it, so it is opened only when it already exists: looking at this
+  // page must not store anything. Browsers that cannot list databases open it as before.
+  async function databaseExists() {
+    if (wiped) return false;
+    try {
+      if (typeof indexedDB === 'undefined' || !indexedDB.databases) return true;
+      return (await indexedDB.databases()).some(db => db && db.name === Store.DB_NAME);
+    } catch (e) { return true; }
+  }
 
   function done(message) {
     const box = $('ydDone');
@@ -64,7 +78,8 @@
   let savingOff = false;
   async function loadResumes() {
     panelNotice('ydResumeError', '');
-    if (wiped) { records = []; savingOff = false; renderResumes(); return; }
+    legacy = Lib.readLegacyDraft(ls.get(LEGACY.draft));
+    if (!(await databaseExists())) { records = []; savingOff = false; renderResumes(); return; }
     try {
       records = sortRecords(await Store.getAll('resumes'));
       let row = null;
@@ -77,14 +92,33 @@
     renderResumes();
   }
 
+  function legacyRow() {
+    if (!legacy) return '';
+    const who = legacy.data ? Lib.suggestName(legacy.data) : '';
+    const when = legacy.savedAt ? `, last saved ${fmtDate(legacy.savedAt)}` : '';
+    const what = legacy.data
+      ? `Kept by an earlier version of the resume builder${when}. The builder adds it to your saved resumes the next time it opens with saving on.`
+      : 'Kept by an earlier version of the resume builder, but it cannot be read as a resume.';
+    return `
+      <li class="file-row" data-legacy="true"${legacy.data ? '' : ' data-status="error"'}>
+        <span class="file-row__thumb" aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span>
+        <div class="file-row__text"><span class="file-row__name">Draft from an earlier version${who && who !== Lib.DEFAULT_NAME ? `: ${esc(who)}` : ''}</span><span class="file-row__meta">${esc(what)}</span></div>
+        <div class="file-row__actions">
+          <button type="button" class="btn btn-sm" data-act="legacy-download" aria-label="Download the draft from an earlier version">${legacy.data ? 'Download' : 'Download raw copy'}</button>
+          <button type="button" class="btn btn-sm btn-danger-ghost" data-act="legacy-delete" aria-label="Delete the draft from an earlier version">Delete</button>
+        </div>
+      </li>`;
+  }
+
   function renderResumes() {
     const list = $('ydResumeList');
     const n = records.length;
     const damaged = records.filter(r => !r.ok).length;
-    $('ydResumeCount').textContent = n ? plural(n, 'resume') + (damaged ? `, ${damaged} damaged` : '') : 'None';
-    $('ydResumeEmpty').hidden = n > 0;
+    const count = n ? plural(n, 'resume') + (damaged ? `, ${damaged} damaged` : '') : '';
+    $('ydResumeCount').textContent = [count, legacy ? '1 earlier draft' : ''].filter(Boolean).join(', ') || 'None';
+    $('ydResumeEmpty').hidden = n > 0 || !!legacy;
     $('ydSavingOff').hidden = !savingOff;
-    list.hidden = n === 0;
+    list.hidden = n === 0 && !legacy;
     list.innerHTML = records.map((r, i) => r.ok ? `
       <li class="file-row" data-index="${i}" data-id="${esc(r.id)}">
         <span class="file-row__thumb" aria-hidden="true"><i class="fa-solid fa-file-lines"></i></span>
@@ -98,15 +132,16 @@
           <button type="button" class="btn btn-sm" data-act="raw" aria-label="Download a raw copy of ${esc(r.name)}">Download raw copy</button>
           <button type="button" class="btn btn-sm btn-danger-ghost" data-act="delete" aria-label="Delete ${esc(r.name)}">Delete</button>
         </div>
-      </li>`).join('');
+      </li>`).join('') + legacyRow();
     const good = records.filter(r => r.ok).length;
     $('ydExport').hidden = good === 0;
-    $('ydDeleteResumes').hidden = n === 0;
+    $('ydDeleteResumes').hidden = n === 0 && !legacy;
   }
 
   $('ydResumeList').addEventListener('click', async e => {
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
+    if (btn.dataset.act === 'legacy-download' || btn.dataset.act === 'legacy-delete') { legacyAction(btn.dataset.act); return; }
     const r = records[Number(btn.closest('[data-index]').dataset.index)];
     if (!r || r.ok) return;
     if (btn.dataset.act === 'raw') {
@@ -122,6 +157,30 @@
       catch (err) { panelNotice('ydResumeError', 'That resume could not be deleted. Close other ApplyReady tabs and try again.', true); }
     }
   });
+
+  async function legacyAction(act) {
+    if (!legacy) return;
+    if (act === 'legacy-download') {
+      if (legacy.data) {
+        const name = Lib.suggestName(legacy.data);
+        const at = legacy.savedAt || Date.now();
+        Files.download(new Blob([JSON.stringify(Lib.singleBackup({ name, data: legacy.data, createdAt: at, updatedAt: at }), null, 2)], { type: 'application/json' }), Lib.fileName(name, 'resume_backup.json'));
+        announce('Draft downloaded as a backup file. You can import it in the resume builder or on this page.');
+      } else {
+        const body = { app: 'ApplyReady', kind: 'damaged-resume-record', exportedAt: new Date().toISOString(), reason: 'A draft from an earlier version that cannot be read as a resume.', record: legacy.raw };
+        Files.download(new Blob([JSON.stringify(body, null, 2)], { type: 'application/json' }), Lib.fileName('ApplyReady', 'earlier_draft_raw.json'));
+        announce('Raw copy downloaded. It cannot be imported as a resume, but its text can be copied from the file.');
+      }
+      return;
+    }
+    const okay = ui().confirm ? await ui().confirm({ title: 'Delete the draft from an earlier version?', message: 'It will be removed from this browser. This cannot be undone. Download it first if you might need it.', confirmLabel: 'Delete', danger: true }) : true;
+    if (!okay) return;
+    ls.remove(LEGACY.draft);
+    ls.remove(LEGACY.flag);
+    await loadResumes();
+    if (legacy) panelNotice('ydResumeError', 'The draft could not be deleted. Close other ApplyReady tabs and try again.', true);
+    else done('Deleted the draft from an earlier version.');
+  }
 
   $('ydExport').addEventListener('click', () => {
     const good = records.filter(r => r.ok).map(r => r.rec);
@@ -180,17 +239,22 @@
   $('ydDeleteResumes').addEventListener('click', async () => {
     await loadResumes(); // count what is stored now, not when the page opened
     const n = records.length;
-    if (!n) return;
-    const okay = ui().confirm ? await ui().confirm({ title: `Delete ${plural(n, 'saved resume')}?`, message: `Every saved resume will be removed from this browser. This cannot be undone. Download a backup first if you might need ${n === 1 ? 'it' : 'them'} again.`, confirmLabel: 'Delete all resumes', danger: true }) : true;
+    const hadDraft = !!legacy;
+    if (!n && !hadDraft) return;
+    const what = [n ? plural(n, 'saved resume') : '', hadDraft ? 'the draft from an earlier version' : ''].filter(Boolean).join(' and ');
+    const okay = ui().confirm ? await ui().confirm({ title: `Delete ${what}?`, message: `Every saved resume${hadDraft ? ', and the draft from an earlier version,' : ''} will be removed from this browser. This cannot be undone. Download a backup first if you might need ${n + (hadDraft ? 1 : 0) === 1 ? 'it' : 'them'} again.`, confirmLabel: 'Delete all resumes', danger: true }) : true;
     if (!okay) return;
     const gone = records.slice();
     try {
-      await Store.clear('resumes');
-      try { await Store.remove('meta', 'lastResumeId'); } catch (e) { /* optional record */ }
-      postDeleted(gone);
+      if (n) {
+        await Store.clear('resumes');
+        try { await Store.remove('meta', 'lastResumeId'); } catch (e) { /* optional record */ }
+        postDeleted(gone);
+      }
+      if (hadDraft) { ls.remove(LEGACY.draft); ls.remove(LEGACY.flag); }
       await loadResumes();
       await renderStorage();
-      done(`Deleted ${plural(n, 'saved resume')}.`);
+      done(`Deleted ${what}.`);
     } catch (e) { panelNotice('ydResumeError', 'The resumes could not be deleted. Close other ApplyReady tabs and try again.', true); }
   });
 
@@ -261,7 +325,7 @@
     try { if (st && st.persisted) persisted = await st.persisted(); } catch (e) { persisted = null; }
     $('ydPersisted').textContent = persisted === true ? 'Yes' : persisted === false ? 'No' : 'Not supported by this browser';
     $('ydPersist').hidden = persisted !== false || !(st && st.persist);
-    if (!wiped) {
+    if (await databaseExists()) {
       try {
         const s = await Store.status();
         const warn = $('ydStorageWarning');
@@ -312,21 +376,81 @@
     offlineInfo = { names, files: size.files, bytes: size.bytes };
     $('ydOfflineSize').textContent = size.files ? `${plural(size.files, 'file')}, ${Files.formatBytes(size.bytes)}` : 'None';
     $('ydOfflineRemove').hidden = !names.length;
+    await renderSiteCopy();
   }
+
+  // The service worker answers questions about the full copy of the site (sw.js, "Messages").
+  let serviceGone = false;   // unregistered by Delete everything
+  function within(promise, ms) { return Promise.race([promise, new Promise(resolve => setTimeout(() => resolve(null), ms))]); }
+  async function offlineService() {
+    if (serviceGone || !('serviceWorker' in navigator) || typeof MessageChannel !== 'function') return null;
+    try { const reg = await within(navigator.serviceWorker.ready, 4000); return reg && reg.active ? reg.active : null; } catch (e) { return null; }
+  }
+  function ask(sw, type, onProgress) {
+    return new Promise(resolve => {
+      const channel = new MessageChannel();
+      let timer = null;
+      const wait = () => { clearTimeout(timer); timer = setTimeout(() => resolve(null), 60000); };
+      channel.port1.onmessage = e => {
+        const m = e.data || {};
+        if (m.type === 'progress') { wait(); if (onProgress) onProgress(m); return; }
+        clearTimeout(timer);
+        resolve(m);
+      };
+      wait();
+      try { sw.postMessage({ type }, [channel.port2]); } catch (e) { clearTimeout(timer); resolve(null); }
+    });
+  }
+  async function renderSiteCopy() {
+    const btn = $('ydOfflineAll'), note = $('ydOfflineAllNote');
+    const sw = await offlineService();
+    const info = sw ? await within(ask(sw, 'site-info'), 5000) : null;
+    if (!info || !info.files) { btn.hidden = true; note.hidden = true; return; }
+    const all = info.saved >= info.files;
+    btn.hidden = all;
+    note.hidden = false;
+    note.textContent = all
+      ? 'Every tool and guide is saved for offline use.'
+      : `${info.saved} of the site’s ${info.files} files are saved. Saving every tool and guide downloads up to about ${Files.formatBytes(info.transfer)} and keeps about ${Files.formatBytes(info.bytes)} on this device.`;
+  }
+  let savingSite = false;
+  $('ydOfflineAll').addEventListener('click', async () => {
+    if (savingSite) return;
+    const sw = await offlineService();
+    const btn = $('ydOfflineAll'), progress = $('ydOfflineProgress');
+    if (!sw) { progress.textContent = 'The offline service is not running in this browser, so nothing could be saved. Reload the page and try again.'; progress.hidden = false; return; }
+    savingSite = true;
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    progress.hidden = false;
+    progress.textContent = 'Saving every tool for offline use…';
+    const result = await ask(sw, 'save-site', m => { progress.textContent = `Saving every tool for offline use: ${m.done} of ${m.total} files…`; });
+    savingSite = false;
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    progress.hidden = true;
+    await renderOffline();
+    await renderStorage();
+    if (result && result.failed === 0) done('Every tool and guide is saved for offline use on this device.');
+    else if (result && result.failed > 0) done(`${result.saved} of ${result.files} files are saved for offline use; ${plural(result.failed, 'file')} could not be downloaded. Check your connection and select Save every tool for offline use again.`);
+    else done('The files could not be saved for offline use. Check your connection, reload the page and try again.');
+  });
+
   $('ydOfflineRemove').addEventListener('click', async () => {
     const { names, bytes } = offlineInfo;
     for (const n of names) { try { await caches.delete(n); } catch (e) { /* ignore */ } }
     await renderOffline();
     await renderStorage();
-    done(`Offline copy removed (${Files.formatBytes(bytes)}). ApplyReady saves a fresh copy the next time you open one of its pages while online.`);
+    done(`Offline copy removed (${Files.formatBytes(bytes)}). ApplyReady keeps a page again when you open it while online.`);
   });
 
   /* ---------------------------------------------------------------- delete everything */
   $('ydDeleteAll').addEventListener('click', async () => {
     await loadResumes(); // count what is stored now, not when the page opened
-    const keys = ls.keys();
+    const keys = ls.keys().filter(k => k !== LEGACY.draft); // the draft is listed with the resumes
     const n = records.length;
     const parts = [plural(n, 'saved resume')];
+    if (legacy) parts.push('a draft from an earlier version');
     if (keys.length) parts.push(plural(keys.length, 'setting'));
     if (offlineInfo.files) parts.push(`the offline copy (${Files.formatBytes(offlineInfo.bytes)})`);
     parts.push('the offline service');
@@ -337,10 +461,14 @@
     // 1. The IndexedDB database (saved resumes and app records). Open resume builder tabs are told
     //    first, so they stop autosaving (and so recreating) what is being deleted.
     postDeleted(records);
-    const destroyed = await Store.destroy();
+    if (await databaseExists()) {
+      const destroyed = await Store.destroy();
+      if (destroyed) removed.push(`${plural(n, 'saved resume')} and the resume database`);
+      else problems.push('The resume database could not be deleted while ApplyReady is open in another tab. Close the other tabs, then select Delete everything again.');
+    }
     wiped = true;
-    if (destroyed) removed.push(`${plural(n, 'saved resume')} and the resume database`);
-    else problems.push('The resume database could not be deleted while ApplyReady is open in another tab. Close the other tabs, then select Delete everything again.');
+    ls.remove(LEGACY.draft);
+    if (legacy) { removed.push('the draft from an earlier version'); legacy = null; }
     // 2. Settings in localStorage and sessionStorage
     keys.forEach(k => ls.remove(k));
     try { Object.keys(sessionStorage).filter(k => k.startsWith('applyready_')).forEach(k => sessionStorage.removeItem(k)); } catch (e) { /* unavailable */ }
@@ -357,6 +485,7 @@
         let count = 0;
         for (const r of regs) { if (await r.unregister()) count++; }
         if (count) removed.push('the offline service');
+        serviceGone = true;
       }
     } catch (e) { /* not available */ }
     document.documentElement.dataset.theme = media && media.matches ? 'dark' : 'light';
@@ -365,7 +494,7 @@
     await renderOffline();
     await renderStorage();
     const summary = removed.length ? `Deleted ${removed.join('; ')}.` : 'Nothing was stored, so there was nothing to delete.';
-    done(`${summary}${problems.length ? ' ' + problems.join(' ') : ' Nothing ApplyReady stored is left in this browser.'} If you open ApplyReady pages again, a fresh offline copy is saved; your resumes are not coming back unless you import a backup.`);
+    done(`${summary}${problems.length ? ' ' + problems.join(' ') : ' Nothing ApplyReady stored is left in this browser.'} If you open ApplyReady pages again, those pages are kept for offline use again; your resumes are not coming back unless you import a backup.`);
   });
 
   /* ---------------------------------------------------------------- start */

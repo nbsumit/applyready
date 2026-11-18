@@ -282,6 +282,72 @@ const server = http.createServer((req, res) => {
     console.log('✓ Merge: order by buttons, keyboard and drag; sizes, rotations and inherited boxes kept; images as A4; bad and protected files');
   }
 
+  /* ---------------------------------------------------------------- 1b. Merge: photo metadata, page and pixel limits */
+  {
+    const D = require('./doc_fixtures.js');
+    // An upright phone photo (orientation 1, so it is embedded without redrawing) with EXIF: camera,
+    // serial number, GPS location and a comment.
+    const photoFile = path.join(tmp, 'gps-photo.jpg');
+    fs.writeFileSync(photoFile, D.jpegWithSegments(fs.readFileSync(path.join(root, 'img/samples/test-portrait.jpg')), [D.exifSegment(D.phoneExif({ orientation: 1 })), D.commentSegment('PhoneCo comment')]));
+    // A 1 MB PDF whose page tree names the same page 200,000 times.
+    const n = 200000;
+    const objs = ['<< /Type /Catalog /Pages 2 0 R >>', `<< /Type /Pages /Kids [${Array(n).fill('3 0 R').join(' ')}] /Count ${n} >>`, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>'];
+    let raw = '%PDF-1.7\n';
+    const offsets = objs.map((o, i) => { const at = raw.length; raw += `${i + 1} 0 obj\n${o}\nendobj\n`; return at; });
+    const xref = raw.length;
+    raw += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offsets.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('')}trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+    const bombFile = path.join(tmp, 'pagebomb.pdf');
+    fs.writeFileSync(bombFile, Buffer.from(raw, 'latin1'));
+    // A 400-megapixel greyscale PNG of a few hundred bytes.
+    const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(20000, 0); ihdr.writeUInt32BE(20000, 4); ihdr[8] = 8; ihdr[9] = 0;
+    const hugeFile = path.join(tmp, 'huge-pixels.png');
+    fs.writeFileSync(hugeFile, Buffer.concat([Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]), D.pngChunk('IHDR', ihdr), D.pngChunk('IDAT', require('node:zlib').deflateSync(Buffer.alloc(20001))), D.pngChunk('IEND', Buffer.alloc(0))]));
+
+    const { context, page } = await open('merge-pdf.html', { viewport: { width: 360, height: 740 } });
+    await page.setInputFiles('#mergeDropInput', [F['second.pdf'], photoFile]);
+    await page.waitForFunction(() => document.querySelectorAll('.merge-row').length === 2, null, { timeout: 30000 });
+    await page.click('#mergeRun');
+    await waitShown(page, '#mergeResult');
+    const out = await save(page, () => page.click('#mergeDownload'), 'merge-photo.pdf');
+    const text = fs.readFileSync(out.file).toString('latin1');
+    ok(pdfInfo(out.file).pages === 3, 'merge with a photo: 2 + 1 pages');
+    ok(!text.includes('Exif') && !text.includes('TestCam') && !text.includes('SN12345') && !text.includes('PhoneCo'), 'merge: the photo is added without its EXIF, camera, serial number or comment');
+    const imgDir = fs.mkdtempSync(path.join(tmp, 'img-'));
+    sh('pdfimages', ['-j', out.file, path.join(imgDir, 'p')]);
+    const embedded = fs.readdirSync(imgDir).filter(f => f.endsWith('.jpg')).map(f => fs.readFileSync(path.join(imgDir, f)));
+    const scan = b => b.subarray(b.indexOf(Buffer.from([0xFF, 0xDA])));
+    ok(embedded.length === 1 && scan(embedded[0]).equals(scan(fs.readFileSync(photoFile))) && !embedded[0].includes('Exif'), 'merge: the photo keeps its original image data (not re-encoded), without EXIF');
+
+    // The page-tree bomb is refused when it is added, and the page stays responsive.
+    const started = Date.now();
+    await page.setInputFiles('#mergeDropInput', bombFile);
+    await page.waitForFunction(() => !document.getElementById('mergeError').hidden, null, { timeout: 30000 });
+    const msg = await errorText(page, '#mergeError');
+    ok(/pagebomb\.pdf has 2,00,000 pages/.test(msg) && /Up to 2,000 pages can be merged into one file in a browser, so it cannot be added/.test(msg) && !/split/i.test(msg), `merge: a file claiming 200000 pages is refused, without sending it to Split PDF (${msg})`);
+    ok(await page.locator('.merge-row').count() === 2 && Date.now() - started < 20000, `merge: nothing added, refused in ${Date.now() - started} ms`);
+    const t = Date.now();
+    await page.evaluate(() => 1);
+    ok(Date.now() - t < 1000, 'merge: the page still responds');
+
+    // A picture that declares 400 megapixels is refused before it is decoded.
+    await page.setInputFiles('#mergeDropInput', hugeFile);
+    await page.waitForFunction(() => /megapixels/.test(document.getElementById('mergeError').textContent), null, { timeout: 15000 });
+    ok(/huge-pixels\.png is 400 megapixels \(20000 × 20000 px\)/.test(await errorText(page, '#mergeError')) && await page.locator('.merge-row').count() === 2, 'merge: a 400-megapixel picture is refused without decoding it');
+    await context.close();
+
+    // Tools that open one PDF refuse the same file instead of trying to number or split 200,000 pages.
+    // Split PDF refuses it too, so none of them may send the person there.
+    for (const [file, input, re] of [['split-pdf.html', '#splitDropInput', /has 2,00,000 pages\. Split works on up to 2,000 pages[\s\S]*desktop PDF program/], ['add-page-numbers.html', '#pnDropInput', /has 2,00,000 pages\. This tool works on up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages[\s\S]*desktop PDF program/], ['watermark-pdf.html', '#wmDropInput', /up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages/]]) {
+      const tool = await open(file);
+      await tool.page.setInputFiles(input, bombFile);
+      await tool.page.waitForFunction(() => { const e = document.querySelector('[data-pdf-error]'); return e && !e.hidden && !e.classList.contains('hidden') && /pages/.test(e.textContent); }, null, { timeout: 30000 });
+      const toolMsg = await tool.page.locator('[data-pdf-error]').innerText();
+      ok(re.test(toolMsg) && !/split (it|the PDF) (into|first)|with Split PDF first/i.test(toolMsg), `${file}: a file claiming 200000 pages is refused, without a dead-end suggestion (${toolMsg})`);
+      await tool.context.close();
+    }
+    console.log('✓ Merge: photo metadata removed; page-tree bombs and 400-megapixel pictures refused at intake');
+  }
+
   /* ---------------------------------------------------------------- 2. Split */
   {
     const { context, page } = await open('split-pdf.html');

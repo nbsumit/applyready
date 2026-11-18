@@ -291,6 +291,13 @@
   const PNG_SIG = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
   const PNG_COLOUR = { 0: 'Greyscale', 2: 'Colour (RGB)', 3: 'Indexed colour (palette)', 4: 'Greyscale with transparency', 6: 'Colour with transparency (RGBA)' };
   const PNG_METADATA = new Set(['tEXt', 'iTXt', 'zTXt', 'eXIf', 'tIME']);
+  // Ancillary chunks that only describe how to show the picture (colour, transparency, density,
+  // animation). Any other ancillary chunk, such as caBX (C2PA content credentials, which can name
+  // the author and the device) or an app's private chunk, is treated as metadata.
+  const PNG_DISPLAY = new Set(['tRNS', 'gAMA', 'cHRM', 'sRGB', 'iCCP', 'sBIT', 'pHYs', 'bKGD', 'hIST', 'cICP', 'mDCV', 'cLLI', 'acTL', 'fcTL', 'fdAT']);
+  // Critical chunks start with an upper-case letter; decoders must understand them, so they are never removed.
+  const pngOther = type => !PNG_METADATA.has(type) && !PNG_DISPLAY.has(type) && type[0] >= 'a' && type[0] <= 'z';
+  const pngOtherLabel = type => (type === 'caBX' ? 'C2PA content credentials' : type);
 
   function walkPng(b, onChunk) {
     if (!PNG_SIG.every((v, i) => b[i] === v)) return { damaged: true, reason: 'The file does not start like a PNG.' };
@@ -312,7 +319,7 @@
     const verifyCrc = !options || options.crc !== false;
     const out = {
       format: 'PNG', width: 0, height: 0, bitDepth: 0, colourType: -1, colour: '', interlaced: false, alpha: false, transparency: '',
-      density: null, exif: null, text: [], time: '', icc: false, iccName: '', animated: false, metadataBytes: 0, crcErrors: 0, trailing: 0, damaged: false, reason: ''
+      density: null, exif: null, text: [], time: '', icc: false, iccName: '', animated: false, otherApp: [], metadataBytes: 0, crcErrors: 0, trailing: 0, damaged: false, reason: ''
     };
     const res = walkPng(b, (type, start, end, data, len) => {
       if (verifyCrc && type !== 'IDAT' && crc32(b, start + 4, end - 4) !== u32be(b, end - 4)) out.crcErrors++;
@@ -325,6 +332,10 @@
         if (b[data + 8] === 1) out.density = { x: Math.round(x * 0.0254), y: Math.round(y * 0.0254), source: 'pHYs' };
       } else if (type === 'iCCP') { out.icc = true; out.iccName = clean(latin1(b, data, Math.min(data + 80, end - 4)).split('\0')[0], 79); }
       else if (type === 'acTL') out.animated = true;
+      if (pngOther(type)) {
+        out.metadataBytes += end - start;
+        if (out.otherApp.length < 20 && !out.otherApp.includes(pngOtherLabel(type))) out.otherApp.push(pngOtherLabel(type));
+      }
       if (PNG_METADATA.has(type)) {
         out.metadataBytes += end - start;
         if (type === 'eXIf') out.exif = parseTiff(b.subarray(data, data + len));
@@ -734,10 +745,19 @@
     return m ? m[1] : '';
   }
 
-  /** Does the name's extension agree with the real type? */
+  // Extensions that mark a program or script. Portals and email services block them whatever the
+  // contents, and a picture or PDF given one is either a mistake or meant to deceive.
+  const PROGRAM_EXT = new Set(['exe', 'scr', 'com', 'pif', 'bat', 'cmd', 'msi', 'msp', 'cpl', 'js', 'jse', 'vbs', 'vbe', 'wsf', 'wsh', 'hta', 'ps1', 'lnk', 'reg', 'jar', 'apk', 'app', 'dmg', 'pkg', 'sh', 'run', 'chm', 'appx', 'msix']);
+
+  /**
+   * Does the name's extension agree with the real type? true, false, or null when there is no
+   * opinion: no extension, or contents that many extensions legitimately share (plain text, older
+   * Office files) under an extension the checker does not know. A picture, PDF, Office or ZIP file
+   * under any other extension (.exe, .scr, .xyz) does not agree: portals check the extension.
+   */
   function extensionAgrees(ext, key) {
     const promised = EXT_KEY[ext];
-    if (!promised) return null; // unknown extension: no opinion
+    if (!promised) return !ext || /^(unknown|empty|text|ole)$/.test(key) ? null : false;
     if (promised === key) return true;
     if (promised === 'zip' && /^(docx|xlsx|pptx|docm|xlsm|pptm|odt|ods|odp|epub)$/.test(key)) return true; // an Office file is a ZIP
     return false;
@@ -867,6 +887,9 @@
     // Name and browser type against the real type
     const agrees = extensionAgrees(report.extension, report.key);
     report.extensionAgrees = agrees;
+    if (PROGRAM_EXT.has(report.extension)) {
+      warn('warning', `Names ending in .${report.extension} are treated as programs. Upload portals and email services block them, and the person who receives the file may be warned that it is unsafe. Do not upload or open a file like this unless you know where it came from.`);
+    }
     if (agrees === false) {
       warn('warning', `The name ends in .${report.extension}, but the contents are ${describeReal(report)}. Renaming a file does not convert it; a portal that checks the contents will reject it.`);
     } else if (!report.extension && report.key !== 'empty') {
@@ -937,8 +960,9 @@
    * JPEG: drops EXIF, XMP, IPTC, MPF, comments, JFIF thumbnails and other application segments, and data
    *       after the end of the image. Keeps the JFIF header (APP0), the colour profile (APP2 ICC_PROFILE)
    *       and the Adobe colour-transform marker (APP14), which decoders need to show the right colours.
-   * PNG:  drops tEXt, iTXt, zTXt, eXIf and tIME chunks and data after IEND; every other chunk is copied
-   *       byte for byte with its checksum.
+   * PNG:  drops tEXt, iTXt, zTXt, eXIf and tIME chunks, every other ancillary chunk that is not about
+   *       how the picture looks (such as caBX content credentials or an app's private data), and data
+   *       after IEND; the chunks that are kept are copied byte for byte with their checksums.
    * Both: when the photo relies on an EXIF orientation (it would otherwise appear sideways), a minimal
    *       EXIF block with only the orientation is written back.
    */
@@ -991,6 +1015,7 @@
       let wrote = !orientation;
       const LABEL = { tEXt: 'Text', iTXt: 'Text', zTXt: 'Text', eXIf: 'EXIF', tIME: 'Last-modified time' };
       walkPng(b, (type, start, stop) => {
+        if (pngOther(type)) { add(`Other data (${pngOtherLabel(type)})`, stop - start); return; }
         if (PNG_METADATA.has(type)) {
           add(LABEL[type], stop - start);
           if (type === 'eXIf' && !wrote) {

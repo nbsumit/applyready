@@ -9,11 +9,21 @@ const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
 const root = path.resolve(__dirname, '..');
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.wasm': 'application/wasm', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
+// Served like GitHub Pages (cacheable for 10 minutes), counting what is sent so the tests can check
+// how much the offline service downloads. swOverride replaces sw.js to simulate a new release.
+const served = { bytes: 0, paths: [] };
+let swOverride = null;
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
   const file = path.resolve(root, '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname));
   if (!file.startsWith(root + path.sep)) { res.writeHead(403); return res.end(); }
-  fs.readFile(file, (e, d) => { res.writeHead(e ? 404 : 200, { 'Content-Type': e ? 'text/html' : mime[path.extname(file)] || 'application/octet-stream' }); res.end(e ? fs.readFileSync(path.join(root, '404.html')) : d); });
+  fs.readFile(file, (e, d) => {
+    if (!e && pathname === '/sw.js' && swOverride) d = Buffer.from(swOverride);
+    const body = e ? fs.readFileSync(path.join(root, '404.html')) : d;
+    served.bytes += body.length; served.paths.push(pathname);
+    res.writeHead(e ? 404 : 200, { 'Content-Type': e ? 'text/html' : mime[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'max-age=600' });
+    res.end(body);
+  });
 });
 const sample = name => fs.readFileSync(path.join(root, 'img/samples', name));
 let checks = 0; const ok = (c, m) => { assert(c, m); checks++; };
@@ -56,20 +66,95 @@ function mixedPdf(jpeg) {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
 
-  // 1. Offline: after one online visit, other pages reload with their styles and scripts.
-  await page.goto(origin + '/');
-  await page.evaluate(() => navigator.serviceWorker.ready);
-  await page.waitForFunction(() => caches.keys().then(k => k.length > 0));
-  await page.waitForTimeout(1000);
-  await context.setOffline(true);
-  for (const p of ['/resume.html', '/compress-pdf.html', '/guides/ats-friendly-resume-guide.html', '/a-page-that-was-never-cached.html']) {
+  // 1. Offline. Opening a page keeps that page and its files for offline use, copied from the HTTP
+  //    cache, without downloading the rest of the site (a first visit once fetched all 171 files,
+  //    5 MB). Pages are kept as they are opened; every tool only after "Save every tool for offline use".
+  //    Its own context without request routing: Playwright turns the HTTP cache off when routing is on,
+  //    and the site makes no outside requests anyway.
+  {
+  const context = await browser.newContext({ viewport: { width: 360, height: 740 } });
+  const page = await context.newPage();
+  page.on('pageerror', e => errors.push(e.message));
+  const offlineCheck = async (p, expectPage) => {
     await page.goto(origin + p);
     const s = await page.evaluate(() => ({ styled: getComputedStyle(document.body).fontFamily.includes('Inter'), scripts: !!window.ApplyReadyUI, title: document.title }));
     ok(s.styled && s.scripts, `offline ${p}: styles and scripts load from the cache (${JSON.stringify(s)})`);
-    if (p.startsWith('/a-page')) ok(/Offline/.test(s.title), `offline ${p}: the offline page is shown (${s.title})`);
-  }
+    ok(expectPage ? !/Offline/.test(s.title) : /Offline/.test(s.title), `offline ${p}: ${expectPage ? 'the page itself' : 'the offline page'} is shown (${s.title})`);
+  };
+  // Poll a condition that needs await in the page (waitForFunction does not wait for a promise here).
+  const until = async (fn, label, timeout = 30000) => {
+    const end = Date.now() + timeout;
+    while (Date.now() < end) { if (await page.evaluate(fn)) return; await page.waitForTimeout(150); }
+    throw new Error(`timed out: ${label}`);
+  };
+  const cachedPaths = () => page.evaluate(async () => (await (await caches.open('applyready-files')).keys()).map(r => r.url));
+  served.bytes = 0; served.paths = [];
+  await page.goto(origin + '/');
+  const pageBytes = served.bytes, pagePaths = served.paths.length;
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await until(async () => {
+    const keys = (await (await caches.open('applyready-files')).keys()).map(r => new URL(r.url).pathname);
+    return ['/', '/css/app.css', '/css/vendor/icons.min.css', '/js/site.js', '/js/home.js', '/offline.html', '/assets/fonts/inter-latin.woff2'].every(p => keys.includes(p));
+  }, 'the first page and its files are kept');
+  await page.waitForTimeout(500);
+  const extraPaths = served.paths.slice(pagePaths).filter(p => p !== '/sw.js' && !p.startsWith('/favicon/')); // the browser asks for the icon itself
+  ok(served.bytes - pageBytes < 60 * 1024 && extraPaths.every(p => p === '/offline.html'), `first visit: the offline service downloaded only the offline page (${Math.round((served.bytes - pageBytes) / 1024)} KB: ${extraPaths.join(', ')})`);
+  let keys = await cachedPaths();
+  ok(keys.length < 40, `first visit: only the page's own files are kept (${keys.length})`);
+  ok(keys.every(u => !/[?&]v=/.test(u)) && new Set(keys.map(u => new URL(u).pathname)).size === keys.length, 'each file is cached once, under its path and content hash, not once per ?v= query');
+  await context.setOffline(true);
+  await offlineCheck('/', true);
+  await offlineCheck('/compress-pdf.html', false);
+  await offlineCheck('/a-page-that-was-never-cached.html', false);
   await context.setOffline(false);
-  console.log('✓ Offline reloads keep styles and scripts; unknown pages fall back to the offline page');
+
+  // A page opened online (the service worker now in control) is kept as it loads.
+  await page.goto(origin + '/resume.html');
+  await page.waitForFunction(() => window.ApplyReadyUI);
+  await page.waitForTimeout(1500);
+  await context.setOffline(true);
+  await offlineCheck('/resume.html', true);
+  await offlineCheck('/guides/ats-friendly-resume-guide.html', false);
+  await context.setOffline(false);
+  keys = await cachedPaths();
+  ok(keys.every(u => !/[?&]v=/.test(u)) && new Set(keys.map(u => new URL(u).pathname)).size === keys.length, 'still one entry per file after browsing');
+
+  // Your data: the visitor can save every tool, and is told the size first.
+  await page.goto(origin + '/your-data.html');
+  await page.locator('#ydOfflineAll').waitFor({ state: 'visible', timeout: 15000 });
+  const note = await page.locator('#ydOfflineAllNote').innerText();
+  ok(/^\d+ of the site’s \d+ files are saved\. Saving every tool and guide downloads up to about [\d.]+ (MB|KB)/.test(note), `your data: the full copy's size is stated before saving (${note})`);
+  await page.click('#ydOfflineAll');
+  await page.waitForFunction(() => !document.getElementById('ydDone').hidden && /saved for offline use/.test(document.getElementById('ydDoneText').textContent), null, { timeout: 60000 });
+  ok(/Every tool and guide is saved for offline use/.test(await page.locator('#ydDoneText').innerText()) && await page.locator('#ydOfflineAll').isHidden(), `your data: every tool saved (${await page.locator('#ydDoneText').innerText()})`);
+  await context.setOffline(true);
+  for (const p of ['/compress-pdf.html', '/guides/ats-friendly-resume-guide.html', '/merge-pdf.html']) await offlineCheck(p, true);
+  await offlineCheck('/a-page-that-was-never-cached.html', false);
+  await context.setOffline(false);
+
+  // A new release: only the files that changed are downloaded again, and the old copies go.
+  const swText = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const list = swText.match(/STATIC_ASSETS = \[([\s\S]*?)\];/)[1].match(/'[^']+'/g).map(x => x.slice(1, -1));
+  const hashes = swText.match(/ASSET_HASHES = '([^']+)'/)[1].split(' ');
+  const at = list.indexOf('/css/app.css');
+  const oldHash = hashes[at];
+  hashes[at] = 'deadbeef';
+  swOverride = swText.replace(/ASSET_HASHES = '[^']+'/, `ASSET_HASHES = '${hashes.join(' ')}'`);
+  served.paths = [];
+  await page.evaluate(async () => { const reg = await navigator.serviceWorker.getRegistration(); await reg.update(); });
+  await until(async () => {
+    const urls = (await (await caches.open('applyready-files')).keys()).map(r => r.url);
+    return urls.some(u => u.endsWith('/css/app.css?sw=deadbeef')) && !urls.some(u => /\/css\/app\.css\?sw=(?!deadbeef)/.test(u));
+  }, 'the new release takes over');
+  const fetched = [...new Set(served.paths)].filter(p => p !== '/sw.js');
+  ok(fetched.every(p => p === '/css/app.css' || p === '/offline.html') && fetched.includes('/css/app.css'), `new release: only the changed file is fetched again (${fetched.join(', ')}, old hash ${oldHash})`);
+  const afterRelease = (await cachedPaths()).map(u => new URL(u).pathname.replace(/index\.html$/, ''));
+  const missing = list.filter(p => !afterRelease.includes(p));
+  ok(!missing.length, `new release: every other file is kept (missing: ${missing.join(', ')}; extra: ${afterRelease.filter(p => !list.includes(p)).join(', ')})`);
+  swOverride = null;
+  await context.close();
+  }
+  console.log('✓ Offline: a first visit keeps only its own files, pages are kept as they open, every tool on request, a release refetches only what changed');
 
   // 2. Compress PDF keeps every page of a PDF that mixes a scanned page and a text page. An older
   //    version refused such files (and before that dropped the text page); pages are now redrawn.

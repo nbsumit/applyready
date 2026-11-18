@@ -134,6 +134,25 @@ ok(!swText.includes("Precache failed"), 'a failed precache rejects install');
 ok(swText.includes('Response.error()'), 'an uncached offline asset gets an error response');
 ok(swText.includes("'/css/webfonts/fa-solid-900.woff2'") && swText.includes("'/css/webfonts/fa-regular-400.woff2'") && swText.includes("'/img/guides/signature-cleaner.webp'"), 'guide images and the icon fonts are precached');
 for (const m of read('css/vendor/icons.min.css').matchAll(/url\("\.\.\/webfonts\/([^"]+)"\)/g)) ok(swText.includes(`'/css/webfonts/${m[1]}'`), `${m[1]} is precached`);
+{
+  // The full site is downloaded only when the visitor asks (Your data); install fetches the offline page alone.
+  const list = (swText.match(/STATIC_ASSETS = \[[\s\S]*?\];/) || [''])[0];
+  const install = (swText.match(/addEventListener\('install'[\s\S]*?\n\}\);/) || [''])[0];
+  ok(install && !/STATIC_ASSETS|addAll/.test(install) && /offline\.html|OFFLINE_PAGE/.test(install), 'the service worker does not precache the whole site on install');
+  ok(/saveData/.test(swText) && /'save-site'/.test(swText) && /'cache-page'/.test(read('js/site.js')) && /'save-site'/.test(read('js/your-data.js')), 'the full offline copy is the visitor’s choice, and Save-Data is respected');
+  ok(!/devanagari/.test(list), 'the Devanagari font, which no page shows, is not part of the offline copy');
+  const hashes = (swText.match(/ASSET_HASHES = '([0-9a-f ]+)'/) || [])[1] || '';
+  ok(hashes.split(' ').length === (list.match(/'\/[^']*'/g) || []).length, 'every file of the offline copy has a content hash');
+  ok(/function keyFor/.test(swText) && !/ignoreSearch/.test(swText), 'files are cached once, under one key per path, not once per query string');
+}
+// A page that shows image previews loads the pixel-size check (js/lib/image-ops.js) used by Kit.thumbnail.
+{
+  const previewing = [...jsIn('js'), ...jsIn('js/lib')].filter(f => f !== 'js/lib/file-kit.js' && /\bKit\.thumbnail\(/.test(read(f))).map(f => f.replace(/^js\//, ''));
+  for (const f of pages) {
+    const html = read(f);
+    if (previewing.some(s => html.includes(`js/${s}?v=`) || html.includes(`js/${s}"`))) ok(/js\/lib\/image-ops\.js/.test(html), `${f}: loads js/lib/image-ops.js for its image previews`);
+  }
+}
 for (const asset of [...((swText.match(/STATIC_ASSETS = \[[\s\S]*?\];/) || [''])[0]).matchAll(/'\/[^']+'/g)].map(m => m[0].slice(2, -1))) {
   const rel = asset.endsWith('/') ? asset + 'index.html' : asset;
   ok(fs.existsSync(path.join(root, rel)), `precache entry exists: /${asset}`);

@@ -1706,6 +1706,9 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
 .yd-empty { padding: var(--s-4); border: var(--bw) dashed var(--c-line-strong); border-radius: var(--r-md); }
 .yd-resumes .file-row { grid-template-columns: 48px minmax(0, 1fr) auto; }
 .yd-resumes .file-row__actions { gap: var(--s-1); flex-wrap: wrap; justify-content: flex-end; }
+/* The name is how someone on a shared computer tells whose resume a row is before deleting it,
+   so it wraps instead of being cut off on a phone. */
+.yd-resumes .file-row__name { white-space: normal; overflow-wrap: anywhere; }
 .yd-chips { list-style: none; display: flex; flex-wrap: wrap; gap: var(--s-2); }
 .yd-chips a { display: inline-flex; align-items: center; gap: var(--s-2); min-height: var(--h-sm); padding: 0 var(--s-3); background: var(--c-surface-2); border: var(--bw) solid var(--c-line-strong); border-radius: var(--r-full); font-size: var(--fs-label); color: var(--c-text); }
 .yd-chips a:hover { border-color: var(--c-accent-line); color: var(--c-accent); }

@@ -252,5 +252,90 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     ok(cut.pdf.truncated && cut.warnings.some(w => w.level !== 'info' && /incomplete/.test(w.text)), 'cut-off PDF: called incomplete (pdf-lib may still recover its pages)');
   }
 
+  // ------------------------------------------------------------------ names that hide what a file is
+  {
+    const jpeg = new Uint8Array(F.jpegWithSegments(Buffer.from(sample('test-portrait.jpg')), [F.exifSegment(F.phoneExif({ orientation: 1 }))]));
+    for (const name of ['photo.exe', 'photo.jpg.scr', 'photo.xyz']) {
+      const r = await Inspect.inspect(jpeg, { name, type: '' });
+      ok(r.extensionAgrees === false && r.warnings.some(w => w.level === 'warning' && /name ends in \.[a-z]+, but the contents are a JPEG image\. Renaming a file does not convert it/.test(w.text)), `${name}: JPEG contents under another extension is a mismatch`);
+      const req = Inspect.checkRequirements(r, { formats: ['jpg'] });
+      ok(!req.pass && req.rows[0].pass === false, `${name}: fails a JPEG-only requirement`);
+    }
+    ok((await Inspect.inspect(jpeg, { name: 'photo.exe' })).warnings.some(w => /\.exe are treated as programs/.test(w.text)), '.exe: program warning');
+    ok(!(await Inspect.inspect(jpeg, { name: 'photo.xyz' })).warnings.some(w => /treated as programs/.test(w.text)), '.xyz: no program warning');
+    ok((await Inspect.inspect(new TextEncoder().encode('Notes\nline two\n'), { name: 'notes.log' })).extensionAgrees === null, 'plain text under an unknown extension: no opinion');
+    ok((await Inspect.inspect(jpeg, { name: 'photo' })).extensionAgrees === null, 'no extension: no opinion (a separate note says so)');
+
+    const Files = require('../js/lib/files.js');
+    ok(Files.withoutHiddenDirection('invoice\u202efdp.exe') === 'invoicefdp.exe' && Files.withoutHiddenDirection('resume\u202excod.jpg') === 'resumexcod.jpg', 'hidden direction characters are removed from a displayed name');
+    ok(Files.withoutHiddenDirection('a\u200eb\u200fc\u061cd\u2066e\u2069f\u202ag') === 'abcdefg' && Files.withoutHiddenDirection('Ana\u200d\u0915\u094d\u0937') === 'Ana\u200d\u0915\u094d\u0937', 'every direction control goes; joiners used by real scripts stay');
+    ok(Files.safeFileName('invoice\u202efdp.exe') === 'invoice_fdp.exe' && Files.safeFileName('x\u200fy.jpg') === 'x_y.jpg', 'download names never keep a direction character');
+  }
+
+  // ------------------------------------------------------------------ PNG chunks that are not about the picture
+  {
+    const secret = 'author=Jane Doe, device serial 1234, gps 28.6,77.2';
+    const png = new Uint8Array(F.makePng({ extra: [F.physChunk(72), F.pngChunk('caBX', Buffer.from(secret)), F.pngChunk('prVt', Buffer.from('private app data')), F.pngChunk('sRGB', Buffer.from([0]))] }));
+    const r = await Inspect.inspect(png, { name: 'credentials.png', type: 'image/png' });
+    ok(r.image.metadataBytes > 0 && r.metadata.some(m => /Other application data \(C2PA content credentials, prVt\)/.test(m)) && r.canStrip, `PNG: content credentials and private chunks are reported (${r.metadata})`);
+    const cleaned = Inspect.stripMetadata(png, 'png');
+    const text = Buffer.from(cleaned.bytes).toString('latin1');
+    ok(!text.includes('Jane Doe') && !text.includes('prVt') && cleaned.removed.some(x => /C2PA/.test(x.what)), 'cleaned PNG: content credentials and private chunks removed');
+    const after = Inspect.parsePng(cleaned.bytes);
+    ok(!after.damaged && after.crcErrors === 0 && after.density.x === 72 && text.includes('sRGB') && !after.otherApp.length && !after.metadataBytes, 'cleaned PNG: display chunks (pHYs, sRGB) kept, checksums intact, nothing left to report');
+  }
+
+  // ------------------------------------------------------------------ PDF kit: photos without metadata, page limits
+  {
+    const Kit = require('../js/lib/pdf-kit.js');
+    const base = Buffer.from(sample('test-portrait.jpg'));
+    // A phone photo with EXIF (camera, serial number, GPS), XMP location, a comment, a colour
+    // profile, an APP11 (C2PA) segment and a motion-photo video after the end of the image.
+    const withTrailer = Buffer.concat([Buffer.from(F.jpegWithSegments(base, [F.exifSegment(F.phoneExif({ orientation: 1 })), F.xmpSegment('<x:xmpmeta><exif:GPSLatitude>28,36N</exif:GPSLatitude></x:xmpmeta>'), F.commentSegment('Taken at home'), F.iccSegment(), F.jpegSegment(0xEB, Buffer.from('JPC2PA manifest'))])), Buffer.from('motion photo video')]);
+    ok(Kit.jpegOrientation(withTrailer) === 1, 'test photo is upright, so it would be embedded without redrawing');
+    const clean = Kit.jpegWithoutMetadata(new Uint8Array(withTrailer));
+    const info = Inspect.parseJpeg(clean);
+    const text = Buffer.from(clean).toString('latin1');
+    ok(clean && !info.damaged && !info.exif && !info.xmp && !info.comments.length && !info.otherApp.length && !info.metadataBytes && !info.trailing, 'JPEG for a PDF: EXIF, XMP, comments, APP11 and trailing data removed');
+    ok(!text.includes('Exif') && !text.includes('TestCam') && !text.includes('SN12345') && !text.includes('GPSLatitude') && !text.includes('motion photo'), 'JPEG for a PDF: no camera, serial number or location bytes left');
+    ok(info.icc && info.width === Inspect.parseJpeg(new Uint8Array(base)).width, 'JPEG for a PDF: colour profile and size kept');
+    const scan = b => { const at = Buffer.from(b).indexOf(Buffer.from([0xFF, 0xDA])); return Buffer.from(b).subarray(at); };
+    ok(scan(clean).equals(scan(base)), 'JPEG for a PDF: image data copied byte for byte');
+    ok(Kit.jpegWithoutMetadata(new Uint8Array(base.subarray(0, base.length / 2))) === null && Kit.jpegWithoutMetadata(new Uint8Array([1, 2, 3])) === null, 'a cut-off or non-JPEG file is not passed through (it is redrawn instead)');
+    const doc = await PDFLib.PDFDocument.create();
+    const img = await doc.embedJpg(clean);
+    doc.addPage().drawImage(img, { x: 0, y: 0, width: 100, height: 100 });
+    ok(!Buffer.from(await doc.save()).toString('latin1').includes('Exif'), 'a PDF made from the cleaned photo carries no EXIF');
+
+    // A small crafted PDF whose page tree names one page 200,000 times is refused before copying.
+    const n = 200000;
+    const kids = Array(n).fill('3 0 R').join(' ');
+    const objs = ['<< /Type /Catalog /Pages 2 0 R >>', `<< /Type /Pages /Kids [${kids}] /Count ${n} >>`, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>'];
+    let pdf = '%PDF-1.7\n';
+    const offsets = objs.map((o, i) => { const at = pdf.length; pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; return at; });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n${offsets.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('')}trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+    const bomb = new Uint8Array(Buffer.from(pdf, 'latin1'));
+    const facts = await Kit.inspect(bomb, 'bomb.pdf');
+    ok(facts.pageCount === n, `page-tree bomb: claims ${facts.pageCount} pages`);
+    const bombDoc = await Kit.openLib(bomb, { name: 'bomb.pdf' });
+    const small = await PDFLib.PDFDocument.create(); small.addPage();
+    const started = Date.now();
+    let refused = null;
+    try { await Kit.merge([{ doc: small }, { doc: bombDoc }]); } catch (e) { refused = e; }
+    ok(refused && refused.code === 'toolarge' && /2,00,001 pages\. Up to 2,000 pages/.test(refused.message) && Date.now() - started < 2000, `merge refuses more than ${Kit.LIMITS.pages} pages at once, quickly (${refused && refused.message}, ${Date.now() - started} ms)`);
+    let extractRefused = null;
+    try { await Kit.extract(bombDoc, Array.from({ length: Kit.LIMITS.pages + 1 }, () => 0)); } catch (e) { extractRefused = e; }
+    ok(extractRefused && extractRefused.code === 'toolarge', 'extract refuses more than the page limit');
+    const fine = await Kit.merge([{ doc: small }, { doc: small }]);
+    ok(fine.getPageCount() === 2, 'merging within the limit still works');
+    // Page-limit advice: Split PDF is suggested only for a file it can open itself.
+    ok(Kit.grouped(2000) === '2,000' && Kit.grouped(200000) === '2,00,000', `page counts are grouped like the rest of the site (${Kit.grouped(2000)}, ${Kit.grouped(200000)})`);
+    ok(/with Split PDF first, then compress each part/.test(Kit.splitFirst(400, 'compress each part')), 'a file Split PDF can open is sent to Split PDF');
+    const tooLong = Kit.splitFirst(Kit.LIMITS.pages + 1, 'use this tool on each part');
+    ok(!/with Split PDF first/.test(tooLong) && /Split PDF also works on up to 2,000 pages/.test(tooLong) && /desktop PDF program/.test(tooLong), `a file Split PDF would refuse is not sent there (${tooLong})`);
+    ok(/with Split PDF first/.test(Kit.compressAdvice(500)) && !/with Split PDF first/.test(Kit.compressAdvice(200000)), 'the compressor only suggests splitting when splitting can help');
+  }
+
   console.log(`\u2713 document tools unit tests: ${checks} checks passed`);
 })().catch(e => { console.error(e); process.exit(1); });

@@ -27,7 +27,7 @@
   const tool = UI.singleTool(app, {
     needs: { lib: true, js: true },
     maxPages: MAX_PAGES,
-    tooManyPages: n => `This PDF has ${n} pages. Organise works on up to ${MAX_PAGES} pages at a time; split it into parts first with Split PDF.`,
+    tooManyPages: n => `This PDF has ${K.grouped(n)} pages. Organise works on up to ${K.grouped(MAX_PAGES)} pages at a time. ${K.splitFirst(n, 'organise each part')}`,
     onOpen(state) {
       reset(true);
       sources = [{ name: state.file.name, bytes: state.bytes, password: state.password, libDoc: state.libDoc, jsDoc: state.jsDoc, count: state.pageCount }];
@@ -236,7 +236,7 @@
     Kit.setButtonBusy(els.insert, true, 'Opening…');
     try {
       const opened = await UI.openPdf(file, { lib: true, js: true });
-      if (tiles.length + opened.pageCount > MAX_PAGES) { K.closeJs(opened.jsDoc); throw new K.PdfError('toolarge', `${file.name} has ${opened.pageCount} pages, which would bring the total over ${MAX_PAGES}. Split it first and insert only the pages you need.`); }
+      if (tiles.length + opened.pageCount > MAX_PAGES) { K.closeJs(opened.jsDoc); throw new K.PdfError('toolarge', `${file.name} has ${K.grouped(opened.pageCount)} pages, which would bring the total over ${K.grouped(MAX_PAGES)}. ${opened.pageCount <= K.LIMITS.pages ? 'Split it first and insert only the pages you need.' : K.splitFirst(opened.pageCount)}`); }
       const src = sources.length;
       sources.push({ name: file.name, bytes: opened.bytes, password: opened.password, libDoc: opened.libDoc, jsDoc: opened.jsDoc, count: opened.pageCount });
       const first = tiles.length;

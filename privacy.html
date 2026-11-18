@@ -164,7 +164,9 @@
               <tr><td>The last resume you opened, whether saving is on, and whether the browser has been asked to keep the data</td><td>IndexedDB database <code>applyready</code></td><td>To reopen the right resume and respect your choice.</td></tr>
               <tr><td>Theme (light or dark), only if you choose one</td><td>local storage key <code>applyready_theme</code></td><td>So the next page opens in the same theme.</td></tr>
               <tr><td>Recently used tools: tool names only, never files or what you typed</td><td>local storage key <code>applyready_recent_tools</code></td><td>To show them in search and on the home page. Can be turned off.</td></tr>
-              <tr><td>The site's own pages, styles, scripts and fonts</td><td>Cache Storage (service worker)</td><td>So the tools work offline. It never contains your files or resumes.</td></tr>
+              <tr><td>Whether you turned recently used tools off (the value <code>1</code>)</td><td>local storage key <code>applyready_recent_off</code></td><td>So the choice is kept. Only written if you turn the list off on the Your data page.</td></tr>
+              <tr><td>A resume draft saved by an earlier version of the resume builder, if you used it before the saved resumes list existed</td><td>local storage keys <code>applyready_resume_draft</code> and <code>applyready_draft_enabled</code></td><td>Nothing writes these any more. The resume builder moves the draft into your saved resumes when saving is on, and the Your data page lists it until then, with Download and Delete.</td></tr>
+              <tr><td>The site's own pages, styles, scripts and fonts: the pages you have opened, or every tool if you choose to save them on the Your data page</td><td>Cache Storage (service worker) <code>applyready-files</code> and <code>applyready-vendor-…</code></td><td>So the pages you use work offline. It never contains your files or resumes.</td></tr>
             </tbody>
           </table>
         </div>
