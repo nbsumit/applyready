@@ -352,9 +352,9 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     says(T, '1036 × 1465 px');
     ok(rows[2].includes('Quality was lowered to 52% to fit under 50 KB.'), `the scanned page also has the quality note (${rows[2]})`);
     says(T, 'quality was lowered to 52%');
-    ok(!/Quality was lowered|pixel size was reduced/.test(rows[3]) && rows[3].includes('38 KB'), 'the small signature has no note');
-    ok(squash(await page.textContent('#batchVerdictTitle')) === '4 images compressed' && squash(await page.textContent('#batchVerdictText')) === '184 KB in total, from 1.2 MB.', 'totals as quoted');
-    says(T, '184 KB in total, from 1.2 MB.');
+    ok(!/Quality was lowered|pixel size was reduced/.test(rows[3]) && rows[3].includes('37 KB'), 'the small signature has no note');
+    ok(squash(await page.textContent('#batchVerdictTitle')) === '4 images compressed' && squash(await page.textContent('#batchVerdictText')) === '183 KB in total, from 1.2 MB.', 'totals as quoted');
+    says(T, '183 KB in total, from 1.2 MB.');
     const [zip] = await Promise.all([page.waitForEvent('download'), page.click('#btnBatchZip')]);
     ok(zip.suggestedFilename() === 'compressed-images.zip', 'ZIP name as quoted');
     says(T, 'compressed-images.zip');
