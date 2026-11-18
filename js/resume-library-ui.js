@@ -414,14 +414,14 @@
       return;
     }
     // Restoring into a browser that already has these resumes must not create look-alikes. A resume
-    // identical to one saved here is skipped. One whose name is taken (usually an older or newer
-    // version of the same resume) is imported as "Name (restored 18 Nov)", so the two can be told
-    // apart in My resumes and in the editor's title.
+    // with the same name and content as one saved here is skipped. One whose name is taken (usually
+    // an older or newer version of the same resume) is imported as "Name (restored 18 Nov)", so the
+    // two can be told apart in My resumes and in the editor's title.
     const now = Date.now();
     if (state.savingOn) { await flush(); await loadList(); }
     const here = state.savingOn ? state.records : [];
     const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-    const incoming = result.resumes.filter(item => !here.some(rec => same(rec.data, item.data)));
+    const incoming = result.resumes.filter(item => !here.some(rec => rec.name === item.name && same(rec.data, item.data)));
     const alreadyHere = result.resumes.length - incoming.length;
     if (!incoming.length) {
       const message = alreadyHere === 1 ? 'This resume is already saved in this browser, exactly as it is in the backup, so nothing was imported.'

@@ -121,8 +121,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     ok(await page.locator('#reviewChecklist .review-jump-btn').count() > 0 && /Fix/.test(await page.locator('#reviewChecklist .review-jump-btn').first().textContent()), 'review items have a Fix button');
     await page.click('#tabDownload');
     const [pdf] = await Promise.all([page.waitForEvent('download'), page.click('#btnDownloadPDF')]);
-    ok(pdf.suggestedFilename() === 'Priya_Sharma_Resume.pdf', `the PDF is named as the tutorial says (${pdf.suggestedFilename()})`);
-    says(T, 'Priya_Sharma_Resume.pdf');
+    ok(pdf.suggestedFilename() === 'Priya_Sharma_Junior_Data_Analyst_Resume.pdf', `the PDF is named as the tutorial says (${pdf.suggestedFilename()})`);
+    says(T, 'Priya_Sharma_Junior_Data_Analyst_Resume.pdf');
     const pdfFile = await save(pdf);
     ok(pdfPages(pdfFile) === 1 && /Priya Sharma/i.test(pdfText(pdfFile)) && /Data Intern/.test(pdfText(pdfFile)), 'the PDF is one page of real text with the name and the role (pdftotext)');
     const [docx] = await Promise.all([page.waitForEvent('download'), page.click('#btnDownloadDOCX')]);
