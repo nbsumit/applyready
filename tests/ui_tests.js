@@ -799,6 +799,21 @@ const server = http.createServer((req, res) => {
       const link = page.locator('.search-results__empty a');
       ok(await link.isVisible() && /underline/.test(await link.evaluate(a => getComputedStyle(a).textDecorationLine)), `search ${scheme}: the "browse all tools" link is underlined`);
       await scan('no results');
+      // Tab goes round the field, Close and (only while it shows) the "browse all tools" link.
+      const tabRound = async (shift) => {
+        const seen = [];
+        await input.focus();
+        for (let i = 0; i < 4; i++) {
+          await page.keyboard.press(shift ? 'Shift+Tab' : 'Tab');
+          seen.push(await page.evaluate(() => { const a = document.activeElement; return a.tagName + (a.closest('.search-dialog') ? '' : ':outside'); }));
+        }
+        return seen.join();
+      };
+      ok(await tabRound(false) === 'BUTTON,A,INPUT,BUTTON', `search ${scheme}: Tab reaches the "browse all tools" link when nothing matches (${await tabRound(false)})`);
+      await input.fill('merge');
+      ok(await page.locator('.search-results__empty').isHidden(), `search ${scheme}: results hide the empty message`);
+      ok(await tabRound(false) === 'BUTTON,INPUT,BUTTON,INPUT', `search ${scheme}: Tab goes round the field and Close after a no-results query, skipping the hidden link (${await tabRound(false)})`);
+      ok(await tabRound(true) === 'BUTTON,INPUT,BUTTON,INPUT', `search ${scheme}: Shift+Tab goes round the same way (${await tabRound(true)})`);
       if (scheme === 'light') {
         await input.fill('mrege pdf');
         await page.keyboard.press('Enter');

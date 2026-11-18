@@ -318,9 +318,12 @@
     box.addEventListener('keydown', e => {
       if (e.key === 'Escape') { e.preventDefault(); close(); return; }
       if (e.key !== 'Tab') return;
-      const focusables = Array.from(box.querySelectorAll('input, button, a[href]'));
-      const i = focusables.indexOf(document.activeElement);
+      // Only what can take focus now: the empty message (and its link) stays in the DOM while hidden.
+      const focusables = Array.from(box.querySelectorAll('input, button, a[href]'))
+        .filter(el => !el.disabled && !el.closest('[hidden]') && el.getClientRects().length > 0);
       e.preventDefault();
+      if (!focusables.length) return;
+      const i = focusables.indexOf(document.activeElement);
       focusables[(i + (e.shiftKey ? -1 : 1) + focusables.length) % focusables.length].focus();
     });
     dialog = { close };
