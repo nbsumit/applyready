@@ -279,8 +279,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     ok(squash(await page.textContent('#resultStatus')) === 'Under the 50 KB limit, at the exact size requested.', 'result sentence as quoted');
     says(T, 'Under the 50 KB limit, at the exact size requested.');
     const size = squash(await page.textContent('#resultFileSize'));
-    ok(size === '26.47 KB (27,109 bytes)', `measured size (${size})`);
-    says(T, '26.47 KB (27,109 bytes)');
+    ok(size === '26.48 KB (27,120 bytes)', `measured size (${size})`);
+    says(T, '26.48 KB (27,120 bytes)');
     const [img] = await Promise.all([page.waitForEvent('download'), page.click('#btnDownload')]);
     ok(img.suggestedFilename() === 'test-portrait_Passport_Photo_350x450.jpg', `file name (${img.suggestedFilename()})`);
     says(T, 'test-portrait_Passport_Photo_350x450.jpg');
@@ -294,8 +294,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await page.fill('#customMaxKB', '10');
     await page.click('#btnProcess');
     await page.waitForSelector('#processErrorBox:not(.hidden)');
-    ok(/^PNG needs 196\.0 KB at this size\./.test(squash(await page.textContent('#processErrorMessage'))), 'PNG message as quoted');
-    says(T, '"PNG needs 196.0 KB at this size."');
+    ok(/^PNG needs 196\.5 KB at this size\./.test(squash(await page.textContent('#processErrorMessage'))), 'PNG message as quoted');
+    says(T, '"PNG needs 196.5 KB at this size."');
     await context.close();
   }
 

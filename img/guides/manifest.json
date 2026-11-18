@@ -60,13 +60,13 @@
   "width": 702,
   "height": 858,
   "alt": "An ApplyReady result for a 350 by 450 pixel photo under a 50 KB limit: the Download button, a preview, and a table comparing the required file size, dimensions and format with the produced file.",
-  "bytes": 34006,
+  "bytes": 33780,
   "phone": {
    "file": "img/guides/phone/resizer-result-table.webp",
    "width": 710,
    "height": 2000,
    "scale": 2,
-   "bytes": 45262
+   "bytes": 45402
   }
  },
  "resizer-settings": {
