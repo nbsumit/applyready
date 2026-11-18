@@ -5,7 +5,7 @@
 
    node scripts/build-pdf-pages.js           create missing pages; refresh the workspace (tool:start/end) of existing ones
    node scripts/build-pdf-pages.js --force   rewrite the whole page from this file
-   node scripts/build-pdf-pages.js --check   exit 1 if a workspace differs from this file
+   node scripts/build-pdf-pages.js --check   exit 1 if a workspace, or anything else in <main>, differs from this file
 
    Then run node scripts/sync-shell.js to fill in the header, footer and Content Security Policy.
    The tool scripts drive the workspace by id and data-* attributes, so those are a contract. */
@@ -370,7 +370,12 @@ const PAGES = [
       ['Is there a limit on the number of files?', 'Up to 50 files at a time, each up to 100 MB, and 500 MB in all. These limits keep your browser responsive, especially on phones. For more, merge in groups, then merge the results.'],
       ['Are my files uploaded?', 'No. The PDFs are read and joined by your browser on this device. ApplyReady has no server that receives files, and the page cannot send data to any other address.']
     ],
-    links: ['split-pdf.html', 'organize-pdf.html', 'compress-pdf.html']
+    links: ['split-pdf.html', 'organize-pdf.html', 'compress-pdf.html'],
+    examples: [
+      ['"Upload all certificates as one PDF"', 'Add the certificates in the order the form lists them, for example class 10, class 12, then your degree. Merge, open the file and scroll through it once, then check its size against the limit. If it is over, bring it down with <a href="compress-pdf.html">Compress PDF</a>.'],
+      ['A certificate you only have as a phone photo', 'Add the photo with the PDFs. It becomes one A4 page in its place in the list. Take it flat, in good light and with the whole page in the frame, so it is readable once it is part of the PDF.']
+    ],
+    guides: ['how-to-merge-pdf-files.html', 'combine-documents-into-one-pdf.html', 'compress-pdf-for-upload-portals.html']
   },
   {
     page: 'split-pdf.html', tool: 'split', name: 'Split PDF', script: 'js/split-pdf.js', extraScripts: ['js/lib/zip.js'],
@@ -390,7 +395,13 @@ const PAGES = [
       ['Why are the parts bigger than the original in total?', 'A font or logo used on every page is stored once in the original, but each new file needs its own copy. Each part is complete on its own, which is what makes it bigger in total.'],
       ['Is my PDF uploaded?', 'No. It is read and split by your browser on this device, and closing the tab clears it.']
     ],
-    links: ['merge-pdf.html', 'organize-pdf.html', 'pdf-to-image.html']
+    links: ['merge-pdf.html', 'organize-pdf.html', 'pdf-to-image.html'],
+    examples: [
+      ['"Upload only page 2"', 'Choose <strong>Extract pages</strong>, select the thumbnail of page 2 or type <em>2</em>, and select <strong>Split PDF</strong>. The download is a one-page PDF; your original file still has every page.'],
+      ['One scan holds several documents', 'A scanner often puts a mark sheet, an ID card and a certificate into one file. Choose <strong>One PDF per range</strong> and type the pages of each document, for example <em>1-2, 3, 4-5</em>, to get three files, then give each the name the form asks for.'],
+      ['The form has two upload slots with a size limit each', 'Split the document into the two parts the form asks for with <strong>One PDF per range</strong>, then check each part against the limit and, if needed, make it smaller with <a href="compress-pdf.html">Compress PDF</a>.']
+    ],
+    guides: ['compress-pdf-for-upload-portals.html', 'combine-documents-into-one-pdf.html', 'document-checklist-before-online-application.html']
   },
   {
     page: 'organize-pdf.html', tool: 'organize', name: 'Organise PDF pages', script: 'js/organize-pdf.js',
@@ -410,7 +421,13 @@ const PAGES = [
       ['Does it change my original file?', 'No. Save PDF makes a new file that you download. Your original stays as it was.'],
       ['Is my PDF uploaded?', 'No. Pages are drawn and rearranged by your browser on this device.']
     ],
-    links: ['merge-pdf.html', 'split-pdf.html', 'add-page-numbers.html']
+    links: ['merge-pdf.html', 'split-pdf.html', 'add-page-numbers.html'],
+    examples: [
+      ['Rotate a sideways scan', 'Use rotate left or rotate right under the sideways page until its thumbnail reads upright, then select <strong>Save PDF</strong>. Only that page turns; the others stay as they were.'],
+      ['Remove a blank page or a back side', 'Delete the page under its thumbnail. It stays in the grid, faded, so you can restore it until you save. Save PDF makes a copy without it.'],
+      ['Put mark sheets in semester order', 'Drag each page by its handle, or use the move buttons, until the order matches the form. The saved copy has the pages in the order of the grid, left to right and top to bottom; each thumbnail keeps its page number from your file, so you can see where every page came from.']
+    ],
+    guides: ['combine-documents-into-one-pdf.html', 'phone-camera-tips-for-document-scans.html', 'document-checklist-before-online-application.html']
   },
   {
     page: 'pdf-to-image.html', tool: 'image', name: 'PDF to images', script: 'js/pdf-to-image.js', extraScripts: ['js/lib/zip.js'],
@@ -430,7 +447,13 @@ const PAGES = [
       ['Why does the result say the resolution was lowered?', 'A very large page at a high resolution would need more pixels than a phone browser can draw. That page is drawn at the highest resolution that fits, and the size is shown with the result.'],
       ['Is my PDF uploaded?', 'No. Pages are drawn by your browser on this device, and the images are made there too.']
     ],
-    links: ['split-pdf.html', 'pdf-to-text.html', 'image-resizer.html']
+    links: ['split-pdf.html', 'pdf-to-text.html', 'image-resizer.html'],
+    examples: [
+      ['"Upload your certificate as a JPG"', 'Choose JPG and 150 DPI, select the page of the certificate, and select <strong>Convert to images</strong>. If the form also gives a KB limit or a pixel size, open the image in the <a href="image-resizer.html">image resizer</a> and set them there.'],
+      ['Send one page as a picture', 'Select only that page. JPG keeps the file small for messaging apps; PNG keeps the edges of text crisp if the page is mostly text and lines.'],
+      ['A copy to print', 'Choose 300 DPI so the printed page is sharp. The files are about four times larger than at 150 DPI, which the estimate shows before you start.']
+    ],
+    guides: ['pixels-cm-inches-dpi-explained.html', 'image-formats-guide.html', 'fix-common-photo-upload-errors.html']
   },
   {
     page: 'pdf-to-text.html', tool: 'text', name: 'Extract text from PDF', script: 'js/pdf-to-text.js',
@@ -450,7 +473,13 @@ const PAGES = [
       ['How do I save the text?', 'Copy text puts it on your clipboard. Download .txt saves a plain text file that opens in any text editor.'],
       ['Is my PDF uploaded?', 'No. The text is read by your browser on this device.']
     ],
-    links: ['pdf-to-image.html', 'compress-pdf.html', 'resume.html']
+    links: ['pdf-to-image.html', 'compress-pdf.html', 'resume.html'],
+    examples: [
+      ['Copy details from a PDF into a form', 'Add the PDF, find the line you need in the text, and copy it. Check numbers such as roll numbers and marks against the PDF before you submit: a table can come out as plain lines read from left to right.'],
+      ['A job advert that came as a PDF', 'Extract its text, select <strong>Copy text</strong>, and paste it into the job description box in the Review step of the <a href="resume.html">resume builder</a> to see which of its key terms your resume already uses.'],
+      ['"No text found"', 'The pages are scans or photos. Ask for the original file, or type the text yourself; ApplyReady does not read pictures of text.']
+    ],
+    guides: ['tailor-resume-to-a-job-description.html', 'document-checklist-before-online-application.html', 'staying-safe-with-document-uploads.html']
   },
   {
     page: 'add-page-numbers.html', tool: 'numbers', name: 'Add page numbers', script: 'js/add-page-numbers.js',
@@ -470,7 +499,13 @@ const PAGES = [
       ['Which formats are available?', '1, 2, 3; Page 1; Page 1 of 10; and 1 / 10, in sizes from 8 to 16 points and in black, grey, blue or red.'],
       ['Is my PDF uploaded?', 'No. The numbers are added by your browser on this device.']
     ],
-    links: ['organize-pdf.html', 'merge-pdf.html', 'watermark-pdf.html']
+    links: ['organize-pdf.html', 'merge-pdf.html', 'watermark-pdf.html'],
+    examples: [
+      ['Number a bundle but not its cover letter', 'For a cover letter followed by six pages of certificates, choose <strong>Page 1 of 10</strong> and turn on <strong>No number on the first page</strong>. The certificates are numbered Page 1 of 6 to Page 6 of 6, and the letter has no number.'],
+      ['Pages that continue another document', 'Type the next number in <strong>First number</strong>, for example 5 when the previous file ended on page 4.'],
+      ['A number covers text at the bottom', 'Choose a top position, or a larger distance from the edge, and check the preview again before you download.']
+    ],
+    guides: ['combine-documents-into-one-pdf.html', 'how-to-merge-pdf-files.html', 'document-checklist-before-online-application.html']
   },
   {
     page: 'watermark-pdf.html', tool: 'watermark', name: 'Watermark PDF', script: 'js/watermark-pdf.js',
@@ -490,11 +525,45 @@ const PAGES = [
       ['Is a watermark the same as self-attestation?', 'No. Self-attestation usually means signing a copy yourself. A typed "Self-attested" mark does not replace your signature if the form asks for one.'],
       ['Is my PDF uploaded?', 'No. The watermark is added by your browser on this device.']
     ],
-    links: ['add-page-numbers.html', 'compress-pdf.html', 'merge-pdf.html']
+    links: ['add-page-numbers.html', 'compress-pdf.html', 'merge-pdf.html'],
+    examples: [
+      ['Sending a copy of an ID to a recruiter', 'Choose <strong>For verification only</strong>, and <strong>Repeated across the page</strong> so the mark cannot be cropped away. Keep the strength low enough that the details stay readable in the preview.'],
+      ['"Self-attested copies"', 'A form that asks for self-attested copies usually wants your signature on each copy. The <strong>Self-attested</strong> mark can go on the page, but it does not replace the signature; sign the copies as the form asks.'],
+      ['The marked file is over the upload limit', 'Check the size shown with the result. If it is over the limit, bring it down with <a href="compress-pdf.html">Compress PDF</a>, then open it once to check that the mark is still readable.']
+    ],
+    guides: ['staying-safe-with-document-uploads.html', 'document-checklist-before-online-application.html', 'combine-documents-into-one-pdf.html']
   }
 ];
 
 /* ------------------------------------------------------------------ Page assembly */
+// Common requests: a few things people are asked to do, and how to do them with this tool.
+const examplesHTML = p => `    <section class="section prose" aria-labelledby="examplesHeading">
+      <h2 id="examplesHeading">Common requests</h2>
+${p.examples.map(([title, body]) => `      <h3>${title}</h3>
+      <p>${body}</p>`).join('\n')}
+    </section>`;
+
+// Guides that help with this tool: the title and lede of each guide, read from the guide itself so the
+// card cannot drift from the page it links to.
+function guideCard(file) {
+  const html = fs.readFileSync(path.join(ROOT, 'guides', file), 'utf8');
+  const title = (html.match(/<h1 class="page-title">([\s\S]*?)<\/h1>/) || [])[1];
+  const lede = (html.match(/<p class="page-lede">([\s\S]*?)<\/p>/) || [])[1];
+  if (!title || !lede) throw new Error(`guides/${file}: no page title or lede for its card`);
+  const text = s => s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  return `        <a href="guides/${file}" class="guide-card">
+          <strong>${text(title)}</strong>
+          <p class="text-muted">${text(lede)}</p>
+          <span class="resource-link">Read guide ${icon('arrow-right')}</span>
+        </a>`;
+}
+const guidesHTML = p => `    <section class="related-guides-section" aria-labelledby="guidesHeading">
+      <h2 id="guidesHeading" class="related-guides-title">Guides that help with this tool</h2>
+      <div class="related-guides-grid">
+${p.guides.map(guideCard).join('\n')}
+      </div>
+    </section>`;
+
 const faqHTML = faq => `    <section class="faq-section" aria-labelledby="faqHeading">
       <div class="faq-header">
         <h2 id="faqHeading" class="faq-title">Questions</h2>
@@ -547,9 +616,14 @@ ${p.how}
       <p class="tool-privacy">${icon('lock')} Your files are processed in this browser and never leave your device. Closing the tab clears them.</p>
     </section>
 
-${faqHTML(p.faq)}`;
+${examplesHTML(p)}
+
+${faqHTML(p.faq)}
+
+${guidesHTML(p)}`;
 }
 
+function run() {
 let differs = 0;
 for (const p of PAGES) {
   const file = path.join(ROOT, p.page);
@@ -562,6 +636,13 @@ for (const p of PAGES) {
     continue;
   }
   const html = fs.readFileSync(file, 'utf8');
+  // Everything else in <main> (how it works, common requests, questions, guide cards) also comes from
+  // this file, and only --force writes it, so --check reports when it differs.
+  if (check) {
+    const inner = s => (s.match(/<main\b[^>]*>([\s\S]*?)<\/main>/) || [])[1];
+    const fresh = pageHTML({ page: p.page, title: p.title, description: p.description, main: mainHTML(p), jsonld: jsonld(p), scripts: [] });
+    if (inner(fresh) !== inner(html)) { differs++; console.error(`page content out of date: ${p.page} (run node scripts/build-pdf-pages.js --force, then node scripts/sync-shell.js)`); continue; }
+  }
   const a = html.indexOf(START), b = html.indexOf(END);
   if (a < 0 || b < 0) throw new Error(`${p.page}: tool markers not found`);
   const next = html.slice(0, a) + toolBlock(p) + html.slice(b + END.length);
@@ -572,5 +653,8 @@ for (const p of PAGES) {
   }
 }
 if (check) { if (differs) process.exit(1); console.log(`PDF tool pages in sync (${PAGES.length})`); }
+}
 
+// Run when called as a script; tests read PAGES without writing anything.
+if (require.main === module) run();
 module.exports = { PAGES };

@@ -14,7 +14,7 @@ requirement and I will get the file right", not as a list of features.
 
 | File | Owns |
 |---|---|
-| `css/app.css` | The whole interface, in numbered sections: 0 tokens, 1 base, 2 layout, 3 header (Tools menu, search), 4 footer, 5 buttons and fields, 6 choice controls, 7 tabs and disclosure, 8 feedback, 9 dialogs and toasts, 10 reading content, 11 page patterns (home, directory, guide lists, FAQ), 12 tool workspace, 13 tool specifics, 14 resume builder, 15 responsive, 16 print and motion, 17 file lists and batches, then one section per newer tool (18 resume library and saving, 19 PDF tools, 20 batch images, 21 document tools and your data, 22 applicant workspaces). |
+| `css/app.css` | The whole interface, in numbered sections: 0 tokens, 1 base, 2 layout, 3 header (Tools menu, search), 4 footer, 5 buttons and fields, 6 choice controls, 7 tabs and disclosure, 8 feedback, 9 dialogs and toasts, 10 reading content, 11 page patterns (home, directory, guide lists, FAQ), 12 tool workspace, 13 tool specifics, 14 resume builder, 15 responsive, 16 print and motion, 17 file lists and batches, then one section per newer tool (18 resume library and saving, 19 PDF tools, 20 batch images, 21 document tools and your data, 22 applicant workspaces, 23 tutorials). New rules go inside the section for their area, not at the end of the file. |
 | `css/document.css` | The resume paper, its templates and its print layout (resume.html only). It is the output format, not interface, and `tests/content_tests.js` pins its hash. Do not edit it for interface work. |
 | `css/vendor/icons.min.css`, `css/vendor/cropper.min.css` | Icon subset (only the classes listed in it exist) and the cropper, restyled in `app.css`. |
 | `js/site.js` | Theme, header menu and phone sheet, on-screen keyboard state, phone layout of reference tables, `ApplyReadyUI.notify` (toast), `ApplyReadyUI.reveal`, `ApplyReadyUI.confirm` (dialog). |
@@ -28,8 +28,12 @@ requirement and I will get the file right", not as a list of features.
 | `scripts/build-pdf-pages.js` | The PDF tool pages (merge, split, organise, PDF to images, extract text, page numbers, watermark). |
 
 Markup between `<!-- tool:start -->` and `<!-- tool:end -->`, and between the `shell:` markers, is
-generated. Edit the generator and re-run it; hand edits are overwritten. After CSS or JS changes bump
-`ASSET_VERSION` in `scripts/lib/shell.js` (then sync) and `CACHE_NAME` in `sw.js`.
+generated. Edit the generator and re-run it; hand edits are overwritten, and `npm test` runs every
+generator with `--check`, so a hand edit fails the tests. After CSS or JS changes run
+`node scripts/sync-shell.js`: the service worker's cache name is a hash of the files it caches, so it
+changes by itself (never edit `CACHE_NAME` in `sw.js` by hand; `sync-shell.js --check` fails if you do).
+`ASSET_VERSION` in `scripts/lib/shell.js` is the `?v=` query on stylesheet and script links; change it
+on a release so browsers without the service worker fetch the new files.
 
 ## Tokens (section 0)
 
@@ -188,7 +192,7 @@ name and facts, `.file-status` in words with an icon, actions). `data-status` on
 `processing`, `done`, `error` or `cancelled`. PDF page thumbnails use `.page-grid` of `.page-tile`.
 Downloads of several results are offered individually and as one ZIP.
 
-The batch image pages (section 18, `scripts/lib/batch-workspace.js`) add a `.batch-panel` for progress
+The batch image pages (section 20, `scripts/lib/batch-workspace.js`) add a `.batch-panel` for progress
 (count, bar with `role="progressbar"`, time left, Cancel) and for the finished verdict (Download all as
 ZIP, Retry failed), a warning notice when changed settings make finished results stale ("Process
 again"), and rows with a result line (`.file-row__result`) and notes (`.file-row__notes`). Settings that
@@ -275,7 +279,7 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
 | Disabled | `--c-text-4`, no pointer events |
 | Empty | Drop zone, `.entries:empty` message, `.empty` |
 | Selected | `aria-pressed` / `aria-selected` with an ink marker and weight, never colour alone |
-| Saving / saved | Resume `#draftStatusText` (`role="status"`) |
+| Saving / saved | Resume `#saveStatus` (icon and `#saveStatusText` under the resume name, state in `data-state`). It is not a live region, so it does not speak on every keystroke; the first save, a failed save and a change in another tab are announced through `ApplyReadyUI.notify`, and anything that needs a decision appears in `#saveNotice` |
 | Offline | `offline.html` served by the service worker |
 | Temporary confirmation | `.task-notification` toast (`ApplyReadyUI.notify`) |
 
@@ -288,6 +292,11 @@ per row (without script it scrolls sideways instead). `.callout` is a ruled asid
 warning rule). Related guides (`.guide-card-grid`, `.related-guides-grid`) are divided link rows in
 two columns, not cards. FAQ is a ruled `<details>` list. `.toolset` lists the product family after
 the home tool.
+
+Screenshots are `figure.shot`: the picture, then a quiet caption that explains each numbered callout.
+A screenshot comes as a `<picture>` with a phone capture for windows up to 640 px, written by
+`scripts/guide-screenshots.js` (section 10). A wide one in a tutorial is wrapped in `.shot__full`, a link
+to the picture shown, with a visible "Open full size" line (`.shot__zoom`, section 23).
 
 ### Resume builder (`.rb`)
 - App bar (`.rb-head`): title, one-line lede, privacy line, "Review and download".
@@ -302,7 +311,8 @@ the home tool.
 - Review: status line, then findings grouped as Fix before sending, Worth checking, Suggestions; each
   says what, where and why, and Fix opens the section and entry and focuses the exact field.
 - Download: one row per format (PDF recommended, Word, plain text) with what it is for, then print,
-  then Keep your work (device draft, backup file).
+  then Keep your work (the Save on this device switch, the save status, backup file download and
+  import, and My resumes).
 - Preview (`.rb-preview`): sticky paper on `--c-desk` with template name, page count, zoom and PDF. On
   desktops it is the one contained scroll region in the product: it stays beside a long editor, so
   multi-page resumes scroll inside it.

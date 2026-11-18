@@ -460,6 +460,69 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await context.close();
   }
 
+  /* ---------------------------------------------------------------- screenshots on a phone */
+  // A phone shows the phone capture at (close to) the size it was taken, not a desktop capture shrunk
+  // until its text is a few pixels tall; "Open full size" is visible and opens the picture shown; a
+  // desktop window shows the desktop capture; and when the phone capture cannot load (offline, not yet
+  // seen), the desktop capture appears instead of a broken image.
+  {
+    stage = 'screenshots on a phone';
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'img/guides/manifest.json'), 'utf8'));
+    // Load every screenshot (they are lazy), then read what is shown.
+    const shots = async page => {
+      await page.evaluate(() => document.querySelectorAll('main .shot img').forEach(img => { img.loading = 'eager'; }));
+      await page.waitForFunction(() => [...document.querySelectorAll('main .shot picture > img')].every(img => img.complete && img.naturalWidth > 0), null, { timeout: 10000 });
+      await page.waitForTimeout(100);
+      return page.evaluate(() => [...document.querySelectorAll('main .shot picture > img')].map(img => {
+        const link = img.closest('.shot__full'), hint = link && link.querySelector('.shot__zoom');
+        return { name: (img.getAttribute('src').match(/([a-z0-9-]+)\.webp$/) || [])[1], current: img.currentSrc, natural: img.naturalWidth, shown: img.getBoundingClientRect().width, href: link && link.href, hint: hint ? hint.getBoundingClientRect().height > 0 && getComputedStyle(hint).visibility === 'visible' && hint.textContent.trim() : null };
+      }));
+    };
+    for (const name of ['how-to-create-a-resume.html', 'how-to-merge-pdf-files.html', 'how-to-process-many-photos-at-once.html']) {
+      const context = await browser.newContext({ viewport: { width: 360, height: 740 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+      await context.route('**/*', r => /^(http:\/\/127\.|blob:|data:)/.test(r.request().url()) ? r.continue() : r.abort());
+      const page = await context.newPage();
+      page.on('pageerror', e => errors.push(`${page.url()}: ${e.message}`));
+      await page.goto(`${origin}/guides/${name}`);
+      const list = await shots(page);
+      ok(list.length >= 2, `${name}: screenshots are offered with a phone capture (${list.length})`);
+      for (const s of list) {
+        const p = manifest[s.name].phone;
+        ok(s.current.endsWith(`/${p.file}`), `${name}: a 360 px phone shows the phone capture of ${s.name} (${s.current})`);
+        // Shown at no less than 85% of the size it was taken (a 328 px column for a capture up to 360 px wide).
+        ok(s.natural === p.width && s.shown >= 0.85 * p.width / p.scale, `${name}: ${s.name} is shown ${Math.round(s.shown)} px wide on the phone, for a capture ${p.width / p.scale} px wide`);
+        if (s.href !== null) {
+          ok(s.hint === 'Open full size', `${name}: ${s.name} says "Open full size" under the picture`);
+          ok(s.href === s.current, `${name}: "Open full size" opens the phone capture of ${s.name} (${s.href})`);
+        }
+      }
+      await context.close();
+    }
+    // A desktop window keeps the desktop capture and the link to it.
+    {
+      const { context, page } = await fresh();
+      await page.goto(`${origin}/guides/how-to-merge-pdf-files.html`);
+      for (const s of await shots(page)) {
+        ok(s.current.endsWith(`/img/guides/${s.name}.webp`), `desktop shows the desktop capture of ${s.name}`);
+        if (s.href !== null) ok(s.href === s.current && s.hint === 'Open full size', `desktop: "Open full size" opens ${s.name}.webp`);
+      }
+      await context.close();
+    }
+    // The phone capture is missing (as when offline before it was ever seen): the desktop capture is shown.
+    {
+      const context = await browser.newContext({ viewport: { width: 360, height: 740 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+      await context.route('**/*', r => /\/img\/guides\/phone\//.test(r.request().url()) ? r.abort() : /^(http:\/\/127\.|blob:|data:)/.test(r.request().url()) ? r.continue() : r.abort());
+      const page = await context.newPage();
+      page.on('pageerror', e => errors.push(`${page.url()}: ${e.message}`));
+      await page.goto(`${origin}/guides/how-to-merge-pdf-files.html`);
+      for (const s of await shots(page)) {
+        ok(s.current.endsWith(`/img/guides/${s.name}.webp`) && s.natural === manifest[s.name].width, `without the phone capture, ${s.name} falls back to the desktop capture (${s.current})`);
+        if (s.href !== null) ok(s.href === s.current, `and "Open full size" opens it (${s.href})`);
+      }
+      await context.close();
+    }
+  }
+
   ok(errors.length === 0, `no page errors: ${errors.join(' | ')}`);
   await browser.close();
   server.close();

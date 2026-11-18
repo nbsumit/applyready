@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /* Writes the workspace of the four single-file tools (signature cleaner, image to PDF, compress PDF,
    passport photo print) using the shared workspace pattern. The tool scripts drive these elements by id,
-   so ids, data-* attributes and the hidden/active state classes are a contract. Safe to re-run. */
+   so ids, data-* attributes and the hidden/active state classes are a contract. Safe to re-run.
+   `--check` writes nothing and exits 1 if any page's workspace differs from this file. */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
+const check = process.argv.includes('--check');
 const START = '<!-- tool:start -->';
 const END = '<!-- tool:end -->';
 
@@ -250,19 +252,28 @@ ${section('Cutting aids', `          <div class="check-group">
     </section>`
 };
 
+let differs = 0;
 for (const [page, render] of Object.entries(TOOLS)) {
   const file = path.join(root, page);
-  let html = fs.readFileSync(file, 'utf8');
+  const before = fs.readFileSync(file, 'utf8');
+  let html = before;
   const markup = `${START}\n    ${render()}\n    ${END}`;
   if (html.includes(START)) {
     html = html.slice(0, html.indexOf(START)) + markup + html.slice(html.indexOf(END) + END.length);
   } else {
+    if (check) { differs++; console.error(`workspace markers missing: ${page}`); continue; }
     const at = html.indexOf('<div class="resizer-grid"');
     if (at < 0) throw new Error(`${page}: workspace grid not found`);
     const end = balanced(html, at, 'div');
     const lineStart = html.lastIndexOf('\n', at) + 1;
     html = html.slice(0, lineStart) + '    ' + markup + html.slice(end);
   }
+  if (html === before) { if (!check) console.log('workspace unchanged:', page); continue; }
+  if (check) { differs++; console.error(`workspace out of date: ${page}`); continue; }
   fs.writeFileSync(file, html);
   console.log('workspace written:', page);
+}
+if (check) {
+  if (differs) { console.error('Run: node scripts/build-tool-pages.js, then node scripts/sync-shell.js'); process.exit(1); }
+  console.log(`tool page workspaces in sync (${Object.keys(TOOLS).length})`);
 }

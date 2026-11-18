@@ -19,14 +19,16 @@ there are no accounts, no cookies, no analytics and no advertising, and every fe
 | Signature cleaner | `signature-cleaner.html` | `js/signature-cleaner.js` |
 | Passport photo print sheet | `passport-photo-print.html` | `js/passport-photo-print.js` |
 | Image to PDF | `image-to-pdf.html` | `js/image-to-pdf.js` |
-| Compress PDF (scanned PDFs) | `compress-pdf.html` | `js/compress-pdf.js` |
+| Compress PDF (scanned PDFs) | `compress-pdf.html` | `js/compress-pdf.js` (+ `lib/pdf-kit.js`, `lib/pdf-ui.js`) |
+| PDF tools: merge, split, organise pages, PDF to images, extract text, add page numbers, watermark | `merge-pdf.html`, `split-pdf.html`, `organize-pdf.html`, `pdf-to-image.html`, `pdf-to-text.html`, `add-page-numbers.html`, `watermark-pdf.html` | One script per page with the same name (`js/merge-pdf.js`, `js/split-pdf.js`, `js/organize-pdf.js`, `js/pdf-to-image.js`, `js/pdf-to-text.js`, `js/add-page-numbers.js`, `js/watermark-pdf.js`), all on `lib/pdf-kit.js` (pdf-lib and pdf.js, loaded through `lib/pdf-kit-boot.js`) and `lib/pdf-ui.js` (shared interface) |
 | File checker: real type, size, pixels, DPI, PDF pages, document properties, photo metadata removal | `file-checker.html` | `js/file-checker.js` (+ `lib/inspect.js`) |
 | Text to PDF | `text-to-pdf.html` | `js/text-to-pdf.js` (+ `lib/text-pdf.js`) |
 | Your data: everything stored on the device, resume backup and restore, delete | `your-data.html` | `js/your-data.js` |
 | Applicant workspaces (cyber cafe mode): one temporary, memory-only space per applicant with one-click photo, signature, compress, convert, combine and merge actions, a ZIP per applicant, and a wipe on finish | `workspace.html` | `js/workspace.js` (+ `lib/applicants.js`, `lib/image-pool.js`, `lib/pdf-kit.js`) |
 
 Every tool is listed in one registry, `scripts/lib/tools.js`, which generates the header menu, footer,
-the tool directory (`tools.html`), the home page entry points and the site search index.
+the tool directory (`tools.html`), the home page entry points and the site search index. `npm test`
+fails if a tool in the registry is missing from the table above.
 
 Contributing: see [`CONTRIBUTING.md`](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
 The plan and its progress are in [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/PROGRESS.md`](docs/PROGRESS.md).
@@ -66,8 +68,22 @@ docs/                    Roadmap, progress, design system, SEO setup, licences
 
 ## Local development
 
-Requirements: Node.js 22 and npm; Python 3 with `fonttools` and `brotli` only to rebuild the icon subset.
-Pages use root-relative paths, so serve the repository root over HTTP:
+Requirements depend on what you run:
+
+| To | You need |
+|---|---|
+| Open the site and run `npm test` | Node.js 22 and npm (`npm ci`) |
+| Also check or rebuild the icon subset (`npm test` skips that check without it) | Python 3 with `pip install fonttools brotli` |
+| Run `npm run test:browser` | Chromium for Playwright: `npx playwright install chromium`, or set `BROWSER_EXECUTABLE_PATH` to a local Chromium or Chrome; poppler-utils (`pdfinfo`, `pdftotext`), `unzip` and ImageMagick (`identify`, `convert`), which the suites use to check downloaded files; Python 3 with `pip install pillow`, which some suites use to make and check images |
+| Regenerate the sample files and guide screenshots | Python 3 with Pillow and the same Chromium (`pdfinfo` is used to check the sample PDFs when it is installed) |
+
+On Debian or Ubuntu: `sudo apt-get install poppler-utils unzip imagemagick`. On macOS with Homebrew:
+`brew install poppler imagemagick`. CI (`.github/workflows/quality.yml`) installs exactly this list.
+
+Serve the repository root over HTTP, at the root of the host (not `file://` and not a sub-path): the
+service worker is registered at `/sw.js` and caches root paths, the 404 and offline pages and the font
+preloads use root paths (such as `/css/app.css` and `/assets/fonts/`), and browsers block service workers, module scripts and
+Web Workers on `file://` pages. Other pages use relative paths.
 
 ```bash
 python3 -m http.server 8000
@@ -86,12 +102,13 @@ Edit the generator, not the generated markup:
 | `node scripts/build-directory.js` | Tool listings on the home page and `tools.html` |
 | `node scripts/build-image-pages.js` | The resizer workspace on the image resizer pages, and the batch workspace on the batch, compressor and converter pages (`scripts/lib/batch-workspace.js`) |
 | `node scripts/build-tool-pages.js` | The workspace of the signature cleaner, passport print, image to PDF and compress PDF pages |
-| `node scripts/build-pdf-pages.js` | The PDF tool pages (merge, split, organise, PDF to images, extract text, page numbers, watermark): their workspace, and with `--force` the whole page, including the questions and their structured data |
+| `node scripts/build-pdf-pages.js` | The PDF tool pages (merge, split, organise, PDF to images, extract text, page numbers, watermark): their workspace, and with `--force` the whole page, including the common requests, the questions and their structured data, and the guide cards |
 | `node scripts/build-sitemap.js` | `sitemap.xml` |
 | `python3 scripts/build-icons.py` | The Font Awesome subset (`css/vendor/icons.min.css`, `css/webfonts/`) |
 | `node scripts/new-page.js <path> "<Title>" "<Description>"` | A new page with the shared head and shell markers |
 
-Each generator has a `--check` mode, and `npm test` fails when anything is out of date. The icon subset changes the
+Each generator has a `--check` mode that writes nothing and exits 1 if its output is out of date;
+`npm test` runs every one of them, so a hand edit inside generated markup fails the tests. The icon subset changes the
 stylesheet, so run `node scripts/sync-shell.js` once more after `build-icons.py` to refresh the service worker's cache name.
 
 ## Guide screenshots and sample files
@@ -108,7 +125,10 @@ BROWSER_EXECUTABLE_PATH=/path/to/chrome node scripts/guide-screenshots.js [shot 
 
 `guide-screenshots.js` drives each tool with Playwright, draws numbered callouts over real elements, saves
 WebP files in `img/guides/`, records their size and alt text in `img/guides/manifest.json` and updates the
-width and height of every `<img>` that shows them. `tests/guides_tests.js` (part of `npm test`) checks that
+width, height and alt text of every `<img>` that shows them. Each shot is also taken in a 360 px phone
+window at 2x (`img/guides/phone/`), and pages offer that capture to narrow screens through `<picture>`, so
+a reader on a phone sees the layout they use at a size they can read. `--desktop` or `--phone` takes only
+one of the two; `--sync` only rewrites the page markup from the manifest. `tests/guides_tests.js` (part of `npm test`) checks that
 images, manifest and pages agree, and `tests/tutorial_tests.js` (part of `npm run test:browser`) follows each
 tutorial in the tools and fails when a label, message or measurement quoted in a tutorial no longer matches.
 
@@ -127,8 +147,11 @@ and the guide image checks.
 npm run test:browser
 ```
 
-The browser suites drive every tool in Chromium with Playwright. Set `BROWSER_EXECUTABLE_PATH` to use a
-locally installed Chromium or Chrome. CI (`.github/workflows/quality.yml`) runs both on every push and
+The browser suites drive every tool in Chromium with Playwright and check the downloaded files with
+independent tools, so they need the extra programs listed under [Local development](#local-development).
+Set `BROWSER_EXECUTABLE_PATH` to use a locally installed Chromium or Chrome instead of
+`npx playwright install chromium`. Each suite can also be run alone, for example
+`node tests/pdf_tools_tests.js`. CI (`.github/workflows/quality.yml`) runs both on every push and
 pull request to `main`.
 
 ## Deployment
