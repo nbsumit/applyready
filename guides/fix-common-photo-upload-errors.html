@@ -125,6 +125,11 @@
                 <ul class="menu__list">
                   <li><a class="menu__item" href="../resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                 </ul>
+                <p class="menu__title"><a href="../tools.html#document">Document tools</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="../text-to-pdf.html"><i class="fa-solid fa-file-export menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Text to PDF</span><span class="menu__desc">Turn typed or pasted text into a clean PDF</span></span></a></li>
+                  <li><a class="menu__item" href="../file-checker.html"><i class="fa-solid fa-file-circle-check menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">File checker</span><span class="menu__desc">See a file’s real type, size, pixels and metadata; remove photo metadata</span></span></a></li>
+                </ul>
               </div>
               <div class="menu__group">
                 <p class="menu__title"><a href="../tools.html#image">Image tools</a></p>
@@ -213,7 +218,7 @@
 <section class="section prose">
 <h2>Format and file errors</h2>
 <h3>"Invalid file format" or "Only JPG/JPEG allowed"</h3>
-<p><strong>Cause:</strong> the file is PNG, WebP or HEIC, or it was renamed rather than converted. Changing <code>photo.png</code> to <code>photo.jpg</code> changes only the name: a JPEG file starts with the bytes <code>FF D8 FF</code> and a PNG file with <code>89 50 4E 47</code>, and a checker that reads the first bytes sees the difference. <strong>Fix:</strong> export a real JPEG. In the resizer, set the format to JPEG; JPEG is also the format that shrinks when quality is lowered, while PNG is lossless (<a href="https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types">MDN image format guide</a>). The <a href="image-formats-guide.html">image formats guide</a> explains when each format is the right choice.</p>
+<p><strong>Cause:</strong> the file is PNG, WebP or HEIC, or it was renamed rather than converted. Changing <code>photo.png</code> to <code>photo.jpg</code> changes only the name: a JPEG file starts with the bytes <code>FF D8 FF</code> and a PNG file with <code>89 50 4E 47</code>, and a checker that reads the first bytes sees the difference. <strong>Fix:</strong> export a real JPEG. In the resizer, set the format to JPEG; JPEG is also the format that shrinks when quality is lowered, while PNG is lossless (<a href="https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types">MDN image format guide</a>). The <a href="image-formats-guide.html">image formats guide</a> explains when each format is the right choice, and the <a href="../file-checker.html">file checker</a> shows the real type of any file next to its name.</p>
 <h3>"Unable to read file" or "File is corrupt"</h3>
 <p><strong>Cause:</strong> an interrupted download, a file renamed from another format, or an unusual colour profile. <strong>Fix:</strong> open the original in the resizer and download a fresh JPEG; the browser re-encodes it from the pixels.</p>
 <h3>"File name is not valid"</h3>
@@ -326,6 +331,8 @@
           <li><a href="../pdf-to-text.html">Extract text from PDF</a></li>
           <li><a href="../add-page-numbers.html">Add page numbers</a></li>
           <li><a href="../watermark-pdf.html">Watermark PDF</a></li>
+          <li><a href="../text-to-pdf.html">Text to PDF</a></li>
+          <li><a href="../file-checker.html">File checker</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
@@ -346,6 +353,7 @@
           <li><a href="../philosophy.html">Our philosophy</a></li>
           <li><a href="../privacy.html">Privacy</a></li>
           <li><a href="../terms.html">Terms of use</a></li>
+          <li><a href="../your-data.html">Your data</a></li>
           <li><a href="../contact.html">Contact and support</a></li>
           <li><a href="../feedback.html">Feedback</a></li>
           <li><a href="../contribute.html">Contribute</a></li>

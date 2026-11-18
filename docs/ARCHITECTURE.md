@@ -26,6 +26,8 @@ Pages (*.html, guides/)          Hand-written content + generated shell and tool
   │               js/lib/pdf-kit-boot.js  module script that imports pdf.js; injected by pdf-kit.js on first use
   │               js/lib/pdf-ui.js     shared PDF tool interface: one-PDF intake, password dialog, progress and cancel,
   │                                    drag to reorder, lazy page thumbnails
+  │               js/lib/inspect.js    file checker parsers: real type, image/PDF/Office details, requirement check, lossless metadata removal
+  │               js/lib/text-pdf.js   text to PDF: WinAnsi character check, word wrap, pagination, PDF writing (pdf-lib standard fonts)
   │
   ├─ Workers      js/workers/image-worker.js
   │
@@ -139,6 +141,10 @@ All resumes (Your data page and the resume library):
   "resumes": [ { "name": "…", "createdAt": 0, "updatedAt": 0, "data": { } } ]
 }
 ```
+
+The Your data page reads, exports and imports resumes with the same `js/resume-library.js` functions as the
+resume builder, refuses an import when saving is switched off or browser storage is unavailable, and
+posts `deleted` and `saved` messages on the `applyready-resumes` channel so open builder tabs follow.
 
 Importing never overwrites: each imported resume becomes a new library entry, keeping the edit
 dates from the file (never later than the import). Files over 5 MB, with an

@@ -63,6 +63,7 @@
 .fa-arrows-rotate:before{content:"\f021"}
 .fa-lock:before{content:"\f023"}
 .fa-print:before{content:"\f02f"}
+.fa-camera:before{content:"\f030"}
 .fa-font:before{content:"\f031"}
 .fa-image:before{content:"\f03e"}
 .fa-circle-half-stroke:before{content:"\f042"}
@@ -82,6 +83,8 @@
 .fa-folder-open:before{content:"\f07c"}
 .fa-arrows-up-down:before{content:"\f07d"}
 .fa-arrow-up-right-from-square:before{content:"\f08e"}
+.fa-upload:before{content:"\f093"}
+.fa-hard-drive:before{content:"\f0a0"}
 .fa-users:before{content:"\f0c0"}
 .fa-scissors:before{content:"\f0c4"}
 .fa-copy:before{content:"\f0c5"}
@@ -91,12 +94,17 @@
 .fa-arrow-rotate-back:before,.fa-arrow-rotate-left:before{content:"\f0e2"}
 .fa-bolt:before{content:"\f0e7"}
 .fa-spinner:before{content:"\f110"}
+.fa-eraser:before{content:"\f12d"}
+.fa-file:before{content:"\f15b"}
 .fa-file-lines:before{content:"\f15c"}
+.fa-building:before{content:"\f1ad"}
 .fa-file-pdf:before{content:"\f1c1"}
 .fa-file-word:before{content:"\f1c2"}
 .fa-file-image:before{content:"\f1c5"}
 .fa-file-zipper:before{content:"\f1c6"}
 .fa-paper-plane:before{content:"\f1d8"}
+.fa-clock-rotate-left:before{content:"\f1da"}
+.fa-wifi:before{content:"\f1eb"}
 .fa-object-group:before{content:"\f247"}
 .fa-hourglass-half:before{content:"\f252"}
 .fa-circle-pause:before{content:"\f28b"}
@@ -108,6 +116,9 @@
 .fa-images:before{content:"\f302"}
 .fa-pen:before{content:"\f304"}
 .fa-lock-open:before{content:"\f3c1"}
+.fa-location-dot:before{content:"\f3c5"}
+.fa-shield-halved:before{content:"\f3ed"}
+.fa-user-shield:before{content:"\f505"}
 .fa-book-open:before{content:"\f518"}
 .fa-crop-simple:before{content:"\f565"}
 .fa-file-export:before{content:"\f56e"}

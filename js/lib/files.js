@@ -35,6 +35,8 @@
     if (startsWith(b, [0x50, 0x4B, 0x03, 0x04])) return { kind: 'zip', ext: 'zip', mime: 'application/zip', label: 'ZIP-based file (ZIP, DOCX, XLSX…)' };
     if (startsWith(b, [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1])) return { kind: 'ole', ext: 'doc', mime: 'application/msword', label: 'Older Office file (DOC, XLS…)' };
     if (startsWith(b, [0x49, 0x49, 0x2A, 0x00]) || startsWith(b, [0x4D, 0x4D, 0x00, 0x2A])) return { kind: 'tiff', ext: 'tif', mime: 'image/tiff', label: 'TIFF image' };
+    // UTF-16 text (Windows Notepad's "Unicode") starts with a byte-order mark and is full of zero bytes.
+    if (b.length >= 2 && ((b[0] === 0xFF && b[1] === 0xFE) || (b[0] === 0xFE && b[1] === 0xFF))) return { kind: 'text', ext: 'txt', mime: 'text/plain', label: 'Plain text (UTF-16)', encoding: b[0] === 0xFF ? 'utf-16le' : 'utf-16be' };
     if (b.length && looksLikeText(b)) return { kind: 'text', ext: 'txt', mime: 'text/plain', label: 'Plain text' };
     return { kind: 'unknown', ext: '', mime: 'application/octet-stream', label: 'Unknown file type' };
   }
