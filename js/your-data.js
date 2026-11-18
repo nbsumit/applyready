@@ -143,6 +143,11 @@
     const btn = $('ydImport');
     btn.disabled = true;
     try {
+      // Without browser storage the store keeps records in this tab's memory only: an import would
+      // look successful and vanish when the tab closes, so say so instead.
+      let persistent = true;
+      try { persistent = wiped || (await Store.status()).persistent; } catch (e) { persistent = true; }
+      if (!persistent) { panelNotice('ydResumeError', 'This browser is not letting ApplyReady save anything right now, so the backup could not be stored here. To use it for this visit only, import it in the resume builder.', true); return; }
       let parsed;
       try { parsed = Lib.parseBackup(await file.text(), file.size); }
       catch (e) { panelNotice('ydResumeError', e instanceof Lib.ImportError ? e.message : 'This backup could not be imported. Your saved resumes are unchanged.', true); return; }

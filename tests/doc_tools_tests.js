@@ -222,6 +222,29 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await page.waitForFunction(i => document.querySelector(`.fc-item[data-id="${i}"]`).dataset.status === 'done', id, { timeout: 15000 });
     ok(true, 'retry checks a stopped file');
     await page.click('#fcClear');
+    // Protected and incomplete PDFs, and a file removed while its metadata is being removed
+    await page.goto(origin + '/file-checker.html');
+    const encDoc = await PDFLib.PDFDocument.create(); encDoc.addPage(); encDoc.addPage(); encDoc.setAuthor('Hidden Author');
+    encDoc.encrypt({ userPassword: 'secret', ownerPassword: 'owner' });
+    const permDoc = await PDFLib.PDFDocument.create(); permDoc.addPage(); permDoc.setAuthor('Permissions Author');
+    permDoc.encrypt({ userPassword: '', ownerPassword: 'owner', permissions: { printing: false } });
+    await page.setInputFiles('#fcDropInput', [
+      { name: 'locked.pdf', mimeType: 'application/pdf', buffer: Buffer.from(await encDoc.save()) },
+      { name: 'restricted.pdf', mimeType: 'application/pdf', buffer: Buffer.from(await permDoc.save()) },
+      { name: 'half.pdf', mimeType: 'application/pdf', buffer: pdf.subarray(0, Math.floor(pdf.length / 2)) },
+      { name: 'gps.jpg', mimeType: 'image/jpeg', buffer: fs.readFileSync(path.join(tmp, 'gps.jpg')) }
+    ]);
+    await page.waitForFunction(() => document.querySelectorAll('.fc-item[data-status="done"]').length === 4, null, { timeout: 30000 });
+    const locked = await card('locked.pdf').innerText();
+    ok(/protected with a password/.test(locked) && /Pages\s+2/.test(locked) && /needs a password to open/.test(locked) && !/Hidden Author/.test(locked), 'password-protected PDF: explained, pages counted, nothing else claimed');
+    const restricted = await card('restricted.pdf').innerText();
+    ok(/encrypted with permissions/.test(restricted) && /opens without a password/.test(restricted) && /Pages\s+1/.test(restricted) && (/Permissions Author/.test(restricted) || /Could not be read in this encrypted file/.test(restricted)), 'permissions-only PDF: opened; its author is shown or the page says it could not be read');
+    ok(/incomplete/.test(await card('half.pdf').innerText()), 'cut-off PDF: reported as incomplete');
+    await card('gps.jpg').locator('[data-action="clean"]').click();
+    await card('gps.jpg').locator('[data-action="remove"]').click();
+    await page.waitForTimeout(1500);
+    ok(await card('gps.jpg').count() === 0 && await page.locator('.fc-item').count() === 3, 'removing a file while it is being cleaned drops it for good');
+
     ok(errors.length === 0, `file checker: no page errors (${errors.join(' | ')})`);
     await context.close();
     console.log('\u2713 File checker: real files, mismatches, PDFs, DOCX, requirement, lossless cleaning verified with PIL, limits, cancel and retry');
@@ -487,6 +510,20 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     for (const width of [320, 390]) {
       await page.setViewportSize({ width, height: 800 });
       await noOverflow(page, `your data at ${width}px`);
+    }
+    // Browser storage blocked (some private windows): the page says so and an import is not faked in memory.
+    {
+      const blocked = await newContext();
+      await blocked.addInitScript(() => { Object.defineProperty(window, 'indexedDB', { get() { throw new Error('blocked'); } }); });
+      const p2 = await blocked.newPage();
+      watch(p2);
+      await p2.goto(origin + '/your-data.html');
+      await p2.locator('#ydStorageWarning').waitFor({ state: 'visible' });
+      ok(/not letting ApplyReady save/.test(await p2.locator('#ydStorageWarningText').innerText()) && await p2.locator('#ydResumeCount').innerText() === 'None', 'storage blocked: explained, no resumes');
+      await p2.setInputFiles('#ydImportInput', backup.file);
+      await p2.waitForFunction(() => !document.getElementById('ydResumeError').hidden);
+      ok(/could not be stored here/.test(await p2.locator('#ydResumeError').innerText()) && await p2.locator('#ydResumeCount').innerText() === 'None', 'storage blocked: import refused instead of kept in memory');
+      await blocked.close();
     }
     ok(errors.length === 0, `your data: no page errors (${errors.join(' | ')})`);
     await context.close();

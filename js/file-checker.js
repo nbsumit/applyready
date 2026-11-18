@@ -215,7 +215,7 @@
       row('Encrypted', p.needsPassword ? 'Yes, needs a password to open' : p.encrypted ? 'Yes, opens without a password' : 'No', '', p.encrypted ? 'fc-warn' : ''),
       row('Title', m.title), row('Author', m.author, '', m.author ? 'fc-warn' : ''), row('Subject', m.subject), row('Keywords', m.keywords),
       row('Created with', m.creator), row('PDF made by', m.producer), row('Created', fmtDate(m.created)), row('Modified', fmtDate(m.modified)),
-      p.needsPassword ? row('Document information', 'Not readable without the password') : '',
+      p.needsPassword ? row('Document information', 'Not readable without the password') : p.infoUnreadable ? row('Document information', 'Could not be read in this encrypted file', 'It may still hold an author name') : '',
       p.forms ? row('Form fields', 'Yes, it has fillable fields') : '',
       p.updates > 0 ? row('Saved again after creation', `${p.updates} time${p.updates === 1 ? '' : 's'}`, 'Earlier versions may still be inside the file') : ''
     ]);

@@ -525,6 +525,9 @@
         created: toIso(safe(() => doc.getCreationDate())), modified: toIso(safe(() => doc.getModificationDate()))
       };
       for (const k of Object.keys(m)) if (m[k]) out.metadata[k] = clean(m[k], 300);
+      // pdf-lib cannot decrypt the document information of some encrypted files (for example AES-256
+      // files that keep it in an object stream). Say it was not read rather than suggest there is none.
+      if (out.encrypted && !Object.keys(out.metadata).length) out.infoUnreadable = true;
       try {
         out.xmpMetadata = !!doc.catalog.get(PDFLib.PDFName.of('Metadata'));
         const v = doc.catalog.get(PDFLib.PDFName.of('Version'));

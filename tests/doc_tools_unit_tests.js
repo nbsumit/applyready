@@ -237,5 +237,20 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     } else console.log('  (pdfinfo/pdftotext not installed; skipped)');
   }
 
+  // Encrypted PDFs: a password-protected file is counted but not read; one whose information pdf-lib
+  // cannot decrypt is marked unreadable instead of reported as having none; an incomplete one says so.
+  {
+    const locked = await PDFLib.PDFDocument.create(); locked.addPage(); locked.setAuthor('A'); locked.encrypt({ userPassword: 'pw', ownerPassword: 'o' });
+    const r1 = await Inspect.inspectPdf(await locked.save(), PDFLib);
+    ok(r1.encrypted && r1.needsPassword && r1.pages === 1 && !Object.keys(r1.metadata).length, 'password PDF: pages counted, details not read');
+    const perm = await PDFLib.PDFDocument.create(); perm.addPage(); perm.setAuthor('A'); perm.encrypt({ userPassword: '', ownerPassword: 'o' });
+    const r2 = await Inspect.inspectPdf(await perm.save(), PDFLib);
+    ok(r2.encrypted && !r2.needsPassword && (r2.metadata.author === 'A' || r2.infoUnreadable === true), 'permissions-only PDF: author read, or marked unreadable');
+    const plain = await PDFLib.PDFDocument.create(); plain.addPage();
+    const bytes = await plain.save();
+    const cut = await Inspect.inspect(bytes.subarray(0, Math.floor(bytes.length / 2)), { name: 'cut.pdf', PDFLib });
+    ok(cut.pdf.truncated && cut.warnings.some(w => w.level !== 'info' && /incomplete/.test(w.text)), 'cut-off PDF: called incomplete (pdf-lib may still recover its pages)');
+  }
+
   console.log(`\u2713 document tools unit tests: ${checks} checks passed`);
 })().catch(e => { console.error(e); process.exit(1); });
