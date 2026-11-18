@@ -779,6 +779,14 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .status-page { padding: var(--s-6) 0; }
 .status-page .actions { display: grid; gap: var(--s-2); max-width: 420px; margin: var(--s-6) 0; }
 .status-page .actions .btn { justify-content: flex-start; white-space: normal; text-align: left; }
+/* The offline page lists only the pages kept on this device (js/offline.js). */
+.status-page__note { margin-top: var(--s-5); color: var(--c-text-2); max-width: 62ch; }
+.status-page__note + .actions { margin-top: var(--s-3); }
+.status-page__saved { margin: 0 0 var(--s-6); max-width: 420px; }
+.status-page__title { font-size: var(--fs-md); font-weight: var(--fw-strong); color: var(--c-text); }
+.status-page__list { list-style: none; margin-top: var(--s-2); display: grid; gap: var(--s-1); }
+.status-page__list a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+.status-page p.muted a { text-decoration: underline; text-underline-offset: .2em; }
 
 /* ================================================================== 12. TOOL WORKSPACE */
 /* One frame for every tool. data-state is empty | ready | done (set by components.js), data-busy

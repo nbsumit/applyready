@@ -144,6 +144,31 @@ for (const m of read('css/vendor/icons.min.css').matchAll(/url\("\.\.\/webfonts\
   const hashes = (swText.match(/ASSET_HASHES = '([0-9a-f ]+)'/) || [])[1] || '';
   ok(hashes.split(' ').length === (list.match(/'\/[^']*'/g) || []).length, 'every file of the offline copy has a content hash');
   ok(/function keyFor/.test(swText) && !/ignoreSearch/.test(swText), 'files are cached once, under one key per path, not once per query string');
+  // The offline page's own script and both icon fonts are cached with it at install (a page that
+  // never drew a regular-weight icon never fetched that font, so the offline page showed a blank icon).
+  const shell = ((swText.match(/OFFLINE_SHELL = \[([^\]]*)\]/) || [])[1] || '').match(/'[^']+'/g) || [];
+  ok(['/js/offline.js', '/css/webfonts/fa-solid-900.woff2', '/css/webfonts/fa-regular-400.woff2'].every(p => shell.includes(`'${p}'`)) && shell.every(p => list.includes(p)), `the offline page's script and icon fonts are cached with it (${shell})`);
+  ok(/keepOfflineShell\(\)/.test(install), 'install caches the offline page’s script and icon fonts');
+  // "Save every tool" includes the PDF libraries, so the PDF tools work offline after it.
+  const vendorList = (swText.match(/VENDOR_ASSETS = \[[\s\S]*?\];/) || [''])[0];
+  for (const f of ['/js/vendor/pdf-lib.min.js', '/js/vendor/pdfjs/pdf.min.mjs', '/js/vendor/pdfjs/pdf.worker.min.mjs', '/js/vendor/pdfjs/wasm/openjpeg.wasm', '/js/vendor/pdfjs/wasm/jbig2.wasm']) ok(vendorList.includes(`'${f}'`), `the full offline copy includes ${f}`);
+  for (const m of vendorList.matchAll(/'\/([^']+)'/g)) ok(fs.existsSync(path.join(root, m[1])), `${m[1]}: listed for the offline copy and present`);
+  const saveFn = (swText.match(/async function missingFiles[\s\S]*?\n\}/) || [''])[0];
+  ok(/VENDOR_ASSETS/.test(saveFn) && /missingFiles\(\)/.test((swText.match(/async function saveSite[\s\S]*?\n\}/) || [''])[0]) && /missingFiles\(\)/.test((swText.match(/async function siteInfo[\s\S]*?\n\}/) || [''])[0]), 'saving every tool fetches the PDF libraries, and the saved count includes them');
+}
+// The offline page and the help pages describe the real offline behaviour: pages that were opened,
+// or every tool once saved on Your data. Nothing is downloaded on a first visit.
+{
+  const offline = read('offline.html');
+  const lede = (offline.match(/<p class="page-lede">([\s\S]*?)<\/p>/) || [])[1] || '';
+  ok(lede && !/first visit|every tool|should still open/i.test(lede), `offline.html: the lede does not promise pages that were never opened (${lede})`);
+  ok(/href="\/your-data\.html#offline"/.test(offline) && /Save every tool for offline use/.test(offline), 'offline.html: points to Save every tool on Your data');
+  ok(/<script src="\/js\/offline\.js\?v=[^"]+" defer><\/script>/.test(offline) && /id="offlineActions"/.test(offline), 'offline.html: loads the script that shows only kept pages');
+  for (const f of pages) {
+    const text = read(f).replace(/<[^>]+>/g, ' ');
+    ok(!/after (your|a) first visit,? offline|offline after a first visit|keeps every tool and guide on this device/i.test(text), `${f}: does not promise offline use after a first visit`);
+  }
+  ok(!/Two links lead elsewhere/.test(read('privacy.html')), 'privacy.html: does not count the outbound links (guides cite many official pages)');
 }
 // A page that shows image previews loads the pixel-size check (js/lib/image-ops.js) used by Kit.thumbnail.
 {

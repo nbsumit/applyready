@@ -89,17 +89,39 @@ function mixedPdf(jpeg) {
     throw new Error(`timed out: ${label}`);
   };
   const cachedPaths = () => page.evaluate(async () => (await (await caches.open('applyready-files')).keys()).map(r => r.url));
+  const swSource = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const offlineShell = swSource.match(/OFFLINE_SHELL = \[([^\]]*)\]/)[1].match(/'[^']+'/g).map(x => x.slice(1, -1));
+  // The offline page, shown for a page that was never kept: which buttons and kept pages it offers,
+  // and whether its icons drew (the regular-weight icon font once failed offline).
+  const offlinePage = async p => {
+    await page.goto(origin + p);
+    await page.waitForFunction(() => !document.getElementById('offlineStatus').hidden, null, { timeout: 10000 });
+    await page.evaluate(() => document.fonts.ready);
+    return page.evaluate(async () => ({
+      // Both icon weights, drawn or not: loading one that is not kept fails offline.
+      fontsLoaded: await Promise.all(['400', '900'].map(w => document.fonts.load(`${w} 16px "Font Awesome 6 Free"`, '\uf15c').then(f => f.length, () => 0))),
+      title: document.title,
+      lede: document.querySelector('.page-lede').textContent,
+      buttons: [...document.querySelectorAll('#offlineActions a')].filter(a => !a.hidden && a.offsetParent).map(a => a.getAttribute('href')),
+      primary: [...document.querySelectorAll('#offlineActions a.btn-primary')].filter(a => !a.hidden).map(a => a.getAttribute('href')),
+      saved: document.getElementById('offlineSavedBox').hidden ? [] : [...document.querySelectorAll('#offlineSaved a')].map(a => a.getAttribute('href')),
+      status: document.getElementById('offlineStatus').textContent,
+      fontErrors: [...document.fonts].filter(f => /Font Awesome/.test(f.family) && f.status === 'error').map(f => f.weight)
+    }));
+  };
   served.bytes = 0; served.paths = [];
   await page.goto(origin + '/');
-  const pageBytes = served.bytes, pagePaths = served.paths.length;
+  const pagePaths = served.paths.length;
   await page.evaluate(() => navigator.serviceWorker.ready);
   await until(async () => {
     const keys = (await (await caches.open('applyready-files')).keys()).map(r => new URL(r.url).pathname);
-    return ['/', '/css/app.css', '/css/vendor/icons.min.css', '/js/site.js', '/js/home.js', '/offline.html', '/assets/fonts/inter-latin.woff2'].every(p => keys.includes(p));
+    return ['/', '/css/app.css', '/css/vendor/icons.min.css', '/js/site.js', '/js/home.js', '/offline.html', '/assets/fonts/inter-latin.woff2', '/js/offline.js', '/css/webfonts/fa-regular-400.woff2'].every(p => keys.includes(p));
   }, 'the first page and its files are kept');
   await page.waitForTimeout(500);
   const extraPaths = served.paths.slice(pagePaths).filter(p => p !== '/sw.js' && !p.startsWith('/favicon/')); // the browser asks for the icon itself
-  ok(served.bytes - pageBytes < 60 * 1024 && extraPaths.every(p => p === '/offline.html'), `first visit: the offline service downloaded only the offline page (${Math.round((served.bytes - pageBytes) / 1024)} KB: ${extraPaths.join(', ')})`);
+  // Counted without sw.js and the favicon, which the browser fetches for itself.
+  const extraBytes = extraPaths.reduce((n, p) => n + fs.statSync(path.join(root, p)).size, 0);
+  ok(extraBytes < 60 * 1024 && extraPaths.every(p => p === '/offline.html' || offlineShell.includes(p)), `first visit: the offline service downloaded only the offline page, its script and icon fonts (${Math.round(extraBytes / 1024)} KB: ${extraPaths.join(', ')})`);
   let keys = await cachedPaths();
   ok(keys.length < 40, `first visit: only the page's own files are kept (${keys.length})`);
   ok(keys.every(u => !/[?&]v=/.test(u)) && new Set(keys.map(u => new URL(u).pathname)).size === keys.length, 'each file is cached once, under its path and content hash, not once per ?v= query');
@@ -107,6 +129,12 @@ function mixedPdf(jpeg) {
   await offlineCheck('/', true);
   await offlineCheck('/compress-pdf.html', false);
   await offlineCheck('/a-page-that-was-never-cached.html', false);
+  // The offline page offers only what is kept (here the home page), never a page that would show it
+  // again, and does not promise that every tool is kept; its icons draw from the cache.
+  let off = await offlinePage('/compress-pdf.html');
+  ok(off.buttons.join() === '/' && off.primary.join() === '/' && !off.saved.length, `offline page after one visit: only the home page is offered (${JSON.stringify(off)})`);
+  ok(!/first visit|every tool/i.test(off.lede) && /opened before/.test(off.lede), `offline page: the text describes what is kept (${off.lede})`);
+  ok(!off.fontErrors.length && off.fontsLoaded.every(n => n > 0), `offline page: both icon fonts load offline (loaded ${off.fontsLoaded}, errors ${JSON.stringify(off.fontErrors)})`);
   await context.setOffline(false);
 
   // A page opened online (the service worker now in control) is kept as it loads.
@@ -116,6 +144,19 @@ function mixedPdf(jpeg) {
   await context.setOffline(true);
   await offlineCheck('/resume.html', true);
   await offlineCheck('/guides/ats-friendly-resume-guide.html', false);
+  off = await offlinePage('/guides/ats-friendly-resume-guide.html');
+  ok(off.buttons.join() === '/,/resume.html' && !off.saved.length, `offline page: the resume builder, opened before, is offered too (${JSON.stringify(off)})`);
+  await page.click('#offlineActions a[href="/resume.html"]');
+  await page.waitForURL(/\/resume\.html$/);
+  ok(!/Offline/.test(await page.title()), 'offline page: its resume builder button opens the resume builder');
+  await context.setOffline(false);
+  // A tool opened online appears in the list of other kept pages.
+  await page.goto(origin + '/merge-pdf.html');
+  await page.waitForFunction(() => window.ApplyReadyUI);
+  await page.waitForTimeout(1500);
+  await context.setOffline(true);
+  off = await offlinePage('/split-pdf.html');
+  ok(off.saved.includes('/merge-pdf.html') && !off.saved.includes('/split-pdf.html') && !off.saved.includes('/tools.html'), `offline page: other kept tools are listed (${JSON.stringify(off.saved)})`);
   await context.setOffline(false);
   keys = await cachedPaths();
   ok(keys.every(u => !/[?&]v=/.test(u)) && new Set(keys.map(u => new URL(u).pathname)).size === keys.length, 'still one entry per file after browsing');
@@ -128,9 +169,24 @@ function mixedPdf(jpeg) {
   await page.click('#ydOfflineAll');
   await page.waitForFunction(() => !document.getElementById('ydDone').hidden && /saved for offline use/.test(document.getElementById('ydDoneText').textContent), null, { timeout: 60000 });
   ok(/Every tool and guide is saved for offline use/.test(await page.locator('#ydDoneText').innerText()) && await page.locator('#ydOfflineAll').isHidden(), `your data: every tool saved (${await page.locator('#ydDoneText').innerText()})`);
+  const vendorKept = await page.evaluate(async () => {
+    const name = (await caches.keys()).find(k => k.startsWith('applyready-vendor-'));
+    return name ? (await (await caches.open(name)).keys()).map(r => new URL(r.url).pathname) : [];
+  });
+  ok(['/js/vendor/pdf-lib.min.js', '/js/vendor/pdfjs/pdf.min.mjs', '/js/vendor/pdfjs/pdf.worker.min.mjs'].every(p => vendorKept.includes(p)), `your data: saving every tool keeps the PDF libraries (${vendorKept.length} files)`);
   await context.setOffline(true);
   for (const p of ['/compress-pdf.html', '/guides/ats-friendly-resume-guide.html', '/merge-pdf.html']) await offlineCheck(p, true);
   await offlineCheck('/a-page-that-was-never-cached.html', false);
+  off = await offlinePage('/a-page-that-was-never-cached.html');
+  ok(off.buttons.length === 5 && off.saved.length > 10, `offline page after saving every tool: every button and the kept tools are offered (${off.buttons.length} buttons, ${off.saved.length} pages)`);
+  // A PDF tool that was never used online works offline after "Save every tool".
+  await page.goto(origin + '/compress-pdf.html');
+  await page.setInputFiles('#compressFileInput', { name: 'mixed.pdf', mimeType: 'application/pdf', buffer: mixedPdf(sample('test-portrait.jpg')) });
+  await page.waitForSelector('#compressFileInfoBox:not(.hidden)', { timeout: 15000 });
+  await page.fill('#targetKbInput', '100');
+  await page.click('#btnStartCompress');
+  await page.waitForSelector('#compressResultArea:not(.hidden)', { timeout: 60000 });
+  ok(true, 'offline after saving every tool: Compress PDF compresses a PDF');
   await context.setOffline(false);
 
   // A new release: only the files that changed are downloaded again, and the old copies go.
