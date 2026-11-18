@@ -423,7 +423,7 @@ const server = http.createServer((req, res) => {
       ok(before, `${file}: the image appears above the Resize button`);
       ok((await page.locator('#btnProcess').textContent()).trim() === label, `${file}: the button keeps its label`);
       // The multi-target KB page asks which limit first, like the image resizer.
-      if (await page.locator('#btnProcess').isDisabled()) await choose(page, 'kb-100');
+      if (await page.locator('#btnProcess').isDisabled()) await choose(page, await page.locator('.choice[data-preset="kb-100"]').count() ? 'kb-100' : 'passport');
       await page.locator('#btnProcess').click();
       await page.locator('#resultArea').waitFor({ state: 'visible' });
       await page.waitForFunction(() => document.getElementById('resultFileSize') && document.getElementById('resultFileSize').textContent.trim().length > 2);
@@ -721,7 +721,7 @@ const server = http.createServer((req, res) => {
     ok(await phone.page.locator('#viewDownload').isVisible() && await phone.page.locator('#btnDownloadPDF').isVisible(), 'resume on a phone: Download opens the download step');
     await phone.context.close();
   }
-  console.log('✓ Rebuild interactions: PDF rotation, drag and keyboard reorder, stale results, focus, signature compare, Hindi results, no inner scrolling, tool order, entry folding, exact-field Fix, phone Download');
+  console.log('✓ Rebuild interactions: PDF rotation, drag and keyboard reorder, stale results, focus, signature compare, no inner scrolling, tool order, entry folding, exact-field Fix, phone Download');
 
   await browser.close();
   server.close();

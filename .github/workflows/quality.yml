@@ -9,16 +9,23 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # build-sitemap.js reads page history for lastmod
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install fonttools brotli pillow   # icon subset check; PIL for image test fixtures
       - run: npm ci
       - run: npm test
       - run: npx playwright install --with-deps chromium
-      - run: sudo apt-get update && sudo apt-get install -y poppler-utils unzip
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils unzip imagemagick
       - run: npm run test:browser
       - uses: actions/upload-artifact@v4
         if: always()
