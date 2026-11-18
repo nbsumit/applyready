@@ -5,10 +5,18 @@
    scripts/make-sample-pdfs.js), so every screenshot can be regenerated after a design change:
 
      python3 scripts/make-sample-images.py && node scripts/make-sample-pdfs.js
-     BROWSER_EXECUTABLE_PATH=/path/to/chromium node scripts/guide-screenshots.js [name ...]
+     BROWSER_EXECUTABLE_PATH=/path/to/chromium node scripts/guide-screenshots.js [--desktop | --phone] [name ...]
 
    Each shot loads a real page in a fresh browser profile, performs the task with the real
    interface, draws numbered callouts over real elements and captures the region that matters.
+
+   Every shot is taken twice: once in a desktop window (img/guides/<name>.webp) and once in a phone
+   window, 360 CSS px wide at 2x (img/guides/phone/<name>.webp), so a reader on a phone sees the
+   layout they will actually use, at a size they can read. Pages show both through <picture>, and
+   this script writes that markup. A shot whose steps need different elements in the phone layout
+   gives them in `phone: { run }`; `phone: false` keeps only the desktop picture.
+   --desktop or --phone takes only one of the two; --sync only rewrites that markup from the manifest.
+
    Width, height, bytes and alt text are recorded in img/guides/manifest.json; tests/guides_tests.js
    checks that every image a guide shows exists, matches the manifest and is used by a page. */
 'use strict';
@@ -21,6 +29,12 @@ const { chromium } = require('playwright');
 
 const root = path.resolve(__dirname, '..');
 const out = path.join(root, 'img', 'guides');
+const outPhone = path.join(out, 'phone');
+// The phone window: the narrowest common phone, at the pixel density of most phones. Pages switch to
+// the phone picture below PHONE_MEDIA (tests/guides_tests.js checks the same media query).
+const PHONE = { width: 360, height: 740, scale: 2 };
+const PHONE_MEDIA = '(max-width: 640px)';
+const ZOOM_HINT = '<span class="shot__zoom"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Open full size</span>';
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.ico': 'image/x-icon', '.webmanifest': 'application/manifest+json', '.wasm': 'application/wasm', '.pdf': 'application/pdf' };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -36,8 +50,14 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-guide-shots-'));
 // Numbered callouts drawn over real elements: [selector, label, side]. side: above, below, left, right,
 // or corner: only the number, on the top right corner of the box, where there is no room for words
 // (the figure caption then explains each number).
+// The last callouts and region asked for on each page, so capture() can draw them again once the
+// window has its final size (see there).
+const drawn = new WeakMap();
 async function annotate(page, notes) {
+  drawn.set(page, { ...drawn.get(page), notes });
   await page.evaluate(notes => {
+    const old = document.getElementById('guideNotes');
+    if (old) old.remove();
     const layer = document.createElement('div');
     layer.id = 'guideNotes';
     // As wide as the page, so a label placed to the left of an element (CSS right) is measured from the page edge.
@@ -56,6 +76,14 @@ async function annotate(page, notes) {
       const pos = side === 'corner' ? `left:${x + r.width - 14}px;top:${y - 16}px` : side === 'below' ? `left:${x - 4}px;top:${y + r.height + 8}px` : side === 'left' ? `right:${W - x + 10}px;top:${y - 4}px` : side === 'right' ? `left:${x + r.width + 10}px;top:${y - 4}px` : `left:${x - 4}px;top:${y - 36}px`;
       tag.style.cssText = `position:absolute;${pos};background:#d9480f;color:#fff;padding:5px 9px;border-radius:6px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25)`;
       layer.append(box, tag);
+      // In a narrow (phone) window a label with words can run off the edge and be cut from the picture,
+      // or land on the content next to it: show only the number on the box's corner, as for 'corner'
+      // (the caption explains each number), kept inside the window.
+      const t = tag.getBoundingClientRect();
+      if (t.left < 4 || t.right > W - 4) {
+        tag.textContent = String(i + 1);
+        tag.style.cssText += `;right:auto;top:${y - 16}px;left:${Math.min(x + r.width - 14, W - 4 - tag.getBoundingClientRect().width)}px`;
+      }
     });
   }, notes);
 }
@@ -63,6 +91,7 @@ async function annotate(page, notes) {
 // Region of the page that contains every given element, with padding, in page coordinates.
 // The callout layer is included, so a label drawn outside an element is not cut off.
 async function regionOf(page, selectors, pad = 24) {
+  drawn.set(page, { ...drawn.get(page), region: [selectors, pad] });
   return page.evaluate(([selectors, pad]) => {
     let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
     const add = x => { l = Math.min(l, x.left + scrollX); t = Math.min(t, x.top + scrollY); r = Math.max(r, x.right + scrollX); b = Math.max(b, x.bottom + scrollY); };
@@ -297,8 +326,25 @@ const SHOTS = {
     }
   },
   'resume-templates': {
-    alt: 'The Style step of the ApplyReady resume builder with the template list and the live preview of a one-page resume beside it.',
+    alt: 'The Style step of the ApplyReady resume builder: the live preview of a one-page resume in the chosen template, with its page count above it. On a wide screen the template list sits beside the preview.',
     maxHeight: 820,
+    // On a phone the template list and the preview are separate views (Edit and Preview): show the
+    // preview after choosing Style, with the same two callouts.
+    phone: {
+      maxHeight: 1000,
+      async run(page, origin) {
+        await resumePage(page, origin);
+        await loadSample(page);
+        await page.click('#tabDesign');
+        await settle(page, 400);
+        // The Edit / Preview bar is hidden in captures (it floats over the picture); press its button directly.
+        await page.evaluate(() => document.getElementById('tabPreview').click());
+        await settle(page, 700);
+        await top(page);
+        await annotate(page, [['.rb-pages', 'Page count', 'corner'], ['#previewWrapper', 'A single column of real text', 'corner']]);
+        return regionOf(page, ['.rb-preview__bar', '#previewWrapper'], 12);
+      }
+    },
     async run(page, origin) {
       await resumePage(page, origin);
       await loadSample(page);
@@ -455,7 +501,8 @@ const SHOTS = {
   },
   'tut-compress-results': {
     alt: 'Image compressor results for four files under a 50 KB limit: each row shows the original size, the result size in KB and exact bytes, and a note when quality was lowered or the photo was made smaller to fit.',
-    async run(page, origin) {
+    phone: { maxHeight: 1200 },
+    async run(page, origin, { phone } = {}) {
       await page.goto(origin + '/compress-image.html');
       await page.setInputFiles('#batchApp input[type=file]', [guideSample('photo-applicant-1.jpg'), guideSample('photo-applicant-2.jpg'), guideSample('document-page-1.jpg'), sample('test-signature-cleaned.jpg')]);
       await page.waitForFunction(() => document.querySelectorAll('#batchList li').length === 4);
@@ -465,7 +512,8 @@ const SHOTS = {
       await settle(page, 600);
       await top(page);
       await annotate(page, [['#batchVerdictTitle', 'Every file checked', 'right'], ['#batchList li:nth-child(3) .file-row__notes', 'What changed, and why', 'corner'], ['#btnBatchZip', 'One ZIP for all', 'right']]);
-      return regionOf(page, ['#batchResult', '#batchList'], 16);
+      // On a phone the rows are tall: end the picture at the row the second callout is on.
+      return regionOf(page, phone ? ['#batchResult', '#batchList li:nth-child(3)'] : ['#batchResult', '#batchList'], 16);
     }
   },
 
@@ -473,6 +521,7 @@ const SHOTS = {
   'tut-signature-controls': {
     alt: 'The ApplyReady signature cleaner after a phone photo was added: the cleaned preview, the Paper whiteness and Ink darkness sliders, the file type menu and the Download signature button.',
     maxHeight: 860,
+    phone: { maxHeight: 1100 },
     async run(page, origin) {
       await page.goto(origin + '/signature-cleaner.html');
       await page.setInputFiles('#cleanerFileInput', sample('test-signature.jpg'));
@@ -562,6 +611,7 @@ const SHOTS = {
   /* ---- tutorial: batch ---- */
   'tut-batch-preset': {
     viewport: 1000,
+    phone: { maxHeight: 1400 },
     alt: 'The batch image processor with six photos added and the Passport photo preset chosen, which sets an exact 350 by 450 pixel size, JPEG and a 50 KB maximum for every image.',
     async run(page, origin) {
       await page.goto(origin + '/batch-image.html');
@@ -575,6 +625,7 @@ const SHOTS = {
     }
   },
   'tut-batch-progress': {
+    moving: true,
     alt: 'The batch image processor while it works: a progress bar with how many images are finished, an estimate of the time left and a Cancel button.',
     async run(page, origin) {
       await page.goto(origin + '/batch-image.html');
@@ -591,15 +642,24 @@ const SHOTS = {
   },
   'tut-batch-cancelled': {
     alt: 'The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the failed and cancelled images.',
+    phone: { maxHeight: 1400 },
     async run(page, origin) {
       await page.goto(origin + '/batch-image.html');
       await page.setInputFiles('#batchApp input[type=file]', photoSet(6));
       await page.waitForFunction(() => document.querySelectorAll('#batchList li').length === 6);
       await setValue(page, 'bPreset', 'passport');
       await page.click('#btnBatchStart');
-      await page.waitForFunction(() => window.ApplyReadyBatchImage.summary().done >= 2, null, { timeout: 60000, polling: 10 });
-      await page.click('#btnBatchCancel');
+      // Cancel from inside the page as soon as four are done: a click from here can arrive after the rest
+      // have finished (on the phone layout it first scrolls the button into view), leaving nothing to cancel.
+      await page.waitForFunction(() => {
+        if (window.ApplyReadyBatchImage.summary().done < 4) return false;
+        document.getElementById('btnBatchCancel').click();
+        return true;
+      }, null, { timeout: 60000, polling: 10 });
       await batchIdle(page);
+      const s = await page.evaluate(() => window.ApplyReadyBatchImage.summary());
+      // The tutorial's caption describes four finished and two cancelled.
+      if (s.done !== 4 || s.total - s.done !== 2) throw new Error(`cancelled batch has ${s.done} done of ${s.total}; the caption expects 4 of 6`);
       await settle(page, 600);
       await top(page);
       await annotate(page, [['#btnBatchZip', 'Finished ones are kept', 'corner'], ['#btnBatchRetry', 'Run the rest again', 'corner'], ['#batchList [data-status="cancelled"]', 'Not processed', 'corner']]);
@@ -661,23 +721,104 @@ const SHOTS = {
   }
 };
 
-// A new capture can change an image's size: update width and height wherever a page shows it, so the
-// layout reserves the right space (tests/guides_tests.js checks that they match the manifest).
+// One capture in a fresh browser profile. Writes the WebP and returns its pixel size and byte count.
+async function capture(browser, origin, contextOptions, steps, maxHeight, file, phone = false, moving = false) {
+  const context = await browser.newContext({ ...contextOptions, colorScheme: 'light', acceptDownloads: true });
+  await context.route('**/*', r => (r.request().url().startsWith(origin) || /^(data|blob):/.test(r.request().url()) ? r.continue() : r.abort()));
+  // Sticky bars would be painted mid-image in a full-page capture; keep them in the flow.
+  // The skip link and the passing notification are not part of what a guide shows, and neither is the
+  // resume builder's fixed phone bar (Edit, Preview, Download), which would float over the picture.
+  await context.addInitScript(phone => document.addEventListener('DOMContentLoaded', () => {
+    const st = document.createElement('style');
+    st.textContent = '.site-header,.rb-steps,.rb-preview__bar,.ws-action{position:static!important}.skip-link,.task-notification{display:none!important}*{caret-color:transparent!important}' + (phone ? '.rb-bar{display:none!important}' : '');
+    document.head.appendChild(st);
+  }), phone);
+  try {
+  const page = await context.newPage();
+  let clip = await steps(page, origin, { phone });
+  // A full-page capture makes the window as tall as the page. Content that waits until it is in view
+  // (PDF thumbnails, lazy images) then appears, and a late autosave or a growing text box can move what
+  // is below it, so the callouts would no longer sit on their elements. Give the window the page's
+  // height first, wait until the marked elements stop moving, then draw the callouts and measure the
+  // region again.
+  const { notes, region } = drawn.get(page) || {};
+  const selectors = [...(notes || []).map(n => n[0]), ...(region ? region[0] : [])];
+  const layout = () => page.evaluate(selectors => selectors.map(sel => {
+    const el = document.querySelector(sel), r = el && el.getBoundingClientRect();
+    return r ? [r.left + scrollX, r.top + scrollY, r.height].map(Math.round).join(',') : '-';
+  }).join('|') + '|' + document.documentElement.scrollHeight, selectors);
+  const vpWidth = page.viewportSize().width, minHeight = page.viewportSize().height;
+  let before = null;
+  // A shot of work in progress (moving: true) cannot wait: it is measured once, right away.
+  for (let i = 0; i < (moving ? 1 : 8); i++) {
+    const full = await page.evaluate(() => document.documentElement.scrollHeight);
+    if (full !== page.viewportSize().height && full > minHeight) await page.setViewportSize({ width: vpWidth, height: full });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    if (moving) break;
+    await page.waitForTimeout(300);
+    const now = await layout();
+    if (now === before) break;
+    before = now;
+  }
+  if (notes) await annotate(page, notes);
+  if (region) clip = await regionOf(page, ...region);
+  const fullHeight = clip.height;
+  clip.height = Math.min(clip.height, maxHeight);
+  // Every numbered callout must be in the picture, or the caption points at something the reader cannot see.
+  const cut = await page.evaluate(clip => {
+    const layer = document.getElementById('guideNotes');
+    return layer ? [...layer.children].filter(el => {
+      const r = el.getBoundingClientRect(), top = r.top + scrollY, left = r.left + scrollX;
+      return top < clip.y - 1 || left < clip.x - 1 || top + r.height > clip.y + clip.height + 1 || left + r.width > clip.x + clip.width + 1;
+    }).map(el => el.textContent || 'a highlight box') : [];
+  }, clip);
+  if (cut.length) throw new Error(`callout outside the picture (${cut.join('; ')}); the region is ${fullHeight} px tall and the limit is ${maxHeight} px: allow a taller picture (maxHeight) or choose a smaller region`);
+  const png = await page.screenshot({ clip, fullPage: true, animations: 'disabled' });
+  // Encode as WebP in the browser itself, so no image library is needed.
+  const [b64, width, height] = await page.evaluate(async b64 => {
+    const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+    const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    return [c.toDataURL('image/webp', 0.8).split(',')[1], c.width, c.height];
+  }, png.toString('base64'));
+  const webp = Buffer.from(b64, 'base64');
+  fs.writeFileSync(file, webp);
+  return { width, height, bytes: webp.length };
+  } finally { await context.close(); }
+}
+
+// Write the markup that shows each screenshot, wherever a page shows one:
+// - the width and height from the manifest, so the layout reserves the right space, and its alt text;
+// - a <picture> with the phone capture for narrow windows, when the shot has one. Its width and
+//   height are in CSS pixels (the file is 2x), so it is shown at the size it was taken and stays sharp.
+// tests/guides_tests.js checks that pages, manifest and files agree.
 function syncPages(manifest) {
   const pages = [...fs.readdirSync(root).filter(f => f.endsWith('.html')), ...fs.readdirSync(path.join(root, 'guides')).filter(f => f.endsWith('.html')).map(f => 'guides/' + f)];
+  // A screenshot that links to itself says so under the picture, so a reader knows it can be enlarged.
+  const FULL = /<a class="shot__full" href="([^"]+)">(<picture>[\s\S]*?<\/picture>|<img\b[^>]*>)(?:<span class="shot__zoom">[\s\S]*?<\/span>)?<\/a>/g;
+  const IMG = /(?:<picture><source\b[^>]*>)?(<img\b[^>]*\bsrc="((?:\.\.\/)?)img\/guides\/([a-z0-9-]+)\.webp"[^>]*>)(?:<\/picture>)?/g;
   for (const page of pages) {
     const file = path.join(root, page);
     const html = fs.readFileSync(file, 'utf8');
-    const next = html.replace(/<img\b[^>]*\bsrc="(?:\.\.\/)?img\/guides\/([a-z0-9-]+)\.webp"[^>]*>/g, (tag, name) => {
+    const next = html.replace(IMG, (all, tag, prefix, name) => {
       const m = manifest[name];
-      if (!m) return tag;
-      return tag.replace(/\bwidth="\d+"/, `width="${m.width}"`).replace(/\bheight="\d+"/, `height="${m.height}"`);
-    });
-    if (next !== html) { fs.writeFileSync(file, next); console.log(`updated image sizes in ${page}`); }
+      if (!m) return all;
+      const img = tag.replace(/\bwidth="\d+"/, `width="${m.width}"`).replace(/\bheight="\d+"/, `height="${m.height}"`).replace(/\balt="[^"]*"/, `alt="${m.alt.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"`);
+      if (!m.phone) return img;
+      const p = m.phone;
+      return `<picture><source media="${PHONE_MEDIA}" srcset="${prefix}${p.file}" width="${Math.round(p.width / p.scale)}" height="${Math.round(p.height / p.scale)}">${img}</picture>`;
+    }).replace(FULL, (all, href, shown) => `<a class="shot__full" href="${href}">${shown}${ZOOM_HINT}</a>`);
+    if (next !== html) { fs.writeFileSync(file, next); console.log(`updated screenshot markup in ${page}`); }
   }
 }
 
 (async () => {
+  // --sync only rewrites the screenshot markup in the pages from the manifest; no browser is needed.
+  if (process.argv.includes('--sync')) {
+    syncPages(JSON.parse(fs.readFileSync(path.join(out, 'manifest.json'), 'utf8')));
+    fs.rmSync(tmp, { recursive: true, force: true });
+    return;
+  }
   for (const f of ['photo-applicant-1.jpg', 'document-page-1.jpg', 'sample-marksheet.pdf', 'sample-certificate-locked.pdf']) {
     if (!fs.existsSync(guideSample(f))) throw new Error(`missing img/samples/guide/${f}: run python3 scripts/make-sample-images.py and node scripts/make-sample-pdfs.js`);
   }
@@ -686,49 +827,64 @@ function syncPages(manifest) {
   const origin = `http://127.0.0.1:${server.address().port}`;
   const exe = process.env.BROWSER_EXECUTABLE_PATH;
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'], ...(exe ? { executablePath: exe } : {}) });
-  const wanted = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const mode = args.includes('--phone') ? 'phone' : args.includes('--desktop') ? 'desktop' : 'both';
+  const wanted = args.filter(a => !a.startsWith('--'));
   const unknown = wanted.filter(w => !SHOTS[w]);
   if (unknown.length) throw new Error(`unknown shot: ${unknown.join(', ')}`);
   const manifestFile = path.join(out, 'manifest.json');
   const manifest = fs.existsSync(manifestFile) ? JSON.parse(fs.readFileSync(manifestFile, 'utf8')) : {};
   for (const name of Object.keys(manifest)) if (!SHOTS[name]) delete manifest[name];
+  // A phone picture whose shot is gone, or no longer has one, is removed with it.
+  if (fs.existsSync(outPhone)) {
+    for (const f of fs.readdirSync(outPhone)) {
+      const shot = SHOTS[f.replace(/\.webp$/, '')];
+      if (!shot || shot.phone === false) fs.rmSync(path.join(outPhone, f));
+    }
+    for (const [name, m] of Object.entries(manifest)) if (m.phone && SHOTS[name].phone === false) delete m.phone;
+  }
   const writeManifest = () => {
     const sorted = Object.fromEntries(Object.keys(manifest).sort().map(k => [k, manifest[k]]));
     fs.writeFileSync(manifestFile, JSON.stringify(sorted, null, 1) + '\n');
   };
+  const failed = [];
   for (const [name, shot] of Object.entries(SHOTS)) {
     if (wanted.length && !wanted.includes(name)) continue;
-    // A shot may use a narrower window (shot.viewport), so that a wide tool reflows into a picture that
-    // fits the guide column without being scaled down until its text is unreadable.
-    const context = await browser.newContext({ viewport: { width: shot.viewport || 1280, height: 900 }, colorScheme: 'light', deviceScaleFactor: 1, acceptDownloads: true });
-    await context.route('**/*', r => (r.request().url().startsWith(origin) || /^(data|blob):/.test(r.request().url()) ? r.continue() : r.abort()));
-    // Sticky bars would be painted mid-image in a full-page capture; keep them in the flow.
-    // The skip link and the passing notification are not part of what a guide shows.
-    await context.addInitScript(() => document.addEventListener('DOMContentLoaded', () => {
-      const st = document.createElement('style');
-      st.textContent = '.site-header,.rb-steps,.rb-preview__bar,.ws-action{position:static!important}.skip-link,.task-notification{display:none!important}*{caret-color:transparent!important}';
-      document.head.appendChild(st);
-    }));
-    const page = await context.newPage();
-    const clip = await shot.run(page, origin);
-    clip.height = Math.min(clip.height, shot.maxHeight || 900);
-    const png = await page.screenshot({ clip, fullPage: true, animations: 'disabled' });
-    // Encode as WebP in the browser itself, so no image library is needed.
-    const webp = Buffer.from(await page.evaluate(async b64 => {
-      const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
-      const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
-      c.getContext('2d').drawImage(img, 0, 0);
-      return c.toDataURL('image/webp', 0.8).split(',')[1];
-    }, png.toString('base64')), 'base64');
-    fs.writeFileSync(path.join(out, name + '.webp'), webp);
-    manifest[name] = { file: `img/guides/${name}.webp`, width: clip.width, height: clip.height, alt: shot.alt, bytes: webp.length };
-    console.log(`${name}.webp ${clip.width}x${clip.height} ${(webp.length / 1024).toFixed(1)} KB`);
+    const entry = manifest[name] || {};
+    if (mode !== 'phone') {
+      // A shot may use a narrower window (shot.viewport), so that a wide tool reflows into a picture that
+      // fits the guide column without being scaled down until its text is unreadable.
+      const img = await capture(browser, origin, { viewport: { width: shot.viewport || 1280, height: 900 }, deviceScaleFactor: 1 }, shot.run, shot.maxHeight || 900, path.join(out, name + '.webp'), false, shot.moving);
+      Object.assign(entry, { file: `img/guides/${name}.webp`, width: img.width, height: img.height, alt: shot.alt, bytes: img.bytes });
+      console.log(`${name}.webp ${img.width}x${img.height} ${(img.bytes / 1024).toFixed(1)} KB`);
+    }
+    if (mode !== 'desktop') {
+      if (shot.phone === false) delete entry.phone;
+      else {
+        fs.mkdirSync(outPhone, { recursive: true });
+        const steps = (shot.phone && shot.phone.run) || shot.run;
+        const maxHeight = (shot.phone && shot.phone.maxHeight) || 1000;
+        let img;
+        try {
+          img = await capture(browser, origin, { viewport: { width: PHONE.width, height: PHONE.height }, deviceScaleFactor: PHONE.scale, isMobile: true, hasTouch: true }, steps, maxHeight, path.join(outPhone, name + '.webp'), true, shot.moving);
+        } catch (e) {
+          // Keep going, so one run shows every shot whose steps do not work in the phone layout.
+          failed.push(`${name} (phone): ${e.message.split('\n')[0]}`);
+          console.error(`phone/${name}.webp failed: ${e.message.split('\n')[0]}`);
+        }
+        if (img) {
+          entry.phone = { file: `img/guides/phone/${name}.webp`, width: img.width, height: img.height, scale: PHONE.scale, bytes: img.bytes };
+          console.log(`phone/${name}.webp ${img.width}x${img.height} ${(img.bytes / 1024).toFixed(1)} KB`);
+        }
+      }
+    }
+    manifest[name] = entry;
     // Written after every shot, so a later failure never leaves the manifest behind the files.
     writeManifest();
-    await context.close();
   }
   syncPages(manifest);
   await browser.close();
   server.close();
   fs.rmSync(tmp, { recursive: true, force: true });
+  if (failed.length) { console.error(`${failed.length} capture(s) failed:\n  ${failed.join('\n  ')}`); process.exit(1); }
 })().catch(e => { console.error(e); fs.rmSync(tmp, { recursive: true, force: true }); process.exit(1); });

@@ -293,6 +293,11 @@ warning rule). Related guides (`.guide-card-grid`, `.related-guides-grid`) are d
 two columns, not cards. FAQ is a ruled `<details>` list. `.toolset` lists the product family after
 the home tool.
 
+Screenshots are `figure.shot`: the picture, then a quiet caption that explains each numbered callout.
+A screenshot comes as a `<picture>` with a phone capture for windows up to 640 px, written by
+`scripts/guide-screenshots.js` (section 10). A wide one in a tutorial is wrapped in `.shot__full`, a link
+to the picture shown, with a visible "Open full size" line (`.shot__zoom`, section 23).
+
 ### Resume builder (`.rb`)
 - App bar (`.rb-head`): title, one-line lede, privacy line, "Review and download".
 - Editor (`.rb-editor`): sticky stage tabs Write, Style, Review, Download (free navigation; Review

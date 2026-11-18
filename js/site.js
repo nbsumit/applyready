@@ -47,6 +47,26 @@
     doc.addEventListener('focusout', () => setTimeout(sync, 150));
   }
 
+  /* ----------------------------------------------------- Guide screenshots */
+  // A screenshot can be a <picture> with a phone capture for narrow windows. "Open full size" opens the
+  // picture actually shown, so a phone opens the phone capture, not the wide desktop one. The phone
+  // capture is not part of the offline copy: if it cannot load (offline, never seen), fall back to the
+  // desktop picture, which is.
+  doc.querySelectorAll('.shot picture > img').forEach(img => {
+    const link = img.closest('.shot__full');
+    const point = () => { if (link && img.currentSrc) link.href = img.currentSrc; };
+    const fallback = () => {
+      const sources = img.parentElement.querySelectorAll('source');
+      if (!sources.length) return;
+      sources.forEach(s => s.remove());
+      if (link) link.href = img.getAttribute('src');
+    };
+    img.addEventListener('load', point);
+    img.addEventListener('error', fallback);
+    // It may have finished, or failed, before this script ran.
+    if (img.complete && img.currentSrc) { if (img.naturalWidth) point(); else fallback(); }
+  });
+
   /* ----------------------------------------------------- Reference tables */
   // On phones a wide table becomes one block per row, each value under its column name, instead of a
   // strip that scrolls sideways. The CSS only stacks tables marked here, so without script they scroll.

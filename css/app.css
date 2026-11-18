@@ -579,6 +579,8 @@ table { border-collapse: collapse; width: 100%; font-size: var(--fs-md); line-he
 /* Screenshots and diagrams in guides: the image, then a quiet caption */
 .shot { margin: var(--s-5) 0; max-width: 100%; }
 .shot img, .shot svg { display: block; max-width: 100%; height: auto; border: var(--bw) solid var(--c-line); border-radius: var(--r-md); background: var(--c-surface); }
+/* A screenshot can come as a <picture> with a phone capture for narrow windows (scripts/guide-screenshots.js). */
+.shot picture { display: block; }
 .shot svg { width: 100%; box-sizing: border-box; padding: var(--s-2) var(--s-3); }
 /* On a phone a diagram keeps a readable text size and scrolls sideways inside its own frame. */
 .shot:has(> svg) { overflow-x: auto; }
@@ -1844,8 +1846,13 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
 }
 
 /* ================================================================== 23. TUTORIALS */
-/* A wide screenshot in a step-by-step tutorial links to the image itself, so on a phone it can be
-   opened full size and zoomed. The link adds no visual chrome; focus shows on the image. */
+/* A wide screenshot in a step-by-step tutorial links to the image itself, so it can be opened full
+   size and zoomed. A visible line under the picture says so; js/site.js points the link at the
+   picture actually shown (the phone capture on a phone). */
 .shot__full { display: block; border-radius: var(--r-md); cursor: zoom-in; }
 .shot__full:focus-visible { outline-offset: 3px; }
 .shot__full:hover img { border-color: var(--c-text-3); }
+.prose .shot__full { text-decoration: none; }
+.shot__zoom { display: inline-flex; align-items: center; gap: var(--s-1); margin-top: var(--s-2); font-size: var(--fs-label); line-height: 1.5; color: var(--c-accent); }
+.shot__zoom .fa-solid { font-size: 12px; }
+.shot__full:hover .shot__zoom { text-decoration: underline; text-underline-offset: .2em; }

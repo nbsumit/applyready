@@ -125,7 +125,10 @@ BROWSER_EXECUTABLE_PATH=/path/to/chrome node scripts/guide-screenshots.js [shot 
 
 `guide-screenshots.js` drives each tool with Playwright, draws numbered callouts over real elements, saves
 WebP files in `img/guides/`, records their size and alt text in `img/guides/manifest.json` and updates the
-width and height of every `<img>` that shows them. `tests/guides_tests.js` (part of `npm test`) checks that
+width, height and alt text of every `<img>` that shows them. Each shot is also taken in a 360 px phone
+window at 2x (`img/guides/phone/`), and pages offer that capture to narrow screens through `<picture>`, so
+a reader on a phone sees the layout they use at a size they can read. `--desktop` or `--phone` takes only
+one of the two; `--sync` only rewrites the page markup from the manifest. `tests/guides_tests.js` (part of `npm test`) checks that
 images, manifest and pages agree, and `tests/tutorial_tests.js` (part of `npm run test:browser`) follows each
 tutorial in the tools and fails when a label, message or measurement quoted in a tutorial no longer matches.
 
