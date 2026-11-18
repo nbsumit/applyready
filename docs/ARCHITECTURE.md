@@ -70,7 +70,7 @@ keywords, `live`). Generators read it:
 | `scripts/build-directory.js` | category cards and "most used" on `index.html`; the full directory on `tools.html` |
 | `scripts/build-image-pages.js` | the resizer workspace on each resizer page (`PAGES` table, markup from `scripts/lib/image-workspace.js`), and the batch workspace on `batch-image.html`, `compress-image.html` and `convert-image.html` (`scripts/lib/batch-workspace.js`) |
 | `scripts/build-tool-pages.js` | the workspace of the older single-file tools (signature cleaner, image to PDF, compress PDF, print sheet) |
-| `scripts/build-pdf-pages.js` | the PDF tool pages: workspace, and with `--force` the whole page (questions and FAQPage data come from one list) |
+| `scripts/build-pdf-pages.js` | the PDF tool pages: workspace, and with `--force` the whole page (common requests, questions and FAQPage data from one list, and guide cards read from the guides); `--check` compares all of `<main>` |
 | `scripts/build-sitemap.js` | `sitemap.xml` |
 | `scripts/build-icons.py` | the Font Awesome subset |
 

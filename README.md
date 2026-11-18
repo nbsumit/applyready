@@ -102,7 +102,7 @@ Edit the generator, not the generated markup:
 | `node scripts/build-directory.js` | Tool listings on the home page and `tools.html` |
 | `node scripts/build-image-pages.js` | The resizer workspace on the image resizer pages, and the batch workspace on the batch, compressor and converter pages (`scripts/lib/batch-workspace.js`) |
 | `node scripts/build-tool-pages.js` | The workspace of the signature cleaner, passport print, image to PDF and compress PDF pages |
-| `node scripts/build-pdf-pages.js` | The PDF tool pages (merge, split, organise, PDF to images, extract text, page numbers, watermark): their workspace, and with `--force` the whole page, including the questions and their structured data |
+| `node scripts/build-pdf-pages.js` | The PDF tool pages (merge, split, organise, PDF to images, extract text, page numbers, watermark): their workspace, and with `--force` the whole page, including the common requests, the questions and their structured data, and the guide cards |
 | `node scripts/build-sitemap.js` | `sitemap.xml` |
 | `python3 scripts/build-icons.py` | The Font Awesome subset (`css/vendor/icons.min.css`, `css/webfonts/`) |
 | `node scripts/new-page.js <path> "<Title>" "<Description>"` | A new page with the shared head and shell markers |
