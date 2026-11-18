@@ -351,7 +351,9 @@
     const ids = new Set(items.map(i => i.id));
     for (const [id, li] of nodes) if (!ids.has(id)) { li.remove(); nodes.delete(id); }
     items.forEach((item, i) => {
-      const li = nodes.get(item.id) || renderItem(item);
+      // Cancel and retry change many items at once with a single change event: re-render any whose status moved.
+      let li = nodes.get(item.id);
+      if (!li || li.dataset.status !== item.status) li = renderItem(item);
       if (els.list.children[i] !== li) els.list.insertBefore(li, els.list.children[i] || null);
     });
   }
@@ -408,7 +410,7 @@
   }
 
   Kit.dropzone(app, {
-    validate: false, multiple: true, maxFiles: MAX_FILES,
+    validate: false, multiple: true, maxFiles: 1000, // the queue enforces the 50-file list limit and says how many were left out
     onFiles: addFiles,
     onReject: messages => showError(messages)
   });

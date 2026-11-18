@@ -270,7 +270,8 @@
           <div class="progress" role="progressbar" aria-label="Checking files" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="fcProgressBar" style="width:0%"></span></div>
           <p class="batch-progress__text" id="fcProgressText"></p>
         </div>
-        <ol class="fc-list" id="fcList" aria-label="Checked files"></ol>
+        <h2 class="sr-only" id="fcListHeading">Checked files</h2>
+        <ol class="fc-list" id="fcList" aria-labelledby="fcListHeading"></ol>
       </div>
     </section>
     <!-- tool:end -->
