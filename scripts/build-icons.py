@@ -117,7 +117,9 @@ def subset(src, codepoints):
     from fontTools import subset as ft_subset
     from fontTools.ttLib import TTFont
     import io
-    font = TTFont(str(src))
+    # recalcTimestamp=False keeps head.modified from the source font, so the output is byte-identical
+    # on every run (a changing font would change the service worker cache name for no reason).
+    font = TTFont(str(src), recalcTimestamp=False)
     available = set(font.getBestCmap())
     keep = sorted(cp for cp in codepoints if cp in available)
     options = ft_subset.Options()
@@ -144,6 +146,12 @@ def main():
         if current != css:
             print('icons.min.css is out of date: run python3 scripts/build-icons.py')
             sys.exit(1)
+        codepoints = {int(icon_map[n]['u'], 16) for n in used}
+        for fname in ('fa-solid-900.woff2', 'fa-regular-400.woff2'):
+            data, _ = subset(VENDOR / fname, codepoints)
+            if (FONT_OUT / fname).read_bytes() != data:
+                print(f'{fname} is out of date: run python3 scripts/build-icons.py')
+                sys.exit(1)
         print(f'Icon subset in sync ({len(used)} icons).')
         return
     codepoints = {int(icon_map[n]['u'], 16) for n in used}

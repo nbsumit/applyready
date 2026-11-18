@@ -23,6 +23,7 @@ there are no accounts, no cookies, no analytics and no advertising, and every fe
 | File checker: real type, size, pixels, DPI, PDF pages, document properties, photo metadata removal | `file-checker.html` | `js/file-checker.js` (+ `lib/inspect.js`) |
 | Text to PDF | `text-to-pdf.html` | `js/text-to-pdf.js` (+ `lib/text-pdf.js`) |
 | Your data: everything stored on the device, resume backup and restore, delete | `your-data.html` | `js/your-data.js` |
+| Applicant workspaces (cyber cafe mode): one temporary, memory-only space per applicant with one-click photo, signature, compress, convert, combine and merge actions, a ZIP per applicant, and a wipe on finish | `workspace.html` | `js/workspace.js` (+ `lib/applicants.js`, `lib/image-pool.js`, `lib/pdf-kit.js`) |
 
 Every tool is listed in one registry, `scripts/lib/tools.js`, which generates the header menu, footer,
 the tool directory (`tools.html`), the home page entry points and the site search index.
