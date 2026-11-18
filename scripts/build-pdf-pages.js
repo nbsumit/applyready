@@ -45,7 +45,7 @@ const progressBox = (p, text = 'Working…') => `        <div id="${p}Progress" 
             <p class="progress-text" id="${p}ProgressText">${text}</p>
             <button type="button" class="btn btn-sm" id="${p}Cancel" data-cancel>Cancel</button>
           </div>
-          <div class="progress" role="progressbar" aria-labelledby="${p}ProgressText" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="progress-bar" id="${p}Bar" style="width:0%"></span></div>
+          <div class="progress" role="progressbar" aria-labelledby="${p}ProgressText" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="progress-bar" id="${p}ProgressBar" style="width:0%"></span></div>
         </div>`;
 
 const stat = (label, id) => `            <div class="meta-stat-item"><dt class="meta-stat-label">${label}</dt><dd class="meta-stat-val" id="${id}">--</dd></div>`;
