@@ -2,17 +2,18 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
-const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
 let checks = 0;
-const ok = (c, m) => { assert(c, m); checks++; };
+// Every failure is collected and reported together, so one run shows everything that needs fixing.
+const failures = [];
+const ok = (c, m) => { checks++; if (!c) failures.push(m); };
 
 const list = (dir, base = '') => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f));
-const listDir = (dir, base = '') => fs.existsSync(path.join(root, dir)) ? fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f)) : [];
-const pages = [...list('.'), ...list('guides', 'guides'), ...list('hi', 'hi'), ...listDir('author', 'author')];
+// Same directories as scripts/sync-shell.js (PAGE_DIRS).
+const pages = [...list('.'), ...list('guides', 'guides')];
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 const textOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [s])[0].replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<nav[\s\S]*?<\/nav>/g, ' ').replace(/<[^>]+>/g, ' ');
-const words = s => (textOf(s).match(/[A-Za-z0-9ऀ-ॿ][\w'ऀ-ॿ-]*/g) || []).length;
+const words = s => (textOf(s).match(/[A-Za-z0-9][\w'-]*/g) || []).length;
 const SITE = 'https://applyready.in';
 const utility = new Set(['404.html', 'offline.html']);
 // Redirect stubs (merged pages) carry a meta refresh and a canonical to the page that replaced them.
@@ -25,7 +26,7 @@ const indexable = new Set(pages.filter(f => !utility.has(f) && !isStub(read(f)) 
 const titles = new Map(), descriptions = new Map();
 for (const f of pages) {
   const s = read(f);
-  ok(/<html lang="(en|hi)"/.test(s), `${f}: html lang`);
+  ok(/<html lang="en"/.test(s), `${f}: html lang`);
   const title = (s.match(/<title>([\s\S]*?)<\/title>/) || [])[1];
   ok(title && title.trim().length >= 15 && title.length <= 110, `${f}: title length (${title && title.length})`);
   ok(!titles.has(title), `${f}: duplicate title with ${titles.get(title)}`); titles.set(title, f);
@@ -87,10 +88,11 @@ ok(new Set(locs).size === locs.length, 'sitemap has duplicate URLs');
 
 // 4. No advertising: no ad network script, tag, slot, record or crawler rule anywhere in what the site ships.
 const AD_MARKERS = /adsbygoogle|googlesyndication|google-adsense|ca-pub-\d|pub-\d{10,}|doubleclick|googleadservices|googletagservices|adservice\.google|adtrafficquality|fundingchoices|Mediapartners-Google|ad-slot|ads\.js/i;
-const shipped = [...pages, 'robots.txt', 'sw.js', 'favicon/site.webmanifest',
-  ...fs.readdirSync(path.join(root, 'js')).filter(f => f.endsWith('.js')).map(f => 'js/' + f),
+const jsIn = dir => fs.existsSync(path.join(root, dir)) ? fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.js')).map(f => `${dir}/${f}`) : [];
+const ownCode = [...jsIn('js'), ...jsIn('js/lib'), ...jsIn('js/workers'),
   ...fs.readdirSync(path.join(root, 'css')).filter(f => f.endsWith('.css')).map(f => 'css/' + f),
-  'scripts/lib/shell.js', 'scripts/sync-shell.js'];
+  ...jsIn('scripts'), ...jsIn('scripts/lib')];
+const shipped = [...pages, 'robots.txt', 'sw.js', 'favicon/site.webmanifest', ...ownCode];
 for (const f of shipped) {
   const m = read(f).match(AD_MARKERS);
   ok(!m, `${f}: no advertising code (found "${m && m[0]}")`);
@@ -101,41 +103,50 @@ const privacyHtml = read('privacy.html');
 const privacy = textOf(privacyHtml);
 ok(/<h2 id="cookies">/.test(privacyHtml), 'privacy policy has a cookies heading');
 ok(/shows no advertisements/.test(privacy) && /sets no cookies/.test(privacy), 'privacy policy says there are no ads and no cookies');
-for (const f of ['privacy.html', 'terms.html', 'about.html', 'editorial-policy.html']) ok(!/AdSense|advertising cookies|personalised ads/i.test(textOf(read(f))), `${f}: no advertising disclosure left over`);
+for (const f of ['privacy.html', 'terms.html', 'about.html']) ok(!/AdSense|advertising cookies|personalised ads/i.test(textOf(read(f))), `${f}: no advertising disclosure left over`);
 ok(/local storage/i.test(privacy) && /[Ss]ervice [Ww]orker/.test(privacy), 'privacy policy still covers local storage and the service worker');
 ok(/not use Google Analytics/.test(privacy), 'privacy policy still says there is no analytics');
 const css = read('css/app.css');
 const flatCss = css.replace(/\s+/g, '');
-ok(/#resize-tool\{min-height:540px/.test(flatCss) && /#resize-tool\{min-height:640px/.test(flatCss), 'the exam resizer reserves its settled height');
+ok(/#resize-tool\{min-height:540px/.test(flatCss) && /#resize-tool\{min-height:640px/.test(flatCss), 'the resizer reserves its settled height');
 ok(/href="\/assets\/fonts\/inter-latin\.woff2" as="font"/.test(read('index.html')) && /href="\/assets\/fonts\/inter-latin\.woff2" as="font"/.test(read('guides/index.html')) && /href="\/assets\/fonts\/inter-latin\.woff2" as="font"/.test(read('404.html')), 'Inter is preloaded from the site root');
 {
-  const { PRESETS } = require('../js/resizer.js');
-  const sig = PRESETS['upsc-signature'];
-  ok(sig && sig.minKB === 20 && sig.maxKB === 100 && sig.padToKB === 30, 'UPSC signature still allows 20–100 KB and pads toward 30 KB');
+  // ApplyReady is a job-application toolkit: no exam presets, pages or copy (removed in November 2026).
+  const { PRESETS } = require('../js/presets.js');
+  ok(Object.keys(PRESETS).every(k => !/^(ssc|upsc|ibps|neet|rrb|gate)-/.test(k)), 'no exam presets');
+  ok(PRESETS.passport && PRESETS.signature, 'generic photo and signature presets exist');
+  const EXAM = /\b(SSC|UPSC|IBPS|NEET|RRB|NTA|CGL|CHSL)\b|\bexams?\b|admit card|sarkari|हिन्दी/i;
+  for (const f of [...pages, 'sw.js', 'robots.txt', 'sitemap.xml', 'README.md', ...ownCode].filter(f => fs.existsSync(path.join(root, f)))) {
+    const m = read(f).match(EXAM);
+    ok(!m, `${f}: exam-specific content is gone (found "${m && m[0]}")`);
+  }
+  for (const f of ['hi', 'author', 'editorial-policy.html', 'ssc-photo-signature-size.html', 'upsc-photo-signature-size.html']) ok(!fs.existsSync(path.join(root, f)), `${f} is removed`);
 }
 for (const f of pages) {
   const visible = read(f).replace(/<!--[\s\S]*?-->/g, ' ').replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ');
   ok(!/\bTODO\b|\[\.\.\.\]/.test(visible), `${f}: visible TODO or placeholder brackets`);
 }
 const swText = read('sw.js');
-ok(!/applyready-v2[1-6]'/.test(swText) && swText.includes("'/author/sumit-sengar.html'"), 'service worker cache is bumped past the ad-serving versions and lists the author page');
+ok(!/applyready-v2[1-7]'/.test(swText), 'service worker cache is bumped past the exam-era versions');
+ok(!/pdfjs\//.test((swText.match(/STATIC_ASSETS = \[[\s\S]*?\];/) || [''])[0]), 'pdf.js is cached at runtime on PDF pages, not precached for every visitor');
+for (const f of [...jsIn('js'), ...jsIn('js/lib'), ...jsIn('js/workers')]) ok(swText.includes(`'/${f}'`), `${f}: precached for offline use`);
 ok(!swText.includes("Precache failed"), 'a failed precache rejects install');
 ok(swText.includes('Response.error()'), 'an uncached offline asset gets an error response');
 ok(swText.includes("'/css/webfonts/fa-solid-900.woff2'") && swText.includes("'/css/webfonts/fa-regular-400.woff2'") && swText.includes("'/img/guides/signature-cleaner.webp'"), 'guide images and the icon fonts are precached');
 for (const m of read('css/vendor/icons.min.css').matchAll(/url\("\.\.\/webfonts\/([^"]+)"\)/g)) ok(swText.includes(`'/css/webfonts/${m[1]}'`), `${m[1]} is precached`);
-for (const asset of [...swText.matchAll(/'\/[^']+'/g)].map(m => m[0].slice(2, -1))) {
+for (const asset of [...((swText.match(/STATIC_ASSETS = \[[\s\S]*?\];/) || [''])[0]).matchAll(/'\/[^']+'/g)].map(m => m[0].slice(2, -1))) {
   const rel = asset.endsWith('/') ? asset + 'index.html' : asset;
   ok(fs.existsSync(path.join(root, rel)), `precache entry exists: /${asset}`);
 }
 for (const f of pages) {
   const s = read(f);
-  if (!utility.has(f)) for (const link of ['privacy.html', 'terms.html', 'about.html', 'author/sumit-sengar.html', 'editorial-policy.html', 'contact.html']) ok(s.includes(link), `${f}: footer link to ${link}`);
+  if (!utility.has(f)) for (const link of ['privacy.html', 'terms.html', 'about.html', 'contact.html']) ok(s.includes(link), `${f}: footer link to ${link}`);
+  // Exactly one optional donation link, the same everywhere; no other payment or checkout host.
+  const donations = s.match(/https:\/\/pages\.razorpay\.com\/[a-z-]+/g) || [];
+  ok(donations.length >= 1 && donations.every(d => d === 'https://pages.razorpay.com/support-applyready'), `${f}: the footer carries the one donation link`);
+  ok(!/checkout\.razorpay|paypal\.|buymeacoffee|ko-fi|patreon|stripe\.com|upi:\/\//i.test(s), `${f}: no other payment links or scripts`);
   const csp = (s.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/) || [])[1] || '';
   ok(/(?:^|; )script-src 'self'(?:;|$)/.test(csp) && /default-src 'self'/.test(csp) && /object-src 'none'/.test(csp) && /frame-src 'none'/.test(csp) && !/https?:/.test(csp) && !/unsafe-eval/.test(csp), `${f}: CSP allows only this origin's scripts, no frames and no third-party hosts (${csp})`);
-  if (/photo-signature-size\.html$/.test(f) && !isStub(s)) {
-    const select = (s.match(/<select id="presetSelect"[\s\S]*?<\/select>/) || [''])[0];
-    ok(select && !/value="(?:passport|signature|avatar|document|web-banner)"/.test(select), `${f}: generic presets are not in the exam list`);
-  }
 }
 
 // 5. Depth of content: guides and landing pages are not thin
@@ -143,15 +154,22 @@ for (const f of pages) {
   if (stubs.has(f)) continue;
   const n = words(read(f));
   if (f.startsWith('guides/') && f !== 'guides/index.html') ok(n >= 600, `${f}: only ${n} words`);
-  if (/^(resize-image-to-(\d+kb|kb-limit)|[a-z]+-photo-signature-size)\.html$/.test(f)) ok(n >= 600, `${f}: only ${n} words`);
-  if (f.startsWith('hi/')) ok(n >= 600, `${f}: only ${n} words`);
+  if (/^resize-image-to-(\d+kb|kb-limit)\.html$/.test(f)) ok(n >= 600, `${f}: only ${n} words`);
 }
 const guides = pages.filter(f => f.startsWith('guides/') && f !== 'guides/index.html' && indexable.has(f));
-ok(guides.length >= 20, `at least 20 indexable guides (found ${guides.length})`);
+ok(guides.length >= 12, `at least 12 indexable guides (found ${guides.length})`);
 
-// 5b. The author page is indexable and is the byline target.
-ok(fs.existsSync(path.join(root, 'author/sumit-sengar.html')), 'author page exists');
-ok(indexable.has('author/sumit-sengar.html'), 'author page is indexable');
+// 5b. The tool registry and the pages agree: every live tool has its page, and every page names its tool.
+{
+  const { TOOLS, liveTools } = require('../scripts/lib/tools.js');
+  for (const t of liveTools()) {
+    ok(fs.existsSync(path.join(root, t.path)), `registry: ${t.id} points at ${t.path}, which exists`);
+    ok(read(t.path).includes(`<meta name="applyready-tool" content="${t.id}">`), `${t.path}: names its tool id for "recently used"`);
+    ok(t.keywords && t.keywords.length >= 3, `registry: ${t.id} has search keywords`);
+  }
+  ok(new Set(TOOLS.map(t => t.id)).size === TOOLS.length, 'registry: tool ids are unique');
+  for (const t of TOOLS.filter(t => t.live === false)) ok(!pages.some(f => read(f).includes(`href="${t.path}"`) || read(f).includes(`href="../${t.path}"`)), `no page links to ${t.path} before that tool is live`);
+}
 
 // 6. Guides: a visible byline linking the about page, dates that match the structured data,
 //    an original visual, a Sources section with an outside link, and links to a tool and other guides.
@@ -159,10 +177,10 @@ const ldDate = (s, key) => ((s.match(new RegExp(`"${key}": "(\\d{4}-\\d{2}-\\d{2
 const bodyOf = s => (s.match(/<main[\s\S]*?<\/main>/) || [''])[0].replace(/<section class="related-guides-section"[\s\S]*?<\/section>/, '');
 for (const f of guides) {
   const s = read(f);
-  ok(s.includes('"@type": "Article"') && /"author": \{[^}]*"@id": "https:\/\/applyready\.in\/author\/sumit-sengar\.html#person"/.test(s), `${f}: Article structured data with the author's Person id`);
+  ok(s.includes('"@type": "Article"') && /"author": \{[^}]*"@type": "Organization"[^}]*"name": "ApplyReady"/.test(s), `${f}: Article structured data authored by ApplyReady`);
   ok(s.includes('"BreadcrumbList"') && s.includes('class="breadcrumb-nav"'), `${f}: breadcrumbs, visible and structured`);
   const meta = (s.match(/<p class="guide-meta">([\s\S]*?)<\/p>/) || [])[1] || '';
-  ok(/By <a href="\.\.\/author\/sumit-sengar\.html" rel="author">Sumit Sengar<\/a>/.test(meta), `${f}: visible byline links the author page`);
+  ok(/ApplyReady guide/.test(meta), `${f}: byline names ApplyReady`);
   const times = [...meta.matchAll(/<time datetime="(\d{4}-\d{2}-\d{2})">/g)].map(m => m[1]);
   ok(times.length === 2 && times[0] === ldDate(s, 'datePublished') && times[1] === ldDate(s, 'dateModified'), `${f}: Published and Last updated dates match datePublished and dateModified (${times} vs ${ldDate(s, 'datePublished')}, ${ldDate(s, 'dateModified')})`);
   ok(times[0] <= times[1], `${f}: last updated is not before published`);
@@ -170,7 +188,8 @@ for (const f of guides) {
   ok(/<figure class="shot">[\s\S]*?(<img [^>]*width="\d+" height="\d+" alt="[^"]{20,}" loading="lazy"|<svg [^>]*role="img")/.test(body), `${f}: at least one original visual with size and alt text`);
   const sources = (body.match(/<h2 id="sourcesHeading">Sources<\/h2>[\s\S]*?<\/section>/) || [''])[0];
   ok(/href="https:\/\/(?!applyready\.in)[^"]+"/.test(sources), `${f}: a Sources section with at least one outside source`);
-  ok(/href="\.\.\/(index|signature-cleaner|passport-photo-print|image-to-pdf|compress-pdf|resume|resize-image-to-[a-z0-9-]+)\.html"/.test(body), `${f}: links its matching tool in the body`);
+  const toolPaths = require('../scripts/lib/tools.js').liveTools().map(t => t.path);
+  ok(toolPaths.some(p => body.includes(`href="../${p}"`)), `${f}: links its matching tool in the body`);
   const guideLinks = new Set([...body.matchAll(/href="([a-z0-9-]+\.html)"/g)].map(m => m[1]).filter(h => h !== path.posix.basename(f)));
   ok(guideLinks.size >= 2, `${f}: links at least two other guides in the body (${guideLinks.size})`);
   ok(/Report an error<\/a>/.test(body), `${f}: a Report an error link`);
@@ -197,13 +216,6 @@ for (const f of guides) {
   for (const [f, from] of inbound) ok(f === 'index.html' || from.size >= 3, `${f}: linked from the body of only ${from.size} other pages`);
 }
 
-// 6b. Exam pages say which notice they were last checked against, link a way to report an error, and cite sources.
-for (const f of pages.filter(f => /^[a-z]+-photo-signature-size\.html$/.test(f))) {
-  const s = read(f);
-  ok(/<p class="checked-line"><strong>Last checked against:<\/strong>[^<]*\d{4}/.test(s) && /Report an error<\/a>/.test(s), `${f}: Last checked line with a report link`);
-  ok(/<ul class="sources-list">[\s\S]*?href="https:\/\/(?!applyready)/.test(s), `${f}: sources list with official links`);
-}
-
 // 7. No leftover placeholder text on public pages
 for (const f of pages) {
   const t = textOf(read(f));
@@ -211,7 +223,7 @@ for (const f of pages) {
 }
 
 // 7b. Landing pages put the tool straight after the page head, before the reference content
-for (const f of pages.filter(f => /(^|\/)(resize-image-to-(\d+kb|kb-limit)|[a-z]+-photo-signature-size)\.html$/.test(f) && !stubs.has(f))) {
+for (const f of pages.filter(f => /^(resize-image-to-(\d+kb|kb-limit)|image-resizer|passport-photo-resizer|signature-resizer)\.html$/.test(f) && !stubs.has(f))) {
   const s = read(f);
   const head = s.indexOf('</header>', s.indexOf('<header class="page-head">'));
   const tool = s.indexOf('<!-- tool:start -->');
@@ -251,10 +263,27 @@ for (const f of pages) {
 // The resume sheet, templates and print layout are the output format: change them on purpose, then update this hash.
 ok(require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(root, 'css/document.css'))).digest('hex') === '5518e883c77adb7de2b939e506d7fc7ca9cea1e70ed1cdd926b4d55d7100ccc1', 'css/document.css (resume sheet and print layout) changed; confirm the exported resume is meant to change, then update the hash');
 ok(!fs.existsSync(path.join(root, 'css/style.css')) && !fs.existsSync(path.join(root, 'css/workspace.css')), 'retired stylesheets are deleted');
-const sync = spawnSync(process.execPath, [path.join(root, 'scripts/sync-shell.js'), '--check'], { encoding: 'utf8' });
-ok(sync.status === 0, `shared header and footer are in sync on every page: ${sync.stdout}${sync.stderr}`);
-for (const f of ['css/app.css', 'js/site.js', 'js/components.js', 'scripts/lib/shell.js', 'scripts/lib/image-workspace.js']) {
+// Generated markup is in sync with its generator (shell, search index, tool listings, image workspaces).
+for (const script of ['sync-shell.js', 'build-directory.js', 'build-image-pages.js', 'build-sitemap.js']) {
+  const run = spawnSync(process.execPath, [path.join(root, 'scripts', script), '--check'], { encoding: 'utf8' });
+  ok(run.status === 0, `${script} --check: ${run.stdout}${run.stderr}`);
+}
+// The icon subset matches the icons in use (needs Python with fonttools; CI installs it).
+{
+  const py = spawnSync('python3', ['-c', 'import fontTools'], { encoding: 'utf8' });
+  if (py.status === 0) {
+    const run = spawnSync('python3', [path.join(root, 'scripts/build-icons.py'), '--check'], { encoding: 'utf8' });
+    ok(run.status === 0, `build-icons.py --check: ${run.stdout}${run.stderr}`);
+  } else console.log('  (icon subset check skipped: pip install fonttools brotli)');
+}
+for (const f of ['css/app.css', 'js/site.js', 'js/components.js', 'js/search.js', 'scripts/lib/shell.js', 'scripts/lib/tools.js', 'scripts/lib/image-workspace.js']) {
   ok(!read(f).includes('—'), `${f}: no em dash in interface code`);
 }
 
+if (failures.length) {
+  console.error(`✗ ${failures.length} of ${checks} content checks failed:`);
+  for (const m of failures.slice(0, 200)) console.error('  - ' + m);
+  if (failures.length > 200) console.error(`  ... and ${failures.length - 200} more`);
+  process.exit(1);
+}
 console.log(`✓ ${pages.length} pages checked: titles, descriptions, canonicals, links, sitemap, offline cache, no ads, depth (${checks} assertions)`);

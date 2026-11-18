@@ -94,12 +94,12 @@ ${section('Clean up', `          <div class="field">
           </div>
           <label class="switch" for="denoiseCheckbox"><span>Remove specks and paper dust</span><input type="checkbox" id="denoiseCheckbox" role="switch" checked></label>`)}
 ${section('Output', `${select('inkColorSelect', 'Ink colour', [['original', 'Keep original ink (cleaned)'], ['black', 'Pure black'], ['blue', 'Deep blue']])}
-${select('cleanerFormatSelect', 'File type', [['image/jpeg', 'White JPEG (.jpg), for exam forms'], ['image/png', 'White PNG (.png)'], ['image/png-transparent', 'Transparent PNG (.png), for documents']])}`)}
+${select('cleanerFormatSelect', 'File type', [['image/jpeg', 'White JPEG (.jpg), for application forms'], ['image/png', 'White PNG (.png)'], ['image/png-transparent', 'Transparent PNG (.png), for documents']])}`)}
         <button type="button" id="btnResetSettings" class="btn btn-sm btn-ghost ws-reset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset to defaults</button>
       </div>
       <div class="ws-action">
         <a id="btnCleanerDownload" class="btn btn-primary btn-lg btn-block" href="#" download="Cleaned_Signature.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download signature</a>
-        <a href="/?preset=signature" class="btn btn-block"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Resize it for an exam form</a>
+        <a href="/image-resizer.html?preset=signature" class="btn btn-block"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Resize it to a form's size</a>
       </div>
       </div>
     </section>`,
@@ -184,7 +184,7 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
           <div class="target-grid" role="group" aria-labelledby="targetKbLabel">
             <button type="button" class="chip preset-kb-btn" data-kb="100" aria-pressed="false">100 KB <span class="chip-sub">strict portals</span></button>
             <button type="button" class="chip preset-kb-btn active" data-kb="200" aria-pressed="true">200 KB <span class="chip-sub">most common</span></button>
-            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">UPSC documents</span></button>
+            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">Larger documents</span></button>
             <button type="button" class="chip preset-kb-btn" data-kb="500" aria-pressed="false">500 KB <span class="chip-sub">larger scans</span></button>
           </div>
           <div class="field">
@@ -223,7 +223,7 @@ ${stat('Resolution', 'statPrintDpi', '300 DPI')}
       </div>
       <div class="ws-rail">
       <div class="ws-side">
-${section('Photo', select('photoSizeSelect', 'Photo size', [['in-passport', 'Indian passport or exam (3.5 × 4.5 cm)'], ['us-visa', 'US, OCI or international visa (2 × 2 in)'], ['stamp', 'Stamp size (2.5 × 3.5 cm)'], ['schengen', 'Schengen visa (3.5 × 4.5 cm)']]))}
+${section('Photo', select('photoSizeSelect', 'Photo size', [['in-passport', 'Indian passport size (3.5 × 4.5 cm)'], ['us-visa', 'US, OCI or international visa (2 × 2 in)'], ['stamp', 'Stamp size (2.5 × 3.5 cm)'], ['schengen', 'Schengen visa (3.5 × 4.5 cm)']]))}
 ${section('Sheet', `${select('paperSizeSelect', 'Paper', [['4x6', '4 × 6 inch photo paper, lab standard'], ['a4', 'A4 sheet, home or office printer'], ['5x7', '5 × 7 inch photo paper']])}
 ${select('photoCountSelect', 'Copies', [['auto', 'As many as fit'], ['4', '4 photos'], ['6', '6 photos'], ['8', '8 photos'], ['12', '12 photos'], ['16', '16 photos']])}
 ${select('gapSelect', 'Space between photos', [['1.5', 'Compact (1.5 mm)'], ['2.5', 'Standard (2.5 mm), easy to cut'], ['4', 'Wide (4 mm)']], 1)}`)}

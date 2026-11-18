@@ -2,7 +2,7 @@
  * ApplyReady.in - PDF Compressor Engine
  * 100% Client-Side In-Browser Tool
  * Compresses document PDFs and document scans to target KB limits
- * (100 KB, 200 KB, 300 KB, 500 KB) for government recruitment portals.
+ * (100 KB, 200 KB, 300 KB, 500 KB) for application portals.
  * Zero server uploads.
  */
 

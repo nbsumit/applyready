@@ -7,7 +7,7 @@
 (function () {
   'use strict';
 
-  // General-Purpose & Official Exam Presets
+  // Built-in presets, used only when js/presets.js has not loaded (it is the source of truth).
   const FALLBACK_PRESETS = {
     'custom': {
       name: 'Custom Dimensions & Limit',
@@ -72,66 +72,6 @@
       minKB: 50,
       maxKB: 100,
       defaultPrefix: 'Declaration'
-    },
-    'ssc-signature': {
-      name: 'SSC Signature (6.0 × 2.0 cm at 300 DPI = 709 × 236 px, 10–20 KB)',
-      width: 709,
-      height: 236,
-      minKB: 10,
-      maxKB: 20,
-      defaultPrefix: 'SSC_Signature'
-    },
-    'upsc-photo': {
-      name: 'UPSC Photo (20–200 KB JPG; UPSC sets no pixel size, 350 × 450 px suggested)',
-      width: 350,
-      height: 450,
-      minKB: 20,
-      maxKB: 200,
-      suggested: true,
-      defaultPrefix: 'UPSC_Photo'
-    },
-    'upsc-signature': {
-      name: 'UPSC Triple Signature (400 × 400 px, within 350–500 px, 20–100 KB)',
-      width: 400,
-      height: 400,
-      minKB: 20,
-      maxKB: 100,
-      padToKB: 30,
-      defaultPrefix: 'UPSC_Signature'
-    },
-    'ibps-photo': {
-      name: 'IBPS Photo (200 × 230 px, 20–50 KB)',
-      width: 200,
-      height: 230,
-      minKB: 20,
-      maxKB: 50,
-      defaultPrefix: 'IBPS_Photo'
-    },
-    'ibps-signature': {
-      name: 'IBPS Signature (140 × 60 px, 10–20 KB)',
-      width: 140,
-      height: 60,
-      minKB: 10,
-      maxKB: 20,
-      defaultPrefix: 'IBPS_Signature'
-    },
-    'neet-photo': {
-      name: 'NEET Photo (10–200 KB JPG; NTA sets no pixel size, 400 × 500 px suggested)',
-      width: 400,
-      height: 500,
-      minKB: 10,
-      maxKB: 200,
-      suggested: true,
-      defaultPrefix: 'NEET_Photo'
-    },
-    'neet-signature': {
-      name: 'NEET Signature (10–100 KB JPG; NTA sets no pixel size, 300 × 100 px suggested)',
-      width: 300,
-      height: 100,
-      minKB: 10,
-      maxKB: 100,
-      suggested: true,
-      defaultPrefix: 'NEET_Signature'
     },
     'kb-10': {
       name: 'Target: Under 10 KB',
@@ -669,44 +609,7 @@
     };
   }
 
-  // Hindi pages show Hindi messages. Each entry rewrites one English message; anything not listed
-  // (internal failures that should never happen) stays in English.
-  const HINDI_MESSAGES = [
-    [/^Width must be a positive integer\.$/, 'चौड़ाई एक पूर्ण संख्या होनी चाहिए।'],
-    [/^Width must be an integer between 20 and 8,000 px\.$/, 'चौड़ाई 20 से 8,000 px के बीच की पूर्ण संख्या होनी चाहिए।'],
-    [/^Height must be a positive integer\.$/, 'ऊंचाई एक पूर्ण संख्या होनी चाहिए।'],
-    [/^Height must be an integer between 20 and 8,000 px\.$/, 'ऊंचाई 20 से 8,000 px के बीच की पूर्ण संख्या होनी चाहिए।'],
-    [/^Total image pixels exceed safe limit/, 'कुल पिक्सेल सुरक्षित सीमा (32 मेगापिक्सेल) से अधिक हैं। साइज़ घटाएं।'],
-    [/^Width must be at least 160 px/, 'नाम की पट्टी पढ़ने योग्य रहे, इसके लिए चौड़ाई कम से कम 160 px होनी चाहिए।'],
-    [/[Hh]eight must be at least 80 px/, 'नाम और तारीख की पट्टी के साथ ऊंचाई कम से कम 80 px होनी चाहिए।'],
-    [/^Max file size must be a positive integer\.$/, 'अधिकतम साइज एक पूर्ण संख्या होना चाहिए।'],
-    [/^Max file size must be between 5 and 20,000 KB\.$/, 'अधिकतम साइज 5 से 20,000 KB के बीच होना चाहिए।'],
-    [/^Min file size must be a positive integer\.$/, 'न्यूनतम साइज एक पूर्ण संख्या होना चाहिए।'],
-    [/^Min file size must be less than max file size\.$/, 'न्यूनतम साइज, अधिकतम साइज से कम होना चाहिए।'],
-    [/^Min file size cannot be negative\.$/, 'न्यूनतम साइज ऋणात्मक नहीं हो सकता।'],
-    [/^The selected file is empty/, 'चुनी गई फाइल खाली है (0 bytes)। कृपया कोई सही फोटो चुनें।'],
-    [/^The selected file is too large \(([\d.]+) MB\)/, 'फाइल बहुत बड़ी है ($1 MB)। 50 MB से छोटी फोटो चुनें।'],
-    [/^Unsupported format\./, 'यह फॉर्मेट समर्थित नहीं है। JPG, PNG, WebP, GIF, BMP या AVIF फोटो चुनें।'],
-    [/^iPhone photos \(HEIC\)/, 'iPhone की HEIC फोटो समर्थित नहीं हैं। Camera → Formats → Most Compatible चुनें, या फोटो को JPG के रूप में शेयर करें।'],
-    [/^Failed to read the selected file/, 'फाइल पढ़ी नहीं जा सकी। उसे दोबारा चुनें।'],
-    [/^(Could not decode image|Image has invalid zero dimensions)/, 'फोटो खुल नहीं सकी। फाइल खराब हो सकती है या उसका फॉर्मेट समर्थित नहीं है। दूसरी फोटो चुनें।'],
-    [/^Image resolution is extremely high \(([^)]*)\)/, 'फोटो का रेज़ोल्यूशन बहुत अधिक है ($1)। 64 मेगापिक्सेल से छोटी फोटो चुनें।'],
-    [/^The original dimensions exceed the supported range/, 'मूल साइज़ समर्थित सीमा (हर तरफ 20 से 8,000 px) से बाहर है। छोटा आउटपुट साइज़ चुनें।'],
-    [/^PNG needs ([\d.]+) KB at this size/, 'इस साइज़ पर PNG को $1 KB चाहिए। फाइल सीमा बढ़ाएं, साइज़ घटाएं, या JPEG चुनें।'],
-    [/^The smallest result is ([\d.]+) KB/, 'सबसे छोटा परिणाम $1 KB है। फाइल सीमा बढ़ाएं या साइज़ घटाएं।'],
-    [/^The image cropper library is unavailable/, 'क्रॉप टूल लोड नहीं हुआ। पेज दोबारा लोड करें।']
-  ];
-  function localize(message) {
-    if (!doc || doc.documentElement.lang !== 'hi' || !message) return message;
-    for (const [pattern, hindi] of HINDI_MESSAGES) {
-      const match = message.match(pattern);
-      if (match) return hindi.replace(/\$(\d)/g, (all, n) => match[n] || '');
-    }
-    return message;
-  }
-
   function showDimError(msg, wErr, hErr) {
-    msg = localize(msg);
     revealSettings();
     if (dimError) {
       dimError.textContent = msg;
@@ -717,7 +620,6 @@
   }
 
   function showSizeError(msg) {
-    msg = localize(msg);
     revealSettings();
     if (sizeError) {
       sizeError.textContent = msg;
@@ -750,8 +652,7 @@
     const customSpec = doc ? doc.querySelector('[data-custom-spec]') : null;
     if (customSpec) {
       if (!customSpec.dataset.empty) customSpec.dataset.empty = customSpec.textContent;
-      const hindi = doc.documentElement.lang === 'hi';
-      const kb = specs.minKB > 0 ? `${specs.minKB}–${specs.maxKB} KB` : (hindi ? `${specs.maxKB} KB से कम` : `under ${specs.maxKB} KB`);
+      const kb = specs.minKB > 0 ? `${specs.minKB}–${specs.maxKB} KB` : `under ${specs.maxKB} KB`;
       customSpec.textContent = currentPresetKey === 'custom' && requirementChosen && specs.isValid ? `${specs.width} × ${specs.height} px · ${kb}` : customSpec.dataset.empty;
     }
     if (btnProcess) btnProcess.disabled = !specs.isValid || !cropperReady || processing || !requirementChosen;
@@ -768,21 +669,20 @@
     if (!reqSummaryName || !reqSummarySpec) return;
     if (!requirementChosen) { reqSummaryName.textContent = ''; reqSummarySpec.textContent = ''; return; }
     const button = reqPanel && reqPanel.querySelector(`.choice[data-preset="${currentPresetKey}"] .choice__name`);
-    // Preset names carry their spec in brackets ("IBPS Signature (140 × 60 px, 10–20 KB)"); the size
+    // Preset names carry their spec in brackets ("Signature (300 × 100 px, max 30 KB)"); the size
     // details follow in reqSummarySpec, so only the short name is shown here.
     const presetName = (PRESETS[currentPresetKey] || PRESETS.custom).name.replace(/\s*\([^()]*\d[^()]*\)\s*$/, '');
     reqSummaryName.textContent = button ? button.textContent : presetName;
     if (!specs.isValid) { reqSummarySpec.textContent = ''; return; }
-    const hindi = doc && doc.documentElement.lang === 'hi';
     const formatNames = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
-    const kb = specs.minKB > 0 ? `${specs.minKB}–${specs.maxKB} KB` : (hindi ? `${specs.maxKB} KB से कम` : `under ${specs.maxKB} KB`);
+    const kb = specs.minKB > 0 ? `${specs.minKB}–${specs.maxKB} KB` : `under ${specs.maxKB} KB`;
     reqSummarySpec.textContent = `${specs.width} × ${specs.height} px · ${kb} · ${formatNames[specs.mimeType] || 'JPEG'}`;
   }
 
   /**
    * One line beside the main action, shown only when the action cannot run yet:
    * no requirement chosen, or a setting that needs fixing. Strings can be overridden
-   * per page with data-* attributes (Hindi pages).
+   * per page with data-* attributes.
    */
   function renderProcessSummary(specs) {
     if (!processSummary || !doc) return;
@@ -1372,7 +1272,6 @@
   }
 
   function showProcessError(msg) {
-    msg = localize(msg);
     setWorkspaceStatus('Check the error below');
     if (processErrorBox && processErrorMessage) {
       processErrorMessage.textContent = msg;
@@ -1566,7 +1465,7 @@
   }
 
   /**
-   * Ensure image meets minimum KB requirements (e.g. for official portals like IBPS/RRB)
+   * Ensure image meets minimum KB requirements (some application portals reject files below a minimum size)
    * Uses lossless standard JPEG COM markers so decoding and visual quality are 100% intact.
    */
   async function ensureMinKB(blob, minKB, maxKB) {
@@ -1695,7 +1594,7 @@
       let compressedBlob = await compressStrictly(canvas, specs.maxKB, specs.mimeType, () => (opId !== currentOpId || revision !== configRevision));
       if (opId !== currentOpId || revision !== configRevision) return;
 
-      // Official minimum, or a higher pad (UPSC signature aims at 30 KB so a small file cannot sit on the 20 KB line).
+      // The minimum, or a higher pad target when a preset sets one, so a file does not sit exactly on the limit.
       const floorKB = specs.padToKB > specs.minKB && specs.padToKB < specs.maxKB ? specs.padToKB : specs.minKB;
       if (floorKB > 0 && compressedBlob.size < floorKB * 1024) {
         compressedBlob = await ensureMinKB(compressedBlob, floorKB, specs.maxKB);

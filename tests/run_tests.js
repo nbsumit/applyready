@@ -861,13 +861,13 @@ const lockedCalcH = Math.round(400 / (800 / 600));
 assert(lockedCalcH === 300, 'Aspect ratio lock calculation correctly scales height proportionally (400 -> 300)');
 
 // 4. HTML verification for image resizer UI controls
-const indexHtmlContent = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
-assert(indexHtmlContent.includes('id="btnLockAspect"'), 'index.html contains aspect ratio lock button (#btnLockAspect)');
-assert(indexHtmlContent.includes('id="btnReplaceFile"'), 'index.html contains replace file button (#btnReplaceFile)');
-assert(indexHtmlContent.includes('id="originalComparisonImage"'), 'index.html contains original comparison image (#originalComparisonImage)');
-assert(indexHtmlContent.includes('id="btnViewProcessed"'), 'index.html contains view processed toggle button (#btnViewProcessed)');
-assert(indexHtmlContent.includes('id="btnViewOriginal"'), 'index.html contains view original toggle button (#btnViewOriginal)');
-assert(indexHtmlContent.includes('class="ws-preview checkerboard"'), 'index.html contains a checkerboard preview for transparent images');
+const indexHtmlContent = fs.readFileSync(path.join(repoRoot, 'image-resizer.html'), 'utf8');
+assert(indexHtmlContent.includes('id="btnLockAspect"'), 'image-resizer.html contains aspect ratio lock button (#btnLockAspect)');
+assert(indexHtmlContent.includes('id="btnReplaceFile"'), 'image-resizer.html contains replace file button (#btnReplaceFile)');
+assert(indexHtmlContent.includes('id="originalComparisonImage"'), 'image-resizer.html contains original comparison image (#originalComparisonImage)');
+assert(indexHtmlContent.includes('id="btnViewProcessed"'), 'image-resizer.html contains view processed toggle button (#btnViewProcessed)');
+assert(indexHtmlContent.includes('id="btnViewOriginal"'), 'image-resizer.html contains view original toggle button (#btnViewOriginal)');
+assert(indexHtmlContent.includes('class="ws-preview checkerboard"'), 'image-resizer.html contains a checkerboard preview for transparent images');
 
 // 5. HTML verification for resume builder controls & preview modal
 const resumeHtmlContent = fs.readFileSync(path.join(repoRoot, 'resume.html'), 'utf8');

@@ -382,13 +382,13 @@ const EXPECTED = {
     for (let i = 0; i < d.data.length; i += 4) { s = (s * 1664525 + 1013904223) >>> 0; const px = (i / 4) % 900, py = Math.floor(i / 4 / 900); d.data[i] = (px * 255 / 900) ^ (s >> 28); d.data[i + 1] = (py * 255 / 1100) ^ ((s >> 24) & 15); d.data[i + 2] = ((px + py) & 255) ^ ((s >> 20) & 15); d.data[i + 3] = 255; }
     x.putImageData(d, 0, 0); x.fillStyle = '#fff'; x.beginPath(); x.arc(450, 420, 230, 0, 7); x.fill(); return c.toDataURL('image/png').split(',')[1];
   }), 'base64');
-  await page.goto(`${origin}/index.html`);
+  await page.goto(`${origin}/image-resizer.html`);
   const setSel = (id, v) => page.evaluate(([id, v]) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event('change', { bubbles: true })); el.dispatchEvent(new Event('input', { bubbles: true })); }, [id, v]);
   const setNum = (id, v) => page.evaluate(([id, v]) => { const el = document.getElementById(id); el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }, [id, v]);
   const val = id => page.evaluate(id => document.getElementById(id).value, id);
   const vis = id => page.evaluate(id => { const e = document.getElementById(id); if (!e) return null; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; }, id);
   const load = async (name = 'src.png') => {
-    await page.goto(`${origin}/index.html`);
+    await page.goto(`${origin}/image-resizer.html`);
     // The home page asks what is being prepared; "Custom size" opens size, limit and format.
     await page.locator('.choice[data-preset="custom"]').click();
     await page.locator('#fileInput').setInputFiles({ name, mimeType: 'image/png', buffer: png });
@@ -463,7 +463,7 @@ const EXPECTED = {
   await page.evaluate(() => { const e = document.getElementById('addDateCheckbox'); for (let a = e.parentElement; a; a = a.parentElement) if (a.tagName === 'DETAILS') a.open = true; e.checked = true; e.dispatchEvent(new Event('change', { bubbles: true })); const n = document.getElementById('candidateNameInput'); n.value = 'Sumit Test'; n.dispatchEvent(new Event('input', { bubbles: true })); });
   rec['annot:crop'] = await crop(); await runProc('annot:result');
   // 9. drag and drop
-  await page.goto(`${origin}/index.html`);
+  await page.goto(`${origin}/image-resizer.html`);
   await page.evaluate(async b64 => {
     const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); const file = new File([bin], 'dropped.png', { type: 'image/png' });
     const dt = new DataTransfer(); dt.items.add(file);

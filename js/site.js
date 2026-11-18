@@ -18,8 +18,8 @@
       themeButton.setAttribute('aria-label', `Switch to ${next} theme`);
       themeButton.title = `Switch to ${next} theme`;
     }
-    const color = doc.querySelector('meta[name="theme-color"]');
-    if (color) color.content = theme === 'dark' ? '#171c23' : '#ffffff';
+    // The page carries a light and a dark theme-color; an explicit choice overrides both.
+    doc.querySelectorAll('meta[name="theme-color"]').forEach(meta => { meta.content = theme === 'dark' ? '#1a1a19' : '#ffffff'; });
   }
   setTheme(root.dataset.theme || 'light');
   if (themeButton) themeButton.addEventListener('click', () => {
@@ -138,20 +138,37 @@
   });
 
   /* ---------------------------------------------------------- Notifications */
+  // Two live regions exist from page load, one polite and one assertive, so screen readers are
+  // already listening when the first message arrives (a region created and filled in the same tick
+  // is often not announced). The visible toast is a separate element.
   let notifyTimer;
+  const liveRegions = {};
+  function liveRegion(kind) {
+    if (liveRegions[kind]) return liveRegions[kind];
+    const node = doc.createElement('div');
+    node.className = 'sr-only';
+    node.setAttribute('aria-live', kind);
+    node.setAttribute('aria-atomic', 'true');
+    doc.body.appendChild(node);
+    liveRegions[kind] = node;
+    return node;
+  }
+  liveRegion('polite'); liveRegion('assertive');
   function notify(message, error = false) {
     let node = doc.getElementById('taskNotification');
     if (!node) {
       node = doc.createElement('div');
       node.id = 'taskNotification'; node.className = 'task-notification';
-      node.setAttribute('role', 'status'); node.setAttribute('aria-live', 'polite');
+      node.setAttribute('aria-hidden', 'true');
       doc.body.appendChild(node);
     }
     clearTimeout(notifyTimer);
     node.textContent = message;
     node.classList.toggle('is-error', error);
-    node.setAttribute('role', error ? 'alert' : 'status');
     node.classList.add('is-visible');
+    const region = liveRegion(error ? 'assertive' : 'polite');
+    region.textContent = '';
+    setTimeout(() => { region.textContent = message; }, 50);
     notifyTimer = setTimeout(() => node.classList.remove('is-visible'), error ? 9000 : 4500);
   }
 
@@ -215,7 +232,56 @@
     });
   }
 
-  window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, { notify, reveal, confirm: confirmDialog });
+  /* ----------------------------------------------------------- Search */
+  // The index and search code load on first use, so pages that never search pay nothing for it.
+  const scriptBase = (() => { const s = doc.querySelector('script[src*="js/site.js"]'); return s ? s.getAttribute('src').replace(/js\/site\.js.*$/, '') : '/'; })();
+  function loadScript(file) {
+    return new Promise((resolve, reject) => {
+      if (doc.querySelector(`script[data-lazy="${file}"]`)) { resolve(); return; }
+      const el = doc.createElement('script');
+      el.src = scriptBase + file;
+      el.dataset.lazy = file;
+      el.onload = resolve; el.onerror = reject;
+      doc.head.appendChild(el);
+    });
+  }
+  async function openSearch() {
+    try {
+      if (!window.APPLYREADY_TOOL_INDEX) await loadScript('js/tool-index.js');
+      if (!window.ApplyReadySearch) await loadScript('js/search.js');
+      window.ApplyReadySearch.open();
+    } catch (e) {
+      location.href = scriptBase + 'tools.html';
+    }
+  }
+  const searchButton = doc.getElementById('searchOpen');
+  if (searchButton) searchButton.addEventListener('click', () => { if (header && header.dataset.open === 'true') setNav(false); openSearch(); });
+  doc.addEventListener('keydown', e => {
+    const target = e.target;
+    const typing = target && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable);
+    if ((e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) || ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))) {
+      if (doc.querySelector('.dialog-backdrop')) return;
+      e.preventDefault();
+      openSearch();
+    }
+  });
+
+  /* ------------------------------------------------- Recently used tools */
+  // Only the tool's id is kept (for example "merge-pdf"), never a file name or anything typed.
+  // "Your data" can clear the list or switch it off.
+  (function rememberTool() {
+    const meta = doc.querySelector('meta[name="applyready-tool"]');
+    if (!meta) return;
+    try {
+      if (localStorage.getItem('applyready_recent_off') === '1') return;
+      const id = meta.content;
+      const list = JSON.parse(localStorage.getItem('applyready_recent_tools') || '[]').filter(x => typeof x === 'string' && x !== id);
+      list.unshift(id);
+      localStorage.setItem('applyready_recent_tools', JSON.stringify(list.slice(0, 6)));
+    } catch (e) { /* storage may be unavailable; recents are optional */ }
+  })();
+
+  window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, { notify, reveal, confirm: confirmDialog, openSearch });
 
   /* ----------------------------------------------- Offline support (PWA) */
   if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {

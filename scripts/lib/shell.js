@@ -1,76 +1,85 @@
 /* The site shell: header, footer and the head links every page shares.
    scripts/sync-shell.js writes these into every HTML page and tests/content_tests.js
-   checks that no page has drifted, so all pages look and behave like one product. */
+   checks that no page has drifted, so all pages look and behave like one product.
+   The list of tools comes from scripts/lib/tools.js. */
 'use strict';
 
-const ASSET_VERSION = '20261115';
+const fs = require('node:fs');
+const path = require('node:path');
+const { CATEGORIES, TOOLS, liveTools, toolsIn } = require('./tools');
 
-// The product map. The header menu, the mobile sheet and the footer all read from here,
-// so every page presents the same five areas: image tools, PDF tools, resume, exam requirements, guides.
-const TOOLS = [
-  { title: 'Image tools', links: [
-    ['Image resizer', '', 'fa-crop-simple', 'Exact pixels and KB limits'],
-    ['Signature cleaner', 'signature-cleaner.html', 'fa-signature', 'White paper, dark ink'],
-    ['Passport photo print', 'passport-photo-print.html', 'fa-print', 'A printable sheet of copies']] },
-  { title: 'PDF tools', links: [
-    ['Image to PDF', 'image-to-pdf.html', 'fa-file-pdf', 'Combine photos and scans'],
-    ['Compress PDF', 'compress-pdf.html', 'fa-compress', 'Fit a portal size limit']] }
+const ASSET_VERSION = '20261118';
+const ROOT = path.resolve(__dirname, '..', '..');
+
+const DONATE_URL = 'https://pages.razorpay.com/support-applyready';
+const SOURCE_URL = 'https://github.com/nbsumit/applyready';
+
+const TAGLINE = 'Free tools for job applications: resumes, photos, signatures and PDFs. Everything runs in your browser, and your files are never uploaded.';
+
+// Footer "ApplyReady" column. A link is shown only once its page exists, so the footer never
+// points at a page that has not been written yet.
+const PROJECT_LINKS = [
+  ['About', 'about.html'], ['Our philosophy', 'philosophy.html'], ['Privacy', 'privacy.html'], ['Terms of use', 'terms.html'],
+  ['Your data', 'your-data.html'], ['Contact and support', 'contact.html'], ['Feedback', 'feedback.html'],
+  ['Changelog', 'changelog.html'], ['Contribute', 'contribute.html']
 ];
-const EXAMS = [['SSC', 'ssc-photo-signature-size.html', 'CGL, CHSL, MTS, GD'], ['UPSC', 'upsc-photo-signature-size.html', 'Civil services, NDA, CDS'],
-  ['IBPS', 'ibps-photo-signature-size.html', 'Bank PO and clerk'], ['NEET', 'neet-photo-signature-size.html', 'Medical entrance'],
-  ['RRB', 'rrb-photo-signature-size.html', 'Railway recruitment']];
-const SIZES = [['20 KB', 'resize-image-to-20kb.html'], ['50 KB', 'resize-image-to-50kb.html'], ['10, 100 or 200 KB', 'resize-image-to-kb-limit.html']];
-
-// Four columns, so the footer divides evenly in every layout mode (4, then 4 under the brand, then 2 by 2).
-const FOOTER_COLUMNS = [
-  { title: 'Tools', links: [['Image resizer', ''], ['Signature cleaner', 'signature-cleaner.html'], ['Passport photo print', 'passport-photo-print.html'], ['Image to PDF', 'image-to-pdf.html'], ['Compress PDF', 'compress-pdf.html'], ['Resume builder', 'resume.html']] },
-  { title: 'Resize to a file size', links: SIZES.map(([label, p]) => [label, p]) },
-  { title: 'Exam requirements', links: EXAMS.map(([label, p]) => [label, p]) },
-  { title: 'ApplyReady', links: [['Guides', 'guides/'], ['How to use', 'how-to-use.html'], ['About', 'about.html'], ['Author', 'author/sumit-sengar.html'], ['Editorial policy', 'editorial-policy.html'], ['Contact', 'contact.html'], ['Privacy', 'privacy.html'], ['Terms', 'terms.html']] }
-];
-
-const TAGLINE = {
-  en: 'Photos, signatures, PDFs and resumes, prepared to the exact requirement. Everything runs in your browser. Files are never uploaded.',
-  hi: 'फोटो, सिग्नेचर, PDF और रिज़्यूमे, सही आवश्यकता के अनुसार तैयार। सब कुछ आपके ब्राउज़र में चलता है। फाइलें कभी अपलोड नहीं होतीं।'
-};
+const HELP_LINKS = [['All tools', 'tools.html'], ['Guides', 'guides/'], ['How to use', 'how-to-use.html']];
 
 // 404.html is served at any depth and offline.html from the cache, so both use root-relative paths.
 const ROOT_RELATIVE = new Set(['404.html', 'offline.html']);
 const prefixFor = page => (ROOT_RELATIVE.has(page) ? '/' : '../'.repeat(page.split('/').length - 1));
 
-const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const exists = p => p === '' || fs.existsSync(path.join(ROOT, p.endsWith('/') ? p + 'index.html' : p));
 
 // href for a site path ('' = home) given the page's prefix ('', '../' or '/').
-function href(path, prefix) {
-  if (path === '') return prefix === '../' ? '../' : '/';
-  return prefix + path;
+function href(p, prefix) {
+  if (p === '') return prefix === '../' ? '../' : '/';
+  return prefix + p;
 }
 
-function isCurrent(path, page) {
-  if (path === '') return page === 'index.html';
-  if (path.endsWith('/')) return page.startsWith(path);
-  return page === path;
+function isCurrent(p, page) {
+  if (p === '') return page === 'index.html';
+  if (p.endsWith('/')) return page.startsWith(p);
+  return page === p;
 }
 
+/** The tool a page belongs to, for "recently used" (null for non-tool pages). */
+function toolFor(page) {
+  const t = TOOLS.find(x => x.path === page && x.live !== false);
+  return t ? t.id : null;
+}
 
-// The header's Hindi link opens this page's own Hindi version when it has one
-// (the five exam pages); every other page opens the Hindi SSC page, the first of the set.
-function hindiTwin(page) {
-  const base = page.replace(/^hi\//, '');
-  return /^(ssc|upsc|ibps|neet|rrb)-photo-signature-size\.html$/.test(base) ? 'hi/' + base : 'hi/ssc-photo-signature-size.html';
+// Header menu columns: what people come for, grouped so no column is long.
+const MENU_COLUMNS = [
+  ['resume', 'document'],
+  ['image'],
+  ['pdf'],
+  ['batch', 'cafe']
+];
+
+function menuGroup(cat, page, rel) {
+  // A tool shows once in the menu: under its own category, unless that category is not in the menu.
+  const tools = toolsIn(cat.id).filter(t => t.directory !== false && (t.category === cat.id || !MENU_COLUMNS.flat().includes(t.category)));
+  if (!tools.length) return '';
+  const cur = p => (isCurrent(p, page) ? ' aria-current="page"' : '');
+  return `                <p class="menu__title"><a href="${rel('tools.html')}#${cat.id}">${esc(cat.name)}</a></p>
+                <ul class="menu__list">
+${tools.map(t => `                  <li><a class="menu__item" href="${rel(t.path)}"${cur(t.path)}><i class="fa-solid fa-${t.icon} menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">${esc(t.name)}</span><span class="menu__desc">${esc(t.summary)}</span></span></a></li>`).join('\n')}
+                </ul>`;
 }
 
 function headerHTML(page) {
   const prefix = prefixFor(page);
   const rel = p => href(p, prefix);
   const cur = p => (isCurrent(p, page) ? ' aria-current="page"' : '');
-  const toolGroups = TOOLS.map(g => `              <p class="menu__title">${esc(g.title)}</p>
-              <ul class="menu__list">
-${g.links.map(([label, p, icon, desc]) => `                <li><a class="menu__item" href="${rel(p)}"${cur(p)}><i class="fa-solid ${icon} menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">${esc(label)}</span><span class="menu__desc">${esc(desc)}</span></span></a></li>`).join('\n')}
-              </ul>`).join('\n');
-  const resumeCur = cur('resume.html');
+  const columnList = MENU_COLUMNS.map(ids => {
+    const groups = ids.map(id => menuGroup(CATEGORIES.find(c => c.id === id), page, rel)).filter(Boolean);
+    return groups.length ? `              <div class="menu__group">\n${groups.join('\n')}\n              </div>` : '';
+  }).filter(Boolean);
+  const columns = columnList.join('\n');
+  const toolsPage = exists('tools.html') ? `\n              <div class="menu__foot"><a class="menu__all" href="${rel('tools.html')}">All tools <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><span class="menu__hint">Press <kbd>/</kbd> to search</span></div>` : '';
   const guidesCur = page.startsWith('guides/') ? ' aria-current="page"' : '';
-  const hindi = page.startsWith('hi/') ? ' aria-current="page"' : '';
   return `  <a class="skip-link" href="#mainContent">Skip to content</a>
   <header class="site-header" id="siteHeader">
     <div class="site-header__inner">
@@ -83,23 +92,17 @@ ${g.links.map(([label, p, icon, desc]) => `                <li><a class="menu__i
           <li class="site-nav__item">
             <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
             <div class="menu" id="toolsMenu" hidden>
-              <div class="menu__group menu__group--tools">
-${toolGroups}
-              </div>
-              <div class="menu__group menu__group--refs">
-              <p class="menu__title">Exam photo and signature</p>
-              <ul class="menu__list">
-${EXAMS.map(([label, p, desc]) => `                <li><a class="menu__item menu__item--plain" href="${rel(p)}"${cur(p)}><span class="menu__text"><span class="menu__name">${esc(label)}</span><span class="menu__desc">${esc(desc)}</span></span></a></li>`).join('\n')}
-              </ul>
-              </div>
+              <div class="menu__cols menu__cols--${columnList.length}">
+${columns}
+              </div>${toolsPage}
             </div>
           </li>
-          <li><a class="site-nav__link" href="${rel('resume.html')}"${resumeCur}>Resume builder</a></li>
+          <li><a class="site-nav__link" href="${rel('resume.html')}"${cur('resume.html')}>Resume builder</a></li>
           <li><a class="site-nav__link" href="${rel('guides/')}"${guidesCur}>Guides</a></li>
-          <li class="site-nav__lang"><a class="site-nav__link" href="${rel(hindiTwin(page))}" lang="hi"${hindi}>हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
+        <button type="button" id="searchOpen" class="search-trigger" aria-haspopup="dialog" aria-keyshortcuts="/ Control+K" aria-label="Search tools"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span class="search-trigger__label" aria-hidden="true">Search tools</span><kbd class="search-trigger__key" aria-hidden="true">/</kbd></button>
         <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
         <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
@@ -107,10 +110,17 @@ ${EXAMS.map(([label, p, desc]) => `                <li><a class="menu__item menu
   </header>`;
 }
 
-function footerHTML(page, lang) {
+function footerHTML(page) {
   const prefix = prefixFor(page);
   const rel = p => href(p, prefix);
-  const cols = FOOTER_COLUMNS.map(c => `      <div class="site-footer__col">
+  const toolLinks = ids => ids.flatMap(id => toolsIn(id)).filter((t, i, all) => t.directory !== false && all.findIndex(x => x.id === t.id) === i).map(t => [t.name, t.path]);
+  const columns = [
+    { title: 'Resume and images', links: toolLinks(['resume', 'image']) },
+    { title: 'PDF and documents', links: toolLinks(['pdf', 'document']) },
+    { title: 'Batch and help', links: [...toolLinks(['batch', 'cafe']), ...HELP_LINKS].filter(([, p]) => exists(p)) },
+    { title: 'ApplyReady', links: PROJECT_LINKS.filter(([, p]) => exists(p)) }
+  ];
+  const cols = columns.map(c => `      <div class="site-footer__col">
         <h2 class="site-footer__title">${esc(c.title)}</h2>
         <ul class="site-footer__list">
 ${c.links.map(([label, p]) => `          <li><a href="${rel(p)}">${esc(label)}</a></li>`).join('\n')}
@@ -120,11 +130,15 @@ ${c.links.map(([label, p]) => `          <li><a href="${rel(p)}">${esc(label)}</
     <div class="site-footer__inner">
       <div class="site-footer__brand">
         <a class="brand" href="${rel('')}"><img class="brand__mark" src="${prefix}favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
-        <p>${TAGLINE[lang] || TAGLINE.en}</p>
+        <p>${esc(TAGLINE)}</p>
+        <p class="site-footer__motto">Free. Open source. Forever.</p>
       </div>
 ${cols}
     </div>
-    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span></div>
+    <div class="site-footer__base">
+      <span>No sign-up, no ads, no watermarks. Every feature is free for everyone.</span>
+      <span class="site-footer__ext"><a href="${SOURCE_URL}" rel="noopener" target="_blank">Source code<span class="sr-only"> (opens in a new tab)</span></a><a class="site-footer__support" href="${DONATE_URL}" rel="noopener" target="_blank"><i class="fa-solid fa-heart" aria-hidden="true"></i> Support ApplyReady<span class="sr-only"> (voluntary contribution, opens in a new tab)</span></a></span>
+    </div>
   </footer>`;
 }
 
@@ -132,7 +146,8 @@ ${cols}
 // Every script, style, font and image is served from this origin; nothing is loaded from a third party.
 // style-src keeps 'unsafe-inline' for style attributes the tools set while cropping and previewing.
 // blob: and data: cover generated previews and downloads, which never leave the browser.
-function cspMeta() {
+// The tool meta lets js/site.js remember recently used tools (tool ids only, never file names).
+function cspMeta(page) {
   const policy = [
     "default-src 'self'",
     "script-src 'self'",
@@ -147,7 +162,8 @@ function cspMeta() {
     "base-uri 'self'",
     "form-action 'self'"
   ].join('; ');
-  return `  <meta http-equiv="Content-Security-Policy" content="${policy}">`;
+  const tool = page ? toolFor(page) : null;
+  return `  <meta http-equiv="Content-Security-Policy" content="${policy}">` + (tool ? `\n  <meta name="applyready-tool" content="${tool}">` : '');
 }
 
 function stylesheetLinks(page, { cropper, document: doc }) {
@@ -155,11 +171,11 @@ function stylesheetLinks(page, { cropper, document: doc }) {
   const v = `?v=${ASSET_VERSION}`;
   return [
     `  <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>`,
-    `  <link rel="stylesheet" href="${up}css/vendor/icons.min.css">`,
+    `  <link rel="stylesheet" href="${up}css/vendor/icons.min.css${v}">`,
     cropper ? `  <link rel="stylesheet" href="${up}css/vendor/cropper.min.css">` : null,
     `  <link rel="stylesheet" href="${up}css/app.css${v}">`,
     doc ? `  <link rel="stylesheet" href="${up}css/document.css${v}">` : null
   ].filter(Boolean).join('\n');
 }
 
-module.exports = { ASSET_VERSION, TOOLS, EXAMS, SIZES, FOOTER_COLUMNS, headerHTML, footerHTML, stylesheetLinks, cspMeta, href };
+module.exports = { ASSET_VERSION, DONATE_URL, SOURCE_URL, TAGLINE, headerHTML, footerHTML, stylesheetLinks, cspMeta, href, prefixFor, toolFor, liveTools };

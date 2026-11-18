@@ -3,15 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- shell:csp:start -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Contact Us | ApplyReady.in</title>
-  <meta name="description" content="Contact ApplyReady to report a wrong exam specification, a tool bug, a feature request or a privacy question. We never ask for your documents by email.">
+  <title>Contact and Support | ApplyReady</title>
+  <meta name="description" content="Contact ApplyReady about a tool that did not work, a feature request or a privacy question. We never ask for your documents by email.">
   <link rel="canonical" href="https://applyready.in/contact.html">
 
   <meta property="og:type" content="article">
   <meta property="og:url" content="https://applyready.in/contact.html">
   <meta property="og:title" content="Contact Us | ApplyReady.in">
-  <meta property="og:description" content="Contact ApplyReady to report a wrong exam specification, a tool bug, a feature request or a privacy question. We never ask for your documents by email.">
+  <meta property="og:description" content="Contact ApplyReady about a tool that did not work, a feature request or a privacy question. We never ask for your documents by email.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -21,7 +24,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:url" content="https://applyready.in/contact.html">
   <meta name="twitter:title" content="Contact Us | ApplyReady.in">
-  <meta name="twitter:description" content="Contact ApplyReady to report a wrong exam specification, a tool bug, a feature request or a privacy question. We never ask for your documents by email.">
+  <meta name="twitter:description" content="Contact ApplyReady about a tool that did not work, a feature request or a privacy question. We never ask for your documents by email.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -30,18 +33,17 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
   <link rel="manifest" href="favicon/site.webmanifest">
-  <meta name="theme-color" content="#2563EB">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
 
-  <script src="js/theme.js?v=20261115"></script>
+  <script src="js/theme.js?v=20261118"></script>
 
   <!-- shell:styles:start -->
   <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261115">
+  <link rel="stylesheet" href="css/vendor/icons.min.css?v=20261118">
+  <link rel="stylesheet" href="css/app.css?v=20261118">
   <!-- shell:styles:end -->
-  <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
-  <!-- shell:csp:end -->
+
 </head>
 <body class="content-page">
 
@@ -59,37 +61,38 @@
           <li class="site-nav__item">
             <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
             <div class="menu" id="toolsMenu" hidden>
-              <div class="menu__group menu__group--tools">
-              <p class="menu__title">Image tools</p>
-              <ul class="menu__list">
-                <li><a class="menu__item" href="/"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixels and KB limits</span></span></a></li>
-                <li><a class="menu__item" href="signature-cleaner.html"><i class="fa-solid fa-signature menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper, dark ink</span></span></a></li>
-                <li><a class="menu__item" href="passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print</span><span class="menu__desc">A printable sheet of copies</span></span></a></li>
-              </ul>
-              <p class="menu__title">PDF tools</p>
-              <ul class="menu__list">
-                <li><a class="menu__item" href="image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans</span></span></a></li>
-                <li><a class="menu__item" href="compress-pdf.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Fit a portal size limit</span></span></a></li>
-              </ul>
+              <div class="menu__cols menu__cols--3">
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
+                </ul>
               </div>
-              <div class="menu__group menu__group--refs">
-              <p class="menu__title">Exam photo and signature</p>
-              <ul class="menu__list">
-                <li><a class="menu__item menu__item--plain" href="ssc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">SSC</span><span class="menu__desc">CGL, CHSL, MTS, GD</span></span></a></li>
-                <li><a class="menu__item menu__item--plain" href="upsc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">UPSC</span><span class="menu__desc">Civil services, NDA, CDS</span></span></a></li>
-                <li><a class="menu__item menu__item--plain" href="ibps-photo-signature-size.html"><span class="menu__text"><span class="menu__name">IBPS</span><span class="menu__desc">Bank PO and clerk</span></span></a></li>
-                <li><a class="menu__item menu__item--plain" href="neet-photo-signature-size.html"><span class="menu__text"><span class="menu__name">NEET</span><span class="menu__desc">Medical entrance</span></span></a></li>
-                <li><a class="menu__item menu__item--plain" href="rrb-photo-signature-size.html"><span class="menu__text"><span class="menu__name">RRB</span><span class="menu__desc">Railway recruitment</span></span></a></li>
-              </ul>
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#image">Image tools</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="image-resizer.html"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixel size and KB limit, with crop and rotate</span></span></a></li>
+                  <li><a class="menu__item" href="signature-cleaner.html"><i class="fa-solid fa-wand-magic-sparkles menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper and dark ink from a phone photo of a signature</span></span></a></li>
+                  <li><a class="menu__item" href="passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print sheet</span><span class="menu__desc">A printable A4 or 4x6 sheet of passport photos</span></span></a></li>
+                </ul>
               </div>
+              <div class="menu__group">
+                <p class="menu__title"><a href="tools.html#pdf">PDF tools</a></p>
+                <ul class="menu__list">
+                  <li><a class="menu__item" href="image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans into one PDF</span></span></a></li>
+                  <li><a class="menu__item" href="compress-pdf.html"><i class="fa-solid fa-file-zipper menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Make a PDF small enough for an upload limit</span></span></a></li>
+                </ul>
+              </div>
+              </div>
+              <div class="menu__foot"><a class="menu__all" href="tools.html">All tools <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><span class="menu__hint">Press <kbd>/</kbd> to search</span></div>
             </div>
           </li>
           <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
           <li><a class="site-nav__link" href="guides/">Guides</a></li>
-          <li class="site-nav__lang"><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi">हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
+        <button type="button" id="searchOpen" class="search-trigger" aria-haspopup="dialog" aria-keyshortcuts="/ Control+K" aria-label="Search tools"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span class="search-trigger__label" aria-hidden="true">Search tools</span><kbd class="search-trigger__key" aria-hidden="true">/</kbd></button>
         <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
         <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
@@ -102,34 +105,29 @@
   <main id="mainContent" class="page page--read">
     <article class="article">
       <header class="page-head">
-        <h1 class="page-title">Contact</h1>
-        <p class="page-lede">ApplyReady is run by one person, <a href="about.html">Sumit Sengar</a>. Every message goes to <a href="mailto:hello@nbsumit.com">hello@nbsumit.com</a>.</p>
+        <h1 class="page-title">Contact and support</h1>
+        <p class="page-lede">Questions, problems and suggestions all go to <a href="mailto:hello@nbsumit.com">hello@nbsumit.com</a>. Technical issues can also be reported on GitHub.</p>
       </header>
-
       <section class="section prose">
+        <h2>Before you write</h2>
+        <p>Most questions about a tool are answered on the <a href="how-to-use.html">how to use</a> page and in the <a href="guides/">guides</a>. If a portal refuses a file, the guide on <a href="guides/fix-common-photo-upload-errors.html">fixing common upload errors</a> matches each error message to its usual cause.</p>
         <h2>What to contact us about</h2>
         <ul>
-          <li><strong>A wrong or outdated specification.</strong> Exam bodies change their photo and signature rules between notices. If an exam page gives a figure that differs from the current notice, <a href="mailto:hello@nbsumit.com?subject=Report%20a%20wrong%20spec&amp;body=Exam%20and%20page%20on%20ApplyReady%3A%0AFigure%20shown%20on%20ApplyReady%3A%0AFigure%20in%20the%20official%20notice%3A%0ALink%20to%20the%20official%20notice%20%28PDF%20or%20page%29%3A%0A">email "Report a wrong spec"</a>. The template asks for the figure on our page, the figure in the notice and a link to the official notice, which is what we need to check and correct it. Corrections are listed in the <a href="editorial-policy.html#corrections-log">corrections log</a>.</li>
-          <li><strong>A tool that did not work.</strong> First check the steps on the <a href="how-to-use.html">how to use</a> page. If it still fails, <a href="mailto:hello@nbsumit.com?subject=Bug%20report&amp;body=Tool%3A%0AWhat%20you%20did%3A%0AWhat%20happened%3A%0ADevice%20and%20browser%3A%0AFile%20type%20and%20approximate%20size%20%28please%20do%20not%20attach%20the%20file%29%3A%0A">Email a bug report</a> with the tool, what you did, what happened, your device and browser, and the type and approximate size of the file.</li>
-          <li><strong>A feature or a guide you would like.</strong> <a href="mailto:hello@nbsumit.com?subject=Feature%20request&amp;body=What%20you%20are%20trying%20to%20prepare%2C%20and%20for%20which%20form%3A%0AWhat%20ApplyReady%20should%20do%3A%0A">Email a feature request</a> describing the form you are filling and the requirement you are stuck on.</li>
-          <li><strong>Privacy.</strong> <a href="mailto:hello@nbsumit.com?subject=Privacy%20question&amp;body=Your%20question%3A%0A">Email a privacy question</a> about data stored on your device or the offline cache. The <a href="privacy.html">privacy policy</a> answers the common ones.</li>
+          <li><strong>A tool that did not work.</strong> <a href="mailto:hello@nbsumit.com?subject=Bug%20report&amp;body=Tool%3A%0AWhat%20you%20did%3A%0AWhat%20happened%3A%0ADevice%20and%20browser%3A%0AFile%20type%20and%20approximate%20size%20%28please%20do%20not%20attach%20the%20file%29%3A%0A">Email a bug report</a> with the tool, what you did, what happened, your device and browser, and the type and approximate size of the file.</li>
+          <li><strong>A feature or a guide you would like.</strong> <a href="mailto:hello@nbsumit.com?subject=Feature%20request&amp;body=What%20you%20are%20trying%20to%20prepare%3A%0AWhat%20ApplyReady%20should%20do%3A%0A">Email a feature request</a> describing what you are trying to prepare and where you got stuck.</li>
+          <li><strong>Privacy.</strong> <a href="mailto:hello@nbsumit.com?subject=Privacy%20question&amp;body=Your%20question%3A%0A">Email a privacy question</a>. The <a href="privacy.html">privacy policy</a> answers the common ones.</li>
         </ul>
-
         <h2>Please do not send your documents</h2>
         <p>ApplyReady never asks for your photo, signature, certificates, identity documents or resume by email, and we will not open attachments of that kind. The tools work on your device, so we never need to see your files to help. If someone claiming to be ApplyReady asks for your documents or for a payment, it is not us.</p>
-        <p>Who runs the site and how it is funded is explained on the <a href="about.html">about page</a>; the rules for using it are in the <a href="terms.html">terms of use</a>.</p>
-
+        <p>Who maintains ApplyReady and why it is free is explained on the <a href="about.html">about page</a>; the rules for using it are in the <a href="terms.html">terms of use</a>.</p>
         <h2>When to expect a reply</h2>
-        <p>Messages are answered by email from hello@nbsumit.com, usually within 3 to 4 business days. A confirmed specification error is corrected on the page, the page's "Last checked" date is updated, and the change is added to the corrections log.</p>
-
+        <p>ApplyReady is maintained by one person, so replies usually take 3 to 4 business days.</p>
         <h2>Write a message</h2>
         <p>Choose a subject and write your message; the button opens a new email in your mail app with the text filled in. Nothing is sent from this page.</p>
-
         <form id="contactForm" class="form-stack">
           <div class="field">
             <label for="contactSubject" class="field-label">Subject</label>
             <select id="contactSubject">
-              <option value="Report a wrong spec">Report a wrong spec</option>
               <option value="Bug Report">Bug report</option>
               <option value="Feature request">Feature request</option>
               <option value="Resume Builder Feedback">Resume builder feedback</option>
@@ -137,23 +135,20 @@
               <option value="General Inquiry">Something else</option>
             </select>
           </div>
-
           <div class="field">
             <label for="contactMessage" class="field-label">Your message</label>
-            <textarea id="contactMessage" rows="5" class="textarea" maxlength="1500" placeholder="For a specification, include the exam and a link to the official notice." aria-describedby="contactMessageHint contactMessageError" required></textarea>
+            <textarea id="contactMessage" rows="5" class="textarea" maxlength="1500" placeholder="Which tool, what you did, and what happened." aria-describedby="contactMessageHint contactMessageError" required></textarea>
             <p id="contactMessageHint" class="field-hint">Opens your email app with this message addressed to hello@nbsumit.com. Nothing is sent until you press send there. Up to 1,500 characters.</p>
             <p id="contactMessageError" class="field-error" hidden></p>
           </div>
-
           <div>
             <button type="submit" class="btn btn-primary">
               <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Compose email
             </button>
           </div>
         </form>
-
         <h2>Code and technical issues</h2>
-        <p>The site's code is public. Technical bug reports and suggestions can also be opened as issues in the <a href="https://github.com/nbsumit/applyready" target="_blank" rel="noopener noreferrer">GitHub repository <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>.</p>
+        <p>ApplyReady's code is public. Bug reports and suggestions can also be opened as issues in the <a href="https://github.com/nbsumit/applyready" target="_blank" rel="noopener noreferrer">GitHub repository <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>. Please do not attach personal documents to an issue: issues are public.</p>
       </section>
     </article>
   </main>
@@ -164,57 +159,52 @@
     <div class="site-footer__inner">
       <div class="site-footer__brand">
         <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
-        <p>Photos, signatures, PDFs and resumes, prepared to the exact requirement. Everything runs in your browser. Files are never uploaded.</p>
+        <p>Free tools for job applications: resumes, photos, signatures and PDFs. Everything runs in your browser, and your files are never uploaded.</p>
+        <p class="site-footer__motto">Free. Open source. Forever.</p>
       </div>
       <div class="site-footer__col">
-        <h2 class="site-footer__title">Tools</h2>
+        <h2 class="site-footer__title">Resume and images</h2>
         <ul class="site-footer__list">
-          <li><a href="/">Image resizer</a></li>
+          <li><a href="resume.html">Resume builder</a></li>
+          <li><a href="image-resizer.html">Image resizer</a></li>
           <li><a href="signature-cleaner.html">Signature cleaner</a></li>
-          <li><a href="passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print sheet</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">PDF and documents</h2>
+        <ul class="site-footer__list">
           <li><a href="image-to-pdf.html">Image to PDF</a></li>
           <li><a href="compress-pdf.html">Compress PDF</a></li>
-          <li><a href="resume.html">Resume builder</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
-        <h2 class="site-footer__title">Resize to a file size</h2>
+        <h2 class="site-footer__title">Batch and help</h2>
         <ul class="site-footer__list">
-          <li><a href="resize-image-to-20kb.html">20 KB</a></li>
-          <li><a href="resize-image-to-50kb.html">50 KB</a></li>
-          <li><a href="resize-image-to-kb-limit.html">10, 100 or 200 KB</a></li>
-        </ul>
-      </div>
-      <div class="site-footer__col">
-        <h2 class="site-footer__title">Exam requirements</h2>
-        <ul class="site-footer__list">
-          <li><a href="ssc-photo-signature-size.html">SSC</a></li>
-          <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
-          <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
-          <li><a href="neet-photo-signature-size.html">NEET</a></li>
-          <li><a href="rrb-photo-signature-size.html">RRB</a></li>
+          <li><a href="tools.html">All tools</a></li>
+          <li><a href="guides/">Guides</a></li>
+          <li><a href="how-to-use.html">How to use</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
         <h2 class="site-footer__title">ApplyReady</h2>
         <ul class="site-footer__list">
-          <li><a href="guides/">Guides</a></li>
-          <li><a href="how-to-use.html">How to use</a></li>
           <li><a href="about.html">About</a></li>
-          <li><a href="author/sumit-sengar.html">Author</a></li>
-          <li><a href="editorial-policy.html">Editorial policy</a></li>
-          <li><a href="contact.html">Contact</a></li>
           <li><a href="privacy.html">Privacy</a></li>
-          <li><a href="terms.html">Terms</a></li>
+          <li><a href="terms.html">Terms of use</a></li>
+          <li><a href="contact.html">Contact and support</a></li>
         </ul>
       </div>
     </div>
-    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span></div>
+    <div class="site-footer__base">
+      <span>No sign-up, no ads, no watermarks. Every feature is free for everyone.</span>
+      <span class="site-footer__ext"><a href="https://github.com/nbsumit/applyready" rel="noopener" target="_blank">Source code<span class="sr-only"> (opens in a new tab)</span></a><a class="site-footer__support" href="https://pages.razorpay.com/support-applyready" rel="noopener" target="_blank"><i class="fa-solid fa-heart" aria-hidden="true"></i> Support ApplyReady<span class="sr-only"> (voluntary contribution, opens in a new tab)</span></a></span>
+    </div>
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261115" defer></script>
-  <script src="js/site.js?v=20261115"></script>
-  <script src="js/contact.js?v=20261115"></script>
+  <script src="js/components.js?v=20261118" defer></script>
+  <script src="js/site.js?v=20261118"></script>
+  <script src="js/contact.js?v=20261118"></script>
 </body>
 </html>
