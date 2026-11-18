@@ -1,6 +1,7 @@
 /* Failure paths that once went wrong silently: offline reloads, a PDF whose text page an older
-   compressor dropped, a new file chosen while the resizer is busy, page order in image to PDF, and the
-   contact form's empty message. Each check failed before its fix. */
+   compressor dropped, a new file chosen while the resizer is busy, page order in image to PDF, a PDF
+   chosen in image to PDF, the contact form's empty message, and old or mistyped addresses on the 404
+   page. Each check failed before its fix. */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
@@ -113,6 +114,23 @@ function mixedPdf(jpeg) {
   ok(order.join() === '1-large.jpg,2-small.jpg,3-medium.jpg', `pages keep the chosen order (${order})`);
   console.log('✓ Image to PDF keeps the chosen page order');
 
+  // 4b. A PDF chosen with the photos is not dropped silently: a notice names it and points to Merge PDF.
+  await page.setInputFiles('#addMoreFileInput', [
+    { name: 'certificate.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF\n') },
+    { name: '4-extra.jpg', mimeType: 'image/jpeg', buffer: sample('test-signature.jpg') }
+  ]);
+  await page.waitForFunction(() => document.querySelectorAll('.page-row__text').length === 4, null, { timeout: 15000 });
+  const skipped = await page.evaluate(() => { const n = document.getElementById('imgPdfSkipped'); return n && { text: n.textContent, role: n.getAttribute('role'), link: (n.querySelector('a') || {}).getAttribute && n.querySelector('a').getAttribute('href'), visible: !!n.offsetParent }; });
+  ok(skipped && skipped.visible && /certificate\.pdf/.test(skipped.text) && /not added/.test(skipped.text) && skipped.link === 'merge-pdf.html' && skipped.role === 'alert', `a skipped PDF is named, with a link to Merge PDF (${JSON.stringify(skipped)})`);
+  await page.setInputFiles('#addMoreFileInput', [{ name: '5-more.jpg', mimeType: 'image/jpeg', buffer: sample('test-signature.jpg') }]);
+  await page.waitForFunction(() => document.querySelectorAll('.page-row__text').length === 5, null, { timeout: 15000 });
+  ok(!(await page.$('#imgPdfSkipped')), 'the notice goes away when only images are added');
+  await page.goto(origin + '/image-to-pdf.html');
+  await page.setInputFiles('#imgPdfFileInput', [{ name: 'only.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF\n') }, { name: 'notes.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: Buffer.from('PK') }]);
+  const onlyPdf = await page.evaluate(() => { const n = document.getElementById('imgPdfSkipped'); return n && { text: n.textContent, visible: !!n.offsetParent }; });
+  ok(onlyPdf && onlyPdf.visible && /only\.pdf/.test(onlyPdf.text) && /notes\.docx/.test(onlyPdf.text) && /JPG, PNG or WebP/.test(onlyPdf.text), `with no image chosen, the notice still explains every file (${JSON.stringify(onlyPdf)})`);
+  console.log('✓ Image to PDF names skipped PDFs and points to Merge PDF');
+
   // 5. The contact form explains an empty message instead of opening a blank email.
   await page.goto(origin + '/contact.html');
   await page.fill('#contactMessage', '   ');
@@ -121,6 +139,31 @@ function mixedPdf(jpeg) {
   ok(contact.shown && contact.text && contact.invalid === 'true' && contact.focused === 'contactMessage', `empty contact message is explained at the field (${JSON.stringify(contact)})`);
   ok(await page.locator('#contactMessage').getAttribute('maxlength') === '1500', 'the message is capped so the mailto link stays short enough');
   console.log('✓ Contact form validates an empty message');
+
+  // 6. Missing pages: an old address that moved goes to its new page, a removed page says where its
+  //    content went, a mistyped one searches for its words, and the main buttons open the real tools.
+  await page.goto(origin + '/guides/image-dimensions-vs-file-size.html');
+  await page.waitForURL(/pixels-cm-inches-dpi-explained\.html$/, { timeout: 10000 });
+  ok(true, 'a moved guide opens its new address');
+  await page.goto(origin + '/ssc-photo-signature-size.html');
+  const removed = await page.evaluate(() => ({ h1: document.querySelector('h1').textContent, links: [...document.querySelectorAll('#notFoundMoved a')].map(a => a.getAttribute('href')), shown: !document.getElementById('notFoundMoved').hidden }));
+  ok(removed.h1 === 'This page was removed' && removed.shown && removed.links.includes('/passport-photo-resizer.html') && removed.links.includes('/signature-resizer.html'), `a removed page explains itself and links its replacements (${JSON.stringify(removed)})`);
+  await page.goto(origin + '/merge-pdfs.html');
+  await page.waitForFunction(() => document.querySelector('[data-search-inline] .search-result'), null, { timeout: 10000 });
+  const guess = await page.evaluate(() => ({ q: document.querySelector('[data-search-inline] input').value, first: document.querySelector('[data-search-inline] .search-result').getAttribute('href'), h1: document.querySelector('h1').textContent }));
+  ok(guess.h1 === 'Page not found' && guess.q === 'merge pdfs' && guess.first === '/merge-pdf.html', `a mistyped address searches for its words (${JSON.stringify(guess)})`);
+  for (const p of ['/no/such/page.html', '/offline.html']) {
+    await page.goto(origin + p);
+    const buttons = await page.evaluate(() => [...document.querySelectorAll('.status-page .actions a')].map(a => [a.textContent.trim(), a.getAttribute('href')]));
+    const resizer = buttons.find(([t]) => /image resizer/i.test(t));
+    ok(resizer && resizer[1] === '/image-resizer.html', `${p}: the image resizer button opens the resizer (${JSON.stringify(buttons)})`);
+    ok(buttons.some(([, h]) => h === '/tools.html'), `${p}: a button lists every tool`);
+  }
+  await page.goto(origin + '/no/such/page.html');
+  await page.click('.status-page .actions a[href="/image-resizer.html"]');
+  await page.waitForURL(/\/image-resizer\.html$/);
+  ok((await page.locator('h1').textContent()).trim() === 'Image resizer', 'following the 404 button lands on the resizer');
+  console.log('✓ Missing pages redirect, explain or search, and their buttons open the real tools');
 
   ok(errors.length === 0, `page errors: ${errors.join('; ')}`);
   await browser.close();

@@ -7,8 +7,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Page Not Found (404) | ApplyReady.in</title>
-  <meta name="description" content="The page you are looking for does not exist on ApplyReady.in. Navigate back to our free Image Resizer or ATS Resume Builder.">
+  <title>Page Not Found (404) | ApplyReady</title>
+  <meta name="description" content="This address does not lead to a page on ApplyReady. Search the tools, or go to the tool list, the image resizer, the resume builder or the guides.">
   <meta name="robots" content="noindex, follow">
 
   <!-- Favicons -->
@@ -114,13 +114,16 @@
   <!-- MAIN CONTAINER -->
   <noscript><p class="noscript-note">Enable JavaScript to use the tools. The guides remain available without it.</p></noscript>
   <main id="mainContent" class="page page--read">
-    <section class="status-page">
+    <section class="status-page" aria-labelledby="notFoundTitle">
       <header class="page-head">
-        <h1 class="page-title">Page not found</h1>
-        <p class="page-lede">This address does not lead anywhere. The page may have moved. These are the places most people are looking for.</p>
+        <h1 class="page-title" id="notFoundTitle">Page not found</h1>
+        <p class="page-lede" id="notFoundText">This address does not lead anywhere. The page may have moved or been removed. Search for what you need, or start from one of the pages below.</p>
       </header>
+      <div class="actions" id="notFoundMoved" hidden></div>
+      <div class="search-inline" data-search-inline data-placeholder="What do you need to do? e.g. compress photo"></div>
       <div class="actions">
-        <a href="/index.html" class="btn btn-primary btn-lg"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Open the image resizer</a>
+        <a href="/tools.html" class="btn btn-primary btn-lg"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i> Browse all tools</a>
+        <a href="/image-resizer.html" class="btn btn-lg"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Open the image resizer</a>
         <a href="/resume.html" class="btn btn-lg"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> Open the resume builder</a>
         <a href="/guides/" class="btn btn-lg"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Browse the guides</a>
       </div>
@@ -202,5 +205,8 @@
 
   <script src="/js/components.js?v=20261118" defer></script>
   <script src="/js/site.js?v=20261118"></script>
+  <script defer src="/js/tool-index.js?v=20261118"></script>
+  <script defer src="/js/search.js?v=20261118"></script>
+  <script defer src="/js/not-found.js?v=20261118"></script>
 </body>
 </html>

@@ -7,8 +7,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>You're Offline | ApplyReady.in</title>
-  <meta name="description" content="You are currently offline. ApplyReady tools you have previously loaded continue to work 100% in your browser.">
+  <title>You Are Offline | ApplyReady</title>
+  <meta name="description" content="This page is not saved on this device yet. Tools and guides that ApplyReady has already saved keep working without a connection.">
   <meta name="robots" content="noindex, nofollow">
 
   <!-- Favicons -->
@@ -22,7 +22,6 @@
 
   <script src="/js/theme.js?v=20261118"></script>
 
-  <!-- Font Awesome Icons & Styles -->
   <!-- shell:styles:start -->
   <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/vendor/icons.min.css?v=20261118">
@@ -113,18 +112,18 @@
 
   <!-- MAIN CONTAINER -->
   <main id="mainContent" class="page page--read">
-    <section class="status-page">
+    <section class="status-page" aria-labelledby="offlineTitle">
       <header class="page-head">
-        <h1 class="page-title">You are offline</h1>
-        <p class="page-lede">Tools you have opened before still work: ApplyReady runs in your browser, so your files never needed the internet.</p>
+        <h1 class="page-title" id="offlineTitle">You are offline</h1>
+        <p class="page-lede">This page is not saved on this device yet, so it needs a connection. ApplyReady runs in your browser, and after your first visit it keeps every tool and guide on this device, so the pages below should still open.</p>
       </header>
       <div class="actions">
-        <a href="/" class="btn btn-primary btn-lg"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Open Image Resizer</a>
-        <a href="/resume.html" class="btn btn-lg"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> Open Resume Builder</a>
-        <a href="/signature-cleaner.html" class="btn btn-lg"><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> Signature Cleaner</a>
-        <a href="/compress-pdf.html" class="btn btn-lg"><i class="fa-solid fa-compress" aria-hidden="true"></i> Compress PDF</a>
+        <a href="/tools.html" class="btn btn-primary btn-lg"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i> Browse all tools</a>
+        <a href="/image-resizer.html" class="btn btn-lg"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Open the image resizer</a>
+        <a href="/resume.html" class="btn btn-lg"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> Open the resume builder</a>
+        <a href="/guides/" class="btn btn-lg"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Browse the guides</a>
       </div>
-      <p class="muted">Once you are back online, simply reconnect or reload to access full guides and specifications.</p>
+      <p class="muted">Some PDF tools also need a PDF library that is saved the first time you use one of them online. When you are back online, reload this page.</p>
     </section>
   </main>
 

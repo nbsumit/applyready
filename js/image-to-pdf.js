@@ -1,10 +1,7 @@
-/**
- * ApplyReady.in - Image to PDF Converter Engine
- * 100% Client-Side Pure Binary PDF 1.4 Generator
- * Supports multiple images (JPG, PNG, WebP), reordering,
- * A4/Letter/Fit Page, margins, orientations, and custom quality.
- * Zero external libraries or server uploads.
- */
+/* Image to PDF: turns JPG, PNG and WebP images into the pages of one PDF, in the order chosen,
+   with page size, orientation, margins and quality. The PDF is written by this file in the browser,
+   with no library and no upload. Files that are not images (a PDF, for example) are listed in a
+   notice instead of being dropped silently. */
 
 (function () {
   'use strict';
@@ -125,12 +122,54 @@
   // Width and height as the page will show them, after any quarter turns.
   const turned = item => (item.rotation % 180 === 0 ? { w: item.width, h: item.height } : { w: item.height, h: item.width });
 
-  function handleFiles(fileList) {
-    const validFiles = Array.from(fileList).filter(f => f.type.startsWith('image/'));
-    if (!validFiles.length) {
-      notifyError('Those files could not be used. Choose JPG, PNG or WebP images.');
-      return;
+  // Files that were not added stay listed in a notice until the next files are chosen or the list
+  // is cleared, so a PDF chosen with the photos is never dropped without a word. A PDF cannot become
+  // a page here; Merge PDF combines PDFs and photos.
+  let skippedNotice = null;
+  const isPdf = f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+  const nameList = files => files.slice(0, 3).map(f => '"' + f.name + '"').join(', ') + (files.length > 3 ? ' and ' + (files.length - 3) + ' more' : '');
+  function showSkipped(pdfs, others) {
+    // A new element each time: an alert is announced when it is added, not when it is unhidden.
+    hideSkipped();
+    skippedNotice = doc.createElement('div');
+    skippedNotice.className = 'notice notice--warning';
+    skippedNotice.id = 'imgPdfSkipped';
+    skippedNotice.setAttribute('role', 'alert');
+    const icon = doc.createElement('i');
+    icon.className = 'fa-solid fa-triangle-exclamation';
+    icon.setAttribute('aria-hidden', 'true');
+    const body = doc.createElement('div');
+    body.className = 'notice__body';
+    if (pdfs.length) {
+      const p = doc.createElement('p');
+      p.append((pdfs.length === 1 ? nameList(pdfs) + ' is a PDF, so it was not added.' : pdfs.length + ' PDF files were not added: ' + nameList(pdfs) + '.') + ' This tool turns images into pages. To combine PDFs with photos or scans, use ');
+      const link = doc.createElement('a');
+      link.href = 'merge-pdf.html';
+      link.textContent = 'Merge PDF';
+      p.append(link, '.');
+      body.append(p);
     }
+    if (others.length) {
+      const p = doc.createElement('p');
+      p.textContent = (others.length === 1 ? nameList(others) + ' was not added' : others.length + ' files were not added: ' + nameList(others)) + '. Choose JPG, PNG or WebP images.';
+      body.append(p);
+    }
+    skippedNotice.append(icon, body);
+    const stage = dropzone.parentElement;
+    stage.insertBefore(skippedNotice, stage.firstChild);
+  }
+  function hideSkipped() {
+    if (skippedNotice) skippedNotice.remove();
+    skippedNotice = null;
+  }
+
+  function handleFiles(fileList) {
+    const all = Array.from(fileList);
+    const validFiles = all.filter(f => f.type.startsWith('image/'));
+    const skipped = all.filter(f => !f.type.startsWith('image/'));
+    if (skipped.length) showSkipped(skipped.filter(isPdf), skipped.filter(f => !isPdf(f)));
+    else hideSkipped();
+    if (!validFiles.length) return;
 
     // Files finish loading in any order; keep the order they were chosen in.
     const loadedItems = new Array(validFiles.length).fill(null);
@@ -359,6 +398,7 @@
 
   function clearAll() {
     items = [];
+    hideSkipped();
     if (fileInput) fileInput.value = '';
     if (addMoreInput) addMoreInput.value = '';
     if (pdfBlobUrl) {
