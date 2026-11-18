@@ -252,6 +252,33 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     ok(cut.pdf.truncated && cut.warnings.some(w => w.level !== 'info' && /incomplete/.test(w.text)), 'cut-off PDF: called incomplete (pdf-lib may still recover its pages)');
   }
 
+  // A PDF whose page list is fine but whose pages' content is missing or garbled is damaged (its
+  // pages show blank); sound files, blank pages and permissions-only encrypted files are not flagged.
+  {
+    const make = async encrypt => {
+      const d = await PDFLib.PDFDocument.create();
+      const font = await d.embedFont(PDFLib.StandardFonts.Helvetica);
+      for (let i = 0; i < 3; i++) d.addPage([300, 400]).drawText(`Page ${i + 1}`, { x: 40, y: 300, size: 20, font });
+      d.addPage([300, 400]); // blank by design: no content at all
+      if (encrypt) d.encrypt(encrypt);
+      return d;
+    };
+    const sound = await Inspect.inspect(await (await make()).save(), { name: 'sound.pdf', PDFLib });
+    ok(!sound.damaged && !sound.pdf.unreadablePages, 'sound PDF with a blank page: not flagged as damaged');
+    const perm = await Inspect.inspect(await (await make({ userPassword: '', ownerPassword: 'o' })).save(), { name: 'perm.pdf', PDFLib });
+    ok(!perm.pdf.unreadablePages, 'permissions-only encrypted PDF: its encrypted content is not mistaken for damage');
+    const d = await PDFLib.PDFDocument.load(await (await make()).save({ useObjectStreams: false }));
+    const contents = PDFLib.PDFName.of('Contents');
+    const garbled = d.context.lookup(d.getPage(1).node.get(contents));
+    const first = garbled instanceof PDFLib.PDFArray ? d.context.lookup(garbled.get(garbled.size() - 1)) : garbled;
+    first.contents.fill(0x41); // still Flate-labelled, no longer Flate data
+    d.getPage(2).node.set(contents, PDFLib.PDFRef.of(9999));
+    const bad = await Inspect.inspect(await d.save({ useObjectStreams: false }), { name: 'bad.pdf', PDFLib });
+    ok(bad.damaged && bad.pdf.unreadablePages.join() === '2,3' && bad.warnings.some(w => w.level === 'error' && /pages 2-3 is missing or broken/.test(w.text)), `damaged page content: pages named, reported as an error (${bad.pdf.unreadablePages}; ${bad.warnings.map(w => w.text).join(' | ')})`);
+    const Kit = require('../js/lib/pdf-kit.js');
+    ok(Kit.unreadablePages(await Kit.openLib(await d.save())).join() === '1,2', 'the PDF tools find the same damaged pages (0-based)');
+  }
+
   // ------------------------------------------------------------------ names that hide what a file is
   {
     const jpeg = new Uint8Array(F.jpegWithSegments(Buffer.from(sample('test-portrait.jpg')), [F.exifSegment(F.phoneExif({ orientation: 1 }))]));

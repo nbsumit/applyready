@@ -477,6 +477,48 @@
    * Encrypted files are opened without a password when they allow it (restrictions only); otherwise
    * only the page structure is read.
    */
+  /**
+   * Pages (0-based) whose own content is missing or broken. A damaged file can keep a readable page
+   * list while its pages' content streams are gone or garbled: the page count looks right but the
+   * pages are blank, and PDF viewers report an error. A page with no /Contents is blank by design and
+   * is not reported; a /Contents that names a missing object or a non-stream, or a Flate stream that
+   * does not decompress (checked up to 16 MB in all), is. Same rules as ApplyReadyPdf.unreadablePages.
+   */
+  function unreadablePdfPages(PDFLib, doc) {
+    const P = PDFLib, ctx = doc.context;
+    const CONTENTS = P.PDFName.of('Contents'), FILTER = P.PDFName.of('Filter'), FLATE = P.PDFName.of('FlateDecode');
+    let budget = 16 * MB;
+    const readable = obj => {
+      if (!(obj instanceof P.PDFStream)) return false;
+      if (!(obj instanceof P.PDFRawStream) || budget <= 0 || typeof P.decodePDFRawStream !== 'function') return true;
+      const f = obj.dict.lookup(FILTER);
+      const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
+      if (!flate) return true;
+      budget -= obj.contents.length;
+      try { P.decodePDFRawStream(obj).decode(); return true; } catch (e) { return false; }
+    };
+    const bad = [];
+    doc.getPages().forEach((page, i) => {
+      const ref = page.node.get(CONTENTS);
+      if (ref === undefined) return;
+      const c = ctx.lookup(ref);
+      const ok = c instanceof P.PDFArray ? c.size() > 0 && c.asArray().every(x => readable(ctx.lookup(x))) : readable(c);
+      if (!ok) bad.push(i);
+    });
+    return bad;
+  }
+
+  /** "page 3", "pages 1-5", "pages 1-2, 7" from 0-based indexes in order. */
+  function pageList(indexes) {
+    const parts = [];
+    for (let i = 0; i < indexes.length; i++) {
+      const start = indexes[i];
+      while (i + 1 < indexes.length && indexes[i + 1] === indexes[i] + 1) i++;
+      parts.push(start === indexes[i] ? `${start + 1}` : `${start + 1}-${indexes[i] + 1}`);
+    }
+    return `${indexes.length === 1 ? 'page' : 'pages'} ${parts.join(', ')}`;
+  }
+
   async function inspectPdf(b, PDFLib) {
     const head = latin1(b, 0, Math.min(b.length, 1024));
     const at = head.indexOf('%PDF-');
@@ -527,6 +569,16 @@
       out.sizeGroups = Array.from(groups.values()).map(g => ({ widthMm: g.widthMm, heightMm: g.heightMm, widthIn: g.widthIn, heightIn: g.heightIn, paper: g.paper, pages: g.pages, orientations: Array.from(g.orientations) }));
       out.mixedSizes = out.sizeGroups.length > 1;
       out.mixedOrientation = new Set(out.pageSizes.map(p => p.orientation).filter(o => o !== 'square')).size > 1;
+      // Content streams are encrypted until the file is opened with its password, so they are only
+      // checked when the file opened (no password, or an owner-only password).
+      if (!out.needsPassword) {
+        const bad = unreadablePdfPages(PDFLib, doc);
+        if (bad.length) {
+          out.unreadablePages = bad.map(i => i + 1);
+          out.damaged = true;
+          out.reason = `This PDF is damaged: the content of ${bad.length === pages.length ? (pages.length === 1 ? 'its page' : `all ${pages.length} pages`) : pageList(bad)} is missing or broken, so ${bad.length === 1 ? 'that page shows' : 'those pages show'} blank or cannot be opened. Most portals will reject it; get a fresh copy from where it came from.`;
+        }
+      }
     } catch (e) { out.damaged = true; out.reason = out.truncated ? 'This PDF is incomplete: its end is missing, so its pages could not be read. Download or export it again.' : 'The pages of this PDF could not be read. It may be damaged; most portals will reject it.'; }
     if (!out.needsPassword) {
       const safe = f => { try { return f(); } catch (e) { return undefined; } };

@@ -141,7 +141,7 @@
   [els.dpi, els.grey].forEach(el => el.addEventListener('change', dropResult));
 
   function show(res) {
-    const { bytes, kept, fits, pageCount, minDpi, target, original } = res;
+    const { bytes, kept, pageCount, minDpi, target, original } = res;
     dropResult();
     output = urls.make(UI.pdfBlob(bytes));
     UI.setDownload(els.download, output, kept ? current.file.name : `${UI.stem(current.file.name)}-compressed.pdf`);
@@ -152,12 +152,14 @@
     icon.className = met ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
     icon.setAttribute('aria-hidden', 'true');
     const text = doc.createElement('span');
-    const kb = target / 1024;
-    if (kept === 'fits') text.textContent = `Already under ${kb} KB, so your original file is kept unchanged. Upload it as it is.`;
+    const kb = res.kb;
+    // Portals count a KB as 1,000 or as 1,024 bytes; the target is the smaller of the two, so give the exact size.
+    const exact = `${K.grouped(bytes.length)} bytes, under ${kb} KB however the portal counts a KB`;
+    if (kept === 'fits') text.textContent = `Already under ${kb} KB (${exact}), so your original file is kept unchanged. Upload it as it is.`;
     else if (kept === 'larger') text.textContent = met
       ? `Already as small as it gets: compressing would not make this file smaller, so your original (${fmtKB(bytes.length)} KB) is kept. It is under ${kb} KB.`
       : `This file could not get under ${kb} KB, and compressing would not make it smaller, so your original (${fmtKB(bytes.length)} KB) is kept. Try a higher limit, or upload fewer pages.`;
-    else text.textContent = met ? `Under ${kb} KB. Ready to upload.` : `This file could not get under ${kb} KB. The smallest readable version is ${fmtKB(bytes.length)} KB. Try a higher limit, or upload fewer pages.`;
+    else text.textContent = met ? `Under ${kb} KB (${exact}). Ready to upload.` : `This file could not get under ${kb} KB. The smallest readable version is ${fmtKB(bytes.length)} KB. Try a higher limit, or upload fewer pages.`;
     els.status.append(icon, text);
     els.orig.textContent = sized(original);
     els.comp.textContent = `${fmtKB(bytes.length)} KB`;
@@ -173,7 +175,10 @@
 
   els.start.addEventListener('click', () => {
     if (!current || !validateTarget()) return;
-    const target = Math.floor(targetKB() * 1024);
+    // Some portals count 1 KB as 1,000 bytes and others as 1,024: aim under the smaller figure, so a
+    // "500 KB" result is accepted either way.
+    const kb = targetKB();
+    const target = Math.floor(kb * 1000);
     const state = current;
     const dpi = Number(els.dpi.value);
     const grey = els.grey.checked;
@@ -181,7 +186,7 @@
       const original = state.file.size;
       if (state.kind === 'pdf' && original <= target) {
         progress(1, 'Already under the limit.');
-        return show({ bytes: state.bytes, kept: 'fits', fits: true, pageCount: state.pageCount, target, original });
+        return show({ bytes: state.bytes, kept: 'fits', fits: true, pageCount: state.pageCount, target, original, kb });
       }
       let res;
       if (state.kind === 'image') {
@@ -198,9 +203,9 @@
       const sizes = res.sizes ? res.sizes.map(s => ({ width: s.view[2] - s.view[0], height: s.view[3] - s.view[1] })) : null;
       await K.verify(res.bytes, { pages: state.pageCount, sizes });
       if (state.kind === 'pdf' && res.bytes.length >= original) {
-        return show({ bytes: state.bytes, kept: 'larger', fits: original <= target, pageCount: state.pageCount, target, original });
+        return show({ bytes: state.bytes, kept: 'larger', fits: original <= target, pageCount: state.pageCount, target, original, kb });
       }
-      return show({ bytes: res.bytes, kept: null, fits: res.fits, pageCount: res.pageCount, minDpi: res.minDpi, target, original });
+      return show({ bytes: res.bytes, kept: null, fits: res.fits, pageCount: res.pageCount, minDpi: res.minDpi, target, original, kb });
     });
   });
 
