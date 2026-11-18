@@ -93,7 +93,7 @@ npm test
 ```
 
 `npm test` runs the unit suite, behaviour regressions and the content checks (metadata, links, sitemap,
-offline cache, CSP, the single donation link, and guards that fail if ads or exam-specific content return).
+offline cache, CSP, the single donation link, and guards that fail if advertising or the retired test-specific pages come back).
 
 ```bash
 npm run test:browser

@@ -76,7 +76,7 @@ for (const f of pages) {
   const url = f === 'index.html' ? SITE + '/' : f === 'guides/index.html' ? SITE + '/guides/' : `${SITE}/${f}`;
   if (indexable.has(f)) ok(locs.includes(url), `${f}: missing from sitemap.xml`);
   else ok(!locs.includes(url), `${f}: noindex or redirect pages must not be in sitemap.xml`);
-  if (f.startsWith('guides/') && !stubs.has(f)) ok(sw.includes(`'/${f}'`), `${f}: missing from the service worker precache`);
+  if (f.startsWith('guides/') && !stubs.has(f)) ok(sw.includes(`'/${f.replace(/index\.html$/, '')}'`), `${f}: missing from the service worker precache`);
   if (stubs.has(f)) ok(!sw.includes(`'/${f}'`), `${f}: redirect stubs should not be precached`);
 }
 for (const l of locs) {
