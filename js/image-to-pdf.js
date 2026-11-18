@@ -152,10 +152,11 @@
       body.append(p);
     }
     if (others.length) {
+      // Each reason already says what to choose instead, so no general advice is added after them.
       const reasons = others.filter(o => o.reason).slice(0, 3);
       const p = doc.createElement('p');
       p.textContent = reasons.length
-        ? (others.length === 1 ? '' : others.length + ' files were not added. ') + reasons.map(o => o.reason).join(' ') + (others.length > reasons.length ? ' ' + (others.length - reasons.length) + ' more could not be used either.' : '') + ' Choose JPG, PNG or WebP images.'
+        ? (others.length === 1 ? '' : others.length + ' files were not added. ') + reasons.map(o => o.reason).join(' ') + (others.length > reasons.length ? ' ' + (others.length - reasons.length) + ' more could not be used either.' : '')
         : (others.length === 1 ? nameList(others.map(o => o.file)) + ' was not added' : others.length + ' files were not added: ' + nameList(others.map(o => o.file))) + '. Choose JPG, PNG or WebP images.';
       body.append(p);
     }
@@ -258,7 +259,7 @@
 
       card.innerHTML = `
         <span class="page-row__num" aria-hidden="true">${index + 1}</span>
-        <img class="page-row__thumb" src="${item.url}" alt="""" style="transform: rotate(${item.rotation}deg)${item.rotation % 180 ? ' scale(.75)' : ''};">
+        <img class="page-row__thumb" src="${item.url}" alt="" style="transform: rotate(${item.rotation}deg)${item.rotation % 180 ? ' scale(.75)' : ''};">
         <div class="page-row__text">
           <strong class="page-row__name">${escapeHTML(item.name)}</strong>
           <span class="page-row__meta">${dims.w} × ${dims.h} px · ${(item.file.size / 1024).toFixed(1)} KB</span>

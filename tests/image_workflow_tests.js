@@ -733,13 +733,22 @@ const EXPECTED = {
   await page.goto(`${origin}/image-to-pdf.html`);
   await page.locator('#imgPdfFileInput').setInputFiles([refusedBy.svg[0], { name: 'page.jpg', mimeType: 'image/jpeg', buffer: buf(made.jpeg) }, refusedBy.truncated[0], refusedBy.bomb[0], { name: 'page2.png', mimeType: 'image/png', buffer: buf(made.small) }]);
   await page.waitForFunction(() => document.querySelectorAll('.page-row').length === 2 && document.getElementById('imgPdfSkipped'), null, { timeout: 15000 });
-  const i2p = await page.evaluate(() => ({ names: [...document.querySelectorAll('.page-row__name')].map(n => n.textContent), notice: document.getElementById('imgPdfSkipped').textContent.replace(/\s+/g, ' '), thumbs: [...document.querySelectorAll('.page-row__thumb')].map(i => i.getAttribute('src').slice(0, 5)) }));
+  const i2p = await page.evaluate(() => ({ names: [...document.querySelectorAll('.page-row__name')].map(n => n.textContent), notice: document.getElementById('imgPdfSkipped').textContent.replace(/\s+/g, ' '), thumbs: [...document.querySelectorAll('.page-row__thumb')].map(i => i.getAttribute('src').slice(0, 5)), attrs: [...document.querySelectorAll('.page-row__thumb')].map(i => i.getAttributeNames().join(' ') + ' alt=' + JSON.stringify(i.getAttribute('alt'))) }));
   yes(i2p.names.join() === 'page.jpg,page2.png', `only the real, complete images become pages, in order (${i2p.names})`);
   yes(/3 files were not added/.test(i2p.notice) && /logo\.svg is a plain text file/.test(i2p.notice) && /cut\.jpg could not be opened/.test(i2p.notice) && /huge\.png is 400 megapixels/.test(i2p.notice), `the notice gives each file's reason (${i2p.notice})`);
+  // Each reason says what to choose; no second, narrower list of types is added after them.
+  yes(!/Choose JPG, PNG or WebP/.test(i2p.notice) && (i2p.notice.match(/choose a file of that type instead/g) || []).length === 1, `the notice does not contradict the reasons with another list of types (${i2p.notice})`);
   yes(i2p.thumbs.every(s => s === 'blob:'), 'page thumbnails use object URLs, not copies of the file in the page');
+  yes(i2p.attrs.every(a => a === 'class src alt style alt=""'), `page thumbnails have well-formed markup with an empty alt (${i2p.attrs.join('; ')})`);
   await page.locator('#btnConvertToPdf').click();
   await page.locator('#pdfResultArea:not(.hidden)').waitFor({ timeout: 20000 });
   yes(/^2 Pages/.test(await page.locator('#statPdfPages').textContent()), 'the PDF has the two good pages');
+  // One refused file on its own: the notification and the notice give its reason once, without a second list of types.
+  await page.goto(`${origin}/image-to-pdf.html`);
+  await page.locator('#imgPdfFileInput').setInputFiles(refusedBy.svg[0]);
+  await page.waitForSelector('#imgPdfSkipped', { timeout: 10000 });
+  const onlySvg = (await page.locator('#imgPdfSkipped').textContent()).replace(/\s+/g, ' ').trim();
+  yes(/^logo\.svg is a plain text file\. This tool needs an image \(JPEG, PNG, WebP, GIF, BMP or AVIF\); choose a file of that type instead\.$/.test(onlySvg), `a single refused file is explained once (${onlySvg})`);
 
   // 20. Compress PDF refuses an oversized or damaged photo when it is chosen, not after Start.
   for (const kind of ['truncated', 'bomb']) {
