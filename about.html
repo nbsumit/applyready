@@ -11,19 +11,17 @@
   <meta name="description" content="What ApplyReady is, who it is for, what its free in-browser resume, photo and PDF tools do and do not do, and why it is free and open source.">
   <link rel="canonical" href="https://applyready.in/about.html">
 
-  <meta property="og:type" content="article">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ApplyReady">
   <meta property="og:url" content="https://applyready.in/about.html">
-  <meta property="og:title" content="About ApplyReady: Who Builds It and How Pages Are Checked">
+  <meta property="og:title" content="About ApplyReady: Free, Open-Source Tools for Job Applications">
   <meta property="og:description" content="What ApplyReady is, who it is for, what its free in-browser resume, photo and PDF tools do and do not do, and why it is free and open source.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="ApplyReady: private image tools and professional resume builder">
-
-  <!-- Twitter Card -->
+  <meta property="og:image:alt" content="ApplyReady: free tools for job applications. Resume builder, photo and signature tools and PDF tools that run in your browser; nothing is uploaded.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://applyready.in/about.html">
-  <meta name="twitter:title" content="About ApplyReady: Who Builds It and How Pages Are Checked">
+  <meta name="twitter:title" content="About ApplyReady: Free, Open-Source Tools for Job Applications">
   <meta name="twitter:description" content="What ApplyReady is, who it is for, what its free in-browser resume, photo and PDF tools do and do not do, and why it is free and open source.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
@@ -130,6 +128,12 @@
   <noscript><p class="noscript-note">Enable JavaScript to use the tools. The guides remain available without it.</p></noscript>
   <main id="mainContent" class="page page--read">
     <article class="article">
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <ol class="breadcrumb-list">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">About</li>
+        </ol>
+      </nav>
       <header class="page-head">
         <h1 class="page-title">About ApplyReady</h1>
         <p class="page-lede">ApplyReady is a free, open-source set of tools for preparing job applications: a resume builder, photo and signature resizers, and PDF tools. Everything runs in your browser, so your files stay on your device.</p>
@@ -144,11 +148,12 @@
 
         <h2>What the tools do, and what they do not</h2>
         <ul>
-          <li><strong><a href="resume.html">Resume builder</a>:</strong> single-column resumes with a live preview, exported as PDF, Word and plain text, with a JSON backup you can restore later.</li>
-          <li><strong><a href="image-resizer.html">Image resizer</a>:</strong> crops a photo or signature to an exact pixel size and keeps the file between a minimum and maximum KB limit, in JPEG, PNG or WebP.</li>
-          <li><strong><a href="signature-cleaner.html">Signature cleaner</a>:</strong> turns a phone photo of a signature into dark ink on white paper.</li>
-          <li><strong><a href="passport-photo-print.html">Passport photo print sheet</a>:</strong> lays out copies of one photo on a 4 × 6 inch or A4 sheet for printing.</li>
-          <li><strong><a href="image-to-pdf.html">Image to PDF</a> and <a href="compress-pdf.html">Compress PDF</a>:</strong> combine scans into one PDF and bring a scanned PDF under an upload limit.</li>
+          <li><strong><a href="tools.html#resume">Resume</a>:</strong> the <a href="resume.html">resume builder</a> writes single-column resumes with a live preview in 15 templates. Your resumes save automatically in this browser as you type, you can keep several versions, and you can download PDF, Word or plain text, or a backup file to restore later.</li>
+          <li><strong><a href="tools.html#image">Image tools</a>:</strong> resize a photo or signature to an exact pixel size and KB limit, compress or convert images between JPG, PNG and WebP, clean the background of a signature photo, and lay out a printable sheet of passport photos.</li>
+          <li><strong><a href="tools.html#pdf">PDF tools</a>:</strong> combine photos and scans into one PDF, merge, split and reorder PDFs, bring a PDF under an upload limit, save pages as images, copy the text out, and add page numbers or a watermark.</li>
+          <li><strong><a href="tools.html#document">Document tools</a>:</strong> check a file’s real type, size, pixel size and hidden metadata before you upload it, and turn typed or pasted text into a PDF.</li>
+          <li><strong><a href="tools.html#batch">Batch processing</a>:</strong> resize, compress or convert many photos with one set of settings and download them as a ZIP.</li>
+          <li><strong><a href="tools.html#cafe">Cyber cafe tools</a>:</strong> applicant workspaces give each customer a separate, temporary space whose files are wiped when they are finished.</li>
         </ul>
         <p>The tools do not submit anything to an application portal, and they cannot make a photo acceptable if the photo itself breaks a rule, such as dark glasses or a busy background. They do not read iPhone HEIC files and do not edit the text inside a PDF. The resume builder does not write your resume for you or score it. A file that meets the published limits can still be rejected by a portal for a reason it does not state, so keep your original files.</p>
         <p>Found a problem or have an idea? Use the <a href="feedback.html">feedback page</a>. Step-by-step instructions are on the <a href="how-to-use.html">how to use</a> page and in the <a href="guides/">guides</a>. Every tool is listed on the <a href="tools.html">all tools</a> page. Using the site is subject to the <a href="terms.html">terms of use</a>.</p>
@@ -163,7 +168,16 @@
         <p>What has changed recently is listed in the <a href="changelog.html">changelog</a>.</p>
 
         <h2>How it is built</h2>
-        <p>The site is plain HTML, CSS and JavaScript hosted on GitHub Pages, with no server-side code and no database. Images are processed with the browser's Canvas API, cropping uses the Cropper.js library, PDFs and Word files are written directly in the browser, and a service worker keeps the tools available offline once a page has loaded.</p>
+        <p>The site is plain HTML, CSS and JavaScript hosted on GitHub Pages, with no server-side code and no database. Images are processed with the browser's Canvas API, and a service worker keeps the tools available offline once a page has loaded. Everything below is served from this site, not loaded from another one.</p>
+        <p>ApplyReady uses these open-source projects, with thanks:</p>
+        <ul>
+          <li><a href="https://github.com/mozilla/pdf.js">pdf.js</a> by Mozilla (Apache-2.0) reads and draws PDF pages.</li>
+          <li><a href="https://github.com/cantoo-scribe/pdf-lib">pdf-lib</a>, the maintained fork by Cantoo of the original by Andrew Dillon (MIT), writes PDFs.</li>
+          <li><a href="https://github.com/fengyuanchen/cropperjs">Cropper.js</a> by Chen Fengyuan (MIT) handles cropping in the image resizer.</li>
+          <li>Icons are <a href="https://fontawesome.com">Font Awesome Free</a> by Fonticons, Inc., licensed under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> (<a href="https://fontawesome.com/license/free">licence details</a>).</li>
+          <li>Text is set in the Inter and Noto Sans Devanagari fonts, both under the SIL Open Font License 1.1.</li>
+        </ul>
+        <p>Versions and full licence texts are listed in the <a href="https://github.com/nbsumit/applyready/blob/main/docs/DEPENDENCIES.md">dependency list</a> in the repository.</p>
       </section>
     </article>
   </main>
