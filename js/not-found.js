@@ -42,8 +42,18 @@
     }
   ];
 
-  const movedTo = MOVED[path] || MOVED[path.replace(/\.html$/, '')];
+  // GitHub Pages serves foo.html at /foo too, so old links often have no extension, and some apps
+  // and link shorteners add a slash at the end. The page an address names, written as a file:
+  // "guides/foo", "guides/foo/" and "guides/foo.htm" are all "guides/foo.html".
+  const trimmed = path.replace(/\/+$/, '');
+  const key = !trimmed ? '' : /\.html?$/.test(trimmed) ? trimmed.replace(/\.htm$/, '.html') : trimmed + '.html';
+
+  const movedTo = MOVED[key];
   if (movedTo) { location.replace('/' + movedTo); return; }
+
+  // A page that exists, asked for with a slash at the end ("/merge-pdf/"): open it.
+  const index = window.APPLYREADY_TOOL_INDEX;
+  if (key && path.endsWith('/') && index && index.items.some(item => item.path === key)) { location.replace('/' + key + location.search + location.hash); return; }
 
   const title = document.getElementById('notFoundTitle');
   const text = document.getElementById('notFoundText');
@@ -68,7 +78,7 @@
     if (primary) primary.classList.remove('btn-primary');
   }
 
-  const removed = REMOVED.find(r => r.match.test(path));
+  const removed = REMOVED.find(r => r.match.test(key) || r.match.test(path));
   if (removed) {
     title.textContent = removed.title;
     text.textContent = removed.text;
@@ -80,13 +90,17 @@
   // match every word of it as plain links. A loose match (one letter off, or only some of the words)
   // is not offered: a wrong guess sends people somewhere unrelated, and the search box is there.
   const STOP = new Set(['a', 'an', 'the', 'my', 'for', 'of', 'in', 'on', 'and', 'or', 'how', 'to', 'do', 'i', 'me', 'us', 'with', 'from', 'into', 'online', 'free', 'tool', 'tools', 'page', 'pages', 'index', 'html', 'htm', 'www', 'new', 'old']);
-  const tokens = (path.split('/').pop() || '').replace(/\.html?$/, '').split(/[^a-z0-9]+/).filter(t => t && !STOP.has(t));
+  const tokens = (key.split('/').pop() || '').replace(/\.html?$/, '').split(/[^a-z0-9]+/).filter(t => t && !STOP.has(t));
+  // A size in the address ("compress-pdf-100kb") is searched for, but does not have to appear in the
+  // page's own words: the tool that reaches any limit is still the right page.
+  const isSize = t => /^\d+(kb|mb)?$/.test(t);
+  const words = tokens.filter(t => !isSize(t));
   const search = window.ApplyReadySearch;
-  if (!tokens.length || tokens.join('').length < 2 || !search) return;
+  if (!words.length || words.join('').length < 2 || !search) return;
   const wordsOf = item => [item.name, item.path.replace(/\.html$/, ''), ...(item.keywords || [])].join(' ').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
   // "pdfs" matches "pdf", "merg" matches "merge"; short fragments and typos do not count.
   const covers = (words, t) => words.some(w => w === t || (t.length >= 4 && w.startsWith(t)) || (w.length >= 3 && t.startsWith(w) && t.length - w.length <= 2));
-  const matches = search.search(tokens.join(' '), 8).filter(item => { const w = wordsOf(item); return tokens.every(t => covers(w, t)); }).slice(0, 3);
+  const matches = search.search(tokens.join(' '), 8).filter(item => { const w = wordsOf(item); return words.every(t => covers(w, t)); }).slice(0, 3);
   if (!matches.length) return;
   text.textContent = `This address does not lead anywhere, but its words match the ${matches.length === 1 ? 'page' : 'pages'} below. You can also search for what you need, or start from one of the general pages.`;
   showLinks(matches.map(item => ['/' + item.path, item.name, 'fa-' + (item.icon || 'arrow-right')]));

@@ -8,6 +8,7 @@ const path = require('node:path');
 const http = require('node:http');
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
+const { resumeFixture } = require('./fixtures.js');
 const root = path.resolve(__dirname, '..');
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.wasm': 'application/wasm', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
 // Served like GitHub Pages (cacheable for 10 minutes), counting what is sent so the tests can check
@@ -307,9 +308,25 @@ function mixedPdf(jpeg) {
   ok(merge.h1 === 'Page not found' && merge.links[0] === '/merge-pdf.html' && !merge.q && !merge.dropdown, `a mistyped address links the page it names, with no dropdown open (${JSON.stringify(merge)})`);
   const contactUs = await offered('/contact-us.html');
   ok(contactUs.links.length === 1 && contactUs.links[0] === '/contact.html' && !contactUs.dropdown, `/contact-us.html links the contact page (${JSON.stringify(contactUs)})`);
-  for (const p of ['/guides/nope/deep.html', '/resize-image-to-30kb.html', '/no/such/page.html']) {
+  for (const p of ['/guides/nope/deep.html', '/no/such/page.html', '/resize-photo-for-ssc.html']) {
     const r = await offered(p);
     ok(r.h1 === 'Page not found' && !r.links.length && !r.dropdown, `${p}: a loose match is not offered as a guess (${JSON.stringify(r)})`);
+  }
+  // Old addresses without .html (GitHub Pages serves /foo for foo.html, so such links are shared) and
+  // with a slash at the end are read as the page they name.
+  for (const [p, to] of [['/guides/image-dimensions-vs-file-size', /pixels-cm-inches-dpi-explained\.html$/], ['/guides/compression-targets-guide/', /how-to-reduce-photo-to-50kb-without-blur\.html$/], ['/merge-pdf/', /\/merge-pdf\.html$/], ['/guides/how-to-merge-pdf-files/', /\/guides\/how-to-merge-pdf-files\.html$/]]) {
+    await page.goto(origin + p);
+    await page.waitForURL(to, { timeout: 10000 });
+    ok(true, `${p} opens the page it names`);
+  }
+  for (const p of ['/editorial-policy', '/guides/aadhaar-pan-passport-photo-specifications']) {
+    const r = await offered(p);
+    ok(/was removed/.test(r.h1) && r.links.length, `${p}: the removed page explains itself without .html too (${JSON.stringify(r)})`);
+  }
+  // A size in the address does not stop the page it names from being offered.
+  for (const [p, href] of [['/compress-pdf-100kb.html', '/compress-pdf.html'], ['/resize-image-to-30kb.html', '/image-resizer.html']]) {
+    const r = await offered(p);
+    ok(r.links.includes(href) && !r.dropdown, `${p}: offers ${href} (${JSON.stringify(r)})`);
   }
   // Every button, clicked with the mouse where a person would click it, opens its own page.
   for (const width of [1280, 360]) {
@@ -343,6 +360,45 @@ function mixedPdf(jpeg) {
   await page.waitForURL(/\/image-resizer\.html$/);
   ok((await page.locator('h1').textContent()).trim() === 'Image resizer', 'following the 404 button lands on the resizer');
   console.log('✓ Missing pages redirect, explain or search, and their buttons open the real tools');
+
+  // 7. An open home page tab forgets a resume deleted in another tab (Your data, Delete everything):
+  //    it once kept showing "Continue editing <name>" until reloaded, on a shared computer too.
+  {
+    const yd = await context.newPage();
+    yd.on('pageerror', e => errors.push(e.message));
+    await yd.goto(origin + '/your-data.html');
+    await yd.waitForFunction(() => window.ApplyReadyStore);
+    await yd.evaluate(async data => {
+      const now = Date.now();
+      await window.ApplyReadyStore.put('resumes', { id: 'r_tabtest', name: 'Tab Test Person', createdAt: now, updatedAt: now, schemaVersion: 3, data });
+      localStorage.setItem('applyready_recent_tools', '["merge-pdf"]');
+    }, resumeFixture());
+    const home = await context.newPage();
+    home.on('pageerror', e => errors.push(e.message));
+    await home.goto(origin + '/');
+    await home.locator('#homeResumes').waitFor({ state: 'visible', timeout: 10000 });
+    ok(/Tab Test Person/.test(await home.locator('#homeResumes').innerText()) && await home.locator('#homeRecent [data-tool="merge-pdf"]').isVisible(), 'home tab: lists the saved resume and the recently used tool');
+    // A resume renamed in another tab is shown under its new name.
+    await yd.evaluate(async () => {
+      const rec = await window.ApplyReadyStore.get('resumes', 'r_tabtest');
+      rec.name = 'Renamed Person'; rec.updatedAt = Date.now();
+      await window.ApplyReadyStore.put('resumes', rec);
+      const ch = new BroadcastChannel('applyready-resumes'); ch.postMessage({ from: 'test', type: 'renamed', id: rec.id, name: rec.name }); ch.close();
+    });
+    await home.waitForFunction(() => /Renamed Person/.test(document.getElementById('homeResumes').textContent), null, { timeout: 5000 });
+    ok(true, 'home tab: a resume renamed in another tab shows its new name');
+    await yd.reload();
+    await yd.waitForFunction(() => /resume/.test(document.getElementById('ydResumeCount').textContent));
+    await yd.click('#ydDeleteAll');
+    await yd.click('.dialog [data-act="ok"]');
+    await yd.locator('#ydDone').waitFor({ state: 'visible' });
+    await home.waitForFunction(() => document.getElementById('homeContinue').hidden, null, { timeout: 5000 }).catch(() => {});
+    const after = await home.evaluate(() => ({ text: document.body.innerText.includes('Renamed Person'), hidden: document.getElementById('homeContinue').hidden, recent: document.querySelectorAll('#homeRecent li').length }));
+    ok(!after.text && after.hidden && after.recent === 0, `home tab: after Delete everything in another tab, no resume name or recent tool is left on screen (${JSON.stringify(after)})`);
+    await yd.close();
+    await home.close();
+  }
+  console.log('✓ An open home page follows resumes deleted or renamed in another tab');
 
   ok(errors.length === 0, `page errors: ${errors.join('; ')}`);
   await browser.close();
