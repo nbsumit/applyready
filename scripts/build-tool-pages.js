@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /* Writes the workspace of the four single-file tools (signature cleaner, image to PDF, compress PDF,
    passport photo print) using the shared workspace pattern. The tool scripts drive these elements by id,
-   so ids, data-* attributes and the hidden/active state classes are a contract. Safe to re-run. */
+   so ids, data-* attributes and the hidden/active state classes are a contract. Safe to re-run.
+   `--check` writes nothing and exits 1 if any page's workspace differs from this file. */
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
+const check = process.argv.includes('--check');
 const START = '<!-- tool:start -->';
 const END = '<!-- tool:end -->';
 
@@ -46,9 +48,9 @@ const stat = (label, id, value = '--') => `            <div class="meta-stat-ite
 
 const select = (id, label, options, selectedIdx = 0, hint = '') => `          <div class="field">
             <label for="${id}" class="field-label">${label}</label>
-            <select id="${id}">
+            <select id="${id}"${hint ? ` aria-describedby="${id}Hint"` : ''}>
 ${options.map(([v, t], i) => `              <option value="${v}"${i === selectedIdx ? ' selected' : ''}>${t}</option>`).join('\n')}
-            </select>${hint ? `\n            <p class="field-hint">${hint}</p>` : ''}
+            </select>${hint ? `\n            <p class="field-hint" id="${id}Hint">${hint}</p>` : ''}
           </div>`;
 
 const section = (title, body) => `        <div class="ws-section">
@@ -94,12 +96,12 @@ ${section('Clean up', `          <div class="field">
           </div>
           <label class="switch" for="denoiseCheckbox"><span>Remove specks and paper dust</span><input type="checkbox" id="denoiseCheckbox" role="switch" checked></label>`)}
 ${section('Output', `${select('inkColorSelect', 'Ink colour', [['original', 'Keep original ink (cleaned)'], ['black', 'Pure black'], ['blue', 'Deep blue']])}
-${select('cleanerFormatSelect', 'File type', [['image/jpeg', 'White JPEG (.jpg), for exam forms'], ['image/png', 'White PNG (.png)'], ['image/png-transparent', 'Transparent PNG (.png), for documents']])}`)}
+${select('cleanerFormatSelect', 'File type', [['image/jpeg', 'White JPEG (.jpg), for application forms'], ['image/png', 'White PNG (.png)'], ['image/png-transparent', 'Transparent PNG (.png), for documents']])}`)}
         <button type="button" id="btnResetSettings" class="btn btn-sm btn-ghost ws-reset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset to defaults</button>
       </div>
       <div class="ws-action">
         <a id="btnCleanerDownload" class="btn btn-primary btn-lg btn-block" href="#" download="Cleaned_Signature.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download signature</a>
-        <a href="/?preset=signature" class="btn btn-block"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Resize it for an exam form</a>
+        <a href="/image-resizer.html?preset=signature" class="btn btn-block"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Resize it to a form's size</a>
       </div>
       </div>
     </section>`,
@@ -122,7 +124,7 @@ ${stat('File size', 'statPdfSize')}
             <a href="compress-pdf.html" class="btn btn-lg"><i class="fa-solid fa-compress" aria-hidden="true"></i> Compress to a size limit</a>
           </div>
         </div>
-${dropzone({ id: 'imgPdfDropzone', inputId: 'imgPdfFileInput', browseId: 'btnImgPdfBrowse', accept: 'image/jpeg,image/png,image/webp', multiple: true, aria: 'Upload images for PDF conversion', title: 'Add photos or scans', text: 'Each image becomes one page. Drop them here, or choose several at once.', button: 'Choose images', hint: 'JPG, PNG or WebP. You can reorder, rotate and remove pages next. Combined on this device, never uploaded.' })}
+${dropzone({ id: 'imgPdfDropzone', inputId: 'imgPdfFileInput', browseId: 'btnImgPdfBrowse', accept: 'image/jpeg,image/png,image/webp', multiple: true, aria: 'Upload images for PDF conversion', title: 'Add photos or scans', text: 'Each image becomes one page. Choose several at once<span class="dropzone__drag">, or drop them here</span>.', button: 'Choose images', hint: 'JPG, PNG or WebP. You can reorder, rotate and remove pages next. Combined on this device, never uploaded.' })}
         <div class="pagelist-head">
           <h2 class="pagelist-head__title">Pages</h2>
           <p class="pagelist-head__hint" id="pageOrderHint">Pages print in this order. Drag a page by its handle to move it, and rotate any page that is sideways.</p>
@@ -151,17 +153,22 @@ ${section('Quality', select('pdfQualitySelect', 'Image quality', [['0.92', 'High
   'compress-pdf.html': () => `<section class="ws" id="compressApp" data-state="empty" data-keep data-settings="open" data-ws-file="#compressFileInfoBox" data-ws-result="#compressResultArea" data-ws-busy="#compressProgressBox" aria-label="PDF compressor">
 ${head(filebar('compressFileInfoBox', 'compressFileInfoText', 'btnCompressReplace', 'btnCompressRemove', 'Choose a different file', 'Remove this file', 'fa-file-pdf'))}
       <div class="ws-stage">
-${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'btnCompressBrowse', accept: 'application/pdf,image/jpeg,image/png', aria: 'Upload a PDF to compress', title: 'Add the PDF to make smaller', text: 'A certificate, mark sheet or scanned document. Photos of a document work too.', button: 'Choose file', hint: 'PDF, JPG or PNG. Compressed on this device, never uploaded.' })}
+        <div class="notice notice--error" id="compressError" role="alert" hidden><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"></div></div>
+${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'btnCompressBrowse', accept: 'application/pdf,.pdf,image/jpeg,image/png,image/webp', aria: 'Upload a PDF to compress', title: 'Add the PDF to make smaller', text: 'A scanned certificate, mark sheet or ID proof. A photo of a document works too.', button: 'Choose file', hint: 'PDF up to 100 MB and 300 pages, or a JPG, PNG or WebP photo. Compressed on this device, never uploaded.' })}
+        <div id="compressLoading" class="pdf-loading hidden" role="status"><span class="pdf-spinner" aria-hidden="true"></span> Opening the file…</div>
         <div class="ws-note">
           <div class="ws-note__body">
-            <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
-            <p class="ws-note__title">Ready to compress</p>
-            <p>Check the maximum file size on the right, then press Compress PDF.</p>
+            <i class="fa-solid fa-file-image" aria-hidden="true"></i>
+            <p class="ws-note__title">Pages become pictures</p>
+            <p>To reach a size limit, every page is redrawn as an image. Text in the result can no longer be selected or searched, so this suits scans and photos of documents best. Set the limit on the right, then press Compress PDF.</p>
           </div>
         </div>
-        <div id="compressProgressBox" class="ws-progress hidden" role="status">
-          <div class="progress"><span id="compressProgressBar" class="progress-bar" style="width: 0%;"></span></div>
-          <p id="compressProgressText" class="progress-text">Processing document…</p>
+        <div id="compressProgressBox" class="ws-progress pdf-progress hidden">
+          <div class="pdf-progress__row">
+            <p id="compressProgressText" class="progress-text">Processing document…</p>
+            <button type="button" class="btn btn-sm" id="compressCancel">Cancel</button>
+          </div>
+          <div class="progress" role="progressbar" aria-labelledby="compressProgressText" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="compressProgressBar" class="progress-bar" style="width:0%"></span></div>
         </div>
         <div id="compressResultArea" class="ws-result hidden">
           <p id="compressStatus" class="result-status" role="status"></p>
@@ -169,12 +176,14 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
             <dl class="size-compare__item"><dt class="size-compare__label">Before</dt><dd id="statOrigSize">--</dd></dl>
             <span class="size-compare__arrow" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
             <dl class="size-compare__item"><dt class="size-compare__label">After</dt><dd id="statCompSize">--</dd></dl>
-            <dl class="size-compare__foot"><div><dt>Reduction</dt><dd id="statReduction">--</dd></div><div><dt>Pages</dt><dd id="statCompPages">--</dd></div></dl>
+            <dl class="size-compare__foot"><div><dt>Reduction</dt><dd id="statReduction">--</dd></div><div><dt>Pages</dt><dd id="statCompPages">--</dd></div><div><dt>Resolution</dt><dd id="statCompDpi">--</dd></div></dl>
           </div>
+          <p class="field-hint" id="compressNote"></p>
           <div class="ws-result__actions">
             <a id="btnDownloadCompressedPdf" class="btn btn-primary btn-lg" href="#" download="Compressed_Document.pdf"><i class="fa-solid fa-download" aria-hidden="true"></i> Download compressed PDF</a>
-            <a href="image-to-pdf.html" class="btn btn-lg"><i class="fa-solid fa-layer-group" aria-hidden="true"></i> Combine images into a PDF</a>
+            <a href="merge-pdf.html" class="btn btn-lg" aria-describedby="compressMergeHint"><i class="fa-solid fa-object-group" aria-hidden="true"></i> Open Merge PDF</a>
           </div>
+          <p class="field-hint" id="compressMergeHint">To join this file with others, download it first, then add the downloaded file in Merge PDF.</p>
         </div>
       </div>
       <div class="ws-rail">
@@ -184,18 +193,22 @@ ${dropzone({ id: 'compressDropzone', inputId: 'compressFileInput', browseId: 'bt
           <div class="target-grid" role="group" aria-labelledby="targetKbLabel">
             <button type="button" class="chip preset-kb-btn" data-kb="100" aria-pressed="false">100 KB <span class="chip-sub">strict portals</span></button>
             <button type="button" class="chip preset-kb-btn active" data-kb="200" aria-pressed="true">200 KB <span class="chip-sub">most common</span></button>
-            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">UPSC documents</span></button>
+            <button type="button" class="chip preset-kb-btn" data-kb="300" aria-pressed="false">300 KB <span class="chip-sub">a few pages</span></button>
             <button type="button" class="chip preset-kb-btn" data-kb="500" aria-pressed="false">500 KB <span class="chip-sub">larger scans</span></button>
           </div>
           <div class="field">
             <label for="targetKbInput" class="field-label">Or type the limit from your form</label>
             <div class="input-unit">
-              <input type="number" id="targetKbInput" class="input" value="200" min="20" max="10000" step="10" inputmode="numeric">
+              <input type="number" id="targetKbInput" class="input" value="200" min="5" max="10000" step="10" inputmode="numeric" aria-describedby="targetKbHint">
               <span class="input-unit__text" aria-hidden="true">KB</span>
             </div>
-            <p class="field-hint">Image quality is lowered only as far as needed to fit. Text stays sharp where it can.</p>
+            <p class="field-hint" id="targetKbHint">From 5 to 10000 KB. Quality is lowered only as far as the limit needs.</p>
+            <p class="field-error" id="targetKbError" hidden></p>
           </div>
         </div>
+${section('Pages', `${select('compressDpi', 'Resolution', [['200', '200 DPI, sharpest'], ['150', '150 DPI, recommended'], ['110', '110 DPI, smaller'], ['72', '72 DPI, smallest']], 1, 'The starting sharpness of each page. If the limit is tight, it is lowered further, down to 50 DPI.')}
+          <label class="switch" for="compressGrey"><span>Black and white (greyscale)</span><input type="checkbox" id="compressGrey" role="switch"></label>
+          <p class="field-hint">Greyscale makes files smaller. Leave it off if a document has coloured stamps or photos.</p>`)}
       </div>
       <div class="ws-action">
         <button type="button" id="btnStartCompress" class="btn btn-primary btn-lg btn-block" disabled><i class="fa-solid fa-compress" aria-hidden="true"></i> Compress PDF</button>
@@ -223,7 +236,7 @@ ${stat('Resolution', 'statPrintDpi', '300 DPI')}
       </div>
       <div class="ws-rail">
       <div class="ws-side">
-${section('Photo', select('photoSizeSelect', 'Photo size', [['in-passport', 'Indian passport or exam (3.5 × 4.5 cm)'], ['us-visa', 'US, OCI or international visa (2 × 2 in)'], ['stamp', 'Stamp size (2.5 × 3.5 cm)'], ['schengen', 'Schengen visa (3.5 × 4.5 cm)']]))}
+${section('Photo', select('photoSizeSelect', 'Photo size', [['in-passport', 'Indian passport size (3.5 × 4.5 cm)'], ['us-visa', 'US, OCI or international visa (2 × 2 in)'], ['stamp', 'Stamp size (2.5 × 3.5 cm)'], ['schengen', 'Schengen visa (3.5 × 4.5 cm)']]))}
 ${section('Sheet', `${select('paperSizeSelect', 'Paper', [['4x6', '4 × 6 inch photo paper, lab standard'], ['a4', 'A4 sheet, home or office printer'], ['5x7', '5 × 7 inch photo paper']])}
 ${select('photoCountSelect', 'Copies', [['auto', 'As many as fit'], ['4', '4 photos'], ['6', '6 photos'], ['8', '8 photos'], ['12', '12 photos'], ['16', '16 photos']])}
 ${select('gapSelect', 'Space between photos', [['1.5', 'Compact (1.5 mm)'], ['2.5', 'Standard (2.5 mm), easy to cut'], ['4', 'Wide (4 mm)']], 1)}`)}
@@ -240,19 +253,28 @@ ${section('Cutting aids', `          <div class="check-group">
     </section>`
 };
 
+let differs = 0;
 for (const [page, render] of Object.entries(TOOLS)) {
   const file = path.join(root, page);
-  let html = fs.readFileSync(file, 'utf8');
+  const before = fs.readFileSync(file, 'utf8');
+  let html = before;
   const markup = `${START}\n    ${render()}\n    ${END}`;
   if (html.includes(START)) {
     html = html.slice(0, html.indexOf(START)) + markup + html.slice(html.indexOf(END) + END.length);
   } else {
+    if (check) { differs++; console.error(`workspace markers missing: ${page}`); continue; }
     const at = html.indexOf('<div class="resizer-grid"');
     if (at < 0) throw new Error(`${page}: workspace grid not found`);
     const end = balanced(html, at, 'div');
     const lineStart = html.lastIndexOf('\n', at) + 1;
     html = html.slice(0, lineStart) + '    ' + markup + html.slice(end);
   }
+  if (html === before) { if (!check) console.log('workspace unchanged:', page); continue; }
+  if (check) { differs++; console.error(`workspace out of date: ${page}`); continue; }
   fs.writeFileSync(file, html);
   console.log('workspace written:', page);
+}
+if (check) {
+  if (differs) { console.error('Run: node scripts/build-tool-pages.js, then node scripts/sync-shell.js'); process.exit(1); }
+  console.log(`tool page workspaces in sync (${Object.keys(TOOLS).length})`);
 }

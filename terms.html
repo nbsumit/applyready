@@ -3,25 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- shell:csp:start -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Terms of Use | ApplyReady.in</title>
-  <meta name="description" content="Terms of Use for ApplyReady.in. Read our terms regarding the free, client-side image resizing, document preparation, and ATS resume builder utilities.">
+  <title>Terms of Use | ApplyReady</title>
+  <meta name="description" content="The terms for using ApplyReady, the free and open-source job application toolkit: what it is, what it cannot promise, acceptable use, licence and contributions.">
   <link rel="canonical" href="https://applyready.in/terms.html">
 
-  <meta property="og:type" content="article">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ApplyReady">
   <meta property="og:url" content="https://applyready.in/terms.html">
-  <meta property="og:title" content="Terms of Use | ApplyReady.in">
-  <meta property="og:description" content="Terms and conditions governing your use of ApplyReady's client-side image tools and ATS resume builder.">
+  <meta property="og:title" content="Terms of Use">
+  <meta property="og:description" content="The terms for using ApplyReady, the free and open-source job application toolkit: what it is, what it cannot promise, acceptable use, licence and contributions.">
   <meta property="og:image" content="https://applyready.in/assets/social-card.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="ApplyReady: private image tools and professional resume builder">
-
-  <!-- Twitter Card -->
+  <meta property="og:image:alt" content="ApplyReady: free tools for job applications. Resume builder, photo and signature tools and PDF tools that run in your browser; nothing is uploaded.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:url" content="https://applyready.in/terms.html">
-  <meta name="twitter:title" content="Terms of Use | ApplyReady.in">
-  <meta name="twitter:description" content="Terms and conditions governing your use of ApplyReady's client-side image tools and ATS resume builder.">
+  <meta name="twitter:title" content="Terms of Use">
+  <meta name="twitter:description" content="The terms for using ApplyReady, the free and open-source job application toolkit: what it is, what it cannot promise, acceptable use, licence and contributions.">
   <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
 
   <!-- Favicons -->
@@ -30,18 +31,17 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
   <link rel="manifest" href="favicon/site.webmanifest">
-  <meta name="theme-color" content="#2563EB">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
 
-  <script src="js/theme.js?v=20261115"></script>
+  <script src="js/theme.js?v=20261118"></script>
 
   <!-- shell:styles:start -->
   <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="css/vendor/icons.min.css">
-  <link rel="stylesheet" href="css/app.css?v=20261115">
+  <link rel="stylesheet" href="css/vendor/icons.min.css?v=20261118">
+  <link rel="stylesheet" href="css/app.css?v=20261118">
   <!-- shell:styles:end -->
-  <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
-  <!-- shell:csp:end -->
+
 </head>
 <body class="content-page">
 
@@ -56,40 +56,89 @@
       </a>
       <nav class="site-nav" id="siteNav" aria-label="Main">
         <ul class="site-nav__list">
+          <li class="site-nav__search"><button type="button" class="site-nav__search-btn" id="navSearch"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search tools</button></li>
           <li class="site-nav__item">
             <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
             <div class="menu" id="toolsMenu" hidden>
-              <div class="menu__group menu__group--tools">
-              <p class="menu__title">Image tools</p>
-              <ul class="menu__list">
-                <li><a class="menu__item" href="/"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixels and KB limits</span></span></a></li>
-                <li><a class="menu__item" href="signature-cleaner.html"><i class="fa-solid fa-signature menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper, dark ink</span></span></a></li>
-                <li><a class="menu__item" href="passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print</span><span class="menu__desc">A printable sheet of copies</span></span></a></li>
-              </ul>
-              <p class="menu__title">PDF tools</p>
-              <ul class="menu__list">
-                <li><a class="menu__item" href="image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans</span></span></a></li>
-                <li><a class="menu__item" href="compress-pdf.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Fit a portal size limit</span></span></a></li>
-              </ul>
+              <div class="menu__cols menu__cols--3">
+              <div class="menu__group">
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-resume">
+                    <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
+                  </ul>
+                </div>
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#image">Image tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-image">Image tools <span class="menu__count">8<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-image">
+                    <li><a class="menu__item" href="image-resizer.html"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixel size and KB limit, with crop and rotate</span></span></a></li>
+                    <li><a class="menu__item" href="passport-photo-resizer.html"><i class="fa-solid fa-id-badge menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo resizer</span><span class="menu__desc">Passport-size photo at the pixel size and KB a form asks for</span></span></a></li>
+                    <li><a class="menu__item" href="signature-resizer.html"><i class="fa-solid fa-signature menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature resizer</span><span class="menu__desc">Signature image at the exact size and KB limit</span></span></a></li>
+                    <li><a class="menu__item" href="compress-image.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image compressor</span><span class="menu__desc">Make photos smaller in KB, one or many at once</span></span></a></li>
+                    <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
+                    <li><a class="menu__item" href="signature-cleaner.html"><i class="fa-solid fa-wand-magic-sparkles menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper and dark ink from a phone photo of a signature</span></span></a></li>
+                    <li><a class="menu__item" href="passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print sheet</span><span class="menu__desc">A printable A4 or 4x6 sheet of passport photos</span></span></a></li>
+                    <li><a class="menu__item" href="batch-image.html"><i class="fa-solid fa-layer-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Batch image processor</span><span class="menu__desc">Resize, compress or convert many photos at once, download a ZIP</span></span></a></li>
+                  </ul>
+                </div>
               </div>
-              <div class="menu__group menu__group--refs">
-              <p class="menu__title">Exam photo and signature</p>
-              <ul class="menu__list">
-                <li><a class="menu__item menu__item--plain" href="ssc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">SSC</span><span class="menu__desc">CGL, CHSL, MTS, GD</span></span></a></li>
-                <li><a class="menu__item menu__item--plain" href="upsc-photo-signature-size.html"><span class="menu__text"><span class="menu__name">UPSC</span><span class="menu__desc">Civil services, NDA, CDS</span></span></a></li>
-                <li><a class="menu__item menu__item--plain" href="ibps-photo-signature-size.html"><span class="menu__text"><span class="menu__name">IBPS</span><span class="menu__desc">Bank PO and clerk</span></span></a></li>
-                <li><a class="menu__item menu__item--plain" href="neet-photo-signature-size.html"><span class="menu__text"><span class="menu__name">NEET</span><span class="menu__desc">Medical entrance</span></span></a></li>
-                <li><a class="menu__item menu__item--plain" href="rrb-photo-signature-size.html"><span class="menu__text"><span class="menu__name">RRB</span><span class="menu__desc">Railway recruitment</span></span></a></li>
-              </ul>
+              <div class="menu__group">
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#pdf">PDF tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-pdf">PDF tools <span class="menu__count">10<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-pdf">
+                    <li><a class="menu__item" href="merge-pdf.html"><i class="fa-solid fa-object-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Merge PDF</span><span class="menu__desc">Join several PDFs into one, in the order you choose</span></span></a></li>
+                    <li><a class="menu__item" href="split-pdf.html"><i class="fa-solid fa-scissors menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Split PDF</span><span class="menu__desc">Take out pages or split a PDF into parts</span></span></a></li>
+                    <li><a class="menu__item" href="organize-pdf.html"><i class="fa-solid fa-table-cells-large menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Organise PDF pages</span><span class="menu__desc">Reorder, rotate and delete pages</span></span></a></li>
+                    <li><a class="menu__item" href="image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans into one PDF</span></span></a></li>
+                    <li><a class="menu__item" href="compress-pdf.html"><i class="fa-solid fa-file-zipper menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Make a PDF small enough for an upload limit</span></span></a></li>
+                    <li><a class="menu__item" href="pdf-to-image.html"><i class="fa-solid fa-images menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">PDF to images</span><span class="menu__desc">Save PDF pages as JPG or PNG images</span></span></a></li>
+                    <li><a class="menu__item" href="pdf-to-text.html"><i class="fa-solid fa-font menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Extract text from PDF</span><span class="menu__desc">Copy the text out of a PDF</span></span></a></li>
+                    <li><a class="menu__item" href="add-page-numbers.html"><i class="fa-solid fa-list-ol menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Add page numbers</span><span class="menu__desc">Number the pages of a PDF</span></span></a></li>
+                    <li><a class="menu__item" href="watermark-pdf.html"><i class="fa-solid fa-stamp menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Watermark PDF</span><span class="menu__desc">Stamp text such as &quot;Copy&quot; across every page</span></span></a></li>
+                    <li><a class="menu__item" href="text-to-pdf.html"><i class="fa-solid fa-file-export menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Text to PDF</span><span class="menu__desc">Turn typed or pasted text into a clean PDF</span></span></a></li>
+                  </ul>
+                </div>
               </div>
+              <div class="menu__group">
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#document">Document tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-document">Document tools <span class="menu__count">3<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-document">
+                    <li><a class="menu__item" href="text-to-pdf.html"><i class="fa-solid fa-file-export menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Text to PDF</span><span class="menu__desc">Turn typed or pasted text into a clean PDF</span></span></a></li>
+                    <li><a class="menu__item" href="file-checker.html"><i class="fa-solid fa-file-circle-check menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">File checker</span><span class="menu__desc">See a file’s real type, size, pixels and metadata; remove photo metadata</span></span></a></li>
+                    <li><a class="menu__item" href="pdf-to-text.html"><i class="fa-solid fa-font menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Extract text from PDF</span><span class="menu__desc">Copy the text out of a PDF</span></span></a></li>
+                  </ul>
+                </div>
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#batch">Batch processing</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-batch">Batch processing <span class="menu__count">3<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-batch">
+                    <li><a class="menu__item" href="batch-image.html"><i class="fa-solid fa-layer-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Batch image processor</span><span class="menu__desc">Resize, compress or convert many photos at once, download a ZIP</span></span></a></li>
+                    <li><a class="menu__item" href="compress-image.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image compressor</span><span class="menu__desc">Make photos smaller in KB, one or many at once</span></span></a></li>
+                    <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
+                  </ul>
+                </div>
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-cafe">
+                    <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
+                  </ul>
+                </div>
+              </div>
+              </div>
+              <div class="menu__foot"><a class="menu__all" href="tools.html">All tools <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><span class="menu__hint">Press <kbd>/</kbd> to search</span></div>
             </div>
           </li>
-          <li><a class="site-nav__link" href="resume.html">Resume builder</a></li>
+          <li class="site-nav__resume"><a class="site-nav__link" href="resume.html">Resume builder</a></li>
           <li><a class="site-nav__link" href="guides/">Guides</a></li>
-          <li class="site-nav__lang"><a class="site-nav__link" href="hi/ssc-photo-signature-size.html" lang="hi">हिन्दी</a></li>
         </ul>
       </nav>
       <div class="site-header__tools">
+        <button type="button" id="searchOpen" class="search-trigger" aria-haspopup="dialog" aria-keyshortcuts="/ Control+K" aria-label="Search tools"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span class="search-trigger__label" aria-hidden="true">Search tools</span><kbd class="search-trigger__key" aria-hidden="true">/</kbd></button>
         <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
         <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
       </div>
@@ -101,130 +150,138 @@
   <noscript><p class="noscript-note">Enable JavaScript to use the tools. The guides remain available without it.</p></noscript>
   <main id="mainContent" class="page page--read">
     <article class="article">
+      <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+        <ol class="breadcrumb-list">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Terms of use</li>
+        </ol>
+      </nav>
       <header class="page-head">
-        <h1 class="page-title">Terms of Use</h1>
-        <p class="page-lede">Last Updated: 15 November 2026. Please read these terms carefully before using ApplyReady.</p>
+        <h1 class="page-title">Terms of use</h1>
+        <p class="page-lede">Last updated: 18 November 2026. These terms explain what ApplyReady is, what it can and cannot promise, and what we ask of you. They are written to be read.</p>
       </header>
 
       <section class="section prose">
-        <h2>1. Acceptance of Terms</h2>
-        <p>
-          By accessing or using ApplyReady (https://applyready.in), you agree to be bound by these Terms of Use and our <a href="privacy.html">Privacy Policy</a>. If you do not agree to these terms, please do not use the service.
-        </p>
+        <h2>1. Using ApplyReady</h2>
+        <p>By using ApplyReady (https://applyready.in) you agree to these terms and to the <a href="privacy.html">privacy policy</a>. If you do not agree, please do not use the site.</p>
 
-        <h2>2. Description of Service</h2>
-        <p>
-          ApplyReady provides free, client-side browser utilities for job candidates, students, and exam applicants. These include image resizing, crop adjustment, byte-size compression targeting (e.g. 20 KB, 50 KB, 100 KB), and ATS-friendly resume formatting and document export (PDF, Word DOCX, Plain Text).
-        </p>
+        <h2>2. What ApplyReady is</h2>
+        <p>ApplyReady is a free collection of tools that run in your web browser to help you prepare job and other applications: a resume builder, image and signature resizers and converters, PDF tools, document tools, batch processing and temporary applicant workspaces. Every feature is free for everyone. There are no accounts, paid plans, usage quotas or daily caps, and contributing money does not unlock anything. Each tool states its own technical limits, such as the largest file it accepts, which keep the browser from running out of memory.</p>
 
-        <h2>3. 100% Client-Side Processing & Data Ownership</h2>
-        <p>
-          All file processing, image compression, and resume generation take place exclusively inside your device's web browser using client-side JavaScript and HTML5 APIs. <strong>Your images, signatures, resumes, and personal details are never uploaded to, transmitted across, or stored on our servers.</strong>
-        </p>
-        <p>
-          You retain complete ownership, copyright, and control of all text, images, and documents you process through ApplyReady. You are solely responsible for ensuring that you have the right to process and use any materials you input into the tools.
-        </p>
+        <h2>3. Your files and your content</h2>
+        <p>Your files are processed on your own device and are not uploaded to us (see the <a href="privacy.html">privacy policy</a>). You keep all rights to the text, images and documents you use with ApplyReady, and you are responsible for having the right to use them. Saved resumes are kept in your browser's storage on your device; we cannot see, recover or restore them, so keep your own backups.</p>
 
-        <h2>4. Acceptable Use</h2>
-        <p>You agree to use ApplyReady only for lawful purposes. You agree not to:</p>
+        <h2>4. Acceptable use</h2>
+        <p>Use ApplyReady lawfully and honestly. Do not use it to:</p>
         <ul>
-          <li>Use the tools to forge, falsify, or fraudulently alter official government credentials, signatures, or certificates.</li>
-          <li>Attempt to reverse-engineer, disrupt, or compromise the availability or security of the website.</li>
-          <li>Use automated scripts, scrapers, or bots to flood or abuse the service infrastructure.</li>
+          <li>forge, falsify or alter certificates, identity documents, signatures or other official records, or to impersonate someone;</li>
+          <li>prepare documents that misrepresent your qualifications or experience to an employer or institution;</li>
+          <li>attack, overload or interfere with the website, or with other people's use of it.</li>
         </ul>
 
-        <h2>5. Disclaimer of Official Affiliation</h2>
-        <p>
-          ApplyReady is an independent utility and is <strong>not affiliated with, endorsed by, or associated with</strong> the Staff Selection Commission (SSC), Union Public Service Commission (UPSC), Institute of Banking Personnel Selection (IBPS), National Testing Agency (NTA), Railway Recruitment Board (RRB), or any other government board or university.
-        </p>
-        <p>
-          Exam guidelines, photo dimensions, file-size ranges, and format requirements change periodically. Users must always verify their specific submission guidelines with the official examination notification or portal before submitting documents.
-        </p>
+        <h2>5. No guarantee that a portal will accept a file</h2>
+        <p>ApplyReady shows the exact size, dimensions and format of every file it makes, but each employer, university and portal sets and checks its own rules, and those rules change. Always check the current requirements of the place you are applying to before you submit. We do not guarantee that a file will be accepted, that a resume will pass any automated screening system, or that an application will succeed.</p>
 
-        <h2>6. Third-Party Links</h2>
-        <p>
-          Our pages may contain links to external sites (such as official exam portals). We are not responsible for the content, privacy practices, or accuracy of third-party websites.
-        </p>
+        <h2>6. Independence</h2>
+        <p>ApplyReady is independent (see <a href="about.html">about ApplyReady</a>). It is not affiliated with, endorsed by or connected to any employer, recruiter, job board, university, application portal or government body. Names of other organisations appear only to describe what people prepare files for.</p>
 
-        <h2>7. Disclaimer of Warranties</h2>
-        <p>
-          ApplyReady is provided on an "as is" and "as available" basis without warranties of any kind, whether express or implied. While we strive for extreme precision in file byte limits, canvas dimensions, and vector PDF standards, we do not guarantee that generated files will meet every third-party portal's idiosyncratic validation checks.
-        </p>
+        <h2>7. Open-source licence</h2>
+        <p>ApplyReady's source code is published under the <a href="https://github.com/nbsumit/applyready/blob/main/LICENSE">GNU Affero General Public License version 3</a>. That licence, not these terms, governs copying, changing and redistributing the code. Third-party components keep their own licences, listed in the repository.</p>
 
-        <h2>8. Limitation of Liability</h2>
-        <p>
-          In no event shall the author or ApplyReady be liable for any direct, indirect, incidental, special, or consequential damages resulting from the use or inability to use the site, including but not limited to rejected job or exam applications, missed submission deadlines, or computer malfunction.
-        </p>
+        <h2>8. Voluntary contributions</h2>
+        <p>You may support the project through the optional contribution page hosted by Razorpay. Contributions are voluntary, are not a purchase of goods or services, do not unlock features or priority support, and are not charitable donations. Payments are handled by Razorpay under its own terms.</p>
 
-        <h2>9. Modifications to Terms</h2>
-        <p>
-          We reserve the right to revise or update these Terms of Use at any time. Continued use of the website following any changes constitutes acceptance of the new terms.
-        </p>
+        <h2>9. Links to other sites</h2>
+        <p>Guides may link to other websites, such as standards bodies or official information pages. We are not responsible for their content or practices.</p>
 
-        <h2>10. Contact Information</h2>
-        <p>
-          If you have questions about these Terms of Use, please reach out through our <a href="contact.html">Contact page</a> or via email at <a href="mailto:hello@nbsumit.com">hello@nbsumit.com</a>.
-        </p>
+        <h2>10. No warranty</h2>
+        <p>ApplyReady is provided free, "as is" and "as available", without warranties of any kind, express or implied, including fitness for a particular purpose. Browsers differ, and a tool may not work on every device. We work to keep the tools accurate and to explain their limits, but we cannot promise that they are error-free or always available.</p>
+
+        <h2>11. Limitation of liability</h2>
+        <p>To the extent the law allows, ApplyReady and its contributors are not liable for any loss or damage arising from using or being unable to use the site, including rejected applications, missed deadlines, or lost data such as resumes removed from browser storage.</p>
+
+        <h2>12. Changes</h2>
+        <p>These terms may be updated. The date at the top shows the latest version, and the <a href="changelog.html">changelog</a> records significant changes. Continuing to use the site after a change means you accept the updated terms.</p>
+
+        <h2>13. Contact</h2>
+        <p>Questions about these terms: <a href="mailto:hello@nbsumit.com">hello@nbsumit.com</a> or the <a href="contact.html">contact page</a>.</p>
       </section>
     </article>
+
   </main>
 
   <!-- FOOTER -->
   <!-- shell:footer:start -->
   <footer class="site-footer">
     <div class="site-footer__inner">
+      <h2 class="sr-only">Site links</h2>
       <div class="site-footer__brand">
         <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
-        <p>Photos, signatures, PDFs and resumes, prepared to the exact requirement. Everything runs in your browser. Files are never uploaded.</p>
+        <p>Free tools for job applications: resumes, photos, signatures and PDFs. Everything runs in your browser, and your files are never uploaded.</p>
+        <p class="site-footer__motto">Free. Open source. Forever.</p>
       </div>
       <div class="site-footer__col">
-        <h2 class="site-footer__title">Tools</h2>
-        <ul class="site-footer__list">
-          <li><a href="/">Image resizer</a></li>
+        <p class="site-footer__title" id="footerLinks1">Resume and images</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks1">
+          <li><a href="resume.html">Resume builder</a></li>
+          <li><a href="image-resizer.html">Image resizer</a></li>
+          <li><a href="passport-photo-resizer.html">Passport photo resizer</a></li>
+          <li><a href="signature-resizer.html">Signature resizer</a></li>
+          <li><a href="compress-image.html">Image compressor</a></li>
+          <li><a href="convert-image.html">Image converter</a></li>
           <li><a href="signature-cleaner.html">Signature cleaner</a></li>
-          <li><a href="passport-photo-print.html">Passport photo print</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print sheet</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks2">PDF and documents</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks2">
+          <li><a href="merge-pdf.html">Merge PDF</a></li>
+          <li><a href="split-pdf.html">Split PDF</a></li>
+          <li><a href="organize-pdf.html">Organise PDF pages</a></li>
           <li><a href="image-to-pdf.html">Image to PDF</a></li>
           <li><a href="compress-pdf.html">Compress PDF</a></li>
-          <li><a href="resume.html">Resume builder</a></li>
+          <li><a href="pdf-to-image.html">PDF to images</a></li>
+          <li><a href="pdf-to-text.html">Extract text from PDF</a></li>
+          <li><a href="add-page-numbers.html">Add page numbers</a></li>
+          <li><a href="watermark-pdf.html">Watermark PDF</a></li>
+          <li><a href="text-to-pdf.html">Text to PDF</a></li>
+          <li><a href="file-checker.html">File checker</a></li>
         </ul>
       </div>
       <div class="site-footer__col">
-        <h2 class="site-footer__title">Resize to a file size</h2>
-        <ul class="site-footer__list">
-          <li><a href="resize-image-to-20kb.html">20 KB</a></li>
-          <li><a href="resize-image-to-50kb.html">50 KB</a></li>
-          <li><a href="resize-image-to-kb-limit.html">10, 100 or 200 KB</a></li>
-        </ul>
-      </div>
-      <div class="site-footer__col">
-        <h2 class="site-footer__title">Exam requirements</h2>
-        <ul class="site-footer__list">
-          <li><a href="ssc-photo-signature-size.html">SSC</a></li>
-          <li><a href="upsc-photo-signature-size.html">UPSC</a></li>
-          <li><a href="ibps-photo-signature-size.html">IBPS</a></li>
-          <li><a href="neet-photo-signature-size.html">NEET</a></li>
-          <li><a href="rrb-photo-signature-size.html">RRB</a></li>
-        </ul>
-      </div>
-      <div class="site-footer__col">
-        <h2 class="site-footer__title">ApplyReady</h2>
-        <ul class="site-footer__list">
+        <p class="site-footer__title" id="footerLinks3">Batch and help</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks3">
+          <li><a href="batch-image.html">Batch image processor</a></li>
+          <li><a href="workspace.html">Applicant workspaces</a></li>
+          <li><a href="tools.html">All tools</a></li>
           <li><a href="guides/">Guides</a></li>
           <li><a href="how-to-use.html">How to use</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks4">ApplyReady</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks4">
           <li><a href="about.html">About</a></li>
-          <li><a href="author/sumit-sengar.html">Author</a></li>
-          <li><a href="editorial-policy.html">Editorial policy</a></li>
-          <li><a href="contact.html">Contact</a></li>
+          <li><a href="philosophy.html">Our philosophy</a></li>
           <li><a href="privacy.html">Privacy</a></li>
-          <li><a href="terms.html">Terms</a></li>
+          <li><a href="terms.html">Terms of use</a></li>
+          <li><a href="your-data.html">Your data</a></li>
+          <li><a href="contact.html">Contact and support</a></li>
+          <li><a href="feedback.html">Feedback</a></li>
+          <li><a href="changelog.html">Changelog</a></li>
+          <li><a href="contribute.html">Contribute</a></li>
         </ul>
       </div>
     </div>
-    <div class="site-footer__base"><span>Free to use. No sign-up, no watermarks.</span></div>
+    <div class="site-footer__base">
+      <span>No sign-up, no ads, no watermarks. Every feature is free for everyone.</span>
+      <span class="site-footer__ext"><a href="https://github.com/nbsumit/applyready" rel="noopener" target="_blank">Source code<span class="sr-only"> (opens in a new tab)</span></a><a class="site-footer__support" href="https://pages.razorpay.com/support-applyready" rel="noopener" target="_blank"><i class="fa-solid fa-heart" aria-hidden="true"></i> Support ApplyReady<span class="sr-only"> (voluntary contribution, opens in a new tab)</span></a></span>
+    </div>
   </footer>
   <!-- shell:footer:end -->
 
-  <script src="js/components.js?v=20261115" defer></script>
-  <script src="js/site.js?v=20261115"></script>
+  <script src="js/components.js?v=20261118" defer></script>
+  <script src="js/site.js?v=20261118"></script>
 </body>
 </html>

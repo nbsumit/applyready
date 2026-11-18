@@ -201,8 +201,8 @@
   }
 
   const clean = value => (typeof value === 'string' ? value.trim() : '');
-  const SECTIONS = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
-  const FALLBACK_LABELS = { summary: 'Professional Summary', experience: 'Work Experience', education: 'Education', projects: 'Key Projects', skills: 'Skills & Competencies', certifications: 'Certifications & Credentials', achievements: 'Honors & Achievements', volunteering: 'Community & Leadership', languages: 'Languages', publications: 'Peer-Reviewed Publications', teaching: 'Teaching Experience', presentations: 'Conference Presentations', grants: 'Research Grants' };
+  const SECTIONS = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'publications', 'academic', 'references'];
+  const FALLBACK_LABELS = { summary: 'Professional Summary', experience: 'Work Experience', education: 'Education', projects: 'Key Projects', skills: 'Skills & Competencies', certifications: 'Certifications & Credentials', achievements: 'Honors & Achievements', volunteering: 'Community & Leadership', languages: 'Languages', publications: 'Publications', teaching: 'Teaching Experience', presentations: 'Conference Presentations', grants: 'Research Grants', references: 'References', referencesOnRequest: 'Available on request.' };
 
   /**
    * Generate complete editable DOCX file from resume model
@@ -466,10 +466,47 @@
     // Section Visibility & Order
     const vis = resumeData.sectionVisibility || options.sectionVisibility || {};
     const savedOrder = (resumeData.design && Array.isArray(resumeData.design.sectionOrder)) ? resumeData.design.sectionOrder : (options.sectionOrder || []);
-    const sectionOrder = [...new Set([...savedOrder.filter(key => SECTIONS.includes(key)), ...SECTIONS])];
+    const sectionOrder = pdf && pdf.orderedSections ? pdf.orderedSections(resumeData, options) : [...new Set([...savedOrder.filter(key => SECTIONS.includes(key)), ...SECTIONS])];
+    const shown = key => (pdf && pdf.sectionShown ? pdf.sectionShown(resumeData, vis, key) : vis[key] !== false);
+    const paragraph = (text, after) => bodyXml.push(`<w:p><w:pPr><w:spacing w:after="${after}"/></w:pPr>${run(text, bodyProps)}</w:p>`);
 
     for (const secKey of sectionOrder) {
-      if (vis[secKey] === false) continue;
+      if (!shown(secKey)) continue;
+
+      if (secKey.startsWith('custom:') && pdf && pdf.customContent) {
+        const content = pdf.customContent(pdf.customSectionFor(resumeData, secKey));
+        if (content) {
+          addSectionHeader(content.title);
+          if (content.mode === 'text') content.paragraphs.forEach(text => paragraph(text, 120));
+          else for (const entry of content.entries) {
+            const parts = entry.heading.split(/\s+\|\s+/);
+            const headingRuns = parts[0] ? run(parts[0], strongProps) + (parts[1] ? run('  |  ' + parts.slice(1).join(' | '), `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : '') : '';
+            if (headingRuns || entry.date) addEntryHeading(headingRuns, entry.date, 120);
+            entry.bullets.forEach(line => addBullet(line));
+          }
+        }
+      }
+
+      if (secKey === 'references' && pdf && pdf.referenceContent) {
+        const refs = pdf.referenceContent(resumeData, label);
+        if (refs) {
+          addSectionHeader(label('references'));
+          if (refs.onRequest) paragraph(refs.onRequest, 80);
+          for (const ref of refs.items) {
+            bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="100" w:after="0"/></w:pPr>${run(ref.name, strongProps)}</w:p>`);
+            if (ref.details) bodyXml.push(`<w:p><w:pPr>${ref.contact ? '<w:keepNext/>' : ''}<w:spacing w:after="0"/></w:pPr>${run(ref.details, bodyProps)}</w:p>`);
+            if (ref.contact) bodyXml.push(`<w:p><w:pPr><w:spacing w:after="0"/></w:pPr>${run(ref.contact, bodyProps)}</w:p>`);
+          }
+        }
+      }
+
+      if (secKey === 'publications') {
+        const texts = optionalEntries(resumeData, 'publications');
+        if (texts.length) {
+          addSectionHeader(label('publications'));
+          texts.forEach(text => addBullet(text));
+        }
+      }
 
       if (secKey === 'summary' && clean(resumeData.summary)) {
         addSectionHeader(title('summary'));
@@ -562,7 +599,7 @@
       }
 
       if (secKey === 'academic') {
-        for (const key of ['publications', 'teaching', 'presentations', 'grants']) {
+        for (const key of ['teaching', 'presentations', 'grants']) {
           const texts = optionalEntries(resumeData, key);
           if (!texts.length) continue;
           addSectionHeader(label(key));

@@ -25,7 +25,7 @@ const EXPECTED = {
   "w": 350,
   "h": 450,
   "type": "image/jpeg",
-  "dl": "Passport_Photo_350x450.jpg",
+  "dl": "src_Passport_Photo_350x450.jpg",
   "status": "Under the 50 KB limit, at the exact size requested.",
   "dims": "350 × 450 px, verified",
   "fmt": "JPEG",
@@ -46,7 +46,7 @@ const EXPECTED = {
   "w": 300,
   "h": 100,
   "type": "image/jpeg",
-  "dl": "Signature_300x100.jpg",
+  "dl": "src_Signature_300x100.jpg",
   "status": "Under the 30 KB limit, at the exact size requested.",
   "dims": "300 × 100 px, verified",
   "fmt": "JPEG",
@@ -67,7 +67,7 @@ const EXPECTED = {
   "w": 240,
   "h": 240,
   "type": "image/jpeg",
-  "dl": "Thumb_Impression_240x240.jpg",
+  "dl": "src_Thumb_Impression_240x240.jpg",
   "status": "Within the 20–50 KB range, at the exact size requested.",
   "dims": "240 × 240 px, verified",
   "fmt": "JPEG",
@@ -88,7 +88,7 @@ const EXPECTED = {
   "w": 800,
   "h": 400,
   "type": "image/jpeg",
-  "dl": "Declaration_800x400.jpg",
+  "dl": "src_Declaration_800x400.jpg",
   "status": "Within the 50–100 KB range, at the exact size requested.",
   "dims": "800 × 400 px, verified",
   "fmt": "JPEG",
@@ -109,7 +109,7 @@ const EXPECTED = {
   "w": 400,
   "h": 400,
   "type": "image/jpeg",
-  "dl": "Avatar_400x400.jpg",
+  "dl": "src_Avatar_400x400.jpg",
   "status": "Under the 100 KB limit, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "JPEG",
@@ -130,7 +130,7 @@ const EXPECTED = {
   "w": 1200,
   "h": 630,
   "type": "image/jpeg",
-  "dl": "Banner_1200x630.jpg",
+  "dl": "src_Banner_1200x630.jpg",
   "status": "Under the 300 KB limit, at the exact size requested.",
   "dims": "1200 × 630 px, verified",
   "fmt": "JPEG",
@@ -151,7 +151,7 @@ const EXPECTED = {
   "w": 1240,
   "h": 1754,
   "type": "image/jpeg",
-  "dl": "Document_1240x1754.jpg",
+  "dl": "src_Document_1240x1754.jpg",
   "status": "Under the 500 KB limit, at the exact size requested.",
   "dims": "1240 × 1754 px, verified",
   "fmt": "JPEG",
@@ -173,7 +173,7 @@ const EXPECTED = {
   "w": 413,
   "h": 354,
   "type": "image/jpeg",
-  "dl": "Custom_413x354.jpg",
+  "dl": "src_Custom_413x354.jpg",
   "status": "Under the 60 KB limit, at the exact size requested.",
   "dims": "413 × 354 px, verified",
   "fmt": "JPEG",
@@ -192,7 +192,7 @@ const EXPECTED = {
   "w": 300,
   "h": 300,
   "type": "image/jpeg",
-  "dl": "Custom_300x300.jpg",
+  "dl": "src_Custom_300x300.jpg",
   "status": "Under the 40 KB limit, at the exact size requested.",
   "dims": "300 × 300 px, verified",
   "fmt": "JPEG",
@@ -254,7 +254,7 @@ const EXPECTED = {
   "w": 400,
   "h": 400,
   "type": "image/jpeg",
-  "dl": "Avatar_400x400.jpg",
+  "dl": "src_Avatar_400x400.jpg",
   "status": "Under the 100 KB limit, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "JPEG",
@@ -268,7 +268,7 @@ const EXPECTED = {
   "w": 240,
   "h": 240,
   "type": "image/jpeg",
-  "dl": "Thumb_Impression_240x240.jpg",
+  "dl": "src_Thumb_Impression_240x240.jpg",
   "status": "Within the 20–50 KB range, at the exact size requested.",
   "dims": "240 × 240 px, verified",
   "fmt": "JPEG",
@@ -286,7 +286,7 @@ const EXPECTED = {
   "w": 400,
   "h": 400,
   "type": "image/png",
-  "dl": "Custom_400x400.png",
+  "dl": "src_Custom_400x400.png",
   "status": "Under the 20000 KB limit, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "PNG",
@@ -299,7 +299,7 @@ const EXPECTED = {
   "w": 400,
   "h": 400,
   "type": "image/webp",
-  "dl": "Custom_400x400.webp",
+  "dl": "src_Custom_400x400.webp",
   "status": "Under the 50 KB limit, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "WebP",
@@ -312,7 +312,7 @@ const EXPECTED = {
   "w": 400,
   "h": 400,
   "type": "image/jpeg",
-  "dl": "Custom_400x400.jpg",
+  "dl": "src_Custom_400x400.jpg",
   "status": "Within the 30–60 KB range, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "JPEG",
@@ -337,7 +337,7 @@ const EXPECTED = {
   "w": 900,
   "h": 1100,
   "type": "image/jpeg",
-  "dl": "Custom_900x1100.jpg",
+  "dl": "src_Custom_900x1100.jpg",
   "status": "Under the 200 KB limit, at the exact size requested.",
   "dims": "900 × 1100 px, verified",
   "fmt": "JPEG",
@@ -353,7 +353,7 @@ const EXPECTED = {
   "w": 350,
   "h": 450,
   "type": "image/jpeg",
-  "dl": "Passport_Photo_Dated_350x450.jpg",
+  "dl": "src_Passport_Photo_Dated_350x450.jpg",
   "status": "Under the 50 KB limit, at the exact size requested.",
   "dims": "350 × 450 px, verified",
   "fmt": "JPEG",
@@ -365,7 +365,7 @@ const EXPECTED = {
  },
  "remove:processDisabled": true,
  "invalidType": {
-  "err": "Unsupported format. Please select a JPG, PNG, WebP, GIF, BMP or AVIF image.",
+  "err": "doc.txt is a plain text file. This tool needs an image (JPEG, PNG, WebP, GIF, BMP or AVIF); choose a file of that type instead.",
   "hasCropper": false
  }
 };
@@ -382,13 +382,13 @@ const EXPECTED = {
     for (let i = 0; i < d.data.length; i += 4) { s = (s * 1664525 + 1013904223) >>> 0; const px = (i / 4) % 900, py = Math.floor(i / 4 / 900); d.data[i] = (px * 255 / 900) ^ (s >> 28); d.data[i + 1] = (py * 255 / 1100) ^ ((s >> 24) & 15); d.data[i + 2] = ((px + py) & 255) ^ ((s >> 20) & 15); d.data[i + 3] = 255; }
     x.putImageData(d, 0, 0); x.fillStyle = '#fff'; x.beginPath(); x.arc(450, 420, 230, 0, 7); x.fill(); return c.toDataURL('image/png').split(',')[1];
   }), 'base64');
-  await page.goto(`${origin}/index.html`);
+  await page.goto(`${origin}/image-resizer.html`);
   const setSel = (id, v) => page.evaluate(([id, v]) => { const el = document.getElementById(id); el.value = v; el.dispatchEvent(new Event('change', { bubbles: true })); el.dispatchEvent(new Event('input', { bubbles: true })); }, [id, v]);
   const setNum = (id, v) => page.evaluate(([id, v]) => { const el = document.getElementById(id); el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }, [id, v]);
   const val = id => page.evaluate(id => document.getElementById(id).value, id);
   const vis = id => page.evaluate(id => { const e = document.getElementById(id); if (!e) return null; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; }, id);
   const load = async (name = 'src.png') => {
-    await page.goto(`${origin}/index.html`);
+    await page.goto(`${origin}/image-resizer.html`);
     // The home page asks what is being prepared; "Custom size" opens size, limit and format.
     await page.locator('.choice[data-preset="custom"]').click();
     await page.locator('#fileInput').setInputFiles({ name, mimeType: 'image/png', buffer: png });
@@ -463,7 +463,7 @@ const EXPECTED = {
   await page.evaluate(() => { const e = document.getElementById('addDateCheckbox'); for (let a = e.parentElement; a; a = a.parentElement) if (a.tagName === 'DETAILS') a.open = true; e.checked = true; e.dispatchEvent(new Event('change', { bubbles: true })); const n = document.getElementById('candidateNameInput'); n.value = 'Sumit Test'; n.dispatchEvent(new Event('input', { bubbles: true })); });
   rec['annot:crop'] = await crop(); await runProc('annot:result');
   // 9. drag and drop
-  await page.goto(`${origin}/index.html`);
+  await page.goto(`${origin}/image-resizer.html`);
   await page.evaluate(async b64 => {
     const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); const file = new File([bin], 'dropped.png', { type: 'image/png' });
     const dt = new DataTransfer(); dt.items.add(file);
@@ -476,6 +476,50 @@ const EXPECTED = {
   await page.locator('#btnRemoveFile').click(); rec['remove:processDisabled'] = await page.locator('#btnProcess').isDisabled();
   await page.locator('#fileInput').setInputFiles({ name: 'doc.txt', mimeType: 'text/plain', buffer: Buffer.from('hello') });
   await page.waitForTimeout(500); rec['invalidType'] = { err: await vis('processErrorBox') ? (await page.locator('#processErrorBox').textContent()).trim().replace(/\s+/g, ' ') : null, hasCropper: await page.evaluate(() => !!(document.getElementById('imageToCrop') && document.getElementById('imageToCrop').cropper)) };
+
+  // 11. One customer after another: the printed name and date never carry over, and every
+  //     download is named after its own photo.
+  let extra = 0;
+  const yes = (c, m) => { assert(c, m); extra++; };
+  const ready = () => page.waitForFunction(() => document.getElementById('imageToCrop').cropper && !document.getElementById('btnProcess').disabled, null, { timeout: 15000 });
+  const strip = () => page.evaluate(() => ({ on: document.getElementById('addDateCheckbox').checked, name: document.getElementById('candidateNameInput').value }));
+  const setStrip = name => page.evaluate(n => {
+    const e = document.getElementById('addDateCheckbox'); for (let a = e.parentElement; a; a = a.parentElement) if (a.tagName === 'DETAILS') a.open = true;
+    e.checked = true; e.dispatchEvent(new Event('change', { bubbles: true }));
+    const i = document.getElementById('candidateNameInput'); i.value = n; i.dispatchEvent(new Event('input', { bubbles: true }));
+  }, name);
+  await page.goto(`${origin}/passport-photo-resizer.html`);
+  await setStrip('Asha Verma');
+  await page.locator('#fileInput').setInputFiles({ name: 'asha-photo.png', mimeType: 'image/png', buffer: png });
+  await ready();
+  yes(JSON.stringify(await strip()) === '{"on":true,"name":"Asha Verma"}', 'a name typed before the first photo is kept for it');
+  await runProc('customer1');
+  yes(rec.customer1.dl === 'asha-photo_Passport_Photo_Dated_350x450.jpg', `the download is named after the photo (${rec.customer1.dl})`);
+  await page.locator('#btnRemoveFile').click();
+  yes(JSON.stringify(await strip()) === '{"on":false,"name":""}', 'Remove switches the name strip off and clears the name');
+  yes(/printed name and date were cleared/.test(await page.locator('#taskNotification').textContent()), 'a notice says the printed name and date were cleared');
+  await page.locator('#fileInput').setInputFiles({ name: 'ravi-photo.png', mimeType: 'image/png', buffer: png });
+  await ready();
+  await runProc('customer2');
+  yes(rec.customer2.dl === 'ravi-photo_Passport_Photo_350x450.jpg', `the next customer's photo has no strip and its own name (${rec.customer2.dl})`);
+  await again(); await setStrip('Ravi Kumar');
+  await page.locator('#fileInput').setInputFiles({ name: 'priya-photo.png', mimeType: 'image/png', buffer: png });   // Replace
+  await ready();
+  yes(JSON.stringify(await strip()) === '{"on":false,"name":""}', 'Replace also clears the strip, so a new photo never carries the last name');
+  // "Try a sample" keeps the requirement chosen and does not enlarge the sample.
+  for (const [preset, kind] of [['passport', 'photo'], ['signature', 'signature'], ['document', 'document']]) {
+    await page.goto(`${origin}/image-resizer.html`);
+    await page.locator(`.choice[data-preset="${preset}"]`).click();
+    const spec = (await page.locator('#reqSummarySpec').textContent()).trim();
+    await page.locator('#btnTryExample').click();
+    await ready();
+    yes((await page.locator('#reqSummarySpec').textContent()).trim() === spec && await val('presetSelect') === preset, `the sample keeps the ${preset} requirement (${spec})`);
+    await runProc(`sample:${preset}`);
+    const s = rec[`sample:${preset}`];
+    const src = await page.evaluate(() => document.getElementById('fileInfoText').textContent);
+    const m = /\((\d+) × (\d+) px/.exec(src);
+    yes(s.resultShown && s.dl.startsWith(`ApplyReady_sample_${kind}_`) && m && Number(m[1]) >= s.w && Number(m[2]) >= s.h, `the ${kind} sample is at least as large as the ${s.w} × ${s.h} px result (${src.trim()})`);
+  }
   await browser.close(); server.close();
   assert.deepEqual(errors, [], 'page errors during the image workflow');
   let checks = 0;
@@ -500,6 +544,6 @@ const EXPECTED = {
     assert(nums.length, k + ': limit text has no byte range: ' + v.limit);
     assert(v.bytes <= nums[nums.length - 1] && v.bytes >= (nums.length > 1 ? nums[0] : 0), k + ': ' + v.bytes + ' bytes is outside ' + v.limit); checks++;
   }
-  console.log('✓ Image workflow: presets, units, DPI, aspect lock, crop ratios, rotate, zoom, reset, retry, formats, limits, original size, annotations, drop, invalid files (' + checks + ' checks)');
+  console.log('✓ Image workflow: presets, units, DPI, aspect lock, crop ratios, rotate, zoom, reset, retry, formats, limits, original size, annotations, drop, invalid files, one customer after another, samples (' + (checks + extra) + ' checks)');
 
 })().catch(e => { console.error(e); process.exit(1); });

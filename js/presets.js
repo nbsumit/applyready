@@ -1,7 +1,7 @@
 /**
  * ApplyReady.in - Shared Presets Database
  * 100% Client-Side In-Browser Configuration
- * Accurate government exam specifications & dimensions.
+ * Common photo, signature and document sizes used by job and application portals.
  */
 
 (function () {
@@ -71,69 +71,6 @@
       minKB: 50,
       maxKB: 100,
       defaultPrefix: 'Declaration'
-    },
-
-    // Exam presets. Sizes and limits are from the official notices cited on each exam page.
-    // `suggested: true` marks a pixel size the exam body does not set; the tool needs one to work.
-    'ssc-signature': {
-      name: 'SSC Signature (6.0 × 2.0 cm at 300 DPI = 709 × 236 px, 10–20 KB)',
-      width: 709,
-      height: 236,
-      minKB: 10,
-      maxKB: 20,
-      defaultPrefix: 'SSC_Signature'
-    },
-    'upsc-photo': {
-      name: 'UPSC Photo (20–200 KB JPG; UPSC sets no pixel size, 350 × 450 px suggested)',
-      width: 350,
-      height: 450,
-      minKB: 20,
-      maxKB: 200,
-      suggested: true,
-      defaultPrefix: 'UPSC_Photo'
-    },
-    'upsc-signature': {
-      name: 'UPSC Triple Signature (400 × 400 px, within 350–500 px, 20–100 KB)',
-      width: 400,
-      height: 400,
-      minKB: 20,
-      maxKB: 100,
-      padToKB: 30,
-      defaultPrefix: 'UPSC_Signature'
-    },
-    'ibps-photo': {
-      name: 'IBPS Photo (200 × 230 px, 20–50 KB)',
-      width: 200,
-      height: 230,
-      minKB: 20,
-      maxKB: 50,
-      defaultPrefix: 'IBPS_Photo'
-    },
-    'ibps-signature': {
-      name: 'IBPS Signature (140 × 60 px, 10–20 KB)',
-      width: 140,
-      height: 60,
-      minKB: 10,
-      maxKB: 20,
-      defaultPrefix: 'IBPS_Signature'
-    },
-    'neet-photo': {
-      name: 'NEET Photo (10–200 KB JPG; NTA sets no pixel size, 400 × 500 px suggested)',
-      width: 400,
-      height: 500,
-      minKB: 10,
-      maxKB: 200,
-      suggested: true,
-      defaultPrefix: 'NEET_Photo'
-    },
-    'neet-signature': {
-      name: 'NEET Signature (10–100 KB JPG; NTA sets no pixel size, 300 × 100 px suggested)',
-      width: 300,
-      height: 100,
-      minKB: 10,
-      maxKB: 100,
-      suggested: true,
-      defaultPrefix: 'NEET_Signature'
     },
 
     // Target KB Presets

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- shell:csp:start -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="applyready-tool" content="pdf-to-image">
+  <!-- shell:csp:end -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>PDF to JPG or PNG: Save PDF Pages as Images | ApplyReady</title>
+  <meta name="description" content="Save PDF pages as JPG or PNG images at 72 to 300 DPI, one page or all of them in a ZIP. Free, in your browser; nothing is uploaded.">
+  <link rel="canonical" href="https://applyready.in/pdf-to-image.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ApplyReady">
+  <meta property="og:url" content="https://applyready.in/pdf-to-image.html">
+  <meta property="og:title" content="PDF to JPG or PNG: Save PDF Pages as Images">
+  <meta property="og:description" content="Save PDF pages as JPG or PNG images at 72 to 300 DPI, one page or all of them in a ZIP. Free, in your browser; nothing is uploaded.">
+  <meta property="og:image" content="https://applyready.in/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ApplyReady: free tools for job applications. Resume builder, photo and signature tools and PDF tools that run in your browser; nothing is uploaded.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PDF to JPG or PNG: Save PDF Pages as Images">
+  <meta name="twitter:description" content="Save PDF pages as JPG or PNG images at 72 to 300 DPI, one page or all of them in a ZIP. Free, in your browser; nothing is uploaded.">
+  <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
+
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
+
+  <script src="js/theme.js?v=20261118"></script>
+
+  <!-- shell:styles:start -->
+  <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/vendor/icons.min.css?v=20261118">
+  <link rel="stylesheet" href="css/app.css?v=20261118">
+  <!-- shell:styles:end -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "ApplyReady PDF to images",
+        "url": "https://applyready.in/pdf-to-image.html",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Any modern browser",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://applyready.in/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "PDF tools",
+            "item": "https://applyready.in/tools.html#pdf"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "PDF to images",
+            "item": "https://applyready.in/pdf-to-image.html"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Which resolution should I choose?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "150 DPI is right for most uses: an A4 page comes out at 1240 × 1754 pixels, sharp on screen and small to send. Choose 300 DPI only for printing, as files are about four times larger. 72 DPI gives the smallest files."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "JPG or PNG?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "JPG for most pages, especially scans and photos: the files are much smaller. PNG keeps the edges of text and lines perfectly crisp, but files are larger. Many portals accept only JPG."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I convert only some pages?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Select the pages in the grid, or type them, for example 1, 3-4. With nothing selected, every page is converted."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I get all the images at once?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Download all as ZIP gives you one ZIP file with every image, named with its page number. You can also download each image on its own."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does the result say the resolution was lowered?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A very large page at a high resolution would need more pixels than a phone browser can draw. That page is drawn at the highest resolution that fits, and the size is shown with the result."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my PDF uploaded?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Pages are drawn by your browser on this device, and the images are made there too."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <!-- shell:header:start -->
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="/" aria-label="ApplyReady home">
+        <img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span class="brand__name">ApplyReady</span>
+      </a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__search"><button type="button" class="site-nav__search-btn" id="navSearch"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search tools</button></li>
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+              <div class="menu__cols menu__cols--3">
+              <div class="menu__group">
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-resume">
+                    <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
+                  </ul>
+                </div>
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#image">Image tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-image">Image tools <span class="menu__count">8<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-image">
+                    <li><a class="menu__item" href="image-resizer.html"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixel size and KB limit, with crop and rotate</span></span></a></li>
+                    <li><a class="menu__item" href="passport-photo-resizer.html"><i class="fa-solid fa-id-badge menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo resizer</span><span class="menu__desc">Passport-size photo at the pixel size and KB a form asks for</span></span></a></li>
+                    <li><a class="menu__item" href="signature-resizer.html"><i class="fa-solid fa-signature menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature resizer</span><span class="menu__desc">Signature image at the exact size and KB limit</span></span></a></li>
+                    <li><a class="menu__item" href="compress-image.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image compressor</span><span class="menu__desc">Make photos smaller in KB, one or many at once</span></span></a></li>
+                    <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
+                    <li><a class="menu__item" href="signature-cleaner.html"><i class="fa-solid fa-wand-magic-sparkles menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper and dark ink from a phone photo of a signature</span></span></a></li>
+                    <li><a class="menu__item" href="passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print sheet</span><span class="menu__desc">A printable A4 or 4x6 sheet of passport photos</span></span></a></li>
+                    <li><a class="menu__item" href="batch-image.html"><i class="fa-solid fa-layer-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Batch image processor</span><span class="menu__desc">Resize, compress or convert many photos at once, download a ZIP</span></span></a></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="menu__group">
+                <div class="menu__cat" data-open>
+                  <p class="menu__title"><a href="tools.html#pdf">PDF tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="true" aria-controls="menuList-pdf">PDF tools <span class="menu__count">10<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-pdf">
+                    <li><a class="menu__item" href="merge-pdf.html"><i class="fa-solid fa-object-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Merge PDF</span><span class="menu__desc">Join several PDFs into one, in the order you choose</span></span></a></li>
+                    <li><a class="menu__item" href="split-pdf.html"><i class="fa-solid fa-scissors menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Split PDF</span><span class="menu__desc">Take out pages or split a PDF into parts</span></span></a></li>
+                    <li><a class="menu__item" href="organize-pdf.html"><i class="fa-solid fa-table-cells-large menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Organise PDF pages</span><span class="menu__desc">Reorder, rotate and delete pages</span></span></a></li>
+                    <li><a class="menu__item" href="image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans into one PDF</span></span></a></li>
+                    <li><a class="menu__item" href="compress-pdf.html"><i class="fa-solid fa-file-zipper menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Make a PDF small enough for an upload limit</span></span></a></li>
+                    <li><a class="menu__item" href="pdf-to-image.html" aria-current="page"><i class="fa-solid fa-images menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">PDF to images</span><span class="menu__desc">Save PDF pages as JPG or PNG images</span></span></a></li>
+                    <li><a class="menu__item" href="pdf-to-text.html"><i class="fa-solid fa-font menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Extract text from PDF</span><span class="menu__desc">Copy the text out of a PDF</span></span></a></li>
+                    <li><a class="menu__item" href="add-page-numbers.html"><i class="fa-solid fa-list-ol menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Add page numbers</span><span class="menu__desc">Number the pages of a PDF</span></span></a></li>
+                    <li><a class="menu__item" href="watermark-pdf.html"><i class="fa-solid fa-stamp menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Watermark PDF</span><span class="menu__desc">Stamp text such as &quot;Copy&quot; across every page</span></span></a></li>
+                    <li><a class="menu__item" href="text-to-pdf.html"><i class="fa-solid fa-file-export menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Text to PDF</span><span class="menu__desc">Turn typed or pasted text into a clean PDF</span></span></a></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="menu__group">
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#document">Document tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-document">Document tools <span class="menu__count">3<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-document">
+                    <li><a class="menu__item" href="text-to-pdf.html"><i class="fa-solid fa-file-export menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Text to PDF</span><span class="menu__desc">Turn typed or pasted text into a clean PDF</span></span></a></li>
+                    <li><a class="menu__item" href="file-checker.html"><i class="fa-solid fa-file-circle-check menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">File checker</span><span class="menu__desc">See a file’s real type, size, pixels and metadata; remove photo metadata</span></span></a></li>
+                    <li><a class="menu__item" href="pdf-to-text.html"><i class="fa-solid fa-font menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Extract text from PDF</span><span class="menu__desc">Copy the text out of a PDF</span></span></a></li>
+                  </ul>
+                </div>
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#batch">Batch processing</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-batch">Batch processing <span class="menu__count">3<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-batch">
+                    <li><a class="menu__item" href="batch-image.html"><i class="fa-solid fa-layer-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Batch image processor</span><span class="menu__desc">Resize, compress or convert many photos at once, download a ZIP</span></span></a></li>
+                    <li><a class="menu__item" href="compress-image.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image compressor</span><span class="menu__desc">Make photos smaller in KB, one or many at once</span></span></a></li>
+                    <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
+                  </ul>
+                </div>
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-cafe">
+                    <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
+                  </ul>
+                </div>
+              </div>
+              </div>
+              <div class="menu__foot"><a class="menu__all" href="tools.html">All tools <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><span class="menu__hint">Press <kbd>/</kbd> to search</span></div>
+            </div>
+          </li>
+          <li class="site-nav__resume"><a class="site-nav__link" href="resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="guides/">Guides</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="searchOpen" class="search-trigger" aria-haspopup="dialog" aria-keyshortcuts="/ Control+K" aria-label="Search tools"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span class="search-trigger__label" aria-hidden="true">Search tools</span><kbd class="search-trigger__key" aria-hidden="true">/</kbd></button>
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  </header>
+  <!-- shell:header:end -->
+
+  <main id="mainContent" class="page">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <ol class="breadcrumb-list">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="tools.html#pdf">PDF tools</a></li>
+        <li class="breadcrumb-item active" aria-current="page">PDF to images</li>
+      </ol>
+    </nav>
+    <header class="page-head">
+      <h1 class="page-title">PDF to images</h1>
+      <p class="page-lede">Save PDF pages as JPG or PNG pictures, for a portal that only accepts images or for sharing a page. Choose the pages and the resolution, then download. Your file stays on this device.</p>
+    </header>
+
+    <noscript><p class="noscript-note">This tool needs JavaScript. It runs entirely in your browser.</p></noscript>
+    <!-- tool:start -->
+    <section class="ws ws--pdf" id="imgApp" data-state="empty" data-keep data-simple-empty data-settings="open" data-ws-file="#imgFile" data-ws-result="#imgResult" data-ws-busy="#imgProgress" aria-label="PDF to images">
+      <div class="ws-head">
+        <div id="imgFile" class="filebar hidden" data-pdf-file>
+          <i class="fa-regular fa-file-pdf filebar__icon" aria-hidden="true"></i>
+          <span class="filebar__name" id="imgFileName" data-pdf-name></span>
+          <div class="filebar__actions">
+            <button type="button" class="btn btn-sm" id="imgReplace" data-pdf-replace>Replace</button>
+            <button type="button" class="btn btn-sm btn-danger-ghost" id="imgRemove" data-pdf-remove>Remove</button>
+          </div>
+        </div>
+      </div>
+      <div class="ws-stage">
+        <div class="notice notice--error" id="imgError" role="alert" data-pdf-error hidden><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"></div></div>
+        <div class="dropzone" data-dropzone id="imgDrop" role="group" aria-labelledby="imgDropTitle">
+          <input type="file" id="imgDropInput" accept="application/pdf,.pdf" class="hidden" tabindex="-1" aria-hidden="true">
+          <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-file-pdf"></i></span>
+          <p class="dropzone__title" id="imgDropTitle">Add the PDF to turn into images</p>
+          <p class="dropzone__text dropzone__drag">Drag it here<span class="dropzone__or">, or</span></p>
+          <button type="button" class="btn btn-primary btn-lg" data-browse><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose PDF</button>
+          <p class="dropzone__hint">PDF up to 100 MB. Up to 500 pages at a time. Processed on your device, never uploaded.</p>
+        </div>
+        <div id="imgLoading" class="pdf-loading hidden" data-pdf-loading role="status"><span class="pdf-spinner" aria-hidden="true"></span> Opening the PDF…</div>
+        <div id="imgResult" class="ws-result hidden" data-pdf-result>
+          <div class="ws-result__head">
+            <div class="verdict">
+              <i class="fa-solid fa-check" aria-hidden="true"></i>
+              <div><h2 class="ws-result__title" id="imgResultTitle">Your images are ready</h2><p class="ws-result__ok" id="imgResultText"></p></div>
+            </div>
+          </div>
+          <dl class="meta-stats meta-stats--row">
+            <div class="meta-stat-item"><dt class="meta-stat-label">Images</dt><dd class="meta-stat-val" id="imgStatCount">--</dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Size of each</dt><dd class="meta-stat-val" id="imgStatDims">--</dd></div>
+            <div class="meta-stat-item"><dt class="meta-stat-label">Total size</dt><dd class="meta-stat-val" id="imgStatSize">--</dd></div>
+          </dl>
+          <div class="ws-result__actions">
+            <button type="button" id="imgZip" class="btn btn-primary btn-lg"><i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download all as ZIP</button>
+          </div>
+          <ul class="file-list pdf-outputs" id="imgOutputs" aria-label="Files"></ul>
+        </div>
+        <div id="imgProgress" class="ws-progress pdf-progress hidden" data-pdf-progress>
+          <div class="pdf-progress__row">
+            <p class="progress-text" id="imgProgressText">Drawing pages…</p>
+            <button type="button" class="btn btn-sm" id="imgCancel" data-cancel>Cancel</button>
+          </div>
+          <div class="progress" role="progressbar" aria-labelledby="imgProgressText" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="progress-bar" id="imgProgressBar" style="width:0%"></span></div>
+        </div>
+        <div class="pdf-pages hidden" id="imgPages">
+          <div class="pagelist-head">
+            <h2 class="pagelist-head__title">Pages</h2>
+            <p class="pagelist-head__hint">Select pages to convert only those. With none selected, every page is converted.</p>
+          </div>
+          <ol class="page-grid" id="imgGrid" aria-label="Pages"></ol>
+          <p class="field-hint" id="imgGridNote"></p>
+        </div>
+      </div>
+      <div class="ws-rail">
+      <div class="ws-side">
+        <div class="ws-section">
+          <h2 class="ws-section__title">Pages</h2>
+          <div class="field">
+            <label for="imgRanges" class="field-label">Pages to convert <span class="optional">(optional)</span></label>
+            <input type="text" id="imgRanges" class="input" autocomplete="off" spellcheck="false" placeholder="All pages" aria-describedby="imgRangesHint">
+            <p class="field-hint" id="imgRangesHint">Leave empty for every page, or type pages such as 1-3, 5.</p>
+            <p class="field-error" id="imgRangesError" hidden></p>
+          </div>
+        </div>
+        <div class="ws-section">
+          <h2 class="ws-section__title">Image</h2>
+          <div class="field">
+            <p class="field-label" id="imgFormatLabel">Format</p>
+            <div class="segmented" role="group" aria-labelledby="imgFormatLabel" id="imgFormat">
+              <button type="button" data-value="jpg" aria-pressed="true">JPG</button>
+              <button type="button" data-value="png" aria-pressed="false">PNG</button>
+            </div>
+            <p class="field-hint">JPG makes smaller files. PNG keeps text edges crisp but is larger.</p>
+          </div>
+          <div class="field">
+            <label for="imgDpi" class="field-label">Resolution</label>
+            <select id="imgDpi">
+              <option value="72">72 DPI, for screens (smallest)</option>
+              <option value="150" selected>150 DPI, for sharing (recommended)</option>
+              <option value="200">200 DPI, sharper</option>
+              <option value="300">300 DPI, for printing</option>
+            </select>
+          </div>
+          <p class="field-hint pdf-estimate" id="imgEstimate" aria-live="polite"></p>
+        </div>
+      </div>
+      <div class="ws-action">
+        <button type="button" id="imgRun" class="btn btn-primary btn-lg btn-block"><i class="fa-solid fa-images" aria-hidden="true"></i> Convert to images</button>
+        <p class="process-summary" id="imgSummary" aria-live="polite"></p>
+      </div>
+      </div>
+    </section>
+    <!-- tool:end -->
+
+    <section class="section prose" aria-labelledby="howHeading">
+      <h2 id="howHeading">How it works</h2>
+      <p>Each page is drawn by your browser at the resolution you choose and saved as an image. <strong>DPI</strong> is the number of pixels for each inch of paper: an A4 page at 150 DPI is 1240 × 1754 pixels, which reads well on a screen; 300 DPI is for printing. The estimate under the setting shows the image size and roughly how much space the images will take before you start. Images are named after the file and page, for example <em>certificate-page-01.jpg</em>, so they sort in order.</p>
+      <p>A portal that wants a photo or signature at an exact pixel size or KB limit needs more than this: convert the page here, then use the <a href="image-resizer.html">image resizer</a>. To keep pages as a PDF instead, use <a href="split-pdf.html">Split PDF</a>, and to copy the words rather than a picture of them, use <a href="pdf-to-text.html">Extract text from PDF</a>.</p>
+      <h3>Limits</h3>
+      <p>Up to 500 pages at a time. Very large pages are drawn at a lower resolution so the image stays within what phones can handle (about 16 million pixels); when that happens, the result says so. The images are pictures: text in them cannot be selected or searched.</p>
+      <p class="tool-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> Your files are processed in this browser and never leave your device. Closing the tab clears them.</p>
+    </section>
+
+    <section class="section prose" aria-labelledby="examplesHeading">
+      <h2 id="examplesHeading">Common requests</h2>
+      <h3>"Upload your certificate as a JPG"</h3>
+      <p>Choose JPG and 150 DPI, select the page of the certificate, and select <strong>Convert to images</strong>. If the form also gives a KB limit or a pixel size, open the image in the <a href="image-resizer.html">image resizer</a> and set them there.</p>
+      <h3>Send one page as a picture</h3>
+      <p>Select only that page. JPG keeps the file small for messaging apps; PNG keeps the edges of text crisp if the page is mostly text and lines.</p>
+      <h3>A copy to print</h3>
+      <p>Choose 300 DPI so the printed page is sharp. The files are about four times larger than at 150 DPI, which the estimate shows before you start.</p>
+    </section>
+
+    <section class="faq-section" aria-labelledby="faqHeading">
+      <div class="faq-header">
+        <h2 id="faqHeading" class="faq-title">Questions</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary class="faq-question"><span>Which resolution should I choose?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>150 DPI is right for most uses: an A4 page comes out at 1240 × 1754 pixels, sharp on screen and small to send. Choose 300 DPI only for printing, as files are about four times larger. 72 DPI gives the smallest files.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>JPG or PNG?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>JPG for most pages, especially scans and photos: the files are much smaller. PNG keeps the edges of text and lines perfectly crisp, but files are larger. Many portals accept only JPG.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Can I convert only some pages?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Yes. Select the pages in the grid, or type them, for example 1, 3-4. With nothing selected, every page is converted.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>How do I get all the images at once?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Download all as ZIP gives you one ZIP file with every image, named with its page number. You can also download each image on its own.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Why does the result say the resolution was lowered?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>A very large page at a high resolution would need more pixels than a phone browser can draw. That page is drawn at the highest resolution that fits, and the size is shown with the result.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Is my PDF uploaded?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>No. Pages are drawn by your browser on this device, and the images are made there too.</p></div>
+        </details>
+      </div>
+    </section>
+
+    <section class="related-guides-section" aria-labelledby="guidesHeading">
+      <h2 id="guidesHeading" class="related-guides-title">Guides that help with this tool</h2>
+      <div class="related-guides-grid">
+        <a href="guides/pixels-cm-inches-dpi-explained.html" class="guide-card">
+          <strong>Pixels, cm, DPI and KB: Which Number Is the Form Asking For?</strong>
+          <p class="text-muted">A photo rule can mix pixels, centimetres, DPI and kilobytes. Here is how they relate, with worked examples you can apply to any form.</p>
+          <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a href="guides/image-formats-guide.html" class="guide-card">
+          <strong>JPEG, PNG or WebP: Which Image Format Should You Upload?</strong>
+          <p class="text-muted">For job portals and application forms the answer is almost always JPEG. Here is why, with the same photo measured in all three formats.</p>
+          <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a href="guides/fix-common-photo-upload-errors.html" class="guide-card">
+          <strong>Photo Upload Errors: What Each Message Means and How to Fix It</strong>
+          <p class="text-muted">Match the message on your screen to the check that failed, then change the file. Retrying the same file rarely works.</p>
+          <span class="resource-link">Read guide <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- shell:footer:start -->
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <h2 class="sr-only">Site links</h2>
+      <div class="site-footer__brand">
+        <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
+        <p>Free tools for job applications: resumes, photos, signatures and PDFs. Everything runs in your browser, and your files are never uploaded.</p>
+        <p class="site-footer__motto">Free. Open source. Forever.</p>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks1">Resume and images</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks1">
+          <li><a href="resume.html">Resume builder</a></li>
+          <li><a href="image-resizer.html">Image resizer</a></li>
+          <li><a href="passport-photo-resizer.html">Passport photo resizer</a></li>
+          <li><a href="signature-resizer.html">Signature resizer</a></li>
+          <li><a href="compress-image.html">Image compressor</a></li>
+          <li><a href="convert-image.html">Image converter</a></li>
+          <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print sheet</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks2">PDF and documents</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks2">
+          <li><a href="merge-pdf.html">Merge PDF</a></li>
+          <li><a href="split-pdf.html">Split PDF</a></li>
+          <li><a href="organize-pdf.html">Organise PDF pages</a></li>
+          <li><a href="image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="compress-pdf.html">Compress PDF</a></li>
+          <li><a href="pdf-to-image.html">PDF to images</a></li>
+          <li><a href="pdf-to-text.html">Extract text from PDF</a></li>
+          <li><a href="add-page-numbers.html">Add page numbers</a></li>
+          <li><a href="watermark-pdf.html">Watermark PDF</a></li>
+          <li><a href="text-to-pdf.html">Text to PDF</a></li>
+          <li><a href="file-checker.html">File checker</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks3">Batch and help</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks3">
+          <li><a href="batch-image.html">Batch image processor</a></li>
+          <li><a href="workspace.html">Applicant workspaces</a></li>
+          <li><a href="tools.html">All tools</a></li>
+          <li><a href="guides/">Guides</a></li>
+          <li><a href="how-to-use.html">How to use</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks4">ApplyReady</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks4">
+          <li><a href="about.html">About</a></li>
+          <li><a href="philosophy.html">Our philosophy</a></li>
+          <li><a href="privacy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms of use</a></li>
+          <li><a href="your-data.html">Your data</a></li>
+          <li><a href="contact.html">Contact and support</a></li>
+          <li><a href="feedback.html">Feedback</a></li>
+          <li><a href="changelog.html">Changelog</a></li>
+          <li><a href="contribute.html">Contribute</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__base">
+      <span>No sign-up, no ads, no watermarks. Every feature is free for everyone.</span>
+      <span class="site-footer__ext"><a href="https://github.com/nbsumit/applyready" rel="noopener" target="_blank">Source code<span class="sr-only"> (opens in a new tab)</span></a><a class="site-footer__support" href="https://pages.razorpay.com/support-applyready" rel="noopener" target="_blank"><i class="fa-solid fa-heart" aria-hidden="true"></i> Support ApplyReady<span class="sr-only"> (voluntary contribution, opens in a new tab)</span></a></span>
+    </div>
+  </footer>
+  <!-- shell:footer:end -->
+
+  <script defer src="js/components.js?v=20261118"></script>
+  <script defer src="js/site.js?v=20261118"></script>
+  <script defer src="js/lib/files.js?v=20261118"></script>
+  <script defer src="js/lib/file-kit.js?v=20261118"></script>
+  <script defer src="js/lib/pdf-kit.js?v=20261118"></script>
+  <script defer src="js/lib/pdf-ui.js?v=20261118"></script>
+  <script defer src="js/lib/zip.js?v=20261118"></script>
+  <script defer src="js/pdf-to-image.js?v=20261118"></script>
+</body>
+</html>

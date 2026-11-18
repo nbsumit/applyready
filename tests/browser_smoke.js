@@ -41,7 +41,7 @@ let checks = 0; const ok = (c, m) => { assert(c, m); checks++; };
   page.on('pageerror', e => errors.push(e.message)); page.on('dialog', d => d.accept());
 
   // Image: upload, preset by mouse on the custom select, process, download
-  await page.goto(`${origin}/index.html`);
+  await page.goto(`${origin}/image-resizer.html`);
   await page.locator('#fileInput').setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: png(1200, 1500) });
   await page.locator('#cropperActiveArea').waitFor({ state: 'visible' });
   const choice = page.locator('.choice[data-preset="passport"]');
@@ -54,14 +54,14 @@ let checks = 0; const ok = (c, m) => { assert(c, m); checks++; };
   ok(fs.statSync(file).size > 1000 && fs.statSync(file).size <= 50 * 1024, 'downloaded image is within the 50 KB limit');
   ok((await page.locator('#resultStatus').textContent()).toLowerCase().includes('50'), 'result states the limit it satisfies');
 
-  // Exam page tool
-  await page.goto(`${origin}/ssc-photo-signature-size.html`);
+  // Landing page tool (preset already chosen)
+  await page.goto(`${origin}/resize-image-to-20kb.html`);
   await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: png(900, 1100) });
   await page.locator('#btnProcess').click();
   await page.locator('#resultArea').waitFor({ state: 'visible' });
-  ok(await page.locator('#btnDownload').isVisible() && (await page.locator('#btnDownload').innerText()).trim().length > 3, 'exam page Download is visible and labelled');
+  ok(await page.locator('#btnDownload').isVisible() && (await page.locator('#btnDownload').innerText()).trim().length > 3, 'landing page Download is visible and labelled');
   const colors = await page.locator('#btnDownload').evaluate(e => { const c = getComputedStyle(e); return [c.color, c.backgroundColor]; });
-  ok(colors[0] !== colors[1], 'exam page Download label is not hidden by its own fill');
+  ok(colors[0] !== colors[1], 'landing page Download label is not hidden by its own fill');
 
   // Secondary tools with real files: compress, image to PDF, passport sheet, signature cleaner
   const saveDownload = async (locator, name) => { const d = page.waitForEvent('download'); await locator.click(); const f = path.join(out, name); await (await d).saveAs(f); return fs.readFileSync(f); };

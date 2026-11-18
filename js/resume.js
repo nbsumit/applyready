@@ -1,8 +1,9 @@
 /**
- * ApplyReady.in - Rebuilt ATS-Friendly Resume Builder
- * 8 Distinct Templates, 3-Tab Workspace (Content, Design, Review & Export),
- * True Vector PDF, Editable OOXML DOCX, and Plain Text Exports.
- * 100% Client-Side Processing, Privacy-Preserving Draft Storage, and Zero Support Popups.
+ * ApplyReady resume builder: the editor (Write, Style, Review, Download) for the open resume.
+ * Saving, the library of saved resumes and backups live in js/resume-library-ui.js; references
+ * and custom sections in js/resume-sections.js; the HTML document in js/resume-render.js.
+ * They talk to this file through window.ApplyReadyResumeEditor (see exposeEditor below).
+ * Everything runs in the browser; nothing is uploaded.
  */
 
 (function () {
@@ -19,6 +20,11 @@
   const TPL = typeof ApplyReadyTemplates !== 'undefined' ? ApplyReadyTemplates
     : (typeof require === 'function' ? require('./templates.js') : null);
   const TEMPLATES = TPL.TEMPLATES;
+  const RENDER = typeof ApplyReadyResumeRender !== 'undefined' ? ApplyReadyResumeRender
+    : (typeof require === 'function' ? require('./resume-render.js') : null);
+  const { escapeHTML, sanitizeHref, renderResumeDataToHTML, renderTemplateIntoContainer } = RENDER;
+  // References and custom sections (js/resume-sections.js), when the page loads them.
+  const EXTRA = () => (typeof window !== 'undefined' && window.ApplyReadyResumeSections) || null;
 
   // Demonstration Sample Data
   const SAMPLE_DATA = {
@@ -179,18 +185,62 @@
     achievements: [],
     volunteering: [],
     languages: [],
+    publications: [],
     academic: {
-      publications: [],
       teaching: [],
-      presentations: []
-    }
+      presentations: [],
+      grants: []
+    },
+    references: [],
+    referencesOnRequest: false,
+    customSections: []
+  };
+
+  // A fictional final-year student, used to preview the student and fresher templates: education
+  // with CGPA and percentage first, an internship, projects, a certificate and a position of
+  // responsibility.
+  const STUDENT_SAMPLE = {
+    version: 2,
+    app: 'ApplyReady',
+    template: 'campus-fresher',
+    design: { fontFamily: 'serif', fontSize: 'standard', density: 'standard', pageSize: 'a4', accentColor: 'navy', sectionOrder: [] },
+    sectionVisibility: { summary: true, experience: true, education: true, projects: true, skills: true, certifications: true, achievements: true, volunteering: true, languages: false, academic: false },
+    personal: {
+      fullName: 'Ananya Rao',
+      targetTitle: 'B.Tech Computer Science, 2026 | Data Analyst Intern',
+      email: 'ananya.rao@email.com',
+      phone: '+91 98765 43210',
+      location: 'Bengaluru, Karnataka',
+      linkedin: 'linkedin.com/in/ananyarao',
+      github: 'github.com/ananyarao',
+      website: ''
+    },
+    summary: 'Final-year computer science student who builds data dashboards and small web tools. Looking for an analyst or software role that works with real data.',
+    experience: [
+      { id: 'exp-s1', role: 'Data Analyst Intern', company: 'Northwind Retail', location: 'Bengaluru', duration: 'May 2025 - Jul 2025', bulletsText: 'Built a weekly sales dashboard in Power BI used by 6 store managers.\nCleaned two years of billing data in Python, cutting report preparation from 3 hours to 40 minutes.' }
+    ],
+    education: [
+      { id: 'edu-s1', degree: 'B.Tech in Computer Science and Engineering', institution: 'State Institute of Technology', location: 'Bengaluru', duration: '2022 - 2026', score: 'CGPA 8.6 / 10' },
+      { id: 'edu-s2', degree: 'Class XII (PCM), CBSE', institution: 'Central Public School', location: 'Mysuru', duration: '2022', score: '92.4%' }
+    ],
+    projects: [
+      { id: 'proj-s1', name: 'Campus Placement Analytics Dashboard', tech: 'Python, Pandas, Power BI', link: 'github.com/ananyarao/placement-dashboard', bulletsText: 'Analysed four years of placement records to show offers by branch and CGPA band.\nPresented the findings to the placement cell, which now updates the dashboard each term.' },
+      { id: 'proj-s2', name: 'Library Seat Booking App', tech: 'Flask, SQLite', link: '', bulletsText: 'Built a seat booking web app for the college library with a team of three.\nHandled 3,000 bookings in the first semester with no double bookings.' }
+    ],
+    skills: { languages: 'Python, SQL, Java, C', frameworks: 'Pandas, NumPy, Flask, scikit-learn', tools: 'Power BI, Excel, Git, Jupyter', other: 'Data structures, DBMS, Operating systems, Statistics' },
+    skillLabels: { languages: 'Programming', frameworks: 'Libraries', tools: 'Tools', other: 'Coursework' },
+    certifications: [{ id: 'cert-s1', name: 'Python for Data Science (online course)', issuer: '', year: '2024' }],
+    achievements: ['Second place in an inter-college hackathon on smart campus ideas (2024)'],
+    volunteering: [{ id: 'vol-s1', role: 'Student Placement Coordinator', organization: 'Training and Placement Cell', duration: '2025 - 2026' }],
+    languages: [],
+    academic: { teaching: [], presentations: [], grants: [] }
   };
 
   // Active Resume State
-  let resumeData = JSON.parse(JSON.stringify(EMPTY_DATA));
+  let resumeData = SCHEMA.migrate(EMPTY_DATA);
   let isDirty = false;
-  let autoSaveDraft = false;
   let currentZoom = 'fit';
+  const changeListeners = [];
 
   // Bounded Undo / Redo History Stack (up to 30 snapshots)
   const undoStack = [];
@@ -205,33 +255,17 @@
     updateUndoRedoButtons();
   }
 
-  function performUndo() {
-    if (undoStack.length === 0) return;
-    redoStack.push(JSON.stringify(resumeData));
-    const previous = undoStack.pop();
-    resumeData = JSON.parse(previous);
-    populateAllFormFields();
-    renderAllDynamicLists();
-    renderResumePreview();
-    updateDesignControlsFromState();
-    setupTemplateGallery();
-    runResumeReview();
+  // Undo and redo swap whole snapshots of this resume. setResume() empties both stacks, so history
+  // never crosses from one saved resume into another.
+  function stepHistory(from, to) {
+    if (from.length === 0) return;
+    to.push(JSON.stringify(resumeData));
+    resumeData = JSON.parse(from.pop());
+    refreshWholeEditor();
     updateUndoRedoButtons();
   }
-
-  function performRedo() {
-    if (redoStack.length === 0) return;
-    undoStack.push(JSON.stringify(resumeData));
-    const next = redoStack.pop();
-    resumeData = JSON.parse(next);
-    populateAllFormFields();
-    renderAllDynamicLists();
-    renderResumePreview();
-    updateDesignControlsFromState();
-    setupTemplateGallery();
-    runResumeReview();
-    updateUndoRedoButtons();
-  }
+  const performUndo = () => stepHistory(undoStack, redoStack);
+  const performRedo = () => stepHistory(redoStack, undoStack);
 
   function updateUndoRedoButtons() {
     const btnUndo = getEl('btnUndo');
@@ -243,34 +277,6 @@
   // DOM Helpers
   const doc = typeof document !== 'undefined' ? document : null;
   const getEl = (id) => doc ? doc.getElementById(id) : null;
-
-  /**
-   * Escape HTML safely to prevent XSS
-   */
-  function escapeHTML(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
-
-  /**
-   * Sanitize URL for safe href
-   */
-  function sanitizeHref(url) {
-    if (!url || typeof url !== 'string') return '#';
-    const clean = url.trim();
-    if (/[\u0000-\u001f]/.test(clean)) return '#';
-    try {
-      // host:port (example.com:8080/x) is not a scheme, so it is given https:// like any bare host.
-      const hasProtocol = /^[a-z][a-z0-9+.-]*:/i.test(clean) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(clean);
-      const parsed = new URL(hasProtocol ? clean : 'https://' + clean);
-      return ['https:', 'http:', 'mailto:', 'tel:'].includes(parsed.protocol) ? parsed.href : '#';
-    } catch (e) { return '#'; }
-  }
 
   /**
    * Validate URL format
@@ -289,23 +295,15 @@
     }
   }
 
-  /**
-   * Validate Backup Schema (v1 or v2)
-   */
-  function validateResumeSchema(payload) { return SCHEMA.validate(payload); }
+  // Backups and saved records of versions 1 to 3 (js/resume-schema.js).
+  const validateResumeSchema = payload => SCHEMA.validate(payload);
+  const migrateResumeSchema = raw => SCHEMA.migrate(raw);
 
   /**
-   * Migrate any v1 or partial data safely into v2
-   */
-  function migrateResumeSchema(raw) {
-    return SCHEMA.migrate(raw);
-  }
-
-  /**
-   * Initialize Builder on DOM Ready
+   * Initialize Builder on DOM Ready. The resume itself arrives from the library through setResume().
    */
   function init() {
-    loadDraftFromStorage();
+    if (EXTRA()) EXTRA().mount(editorApi);
     setupEditorTabs();
     setupTemplateGallery();
     setupTemplatePreviewModal();
@@ -320,90 +318,55 @@
     updateUndoRedoButtons();
     runResumeReview();
 
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const sheet = getEl('resumeSheet'); if (sheet) visualPageCount = renderPaginatedPreview(sheet, pdfPageCount); updatePreviewScale(); });
+    // The vector preview does not depend on web fonts; only the HTML fallback pages are re-measured.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { const sheet = getEl('resumeSheet'); if (sheet && pdfPageCount === null) visualPageCount = renderPaginatedPreview(sheet); updatePreviewScale(); });
     window.addEventListener('resize', () => { updatePreviewScale(); scaleTemplateModal(); });
-    // Without device saving, a reload or closed tab would silently discard
-    // the resume. Warn only when there is unsaved, non-sample work.
-    window.addEventListener('beforeunload', e => {
-      if (autoSaveDraft || !isDirty || isDocumentEmpty()) return;
-      e.preventDefault();
-      e.returnValue = '';
-    });
     window.addEventListener('orientationchange', () => setTimeout(updatePreviewScale, 150));
   }
 
-  /**
-   * Load Draft from Local Storage (consented draft takes precedence)
-   */
-  function loadDraftFromStorage() {
-    try {
-      const enabled = localStorage.getItem('applyready_draft_enabled');
-      const chkSaveDraft = getEl('chkSaveDraft');
-      const draftStatusText = getEl('draftStatusText');
-
-      if (enabled === 'true') {
-        autoSaveDraft = true;
-        if (chkSaveDraft) chkSaveDraft.checked = true;
-        const saved = localStorage.getItem('applyready_resume_draft');
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (validateResumeSchema(parsed)) {
-            resumeData = migrateResumeSchema(parsed);
-            if (draftStatusText && parsed.savedAt) {
-              const d = new Date(parsed.savedAt);
-              draftStatusText.textContent = `Draft restored: ${d.toLocaleDateString()} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-            }
-            return;
-          }
-          throw new Error('Saved draft is invalid');
-        }
-      } else {
-        autoSaveDraft = false;
-        if (chkSaveDraft) chkSaveDraft.checked = false;
-        if (draftStatusText) draftStatusText.textContent = 'Local saving disabled';
-      }
-    } catch (e) {
-      autoSaveDraft = false;
-      const saveCheckbox = getEl('chkSaveDraft');
-      if (saveCheckbox) saveCheckbox.checked = false;
-      const draftStatusText = getEl('draftStatusText');
-      if (draftStatusText) draftStatusText.textContent = 'Draft could not be restored. Import a backup or start a new resume.';
-    }
-
-    // Default start with clean EMPTY_DATA (placeholders will guide the user)
-    resumeData = JSON.parse(JSON.stringify(EMPTY_DATA));
+  /* ------------------------------------------------ Editor interface for the library and sections */
+  // Load another resume: migrate it, clear undo history, folded entries and the dirty flag, redraw.
+  function setResume(data) {
+    clearTimeout(renderTimer);
+    resumeData = SCHEMA.migrate(data);
+    undoStack.length = 0;
+    redoStack.length = 0;
+    isDirty = false;
+    collapsedEntries.clear();
+    refreshWholeEditor();
+    updateUndoRedoButtons();
   }
+  const emitChange = () => changeListeners.forEach(fn => { try { fn(resumeData); } catch (e) { /* a listener must not break editing */ } });
+  const editorApi = {
+    getData: () => resumeData,
+    setResume,
+    isEmpty: () => isDocumentEmpty(),
+    hasUserChanges: () => isDirty || undoStack.length > 0,
+    onChange: fn => { changeListeners.push(fn); },
+    pushHistory: () => pushHistoryState(),
+    render: () => renderResumePreview(),
+    scheduleRender: () => scheduleRender(),
+    refreshOrder: () => renderSectionOrderControls(),
+    refresh: () => refreshWholeEditor(),
+    sample: () => withCurrentDesign(SCHEMA.migrate(SAMPLE_DATA), SAMPLE_DATA.sectionVisibility),
+    blank: () => withCurrentDesign(SCHEMA.migrate(EMPTY_DATA), EMPTY_DATA.sectionVisibility),
+    templateName: id => (TEMPLATES[id] || TEMPLATES['classic-professional']).name,
+    newEntryId: prefix => newEntryId(prefix),
+    focusNewEntry: id => focusNewEntry(id),
+    restoreRemoveFocus: (listId, idx, addId) => restoreRemoveFocus(listId, idx, addId),
+    escapeHTML,
+    confirm: askConfirm,
+    downloadName: suffix => downloadName(suffix),
+    openSection: id => openAccordion(getEl(id)),
+    announce: message => announce(message)
+  };
+  if (typeof window !== 'undefined') window.ApplyReadyResumeEditor = editorApi;
 
-  function saveDraftToStorage() {
-    if (!autoSaveDraft) return;
-    try {
-      const payload = {
-        version: 2,
-        app: 'ApplyReady',
-        savedAt: new Date().toISOString(),
-        data: resumeData
-      };
-      localStorage.setItem('applyready_resume_draft', JSON.stringify(payload));
-      const draftStatusText = getEl('draftStatusText');
-      if (draftStatusText) {
-        const now = new Date();
-        draftStatusText.textContent = `Draft saved: Just now (${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})`;
-      }
-    } catch (e) {
-      // Storage can be blocked or full; keep the current in-memory draft.
-      const draftStatusText = getEl('draftStatusText');
-      if (draftStatusText) draftStatusText.textContent = 'Error saving to local storage (quota exceeded)';
-    }
-  }
-
-  function deleteDraftFromStorage() {
-    try {
-      localStorage.removeItem('applyready_resume_draft');
-      const draftStatusText = getEl('draftStatusText');
-      if (draftStatusText) {
-        draftStatusText.textContent = autoSaveDraft ? 'No draft saved yet' : 'Local saving disabled';
-      }
-    } catch (e) {}
+  function openAccordion(section) {
+    if (!section || !section.classList.contains('accordion-section')) return;
+    section.classList.add('open');
+    const header = section.querySelector('.accordion-header');
+    if (header) header.setAttribute('aria-expanded', 'true');
   }
 
   /**
@@ -434,6 +397,7 @@
         if (btn.id === 'tabReview') {
           runResumeReview();
         }
+        if (btn.id === 'tabDownload') loadDocxEngine().catch(() => { /* retried on the Word download itself */ });
         // A new step starts at its top, below the sticky header.
         const panel = getEl('formPanel');
         if (panel && panel.getBoundingClientRect().top < 0) {
@@ -457,126 +421,12 @@
     const hasText = value => typeof value === 'string' ? !!value.trim()
       : Array.isArray(value) ? value.some(hasText)
       : value && typeof value === 'object' ? Object.keys(value).some(key => key !== 'id' && hasText(value[key])) : false;
-    return !hasText({ personal: resumeData.personal, summary: resumeData.summary, experience: resumeData.experience, education: resumeData.education, projects: resumeData.projects, skills: resumeData.skills, certifications: resumeData.certifications, achievements: resumeData.achievements, volunteering: resumeData.volunteering, languages: resumeData.languages, academic: resumeData.academic });
+    const custom = (resumeData.customSections || []).map(s => ({ text: s.text, entries: s.entries }));
+    return !hasText({ personal: resumeData.personal, summary: resumeData.summary, experience: resumeData.experience, education: resumeData.education, projects: resumeData.projects, skills: resumeData.skills, certifications: resumeData.certifications, achievements: resumeData.achievements, volunteering: resumeData.volunteering, languages: resumeData.languages, publications: resumeData.publications, academic: resumeData.academic, references: resumeData.references, custom });
   }
 
   function newEntryId(prefix) {
     return prefix + '-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
-  }
-
-  function renderResumeDataToHTML(data, templateId) {
-    const p = data.personal || {};
-    const style = TPL.getTemplateStyle(templateId);
-    const pdfApi = (typeof window !== 'undefined' && window.ApplyReadyPDF) || (typeof require === 'function' ? require('./pdf-engine.js') : null);
-    const bulletLines = pdfApi ? pdfApi.bulletLines : text => String(text || '').split(/\r?\n|\r/).map(l => l.trim().replace(/^[-*•]\s*/, '')).filter(Boolean);
-    const optionalEntries = pdfApi ? pdfApi.optionalEntries : () => [];
-    const vis = data.sectionVisibility || {};
-    const visible = key => vis[key] !== false;
-    const t = value => (typeof value === 'string' ? value.trim() : '');
-    const heading = text => `<h3 class="resume-section-title">${escapeHTML(text)}</h3>`;
-    const bulletList = items => items.length ? `<ul class="resume-bullets">${items.map(l => `<li>${escapeHTML(l)}</li>`).join('')}</ul>` : '';
-    const entryHeader = (left, right) => {
-      if (!left && !right) return '';
-      return `<div class="resume-entry-header">${left ? `<span>${left}</span>` : ''}${right ? `<span class="resume-entry-meta">${right}</span>` : ''}</div>`;
-    };
-
-    const contactItems = [];
-    if (t(p.phone)) contactItems.push({ text: t(p.phone), href: 'tel:' + t(p.phone).replace(/[^\d+]/g, '') });
-    if (t(p.email)) contactItems.push({ text: t(p.email), href: 'mailto:' + t(p.email) });
-    if (t(p.location)) contactItems.push({ text: t(p.location) });
-    for (const key of ['linkedin', 'github', 'website']) if (t(p[key])) contactItems.push({ text: t(p[key]), href: sanitizeHref(t(p[key])) });
-
-    const contactHtml = contactItems.map((item, idx) => {
-      const inner = item.href && item.href !== '#' ? `<a href="${escapeHTML(item.href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(item.text)}</a>` : escapeHTML(item.text);
-      return `<span class="resume-contact-item">${inner}</span>` + (idx < contactItems.length - 1 ? `<span class="resume-contact-sep" aria-hidden="true">${escapeHTML(style.contactSeparator)}</span>` : '');
-    }).join('');
-
-    const sections = {};
-    const summaryText = t(data.summary);
-    if (summaryText && visible('summary')) {
-      sections.summary = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'summary'))}<p class="resume-summary">${escapeHTML(summaryText)}</p></section>`;
-    }
-
-    const exp = (data.experience || []).filter(x => x && (t(x.role) || t(x.company) || t(x.duration) || t(x.location) || bulletLines(x.bulletsText).length));
-    if (exp.length && visible('experience')) {
-      const items = exp.map(item => `<div class="resume-entry">${entryHeader(escapeHTML([t(item.role), t(item.company)].filter(Boolean).join(' | ')), escapeHTML([t(item.duration), t(item.location)].filter(Boolean).join(' • ')))}${bulletList(bulletLines(item.bulletsText))}</div>`).join('');
-      sections.experience = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'experience'))}<div>${items}</div></section>`;
-    }
-
-    const edu = (data.education || []).filter(x => x && (t(x.degree) || t(x.institution) || t(x.duration) || t(x.location) || t(x.score)));
-    if (edu.length && visible('education')) {
-      const items = edu.map(item => `<div class="resume-entry">${entryHeader(escapeHTML([t(item.degree), t(item.institution)].filter(Boolean).join(' — ')), escapeHTML([t(item.duration), t(item.location), t(item.score)].filter(Boolean).join(' • ')))}</div>`).join('');
-      sections.education = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'education'))}<div>${items}</div></section>`;
-    }
-
-    const proj = (data.projects || []).filter(x => x && (t(x.name) || t(x.tech) || t(x.link) || bulletLines(x.bulletsText).length));
-    if (proj.length && visible('projects')) {
-      const items = proj.map(item => {
-        const href = sanitizeHref(t(item.link));
-        const link = t(item.link) ? (href !== '#' ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(t(item.link))}</a>` : escapeHTML(t(item.link))) : '';
-        const name = t(item.name);
-        const tech = t(item.tech);
-        const titleHtml = name
-          ? escapeHTML(name) + (tech ? ` <span class="resume-entry-tech">| ${escapeHTML(tech)}</span>` : '')
-          : (tech ? escapeHTML(tech) : '');
-        return `<div class="resume-entry">${entryHeader(titleHtml, link)}${bulletList(bulletLines(item.bulletsText))}</div>`;
-      }).join('');
-      sections.projects = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'projects'))}<div>${items}</div></section>`;
-    }
-
-    const s = data.skills || {};
-    const skillLabels = TPL.getSkillLabels(templateId, data);
-    const skillRows = Array.isArray(s.categories)
-      ? s.categories.filter(c => c && t(c.name) && t(c.items)).map(c => ({ label: t(c.name).replace(/:\s*$/, ''), val: t(c.items) }))
-      : ['languages', 'frameworks', 'tools', 'other'].filter(key => t(s[key])).map(key => ({ label: String(skillLabels[key] || '').replace(/:\s*$/, ''), val: t(s[key]) }));
-    if (skillRows.length && visible('skills')) {
-      sections.skills = `<section class="resume-section">${heading(TPL.getSectionTitle(data, templateId, 'skills'))}<div>${skillRows.map(r => `<div class="resume-skills-row"><span class="skills-category">${escapeHTML(r.label)}: </span><span>${escapeHTML(r.val)}</span></div>`).join('')}</div></section>`;
-    }
-
-    for (const key of ['certifications', 'achievements', 'volunteering']) {
-      const lines = optionalEntries(data, key);
-      if (lines.length && visible(key)) sections[key] = `<section class="resume-section">${heading(TPL.getSectionLabel(templateId, key))}<div>${lines.map(line => `<div class="resume-entry resume-list-entry">${escapeHTML(line)}</div>`).join('')}</div></section>`;
-    }
-    const langs = optionalEntries(data, 'languages');
-    if (langs.length && visible('languages')) sections.languages = `<section class="resume-section">${heading(TPL.getSectionLabel(templateId, 'languages'))}<p class="resume-summary">${escapeHTML(langs.join(' • '))}</p></section>`;
-    if (visible('academic')) {
-      sections.academic = ['publications', 'teaching', 'presentations', 'grants'].map(key => {
-        const lines = optionalEntries(data, key);
-        return lines.length ? `<section class="resume-section">${heading(TPL.getSectionLabel(templateId, key))}<div>${lines.map(line => `<div class="resume-entry resume-list-entry">${escapeHTML(line)}</div>`).join('')}</div></section>` : '';
-      }).join('');
-    }
-
-    const order = SCHEMA.normalizeSectionOrder(data.design && data.design.sectionOrder);
-    const orderedHtml = order.map(k => sections[k] || '').join('');
-    const name = t(p.fullName) || 'YOUR NAME';
-
-    return `
-      <header class="resume-header">
-        <div class="resume-name">${escapeHTML(style.nameCase === 'upper' ? name.toUpperCase() : name)}</div>
-        ${t(p.targetTitle) ? `<div class="resume-target-title">${escapeHTML(t(p.targetTitle))}</div>` : ''}
-        ${contactHtml ? `<div class="resume-contact-line">${contactHtml}</div>` : ''}
-      </header>
-      <div>${orderedHtml}</div>
-    `;
-  }
-
-  function renderTemplateIntoContainer(sheet, templateId, data) {
-    const tmpl = TEMPLATES[templateId] || TEMPLATES['classic-professional'];
-    const style = TPL.getTemplateStyle(templateId);
-    const fontClass = ((data.design && data.design.fontFamily) || tmpl.fontFamily) === 'sans' ? 'font-sans' : 'font-serif';
-    const density = (data.design && data.design.density) || tmpl.density || 'standard';
-    const fontSize = (data.design && data.design.fontSize) || 'standard';
-    const pageSize = (data.design && data.design.pageSize) || 'a4';
-    const sourceClass = sheet.id === 'resumeSheet' ? ' resume-source-sheet' : '';
-    const styleClasses = [`header-${style.headerAlign}`, `header-rule-${style.headerRule}`, `heading-rule-${style.headingRule}`, `dates-${style.datePlacement}`].join(' ');
-
-    sheet.className = `ats-resume-sheet template-${templateId} page-${pageSize} density-${density} font-size-${fontSize} ${fontClass} ${styleClasses}${sourceClass}`;
-    sheet.style.setProperty('--resume-heading-color', '#' + style.headingHex);
-    sheet.style.setProperty('--resume-rule-color', '#' + style.ruleHex);
-    sheet.style.setProperty('--resume-header-rule-color', '#' + style.headerRuleHex);
-    sheet.style.setProperty('--resume-link-color', '#' + style.linkHex);
-    sheet.style.setProperty('--resume-meta-color', '#' + style.metaHex);
-    sheet.innerHTML = renderResumeDataToHTML(data, templateId);
   }
 
   // Share PDF line positions and page breaks with the live preview. SVG text
@@ -762,14 +612,27 @@
       title.textContent = `${tmpl.name} | Full template preview`;
     }
 
-    const sample = SCHEMA.migrate(SAMPLE_DATA);
+    // Student templates are shown with a student's resume; the others with the general sample.
+    const student = tmpl.group === 'students';
+    const sample = SCHEMA.migrate(student ? STUDENT_SAMPLE : SAMPLE_DATA);
     sample.template = templateId;
     sample.design.templateId = templateId;
     sample.design.fontFamily = tmpl.fontFamily;
     sample.design.density = tmpl.density || 'standard';
     sample.design.pageSize = resumeData.design.pageSize || 'a4';
-    sample.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
-    Object.assign(sample.sectionVisibility, tmpl.defaultVisibility || {});
+    Object.assign(sample.sectionVisibility, tmpl.defaultVisibility || {}, student ? STUDENT_SAMPLE.sectionVisibility : {});
+    // The sample shows the section order this resume will have with the template: the template's
+    // own order, or the person's order when they have arranged the sections themselves.
+    const keepsOwnOrder = orderIsOwn(resumeData);
+    sample.design.sectionOrder = keepsOwnOrder
+      ? SCHEMA.normalizeSectionOrder(SCHEMA.sectionKeys(resumeData).filter(key => !SCHEMA.isCustomKey(key)), sample)
+      : recommendedOrderFor(templateId, sample);
+    const note = getEl('tmplModalNote');
+    if (note) {
+      note.textContent = `${student ? 'A sample student resume' : 'Sample content'}, for illustration. Choosing this template keeps everything you wrote${keepsOwnOrder
+        ? ' and the section order you set yourself, as shown here.'
+        : ', and your sections follow the order shown here.'}`;
+    }
     // Draw the first page with the export engine so the preview is the download.
     try {
       const doc = window.ApplyReadyPDF.generateResumePDF(sample);
@@ -856,7 +719,7 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Tab' && modal && !modal.classList.contains('hidden')) {
-        const buttons = Array.from(modal.querySelectorAll('button:not(:disabled)'));
+        const buttons = Array.from(modal.querySelectorAll('button:not(:disabled), [tabindex="0"]'));
         const first = buttons[0], last = buttons[buttons.length - 1];
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
@@ -870,16 +733,26 @@
     });
   }
 
-  function restoreListFocus(listId, targetId, preferredAction, fallbackAddBtnId) {
+  // After a move or duplicate, focus stays in the same entry: the pressed button, or once the entry
+  // reaches the top or the bottom (and that button is disabled) the opposite move button. A move is
+  // announced with the entry's new position.
+  function restoreListFocus(listId, targetId, preferredAction, fallbackAddBtnId, noun) {
     setTimeout(() => {
       const list = getEl(listId);
       if (!list) return;
       if (targetId) {
         const item = list.querySelector(`.dynamic-item[data-id="${targetId}"]`);
         if (item) {
-          const btn = item.querySelector(`button[data-action="${preferredAction}"]`) || item.querySelector('button');
-          if (btn && !btn.disabled) {
+          const opposite = preferredAction.startsWith('move-up-') ? preferredAction.replace('move-up-', 'move-down-')
+            : preferredAction.startsWith('move-down-') ? preferredAction.replace('move-down-', 'move-up-') : '';
+          const btn = [`button[data-action="${preferredAction}"]`, opposite && `button[data-action="${opposite}"]`, '.entry__toggle', 'button']
+            .filter(Boolean).map(sel => item.querySelector(sel)).find(b => b && !b.disabled);
+          if (btn) {
             btn.focus();
+            if (noun) {
+              const items = Array.from(list.querySelectorAll(':scope > .dynamic-item'));
+              announce(`${noun[0].toUpperCase()}${noun.slice(1)} moved to position ${items.indexOf(item) + 1} of ${items.length}.`);
+            }
             return;
           }
         }
@@ -960,7 +833,7 @@
           <span class="template-thumb-wrap">${svgThumb}</span>
           <span class="template-meta-row">
             <strong class="template-card-title">${escapeHTML(tmpl.name)}</strong>
-            <span class="template-badge">${escapeHTML(tmpl.badge || 'ATS')}</span>
+            <span class="template-badge">${escapeHTML(tmpl.badge || '')}</span>
             <span class="template-check" aria-hidden="true"><i class="fa-solid fa-check"></i> In use</span>
           </span>
           <span class="template-card-desc">${escapeHTML(tmpl.description)}</span>
@@ -996,6 +869,9 @@
     if (!TEMPLATES[templateId]) return;
     pushHistoryState();
 
+    const previousTemplate = resumeData.template;
+    const previousOrder = SCHEMA.sectionKeys(resumeData);
+    const previousLabels = TPL.getSkillLabels(previousTemplate, resumeData);
     resumeData.template = templateId;
     resumeData.design.templateId = templateId;
     const tmpl = TEMPLATES[templateId];
@@ -1004,35 +880,24 @@
     if (tmpl.fontFamily) resumeData.design.fontFamily = tmpl.fontFamily;
     if (tmpl.density) resumeData.design.density = tmpl.density;
 
-    const btnApplyRecommended = getEl('btnApplyRecommendedOrder');
+    // The template's section order is part of what it promises, so it applies unless the person
+    // has arranged the sections by hand. The note under the card says what changed and undoes it.
+    if (Array.isArray(tmpl.recommendedOrder) && !orderIsOwn(resumeData)) {
+      resumeData.design.sectionOrder = recommendedOrderFor(templateId, resumeData);
+      resumeData.design.orderCustom = false;
+    }
 
-    if (tmpl.recommendedOrder && Array.isArray(tmpl.recommendedOrder)) {
-      if (isDocumentEmpty()) {
-        // Automatically apply recommended order for new empty documents
-        resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
-        if (btnApplyRecommended) btnApplyRecommended.classList.add('hidden');
-      } else {
-        // Document has content: do not overwrite user's section order silently.
-        const currentOrder = resumeData.design.sectionOrder || [];
-        const isDifferent = JSON.stringify(currentOrder) !== JSON.stringify(tmpl.recommendedOrder);
-        if (btnApplyRecommended) {
-          if (isDifferent) {
-            btnApplyRecommended.classList.remove('hidden');
-            btnApplyRecommended.innerHTML = `<i aria-hidden="true" class="fa-solid fa-arrows-rotate"></i> Apply ${escapeHTML(tmpl.name)}'s Recommended Section Order`;
-            btnApplyRecommended.onclick = () => {
-              pushHistoryState();
-              resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(tmpl.recommendedOrder);
-              renderSectionOrderControls();
-              renderResumePreview();
-              btnApplyRecommended.classList.add('hidden');
-            };
-          } else {
-            btnApplyRecommended.classList.add('hidden');
-          }
-        }
-      }
-    } else if (btnApplyRecommended) {
-      btnApplyRecommended.classList.add('hidden');
+    // Skill rows the person has filled in keep the label they were written under. Otherwise a
+    // template would silently turn "Core Competencies: Python, SQL" into "Leadership: Python, SQL".
+    const keptLabels = [];
+    if (previousTemplate !== templateId) {
+      const next = TPL.getSkillLabels(templateId, resumeData);
+      const custom = resumeData.skillLabels && typeof resumeData.skillLabels === 'object' ? resumeData.skillLabels : (resumeData.skillLabels = {});
+      SKILL_KEYS.forEach(key => {
+        const filled = typeof resumeData.skills[key] === 'string' && resumeData.skills[key].trim();
+        const named = typeof custom[key] === 'string' && custom[key].trim();
+        if (filled && !named && next[key] !== previousLabels[key]) { custom[key] = previousLabels[key]; keptLabels.push(key); }
+      });
     }
 
     // Update gallery UI active states
@@ -1047,6 +912,102 @@
     updateTemplateFieldLabels();
     renderResumePreview();
     runResumeReview();
+    showTemplateNote(previousOrder, keptLabels);
+  }
+
+  const SKILL_KEYS = ['languages', 'frameworks', 'tools', 'other'];
+  // Names of the editor's sections, as review findings refer to them.
+  const SECTION_NAMES = {
+    personal: 'Contact details', summary: 'Professional summary', experience: 'Work experience', education: 'Education', skills: 'Skills', projects: 'Projects',
+    certifications: 'Certifications', achievements: 'Achievements', volunteering: 'Leadership and volunteering', languages: 'Languages', publications: 'Publications',
+    academic: 'Academic and research', references: 'References', custom: 'Custom sections'
+  };
+  // A template's order for a resume. A template that hides the summary by default (or does not
+  // place it) still keeps a written summary at the top rather than after every other section:
+  // choosing a template does not hide the summary, so its place must stay where a reader expects it.
+  function recommendedOrderFor(templateId, data) {
+    const tmpl = TEMPLATES[templateId] || {};
+    const order = tmpl.recommendedOrder || [];
+    const hidesSummary = !order.includes('summary') || (tmpl.defaultVisibility && tmpl.defaultVisibility.summary === false);
+    return SCHEMA.normalizeSectionOrder(hidesSummary ? ['summary', ...order.filter(key => key !== 'summary')] : order, data);
+  }
+
+  // Whether the person arranged the sections themselves. Resumes saved before this was recorded
+  // count as arranged by hand only when their order is not the recommended order of any template.
+  function orderIsOwn(data) {
+    if (typeof data.design.orderCustom === 'boolean') return data.design.orderCustom;
+    const current = JSON.stringify(SCHEMA.sectionKeys(data));
+    return !Object.keys(TEMPLATES).some(id => Array.isArray(TEMPLATES[id].recommendedOrder)
+      && [recommendedOrderFor(id, data), SCHEMA.normalizeSectionOrder(TEMPLATES[id].recommendedOrder, data)].some(order => JSON.stringify(order) === current));
+  }
+
+  // The headings of the sections that print, in order, for messages ("Education, Key Projects, ...").
+  function shownSectionNames(order) {
+    const names = sectionLabels();
+    const shown = order.filter(key => {
+      if (!names[key]) return false;
+      if (SCHEMA.isCustomKey(key)) { const s = (resumeData.customSections || []).find(c => SCHEMA.customKey(c.id) === key); return !!s && s.visible !== false; }
+      return resumeData.sectionVisibility[key] !== false;
+    }).map(key => names[key]);
+    return shown.length > 6 ? shown.slice(0, 6).join(', ') + ' and more' : shown.join(', ');
+  }
+
+  // A short note under the chosen template card: what choosing it did to the section order and
+  // the skill labels, with a way back. An empty resume has nothing to rearrange, so it gets none.
+  function showTemplateNote(previousOrder, keptLabels) {
+    document.querySelectorAll('.template-note').forEach(el => el.remove());
+    if (isDocumentEmpty()) return;
+    const tmpl = TEMPLATES[resumeData.template];
+    const card = document.querySelector(`#templateGalleryGrid .template-card[data-template-id="${resumeData.template}"]`);
+    if (!tmpl || !card) return;
+    const order = SCHEMA.sectionKeys(resumeData);
+    const changed = JSON.stringify(order) !== JSON.stringify(previousOrder);
+    const recommended = recommendedOrderFor(resumeData.template, resumeData);
+    const parts = [], spoken = [];
+    const say = (text, button) => { spoken.push(text); parts.push(`<p>${escapeHTML(text)}</p>${button || ''}`); };
+    if (changed) {
+      say(`Your sections now follow this template's order: ${shownSectionNames(order)}.`, '<button type="button" class="btn btn-sm" data-note="keep-order">Keep my previous order</button>');
+    } else if (JSON.stringify(order) !== JSON.stringify(recommended)) {
+      say(`Your own section order is kept. This template suggests: ${shownSectionNames(recommended)}.`, '<button type="button" class="btn btn-sm" data-note="use-order">Use this template\'s order</button>');
+    }
+    if (keptLabels.length) {
+      const labels = TPL.getSkillLabels(resumeData.template, resumeData);
+      say(`Your skill rows keep their labels (${keptLabels.map(key => labels[key]).join(', ')}). To use this template's wording instead, clear the label boxes in Skills.`);
+    }
+    if (!parts.length) return;
+    const note = document.createElement('div');
+    note.className = 'template-note';
+    note.innerHTML = parts.join('');
+    card.appendChild(note);
+    announce(spoken.join(' '));
+    const restore = note.querySelector('[data-note="keep-order"]');
+    if (restore) restore.addEventListener('click', () => {
+      pushHistoryState();
+      resumeData.design.sectionOrder = SCHEMA.normalizeSectionOrder(previousOrder, resumeData);
+      resumeData.design.orderCustom = true;
+      renderSectionOrderControls();
+      renderResumePreview();
+      note.innerHTML = `<p>Your previous section order is back: ${escapeHTML(shownSectionNames(SCHEMA.sectionKeys(resumeData)))}.</p>`;
+      note.tabIndex = -1;
+      note.focus();
+      announce(note.textContent.trim());
+    });
+    const use = note.querySelector('[data-note="use-order"]');
+    if (use) use.addEventListener('click', () => {
+      applyRecommendedOrder();
+      note.innerHTML = `<p>Your sections now follow this template's order: ${escapeHTML(shownSectionNames(SCHEMA.sectionKeys(resumeData)))}.</p>`;
+      note.tabIndex = -1;
+      note.focus();
+      announce(note.textContent.trim());
+    });
+  }
+
+  // Polite screen-reader updates for changes that move things around (reordering, template notes).
+  function announce(message) {
+    const region = getEl('rbAnnounce');
+    if (!region) return;
+    region.textContent = '';
+    setTimeout(() => { region.textContent = message; }, 50);
   }
 
   /**
@@ -1054,7 +1015,7 @@
    */
   function populateAllFormFields() {
     const p = resumeData.personal || {};
-    if (getEl('fullName')) getEl('fullName').value = p.fullName || '';
+    if (getEl('fullName')) { getEl('fullName').value = p.fullName || ''; clearFullNameError(); }
     if (getEl('targetTitle')) getEl('targetTitle').value = p.targetTitle || '';
     if (getEl('email')) getEl('email').value = p.email || '';
     if (getEl('phone')) getEl('phone').value = p.phone || '';
@@ -1081,7 +1042,7 @@
       input.value = TPL.getSectionTitle(resumeData, resumeData.template, key);
       input.placeholder = TPL.getSectionLabel(resumeData.template, key);
     });
-    ['certifications', 'achievements', 'volunteering', 'languages'].forEach(key => {
+    ['certifications', 'achievements', 'volunteering', 'languages', 'publications', 'references'].forEach(key => {
       const text = TPL.getSectionLabel(resumeData.template, key);
       const header = document.querySelector(`#sec-${key} .accordion-header > span`);
       if (header && header.lastChild && header.lastChild.nodeType === 3) header.lastChild.textContent = text;
@@ -1323,12 +1284,14 @@
           </div>`);
       });
     }
+    if (show('sec-publications', vis.publications)) {
+      fill('publicationsList', resumeData.publications || [], (p, idx) => optionalItem(`Publication ${idx + 1}`, 'remove-pub', idx, `<div class="field">
+            <label class="field-label" for="pub-text-${idx}">Full citation</label>
+            <textarea id="pub-text-${idx}" class="textarea item-pub-text" data-index="${idx}" rows="3" placeholder="Authors, title, journal or publisher, year">${escapeHTML(p.title || p.citation)}</textarea>
+          </div>`));
+    }
     if (show('sec-academic', vis.academic)) {
       const academic = resumeData.academic || {};
-      fill('academicPubsList', academic.publications || [], (p, idx) => optionalItem(`Publication ${idx + 1}`, 'remove-pub', idx, `<div class="field">
-            <label class="field-label" for="pub-text-${idx}">Full citation</label>
-            <textarea id="pub-text-${idx}" class="textarea item-pub-text" data-index="${idx}" rows="3" placeholder="Authors, title, journal, year">${escapeHTML(p.title || p.citation)}</textarea>
-          </div>`));
       fill('academicTeachingList', academic.teaching || [], (t, idx) => optionalItem(t.role || t.course || `Teaching entry ${idx + 1}`, 'remove-teach', idx, `
           <div class="field-row">
             ${optField('teach-role', idx, 'Role or course', 'item-teach-role', t.role || t.course, 'e.g. Teaching assistant, Statistics')}
@@ -1354,6 +1317,7 @@
           ${optField('grant-year', idx, 'Year', 'item-grant-year', rest.year, 'e.g. 2024')}`);
       });
     }
+    if (EXTRA()) EXTRA().render();
     labelOptionalFields();
   }
 
@@ -1402,6 +1366,46 @@
     }
 
     renderSectionOrderControls();
+    const apply = getEl('btnApplyRecommendedOrder');
+    if (apply) apply.addEventListener('click', () => {
+      if (!applyRecommendedOrder()) return;
+      document.querySelectorAll('.template-note').forEach(el => el.remove());
+      const first = document.querySelector('#sectionOrderContainer button:not(:disabled), #sectionOrderContainer input');
+      if (first) first.focus();
+      announce(`Sections now follow the ${TEMPLATES[resumeData.template].name} order.`);
+    });
+  }
+
+  // Put the sections in the open template's recommended order; choosing templates then follows
+  // their orders again until the person rearranges sections by hand.
+  function applyRecommendedOrder() {
+    const tmpl = TEMPLATES[resumeData.template];
+    if (!tmpl || !Array.isArray(tmpl.recommendedOrder)) return false;
+    pushHistoryState();
+    resumeData.design.sectionOrder = recommendedOrderFor(resumeData.template, resumeData);
+    resumeData.design.orderCustom = false;
+    renderSectionOrderControls();
+    renderResumePreview();
+    return true;
+  }
+
+  // Heading of every section as the resume prints it, by section key.
+  function sectionLabels() {
+    const labels = { academic: 'Academic & Research (CV)' };
+    ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => { labels[key] = TPL.getSectionTitle(resumeData, resumeData.template, key); });
+    ['certifications', 'achievements', 'volunteering', 'languages', 'publications', 'references'].forEach(key => { labels[key] = TPL.getSectionLabel(resumeData.template, key); });
+    (resumeData.customSections || []).forEach(s => { labels[SCHEMA.customKey(s.id)] = s.title.trim() || 'Custom section'; });
+    return labels;
+  }
+
+  // Offer the template's own section order whenever the resume uses a different one.
+  function updateRecommendedOrderButton() {
+    const apply = getEl('btnApplyRecommendedOrder');
+    if (!apply) return;
+    const tmpl = TEMPLATES[resumeData.template] || {};
+    const differs = Array.isArray(tmpl.recommendedOrder) && JSON.stringify(SCHEMA.sectionKeys(resumeData)) !== JSON.stringify(recommendedOrderFor(resumeData.template, resumeData));
+    apply.classList.toggle('hidden', !differs);
+    if (differs) apply.innerHTML = `<i aria-hidden="true" class="fa-solid fa-arrows-rotate"></i> Use the ${escapeHTML(tmpl.name)} section order`;
   }
 
   function updateDesignControlsFromState() {
@@ -1430,17 +1434,14 @@
     if (!container) return;
     container.innerHTML = '';
 
-    const order = (resumeData.design && Array.isArray(resumeData.design.sectionOrder))
-      ? resumeData.design.sectionOrder
-      : ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
-
-    const labels = { academic: 'Academic & Research (CV)' };
-    ['summary', 'experience', 'education', 'projects', 'skills'].forEach(key => { labels[key] = TPL.getSectionTitle(resumeData, resumeData.template, key); });
-    ['certifications', 'achievements', 'volunteering', 'languages'].forEach(key => { labels[key] = TPL.getSectionLabel(resumeData.template, key); });
+    const order = SCHEMA.sectionKeys(resumeData);
+    updateRecommendedOrderButton();
+    const labels = sectionLabels();
 
     order.forEach((key, index) => {
       if (!labels[key]) return;
-      const isVis = resumeData.sectionVisibility[key] !== false;
+      const custom = SCHEMA.isCustomKey(key) ? (resumeData.customSections || []).find(s => SCHEMA.customKey(s.id) === key) : null;
+      const isVis = custom ? custom.visible !== false : resumeData.sectionVisibility[key] !== false;
 
       const row = document.createElement('div');
       row.className = 'dynamic-item section-order-row';
@@ -1461,7 +1462,8 @@
 
       row.querySelector('.chk-section-vis').addEventListener('change', (e) => {
         pushHistoryState();
-        resumeData.sectionVisibility[key] = e.target.checked;
+        if (custom) custom.visible = e.target.checked;
+        else resumeData.sectionVisibility[key] = e.target.checked;
         renderOptionalSections();
         renderResumePreview();
         runResumeReview();
@@ -1483,19 +1485,20 @@
             order[idx + 1] = temp;
           }
           resumeData.design.sectionOrder = order;
+          resumeData.design.orderCustom = true;
           renderSectionOrderControls();
           renderResumePreview();
-          setTimeout(() => {
-            const newIdx = (action === 'order-up') ? idx - 1 : idx + 1;
-            const c = getEl('sectionOrderContainer');
-            if (c) {
-              const rows = c.querySelectorAll('.dynamic-item');
-              if (rows[newIdx]) {
-                const b = rows[newIdx].querySelector(`button[data-action="${action}"]`);
-                if (b && !b.disabled) b.focus();
-              }
-            }
-          }, 20);
+          // Focus stays on the moved row: the same button, or the other one once the row reaches the
+          // top or the bottom and the pressed button is disabled.
+          const newIdx = (action === 'order-up') ? idx - 1 : idx + 1;
+          const rows = container.querySelectorAll('.section-order-row');
+          const moved = rows[newIdx];
+          if (moved) {
+            const other = action === 'order-up' ? 'order-down' : 'order-up';
+            const target = [`button[data-action="${action}"]`, `button[data-action="${other}"]`, '.chk-section-vis'].map(sel => moved.querySelector(sel)).find(b => b && !b.disabled);
+            if (target) target.focus();
+            announce(`${labels[order[newIdx]]} moved to position ${newIdx + 1} of ${rows.length}.`);
+          }
         });
       });
 
@@ -1515,7 +1518,7 @@
     const skills = resumeData.skills || {};
     const skillCount = ['languages', 'frameworks', 'tools', 'other'].reduce((n, k) => n + t(skills[k]).split(',').filter(x => x.trim()).length, 0);
     const academic = resumeData.academic || {};
-    const academicCount = ['publications', 'teaching', 'presentations', 'grants'].reduce((n, k) => n + (academic[k] || []).length, 0);
+    const academicCount = ['teaching', 'presentations', 'grants'].reduce((n, k) => n + (academic[k] || []).length, 0);
     const meta = {
       personal: t(p.fullName) || '',
       summary: words ? `${words} words` : '',
@@ -1527,8 +1530,10 @@
       achievements: count(resumeData.achievements, 'item', 'items'),
       volunteering: count(resumeData.volunteering, 'entry', 'entries'),
       languages: count(resumeData.languages, 'language', 'languages'),
+      publications: count(resumeData.publications, 'publication', 'publications'),
       academic: academicCount ? `${academicCount} items` : ''
     };
+    if (EXTRA()) Object.assign(meta, EXTRA().meta());
     document.querySelectorAll('.accordion-meta[data-meta]').forEach(el => {
       const text = meta[el.dataset.meta] || '';
       el.textContent = text || 'Empty';
@@ -1541,7 +1546,19 @@
    */
   let pdfPageCount = 1;
   let visualPageCount = 1;
+  // Typing redraws once the person pauses (layout of every page costs tens of milliseconds on a slow
+  // computer). The data itself is updated on every keystroke, so exports never lag behind.
+  const RENDER_DELAY = 180;
+  let renderTimer = null;
+  function scheduleRender() {
+    clearTimeout(renderTimer);
+    renderTimer = setTimeout(renderResumePreview, RENDER_DELAY);
+    // The counts in the section headers are cheap, so they follow every keystroke.
+    updateSectionMeta();
+  }
   function renderResumePreview() {
+    clearTimeout(renderTimer);
+    renderTimer = null;
     const sheet = getEl('resumeSheet');
     if (!sheet) return;
     renderTemplateIntoContainer(sheet, resumeData.template, resumeData);
@@ -1557,9 +1574,10 @@
       pdfPageCount = null;
       visualPageCount = renderPaginatedPreview(sheet);
     }
-    saveDraftToStorage();
+    emitChange();
     updatePreviewScale();
     updateSectionMeta();
+    refreshReview();
   }
 
   /**
@@ -1637,7 +1655,7 @@
       const field = name => (exp.id ? `exp-${name}-${exp.id}` : undefined);
       if (!t(exp.role)) add('warning', `Experience "${label}" has no job title.`, 'experience', field('role'));
       if (!t(exp.company)) add('info', `Experience "${label}" has no company or organisation.`, 'experience', field('comp'));
-      if (!t(exp.duration)) add('warning', `Experience "${label}" has no dates. Applicant tracking systems use dates to calculate experience.`, 'experience', field('dur'));
+      if (!t(exp.duration)) add('warning', `Experience "${label}" has no dates. Recruiters and many applicant tracking systems use dates to work out your experience.`, 'experience', field('dur'));
       if (!splitBullets(exp.bulletsText).length) add('info', `Experience "${label}" has no bullet points describing your work.`, 'experience', field('bul'));
       if (splitBullets(exp.bulletsText).length > 8) add('info', `Experience "${label}" has ${splitBullets(exp.bulletsText).length} bullets. Keep the strongest 3 to 6.`, 'experience', field('bul'));
     });
@@ -1667,11 +1685,172 @@
     if (/lorem ipsum|\[company name\]|\[your name\]|xxx|todo:/.test(strPayload)) add('warning', 'Placeholder text detected (for example "[Company Name]" or "Lorem ipsum"). Replace it before you send the file.', 'summary');
     if (pageCount && pageCount > 2 && data.template !== 'academic-cv') add('warning', `Your PDF is ${pageCount} pages. Most employers expect one or two pages; consider trimming older roles.`, 'experience');
     else if (pageCount === 2 && experience.length <= 1 && education.length <= 2) add('info', 'Your PDF runs to two pages with little experience. Try the Compact density or 10 pt text to fit one page.', 'experience');
-    if (!pageCount) add('info', 'Some characters need a Unicode font, so PDF download uses your browser\'s Save as PDF. Word and text downloads keep every character.', 'personal');
+    // Characters outside the PDF's built-in fonts (₹, arrows, emoji, Indian scripts): name them and
+    // the first field that has them, and offer a plain replacement where one exists.
+    const odd = findUnsupportedText(data);
+    if (odd.length) {
+      const chars = [...new Set(odd.flatMap(x => x.chars))];
+      const more = odd.length > 1 ? ` (and ${odd.length - 1} more ${odd.length === 2 ? 'place' : 'places'})` : '';
+      issues.push({
+        type: 'warning',
+        message: `${capital(quoteList(chars))} cannot be written with the PDF's built-in fonts, so Download PDF opens your browser's print dialog instead, where Save as PDF keeps every character. Word and text downloads keep them as well.`,
+        section: odd[0].section,
+        where: odd[0].where + more,
+        targetField: odd[0].field,
+        replace: chars.some(c => REPLACEMENTS[c]) ? chars.filter(c => REPLACEMENTS[c]) : null
+      });
+    } else if (!pageCount) add('info', 'Some characters need a Unicode font, so PDF download uses your browser\'s Save as PDF. Word and text downloads keep every character.', 'personal');
 
     if (data.template === 'academic-cv') add('info', 'Academic / Research CV is designed for comprehensive multi-page dossiers with publications and teaching.', 'academic');
 
     return issues;
+  }
+
+  // Plain stand-ins for common symbols the PDF fonts lack. Each is offered, never applied silently.
+  const REPLACEMENTS = {
+    '₹': { pattern: /₹\s*/g, with: 'Rs. ', label: 'Rs.' },
+    '→': { pattern: /\s*→\s*/g, with: ' - ', label: '-' },
+    '➔': { pattern: /\s*➔\s*/g, with: ' - ', label: '-' },
+    '⇒': { pattern: /\s*⇒\s*/g, with: ' - ', label: '-' },
+    '✓': { pattern: /✓\s*/g, with: '', label: 'nothing' },
+    '✔': { pattern: /✔\s*/g, with: '', label: 'nothing' },
+    '≥': { pattern: /≥/g, with: '>=', label: '>=' },
+    '≤': { pattern: /≤/g, with: '<=', label: '<=' }
+  };
+  // Writing systems named as a whole ("Devanagari text") rather than letter by letter: their vowel
+  // signs and viramas mean nothing on their own. Keys are Unicode script names.
+  const SCRIPT_NAMES = {
+    Devanagari: 'Devanagari', Bengali: 'Bengali', Gurmukhi: 'Gurmukhi', Gujarati: 'Gujarati', Oriya: 'Odia', Tamil: 'Tamil',
+    Telugu: 'Telugu', Kannada: 'Kannada', Malayalam: 'Malayalam', Sinhala: 'Sinhala', Ol_Chiki: 'Ol Chiki', Meetei_Mayek: 'Meetei Mayek',
+    Arabic: 'Arabic', Hebrew: 'Hebrew', Thai: 'Thai', Lao: 'Lao', Khmer: 'Khmer', Myanmar: 'Myanmar', Tibetan: 'Tibetan',
+    Han: 'Chinese or Japanese', Hiragana: 'Japanese', Katakana: 'Japanese', Hangul: 'Korean',
+    Cyrillic: 'Cyrillic', Greek: 'Greek', Armenian: 'Armenian', Georgian: 'Georgian', Ethiopic: 'Ethiopic'
+  };
+  const SCRIPT_TESTS = Object.keys(SCRIPT_NAMES).map(key => [new RegExp(`\\p{Script_Extensions=${key}}`, 'u'), `${SCRIPT_NAMES[key]} text`]);
+  const EMOJI_PART = /[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}\u{FE00}-\u{FE0F}\u{20E3}\u{E0020}-\u{E007F}]/u;
+  // What a reader should look for: "Devanagari text", "emoji", "accent marks", or the character itself.
+  function charGroup(c) {
+    for (const [test, name] of SCRIPT_TESTS) if (test.test(c)) return name;
+    if (EMOJI_PART.test(c)) return 'emoji';
+    if (/\p{M}/u.test(c)) return 'accent marks';
+    return `“${c}”`;
+  }
+  // "Devanagari text and “₹”": scripts and emoji once each, other characters quoted one by one.
+  const quoteList = chars => {
+    const items = [...new Set(chars.map(charGroup))];
+    const shown = items.slice(0, 5);
+    const rest = items.length - shown.length;
+    if (rest) return `${shown.join(', ')} and ${rest} more${items.slice(5).every(item => item.startsWith('“')) ? (rest === 1 ? ' character' : ' characters') : ''}`;
+    return andList(shown);
+  };
+  const andList = items => (items.length === 1 ? items[0] : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`);
+  const capital = text => text.charAt(0).toUpperCase() + text.slice(1);
+  // "replace ₹ with Rs.", "remove ✓": what the Review step's Replace button will do.
+  const replacementPhrase = c => (REPLACEMENTS[c].with === '' ? `remove ${c}` : `replace ${c} with ${REPLACEMENTS[c].label}`);
+
+  /* The message when Download PDF has to fall back to the print dialog. It names what is in the
+     first place found, and offers the Review step's replacement only for characters that have one. */
+  function unsupportedDownloadMessage(odd) {
+    if (!odd.length) return 'Use Save as PDF in the print dialog to preserve all your characters.';
+    const all = [...new Set(odd.flatMap(x => x.chars))];
+    const replaceable = all.filter(c => REPLACEMENTS[c]);
+    const others = odd.length - 1;
+    const more = others ? ` (and ${others} more ${others === 1 ? 'place' : 'places'})` : '';
+    const next = replaceable.length
+      ? `The Review step ${replaceable.length < all.length ? 'shows where the rest is and ' : ''}can ${andList(replaceable.map(replacementPhrase))}`.replace(/\.?$/, '.')
+      : 'The Review step shows where.';
+    return `${capital(quoteList(odd[0].chars))} in ${odd[0].where}${more} cannot go into this PDF, so the print dialog opens: choose Save as PDF there. ${next}`;
+  }
+  const PDF_ENGINE = () => (typeof window !== 'undefined' && window.ApplyReadyPDF) || (typeof require === 'function' ? require('./pdf-engine.js') : null);
+
+  /* Every printed field holding characters the vector PDF cannot write, in reading order:
+     [{ chars, section, where ("Work experience, role 2"), field (the input's id) }]. */
+  function findUnsupportedText(data) {
+    const engine = PDF_ENGINE();
+    if (!engine || !engine.unsupportedCharacters) return [];
+    const vis = data.sectionVisibility || {};
+    const shown = key => vis[key] !== false;
+    const found = [];
+    const check = (value, section, where, field) => {
+      const chars = typeof value === 'string' ? engine.unsupportedCharacters(value) : [];
+      if (chars.length) found.push({ chars, section, where, field });
+    };
+    const each = (items, section, noun, fields) => (Array.isArray(items) ? items : []).forEach((item, i) => {
+      const where = `${noun} ${i + 1}`;
+      if (typeof item === 'string') { check(item, section, where, fields[0][1](item, i)); return; }
+      if (item && typeof item === 'object') fields.forEach(([key, field]) => check(item[key], section, where, field(item, i)));
+    });
+    const p = data.personal || {};
+    [['fullName', 'name'], ['targetTitle', 'headline'], ['email', 'email'], ['phone', 'phone'], ['location', 'location'], ['linkedin', 'LinkedIn'], ['github', 'GitHub'], ['website', 'website']]
+      .forEach(([key, label]) => check(p[key], 'personal', `Contact details, ${label}`, key));
+    for (const key of ['summary', 'experience', 'education', 'projects', 'skills']) if (shown(key)) check(data[key + 'Title'], key, `${SECTION_NAMES[key]}, heading`, key + 'TitleInput');
+    if (shown('summary')) check(data.summary, 'summary', SECTION_NAMES.summary, 'summaryText');
+    if (shown('experience')) each(data.experience, 'experience', 'Work experience, role', [['role', 'role'], ['company', 'comp'], ['duration', 'dur'], ['location', 'loc'], ['bulletsText', 'bul']].map(([key, f]) => [key, item => `exp-${f}-${item.id}`]));
+    if (shown('education')) each(data.education, 'education', 'Education, entry', [['degree', 'deg'], ['institution', 'inst'], ['duration', 'dur'], ['location', 'loc'], ['score', 'score']].map(([key, f]) => [key, item => `edu-${f}-${item.id}`]));
+    if (shown('projects')) each(data.projects, 'projects', 'Projects, project', [['name', 'name'], ['tech', 'tech'], ['link', 'link'], ['bulletsText', 'bul']].map(([key, f]) => [key, item => `proj-${f}-${item.id}`]));
+    if (shown('skills')) {
+      const skills = data.skills || {}, labels = data.skillLabels || {};
+      SKILL_KEYS.forEach((key, i) => {
+        if (!(typeof skills[key] === 'string' && skills[key].trim())) return;
+        const id = key[0].toUpperCase() + key.slice(1);
+        check(labels[key], 'skills', `Skills, row ${i + 1} label`, 'skillLabel' + id);
+        check(skills[key], 'skills', `Skills, row ${i + 1}`, 'skill' + id);
+      });
+    }
+    const at = prefix => (item, i) => `${prefix}-${i}`;
+    if (shown('certifications')) each(data.certifications, 'certifications', 'Certifications, item', [['name', at('cert-name')], ['title', at('cert-name')], ['issuer', at('cert-issuer')], ['year', at('cert-year')]]);
+    if (shown('achievements')) each(data.achievements, 'achievements', 'Achievements, item', [['title', at('ach-text')], ['text', at('ach-text')]]);
+    if (shown('volunteering')) each(data.volunteering, 'volunteering', 'Leadership and volunteering, entry', [['role', at('vol-role')], ['organization', at('vol-org')], ['duration', at('vol-dur')]]);
+    if (shown('languages')) each(data.languages, 'languages', 'Languages, item', [['name', at('lang-name')], ['proficiency', at('lang-prof')]]);
+    if (shown('publications')) each(data.publications, 'publications', 'Publications, item', [['title', at('pub-text')], ['citation', at('pub-text')]]);
+    if (shown('academic')) {
+      const academic = data.academic || {};
+      each(academic.teaching, 'academic', 'Teaching, entry', [['role', at('teach-role')], ['course', at('teach-role')], ['institution', at('teach-inst')], ['term', at('teach-term')]]);
+      each(academic.presentations, 'academic', 'Presentations, entry', [['title', at('pres-title')], ['event', at('pres-event')]]);
+      each(academic.grants, 'academic', 'Grants, entry', [['title', at('grant-title')], ['name', at('grant-title')], ['funder', at('grant-funder')], ['year', at('grant-year')]]);
+    }
+    if (shown('references') && data.referencesOnRequest !== true) each(data.references, 'references', 'References, referee', ['name', 'title', 'organization', 'contact'].map(key => [key, item => `ref-${key === 'organization' ? 'org' : key}-${item.id}`]));
+    (data.customSections || []).filter(s => s && s.visible !== false).forEach(s => {
+      const name = (typeof s.title === 'string' && s.title.trim()) || 'Custom section';
+      check(s.title, 'custom', name + ', heading', `cs-title-${s.id}`);
+      if (s.mode === 'text') check(s.text, 'custom', name, `cs-text-${s.id}`);
+      else each(s.entries, 'custom', name + ', entry', [['title', item => `ce-title-${item.id}`], ['subtitle', item => `ce-sub-${item.id}`], ['date', item => `ce-date-${item.id}`], ['bulletsText', item => `ce-bul-${item.id}`]]);
+    });
+    return found;
+  }
+
+  // Swap the offered stand-ins into every text of the resume (one undo step), then redraw.
+  function replaceUnsupported(chars) {
+    const rules = chars.map(c => REPLACEMENTS[c]).filter(Boolean);
+    if (!rules.length) return;
+    pushHistoryState();
+    let count = 0;
+    const walk = value => {
+      if (typeof value === 'string') return rules.reduce((text, rule) => text.replace(rule.pattern, () => { count++; return rule.with; }), value);
+      if (Array.isArray(value)) return value.map(walk);
+      if (value && typeof value === 'object') { Object.keys(value).forEach(key => { if (key !== 'id') value[key] = walk(value[key]); }); return value; }
+      return value;
+    };
+    walk(resumeData);
+    refreshWholeEditor();
+    notify(`Replaced ${count} ${count === 1 ? 'character' : 'characters'}. You can undo this in the Write step.`);
+  }
+
+  // The count on the Review tab follows every change, not only a visit to the Review step.
+  function updateReviewCount(issues) {
+    const tabCount = getEl('reviewTabCount');
+    if (!tabCount) return;
+    const errors = issues.filter(x => x.type === 'error').length;
+    const open = errors + issues.filter(x => x.type === 'warning').length;
+    tabCount.hidden = !open;
+    tabCount.textContent = open ? String(open) : '';
+    tabCount.className = `tab-count${errors ? ' tab-count--error' : ''}`;
+    tabCount.setAttribute('aria-label', open ? `${open} to check` : '');
+  }
+  function refreshReview() {
+    const pane = getEl('viewReview');
+    if (pane && pane.classList.contains('active')) runResumeReview();
+    else updateReviewCount(generateReviewReport(resumeData, pdfPageCount));
   }
 
   function runResumeReview() {
@@ -1710,15 +1889,7 @@
       pageEstPill.textContent = pdfPageCount ? `${pdfPageCount} PDF page${pdfPageCount > 1 ? 's' : ''}` : 'Browser PDF';
     }
 
-    const tabCount = getEl('reviewTabCount');
-    if (tabCount) {
-      const errors = issues.filter(x => x.type === 'error').length;
-      const open = errors + issues.filter(x => x.type === 'warning').length;
-      tabCount.hidden = !open;
-      tabCount.textContent = open ? String(open) : '';
-      tabCount.className = `tab-count${errors ? ' tab-count--error' : ''}`;
-      tabCount.setAttribute('aria-label', open ? `${open} to check` : '');
-    }
+    updateReviewCount(issues);
 
     renderKeywordMatch();
     checklist.innerHTML = '';
@@ -1739,7 +1910,7 @@
       { type: 'warning', title: 'Worth checking', icon: 'fa-circle-exclamation', label: 'Warning' },
       { type: 'info', title: 'Suggestions', icon: 'fa-circle-info', label: 'Suggestion' }
     ];
-    const WHERE = { personal: 'Contact details', summary: 'Professional summary', experience: 'Work experience', education: 'Education', skills: 'Skills', projects: 'Projects', academic: 'Academic and research' };
+    const WHERE = SECTION_NAMES;
     groups.forEach(group => {
       const groupIssues = issues.filter(x => (x.type === 'error' || x.type === 'warning') ? x.type === group.type : group.type === 'info');
       if (!groupIssues.length) return;
@@ -1755,10 +1926,17 @@
           <i aria-hidden="true" class="fa-solid ${group.icon}"></i>
           <div class="review-item__body">
             <p class="review-item__msg"><span class="sr-only">${group.label}: </span>${escapeHTML(iss.message)}</p>
-            <p class="review-item__where">In ${escapeHTML(WHERE[iss.section] || 'your resume')}</p>
+            <p class="review-item__where">In ${escapeHTML(iss.where || WHERE[iss.section] || 'your resume')}</p>
+            ${iss.replace ? `<button type="button" class="btn btn-sm review-replace-btn">${escapeHTML(iss.replace.map(c => `Replace ${c} with ${REPLACEMENTS[c].label}`).join(', '))}</button>` : ''}
           </div>
-          <button type="button" class="btn btn-sm review-jump-btn" data-target="${iss.targetField || iss.section}" aria-label="Go to ${escapeHTML(WHERE[iss.section] || 'the section')} to fix this">Fix</button>
+          <button type="button" class="btn btn-sm review-jump-btn" data-target="${iss.targetField || iss.section}" aria-label="Go to ${escapeHTML(iss.where || WHERE[iss.section] || 'the section')} to fix this">Fix</button>
         `;
+        const replaceBtn = item.querySelector('.review-replace-btn');
+        if (replaceBtn) replaceBtn.addEventListener('click', () => {
+          replaceUnsupported(iss.replace);
+          const heading = getEl('reviewHeading');
+          if (heading) { heading.tabIndex = -1; heading.focus(); }
+        });
 
         item.querySelector('.review-jump-btn').addEventListener('click', () => {
           // Switch to Content Tab (on a phone, to the editor as well)
@@ -1778,9 +1956,11 @@
                 section.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
               }
               setEntryOpen(target.closest('.entry'), true);
+              // A field inside a closed disclosure (a section heading, a skill label) cannot take focus.
+              for (let box = target.closest('details'); box; box = box.parentElement && box.parentElement.closest('details')) box.open = true;
               if (!iss.targetField) section.querySelector('.accordion-header').focus();
               else target.focus();
-              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              target.scrollIntoView({ behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'), block: 'center' });
             }
           }, 100);
         });
@@ -1795,7 +1975,8 @@
   function withCurrentDesign(next, sectionVisibility) {
     next.template = resumeData.template;
     next.design = Object.assign({}, JSON.parse(JSON.stringify(resumeData.design)), { templateId: resumeData.template });
-    next.design.sectionOrder = SCHEMA.normalizeSectionOrder((TEMPLATES[resumeData.template] || {}).recommendedOrder || next.design.sectionOrder);
+    next.design.sectionOrder = recommendedOrderFor(resumeData.template, next);
+    next.design.orderCustom = false;
     next.sectionVisibility = Object.assign({}, sectionVisibility);
     return next;
   }
@@ -1809,10 +1990,15 @@
     runResumeReview();
   }
 
+  // "Priya_Raghavan_Business_Analyst_Resume.pdf": the name, then the headline up to its first
+  // separator, so versions tailored to different roles do not overwrite each other.
   function downloadName(suffix) {
-    const name = ((resumeData.personal && resumeData.personal.fullName) || '').trim().normalize('NFC')
-      .replace(/[^\p{L}\p{M}\p{N}_-]+/gu, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 60);
-    return `${name || 'Candidate'}_${suffix}`;
+    const part = (value, max) => String(value || '').trim().normalize('NFC')
+      .replace(/[^\p{L}\p{M}\p{N}_-]+/gu, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, max).replace(/_$/, '');
+    const personal = resumeData.personal || {};
+    const name = part(personal.fullName, 60);
+    const headline = part(String(personal.targetTitle || '').split(/\s[-–—]\s|[|•·,;:()/]/)[0], 40);
+    return [name || 'Candidate', headline, suffix].filter(Boolean).join('_');
   }
 
   // Job-description comparison: lists the advert's key terms found in, and
@@ -1895,6 +2081,17 @@
 
     // Fold or unfold an entry from its title row.
     const formPanel = getEl('formPanel');
+    // A text box focused from below scrolls only as far as its caret, which can leave its label and
+    // top under the sticky step bar; bring the whole field into view when it fits.
+    if (formPanel) formPanel.addEventListener('focusin', e => {
+      requestAnimationFrame(() => {
+        const steps = formPanel.querySelector('.rb-steps');
+        if (!steps || document.activeElement !== e.target || e.target === steps || steps.contains(e.target)) return;
+        const box = e.target.getBoundingClientRect();
+        const limit = steps.getBoundingClientRect().bottom + 8;
+        if (box.top < limit && box.bottom > 0 && box.height < window.innerHeight - limit) window.scrollBy(0, box.top - limit);
+      });
+    });
     if (formPanel) formPanel.addEventListener('click', e => {
       const toggle = e.target.closest('[data-entry-toggle]');
       if (toggle) setEntryOpen(toggle.closest('.entry'), toggle.getAttribute('aria-expanded') !== 'true');
@@ -1909,7 +2106,7 @@
       getEl('tabDownload').focus({ preventScroll: true });
     });
     const openExport = getEl('btnOpenExport');
-    if (openExport) openExport.addEventListener('click', () => { getEl('tabEdit').click(); getEl('tabReview').click(); getEl('formPanel').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+    if (openExport) openExport.addEventListener('click', () => { getEl('tabEdit').click(); getEl('tabReview').click(); getEl('formPanel').scrollIntoView({ block: 'start', behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth') }); });
 
     // Quick PDF button
     const btnQuickPDF = getEl('btnQuickPDF');
@@ -1921,7 +2118,7 @@
       if (el) {
         el.addEventListener('input', (e) => {
           setter(e.target.value);
-          renderResumePreview();
+          scheduleRender();
         });
       }
     };
@@ -1946,7 +2143,7 @@
       input.addEventListener('input', () => {
         if (!resumeData.skillLabels || typeof resumeData.skillLabels !== 'object') resumeData.skillLabels = {};
         resumeData.skillLabels[input.dataset.skill] = input.value;
-        renderResumePreview();
+        scheduleRender();
       });
       input.addEventListener('blur', updateTemplateFieldLabels);
     });
@@ -1996,7 +2193,7 @@
       langList.addEventListener('input', handleLangInput);
       langList.addEventListener('click', handleLangAction);
     }
-    const pubsList = getEl('academicPubsList');
+    const pubsList = getEl('publicationsList');
     if (pubsList) {
       pubsList.addEventListener('input', handlePubInput);
       pubsList.addEventListener('click', handlePubAction);
@@ -2091,6 +2288,7 @@
       btnAddOptional.addEventListener('click', () => {
         const val = selectOptional.value;
         if (!val) return;
+        if ((val === 'references' || val === 'custom') && EXTRA()) { EXTRA().add(val); return; }
         pushHistoryState();
         resumeData.sectionVisibility[val] = true;
 
@@ -2100,12 +2298,14 @@
         } else if (val === 'achievements' && (!resumeData.achievements || resumeData.achievements.length === 0)) {
           resumeData.achievements = [''];
         } else if (val === 'volunteering' && (!resumeData.volunteering || resumeData.volunteering.length === 0)) {
-          resumeData.volunteering = [{ role: '', organization: '', duration: '' }];
+          resumeData.volunteering = [{ id: newEntryId('vol'), role: '', organization: '', duration: '' }];
         } else if (val === 'languages' && (!resumeData.languages || resumeData.languages.length === 0)) {
-          resumeData.languages = [{ name: '', proficiency: '' }];
+          resumeData.languages = [{ id: newEntryId('lang'), name: '', proficiency: '' }];
+        } else if (val === 'publications' && (!resumeData.publications || resumeData.publications.length === 0)) {
+          resumeData.publications = [{ id: newEntryId('pub'), title: '' }];
         } else if (val === 'academic') {
           if (!resumeData.academic) resumeData.academic = {};
-          if (!resumeData.academic.publications) resumeData.academic.publications = [{ title: '' }];
+          if (!resumeData.academic.teaching || !resumeData.academic.teaching.length) resumeData.academic.teaching = [{ id: newEntryId('teach'), role: '', institution: '', term: '' }];
         }
 
         renderOptionalSections();
@@ -2116,7 +2316,7 @@
         const secEl = getEl('sec-' + val);
         if (secEl) {
           secEl.classList.add('open');
-          secEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          secEl.scrollIntoView({ behavior: (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'), block: 'center' });
         }
       });
     }
@@ -2158,7 +2358,7 @@
       btnAddVol.addEventListener('click', () => {
         pushHistoryState();
         if (!resumeData.volunteering) resumeData.volunteering = [];
-        resumeData.volunteering.push({ role: '', organization: '', duration: '' });
+        resumeData.volunteering.push({ id: newEntryId('vol'), role: '', organization: '', duration: '' });
         renderOptionalSections();
         renderResumePreview();
         focusNewEntry('volunteeringList');
@@ -2169,7 +2369,7 @@
       btnAddLang.addEventListener('click', () => {
         pushHistoryState();
         if (!resumeData.languages) resumeData.languages = [];
-        resumeData.languages.push({ name: '', proficiency: '' });
+        resumeData.languages.push({ id: newEntryId('lang'), name: '', proficiency: '' });
         renderOptionalSections();
         renderResumePreview();
         focusNewEntry('languagesList');
@@ -2179,12 +2379,11 @@
     if (btnAddPub) {
       btnAddPub.addEventListener('click', () => {
         pushHistoryState();
-        if (!resumeData.academic) resumeData.academic = {};
-        if (!resumeData.academic.publications) resumeData.academic.publications = [];
-        resumeData.academic.publications.push({ title: '' });
+        if (!Array.isArray(resumeData.publications)) resumeData.publications = [];
+        resumeData.publications.push({ id: newEntryId('pub'), title: '' });
         renderOptionalSections();
         renderResumePreview();
-        focusNewEntry('academicPubsList');
+        focusNewEntry('publicationsList');
       });
     }
     const btnAddTeach = getEl('btnAddTeaching');
@@ -2193,7 +2392,7 @@
         pushHistoryState();
         if (!resumeData.academic) resumeData.academic = {};
         if (!resumeData.academic.teaching) resumeData.academic.teaching = [];
-        resumeData.academic.teaching.push({ role: '', institution: '', term: '' });
+        resumeData.academic.teaching.push({ id: newEntryId('teach'), role: '', institution: '', term: '' });
         renderOptionalSections();
         renderResumePreview();
         focusNewEntry('academicTeachingList');
@@ -2205,6 +2404,8 @@
     if (btnLoadSample) {
       btnLoadSample.addEventListener('click', async () => {
         if (!isDocumentEmpty()) {
+          // With the library, the sample opens as a new resume and nothing written is replaced.
+          if (typeof editorApi.openSampleAsNew === 'function') { editorApi.openSampleAsNew(); return; }
           const ok = await askConfirm({ title: 'Replace your content with the sample?', message: 'The sample overwrites what you have written so far. You can undo this straight afterwards.', confirmLabel: 'Use the sample' });
           if (!ok) return;
         }
@@ -2219,121 +2420,12 @@
     const btnClearForm = getEl('btnClearForm');
     if (btnClearForm) {
       btnClearForm.addEventListener('click', async () => {
-        const ok = await askConfirm({ title: 'Clear the whole resume?', message: 'Every field will be emptied. You can undo this straight afterwards.', confirmLabel: 'Clear resume', danger: true });
+        const ok = await askConfirm({ title: 'Clear the whole resume?', message: 'Every field of this resume will be emptied, and the empty version is saved. You can undo this straight afterwards. To keep a copy, duplicate it in My resumes first.', confirmLabel: 'Clear resume', danger: true });
         if (!ok) return;
         pushHistoryState();
         resumeData = withCurrentDesign(SCHEMA.migrate(EMPTY_DATA), EMPTY_DATA.sectionVisibility);
         isDirty = false;
         refreshWholeEditor();
-      });
-    }
-
-    // Draft Persistence
-    const chkSaveDraft = getEl('chkSaveDraft');
-    if (chkSaveDraft) {
-      chkSaveDraft.addEventListener('change', () => {
-        autoSaveDraft = chkSaveDraft.checked;
-        try {
-          localStorage.setItem('applyready_draft_enabled', String(autoSaveDraft));
-        } catch (e) {}
-        if (autoSaveDraft) saveDraftToStorage();
-        else deleteDraftFromStorage();
-      });
-    }
-
-    const btnDeleteDraft = getEl('btnDeleteDraft');
-    if (btnDeleteDraft) {
-      btnDeleteDraft.addEventListener('click', async () => {
-        const ok = await askConfirm({ title: 'Delete the saved draft?', message: 'The draft stored in this browser is removed. The resume on screen is not affected.', confirmLabel: 'Delete draft', danger: true });
-        if (!ok) return;
-        autoSaveDraft = false;
-        deleteDraftFromStorage();
-        if (chkSaveDraft) chkSaveDraft.checked = false;
-        autoSaveDraft = false;
-        try {
-          localStorage.setItem('applyready_draft_enabled', 'false');
-        } catch (e) {}
-      });
-    }
-
-    // Export JSON Backup
-    const btnExportJSON = getEl('btnExportJSON');
-    if (btnExportJSON) {
-      btnExportJSON.addEventListener('click', () => {
-        const payload = {
-          version: 2,
-          app: 'ApplyReady',
-          exportedAt: new Date().toISOString(),
-          data: resumeData
-        };
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = downloadName('Resume_Backup.json');
-        isDirty = false;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      });
-    }
-
-    // Import JSON Backup
-    const btnImportJSON = getEl('btnImportJSON');
-    const fileImportInput = getEl('fileImportInput');
-    if (btnImportJSON && fileImportInput) {
-      btnImportJSON.addEventListener('click', () => fileImportInput.click());
-      fileImportInput.addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-
-        if (file.size > 2 * 1024 * 1024) {
-          notify('This backup exceeds 2 MB. Your resume is preserved.', true);
-          fileImportInput.value = '';
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onerror = () => {
-          notify('Could not read the backup file from disk.', true);
-          fileImportInput.value = '';
-        };
-        reader.onload = async (event) => {
-          try {
-            const parsed = JSON.parse(event.target.result);
-            if (!validateResumeSchema(parsed)) {
-              throw new Error('Invalid resume schema');
-            }
-            if (!isDocumentEmpty()) {
-              const ok = await askConfirm({ title: 'Replace your current resume?', message: 'Importing this backup replaces what is on screen. You can undo this straight afterwards.', confirmLabel: 'Import backup' });
-              if (!ok) {
-                fileImportInput.value = '';
-                return;
-              }
-            }
-            // Migrate before touching the editor, so a backup that fails here leaves the resume as it was.
-            const restored = migrateResumeSchema(parsed);
-            pushHistoryState();
-            resumeData = restored;
-            isDirty = false;
-            refreshWholeEditor();
-            notify('Resume backup restored.');
-            // Restored sections can change the page height substantially. Show the
-            // restored identity instead of leaving a field beneath the sticky header.
-            // Backups are imported from the Download step; show the restored resume from its start.
-            const tabContent = getEl('tabContent');
-            if (tabContent) tabContent.click();
-            const contactSection = getEl('sec-personal');
-            contactSection.classList.add('open');
-            contactSection.querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
-            contactSection.scrollIntoView({ block: 'start', behavior: 'auto' });
-            getEl('fullName').focus({ preventScroll: true });
-          } catch (err) {
-            notify('Could not import this backup. Your current resume is preserved.', true);
-          }
-          fileImportInput.value = '';
-        };
-        reader.onerror = () => { notify('Could not read this backup. Please choose it again.', true); fileImportInput.value = ''; };
-        reader.readAsText(file);
       });
     }
 
@@ -2389,7 +2481,7 @@
     if (e.target.classList.contains('item-location')) item.location = e.target.value;
     if (e.target.classList.contains('item-bullets')) item.bulletsText = e.target.value;
     refreshEntryTitle(parent, 'exp', item);
-    renderResumePreview();
+    scheduleRender();
   }
 
   function handleExperienceAction(e) {
@@ -2421,7 +2513,7 @@
       resumeData.experience[idx - 1] = temp;
       renderExperienceList();
       renderResumePreview();
-      restoreListFocus('experienceList', id, 'move-up-exp', 'btnAddExperience');
+      restoreListFocus('experienceList', id, 'move-up-exp', 'btnAddExperience', 'role');
       return;
     } else if (action === 'move-down-exp' && idx < resumeData.experience.length - 1) {
       const temp = resumeData.experience[idx];
@@ -2429,7 +2521,7 @@
       resumeData.experience[idx + 1] = temp;
       renderExperienceList();
       renderResumePreview();
-      restoreListFocus('experienceList', id, 'move-down-exp', 'btnAddExperience');
+      restoreListFocus('experienceList', id, 'move-down-exp', 'btnAddExperience', 'role');
       return;
     }
 
@@ -2449,7 +2541,7 @@
     if (e.target.classList.contains('item-location')) item.location = e.target.value;
     if (e.target.classList.contains('item-score')) item.score = e.target.value;
     refreshEntryTitle(parent, 'edu', item);
-    renderResumePreview();
+    scheduleRender();
   }
 
   function handleEducationAction(e) {
@@ -2481,7 +2573,7 @@
       resumeData.education[idx - 1] = temp;
       renderEducationList();
       renderResumePreview();
-      restoreListFocus('educationList', id, 'move-up-edu', 'btnAddEducation');
+      restoreListFocus('educationList', id, 'move-up-edu', 'btnAddEducation', 'education entry');
       return;
     } else if (action === 'move-down-edu' && idx < resumeData.education.length - 1) {
       const temp = resumeData.education[idx];
@@ -2489,7 +2581,7 @@
       resumeData.education[idx + 1] = temp;
       renderEducationList();
       renderResumePreview();
-      restoreListFocus('educationList', id, 'move-down-edu', 'btnAddEducation');
+      restoreListFocus('educationList', id, 'move-down-edu', 'btnAddEducation', 'education entry');
       return;
     }
 
@@ -2508,7 +2600,7 @@
     if (e.target.classList.contains('item-link')) item.link = e.target.value;
     if (e.target.classList.contains('item-bullets')) item.bulletsText = e.target.value;
     refreshEntryTitle(parent, 'proj', item);
-    renderResumePreview();
+    scheduleRender();
   }
 
   function handleProjectAction(e) {
@@ -2540,7 +2632,7 @@
       resumeData.projects[idx - 1] = temp;
       renderProjectsList();
       renderResumePreview();
-      restoreListFocus('projectsList', id, 'move-up-proj', 'btnAddProject');
+      restoreListFocus('projectsList', id, 'move-up-proj', 'btnAddProject', 'project');
       return;
     } else if (action === 'move-down-proj' && idx < resumeData.projects.length - 1) {
       const temp = resumeData.projects[idx];
@@ -2548,7 +2640,7 @@
       resumeData.projects[idx + 1] = temp;
       renderProjectsList();
       renderResumePreview();
-      restoreListFocus('projectsList', id, 'move-down-proj', 'btnAddProject');
+      restoreListFocus('projectsList', id, 'move-down-proj', 'btnAddProject', 'project');
       return;
     }
 
@@ -2563,7 +2655,7 @@
     if (e.target.classList.contains('item-cert-name')) resumeData.certifications[idx].name = e.target.value;
     if (e.target.classList.contains('item-cert-issuer')) resumeData.certifications[idx].issuer = e.target.value;
     if (e.target.classList.contains('item-cert-year')) resumeData.certifications[idx].year = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleCertAction(e) {
     const btn = e.target.closest('button[data-action="remove-cert"]');
@@ -2580,7 +2672,7 @@
     const idx = parseInt(e.target.dataset.index, 10);
     if (!resumeData.achievements) return;
     resumeData.achievements[idx] = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleAchAction(e) {
     const btn = e.target.closest('button[data-action="remove-ach"]');
@@ -2599,7 +2691,7 @@
     if (e.target.classList.contains('item-vol-role')) resumeData.volunteering[idx].role = e.target.value;
     if (e.target.classList.contains('item-vol-org')) resumeData.volunteering[idx].organization = e.target.value;
     if (e.target.classList.contains('item-vol-dur')) resumeData.volunteering[idx].duration = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleVolAction(e) {
     const btn = e.target.closest('button[data-action="remove-vol"]');
@@ -2617,7 +2709,7 @@
     if (!resumeData.languages || !resumeData.languages[idx]) return;
     if (e.target.classList.contains('item-lang-name')) resumeData.languages[idx].name = e.target.value;
     if (e.target.classList.contains('item-lang-prof')) resumeData.languages[idx].proficiency = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleLangAction(e) {
     const btn = e.target.closest('button[data-action="remove-lang"]');
@@ -2632,19 +2724,19 @@
 
   function handlePubInput(e) {
     const idx = parseInt(e.target.dataset.index, 10);
-    if (!resumeData.academic || !resumeData.academic.publications || !resumeData.academic.publications[idx]) return;
-    resumeData.academic.publications[idx].title = e.target.value;
-    renderResumePreview();
+    if (!resumeData.publications || !resumeData.publications[idx]) return;
+    resumeData.publications[idx].title = e.target.value;
+    scheduleRender();
   }
   function handlePubAction(e) {
     const btn = e.target.closest('button[data-action="remove-pub"]');
     if (!btn) return;
     const idx = parseInt(btn.dataset.index, 10);
     pushHistoryState();
-    resumeData.academic.publications.splice(idx, 1);
+    resumeData.publications.splice(idx, 1);
     renderOptionalSections();
     renderResumePreview();
-    restoreRemoveFocus('academicPubsList', idx, 'btnAddPublication');
+    restoreRemoveFocus('publicationsList', idx, 'btnAddPublication');
   }
 
   function handleTeachInput(e) {
@@ -2653,7 +2745,7 @@
     if (e.target.classList.contains('item-teach-role')) resumeData.academic.teaching[idx].role = e.target.value;
     if (e.target.classList.contains('item-teach-inst')) resumeData.academic.teaching[idx].institution = e.target.value;
     if (e.target.classList.contains('item-teach-term')) resumeData.academic.teaching[idx].term = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleTeachAction(e) {
     const btn = e.target.closest('button[data-action="remove-teach"]');
@@ -2674,7 +2766,7 @@
     const cls = Object.keys(fields).find(name => e.target.classList.contains(name));
     if (!cls) return;
     list[idx][fields[cls]] = e.target.value;
-    renderResumePreview();
+    scheduleRender();
   }
   function handleAcademicRemove(e, key, action, listId, addBtnId) {
     const btn = e.target.closest(`button[data-action="${action}"]`);
@@ -2687,14 +2779,16 @@
     restoreRemoveFocus(listId, idx, addBtnId);
   }
 
+  // One delegated listener, so sections drawn later (custom sections) fold the same way.
   function setupAccordions() {
-    document.querySelectorAll('.accordion-header').forEach(header => {
-      header.addEventListener('click', () => {
-        const sec = header.parentElement;
-        const isOpen = sec.classList.contains('open');
-        sec.classList.toggle('open');
-        header.setAttribute('aria-expanded', String(!isOpen));
-      });
+    const panel = getEl('formPanel');
+    if (panel) panel.addEventListener('click', e => {
+      const header = e.target.closest('.accordion-header');
+      if (!header) return;
+      const sec = header.parentElement;
+      const isOpen = sec.classList.contains('open');
+      sec.classList.toggle('open');
+      header.setAttribute('aria-expanded', String(!isOpen));
     });
   }
 
@@ -2712,28 +2806,57 @@
     document.fonts.ready.then(() => window.print());
   }
 
-  function exportToVectorPDF() {
+  /* The error under Full name lasts only while the field is empty. Typing clears it, and so does
+     any change that fills the form from data (a sample, another saved resume, an import, undo). */
+  function clearFullNameError() {
+    const input = getEl('fullName');
+    const shown = getEl('fullNameError');
+    if (!input || !shown || !input.value.trim()) return;
+    shown.remove();
+    input.removeAttribute('aria-invalid');
+    input.removeAttribute('aria-describedby');
+  }
+
+  /* Every download needs the name. Without it, go to the field, mark it invalid and put the reason
+     under it (linked with aria-describedby), so it stays after the toast has gone. Typing clears it. */
+  function requireFullName() {
+    const input = getEl('fullName');
+    if (((resumeData.personal && resumeData.personal.fullName) || '').trim()) return true;
+    notify('Add your name in Contact details before downloading.', true);
+    const tabEdit = getEl('tabEdit');
+    if (tabEdit) tabEdit.click();
+    const tabContent = getEl('tabContent');
+    if (tabContent) tabContent.click();
+    openAccordion(getEl('sec-personal'));
+    if (!input) return false;
+    let error = getEl('fullNameError');
+    if (!error) {
+      error = document.createElement('p');
+      error.id = 'fullNameError';
+      error.className = 'field-error';
+      input.insertAdjacentElement('afterend', error);
+    }
+    if (!input.dataset.nameCheck) {
+      input.dataset.nameCheck = 'on';
+      input.addEventListener('input', clearFullNameError);
+    }
+    error.textContent = 'Enter your full name before downloading. It goes at the top of the resume and in the file name.';
+    input.setAttribute('aria-invalid', 'true');
+    input.setAttribute('aria-describedby', 'fullNameError');
+    setTimeout(() => { input.focus({ preventScroll: true }); input.scrollIntoView({ block: 'center', behavior: 'auto' }); }, 100);
+    return false;
+  }
+
+  function exportToVectorPDF(event) {
     if (!window.ApplyReadyPDF) {
       notify('PDF export is unavailable. Reload or use Browser Print.', true);
       return;
     }
 
-    const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
-    if (!fullName) {
-      notify('Add your name in Contact details before downloading.', true);
-      getEl('tabEdit').click();
-      getEl('sec-personal').classList.add('open');
-      getEl('sec-personal').querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
-      const fnInp = getEl('fullName');
-      if (fnInp) {
-        const tabContent = getEl('tabContent');
-        if (tabContent) tabContent.click();
-        setTimeout(() => fnInp.focus(), 100);
-      }
-      return;
-    }
+    if (!requireFullName()) return;
 
-    const btn = getEl('btnDownloadPDF') || getEl('btnQuickPDF');
+    // Show progress on the button that was pressed (Download step or the Quick PDF button).
+    const btn = (event && event.currentTarget && event.currentTarget.tagName === 'BUTTON') ? event.currentTarget : getEl('btnDownloadPDF');
     const originalHtml = btn ? btn.innerHTML : '';
     if (btn) {
       btn.disabled = true;
@@ -2763,7 +2886,7 @@
       setTimeout(() => URL.revokeObjectURL(url), 10000);
     } catch (err) {
       if (err.code === 'UNSUPPORTED_PDF_TEXT') {
-        notify('Use Save as PDF in the print dialog to preserve all your characters.');
+        notify(unsupportedDownloadMessage(findUnsupportedText(resumeData)));
         printResume();
       } else notify('PDF could not be generated. Try Browser Print or Word.', true);
     } finally {
@@ -2777,21 +2900,25 @@
   /**
    * Export to Editable OOXML DOCX
    */
-  function exportToDOCX() {
-    if (!window.ApplyReadyDOCX) {
-      notify('Word export is unavailable. Reload or use PDF.', true);
-      return;
-    }
+  // The Word engine loads on the way to the first Word download (the Download step), not with the
+  // page. It is part of the offline cache like every other script.
+  let docxLoading = null;
+  function loadDocxEngine() {
+    if (window.ApplyReadyDOCX) return Promise.resolve(window.ApplyReadyDOCX);
+    if (!docxLoading) docxLoading = new Promise((resolve, reject) => {
+      const own = document.querySelector('script[src*="js/resume.js"]');
+      const query = own ? (own.getAttribute('src').split('?')[1] || '') : '';
+      const script = document.createElement('script');
+      script.src = 'js/docx-engine.js' + (query ? '?' + query : '');
+      script.onload = () => (window.ApplyReadyDOCX ? resolve(window.ApplyReadyDOCX) : reject(new Error('Word engine missing')));
+      script.onerror = () => { docxLoading = null; script.remove(); reject(new Error('Word engine did not load')); };
+      document.head.appendChild(script);
+    });
+    return docxLoading;
+  }
 
-    const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
-    if (!fullName) {
-      notify('Add your name in Contact details before downloading.', true);
-      getEl('tabEdit').click(); getEl('tabContent').click();
-      getEl('sec-personal').classList.add('open');
-      getEl('sec-personal').querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
-      getEl('fullName').focus();
-      return;
-    }
+  async function exportToDOCX() {
+    if (!requireFullName()) return;
 
     const btn = getEl('btnDownloadDOCX');
     const originalHtml = btn ? btn.innerHTML : '';
@@ -2801,7 +2928,12 @@
     }
 
     try {
-      const zip = window.ApplyReadyDOCX.generateResumeDOCX(resumeData, {
+      let engine;
+      try { engine = await loadDocxEngine(); } catch (e) {
+        notify('Word export could not start. Check your connection and reload, or download the PDF.', true);
+        return;
+      }
+      const zip = engine.generateResumeDOCX(resumeData, {
         pageSize: resumeData.design.pageSize || 'a4',
         fontFamily: resumeData.design.fontFamily || 'serif',
         template: resumeData.template || 'classic-professional',
@@ -2838,15 +2970,7 @@
       return;
     }
 
-    const fullName = (resumeData.personal && resumeData.personal.fullName ? resumeData.personal.fullName : '').trim();
-    if (!fullName) {
-      notify('Add your name in Contact details before downloading.', true);
-      getEl('tabEdit').click(); getEl('tabContent').click();
-      getEl('sec-personal').classList.add('open');
-      getEl('sec-personal').querySelector('.accordion-header').setAttribute('aria-expanded', 'true');
-      getEl('fullName').focus();
-      return;
-    }
+    if (!requireFullName()) return;
 
     const textContent = window.ApplyReadyPDF.generateResumeText(resumeData);
     const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
@@ -2877,6 +3001,7 @@
       sanitizeHref,
       isValidUrlFormat,
       generateReviewReport,
+      unsupportedDownloadMessage,
       renderResumeDataToHTML,
       TEMPLATES
     };

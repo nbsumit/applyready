@@ -18,8 +18,8 @@
       themeButton.setAttribute('aria-label', `Switch to ${next} theme`);
       themeButton.title = `Switch to ${next} theme`;
     }
-    const color = doc.querySelector('meta[name="theme-color"]');
-    if (color) color.content = theme === 'dark' ? '#171c23' : '#ffffff';
+    // The page carries a light and a dark theme-color; an explicit choice overrides both.
+    doc.querySelectorAll('meta[name="theme-color"]').forEach(meta => { meta.content = theme === 'dark' ? '#1a1a19' : '#ffffff'; });
   }
   setTheme(root.dataset.theme || 'light');
   if (themeButton) themeButton.addEventListener('click', () => {
@@ -35,17 +35,46 @@
   /* ----------------------------------------------------- On-screen keyboard */
   // Sticky bars (the resume Edit/Preview bar, a tool's action bar) step aside only while the on-screen
   // keyboard is actually open, so they never cover the field being typed in.
+  // Two ways a keyboard shows: the visual viewport shrinks inside the page (most browsers), or the
+  // page itself shrinks (in-app browsers, interactive-widget=resizes-content). The second is seen
+  // as the window becoming much shorter than its full height at the same width, on a touch screen.
   if (window.visualViewport) {
     const vv = window.visualViewport;
+    const touch = window.matchMedia('(pointer: coarse)');
+    let fullHeight = window.innerHeight, fullWidth = window.innerWidth;
     const sync = () => {
-      const field = doc.activeElement && /^(INPUT|TEXTAREA)$/.test(doc.activeElement.tagName);
-      doc.body.classList.toggle('is-typing', !!field && window.innerHeight - vv.height > 150);
+      if (window.innerWidth !== fullWidth) { fullWidth = window.innerWidth; fullHeight = window.innerHeight; }
+      const field = doc.activeElement && /^(INPUT|TEXTAREA)$/.test(doc.activeElement.tagName) && !/^(checkbox|radio|range|color|file|button|submit|reset|image)$/.test(doc.activeElement.type);
+      if (!field) fullHeight = Math.max(fullHeight, window.innerHeight);
+      const keyboard = window.innerHeight - vv.height > 150 || (touch.matches && fullHeight - window.innerHeight > 150);
+      doc.body.classList.toggle('is-typing', !!field && keyboard);
     };
+    window.addEventListener('resize', sync);
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
     doc.addEventListener('focusin', () => setTimeout(sync, 150));
     doc.addEventListener('focusout', () => setTimeout(sync, 150));
   }
+
+  /* ----------------------------------------------------- Guide screenshots */
+  // A screenshot can be a <picture> with a phone capture for narrow windows. "Open full size" opens the
+  // picture actually shown, so a phone opens the phone capture, not the wide desktop one. The phone
+  // capture is not part of the offline copy: if it cannot load (offline, never seen), fall back to the
+  // desktop picture, which is.
+  doc.querySelectorAll('.shot picture > img').forEach(img => {
+    const link = img.closest('.shot__full');
+    const point = () => { if (link && img.currentSrc) link.href = img.currentSrc; };
+    const fallback = () => {
+      const sources = img.parentElement.querySelectorAll('source');
+      if (!sources.length) return;
+      sources.forEach(s => s.remove());
+      if (link) link.href = img.getAttribute('src');
+    };
+    img.addEventListener('load', point);
+    img.addEventListener('error', fallback);
+    // It may have finished, or failed, before this script ran.
+    if (img.complete && img.currentSrc) { if (img.naturalWidth) point(); else fallback(); }
+  });
 
   /* ----------------------------------------------------- Reference tables */
   // On phones a wide table becomes one block per row, each value under its column name, instead of a
@@ -80,6 +109,8 @@
     header.dataset.open = String(open);
     navToggle.setAttribute('aria-expanded', String(open));
     navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    const icon = navToggle.querySelector('.fa-solid');
+    if (icon) { icon.classList.toggle('fa-bars', !open); icon.classList.toggle('fa-xmark', open); }
     root.classList.toggle('nav-open', open);
     pageRegions().forEach(el => { el.inert = open; });
   }
@@ -90,7 +121,8 @@
       if (e.key === 'ArrowDown') { e.preventDefault(); setToolsMenu(true); const first = toolsMenu.querySelector('a'); if (first) first.focus(); }
     });
     toolsMenu.addEventListener('keydown', e => {
-      const links = Array.from(toolsMenu.querySelectorAll('a'));
+      const links = Array.from(toolsMenu.querySelectorAll('a')).filter(a => a.offsetParent !== null);
+      if (!links.length) return;
       const i = links.indexOf(doc.activeElement);
       if (e.key === 'ArrowDown') { e.preventDefault(); links[(i + 1) % links.length].focus(); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); links[(i - 1 + links.length) % links.length].focus(); }
@@ -105,12 +137,35 @@
       setToolsMenu(false, inside);
     });
   }
+  // The phone menu sheet. Opening it moves focus to its first item (Search tools), and while it is
+  // open Tab stays inside the header and the sheet, because the page behind it is inert.
+  const focusables = () => Array.from(header.querySelectorAll('a[href], button, input')).filter(el => !el.disabled && el.offsetParent !== null);
   if (navToggle && nav) {
-    navToggle.addEventListener('click', () => setNav(header.dataset.open !== 'true'));
+    navToggle.addEventListener('click', () => {
+      const open = header.dataset.open !== 'true';
+      setNav(open);
+      if (open) { const first = nav.querySelector('#navSearch'); if (first && first.offsetParent !== null) first.focus(); }
+    });
     doc.addEventListener('keydown', e => { if (e.key === 'Escape' && header.dataset.open === 'true') { setNav(false); navToggle.focus(); } });
+    header.addEventListener('keydown', e => {
+      if (e.key !== 'Tab' || header.dataset.open !== 'true') return;
+      const items = focusables();
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      if (e.shiftKey && doc.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && doc.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
     nav.addEventListener('click', e => { if (e.target.closest('a')) setNav(false); });
     window.addEventListener('resize', () => { if (!isMobile() && header.dataset.open === 'true') setNav(false); });
   }
+  // Category buttons in the sheet show or hide that category's tools.
+  doc.querySelectorAll('.menu__toggle').forEach(button => {
+    button.addEventListener('click', () => {
+      const open = button.getAttribute('aria-expanded') !== 'true';
+      button.setAttribute('aria-expanded', String(open));
+      button.parentElement.toggleAttribute('data-open', open);
+    });
+  });
 
   // Mark the current page in the header and footer (also marked in the HTML for no-JS).
   (function markCurrent() {
@@ -138,29 +193,90 @@
   });
 
   /* ---------------------------------------------------------- Notifications */
+  // Two live regions exist from page load, one polite and one assertive, so screen readers are
+  // already listening when the first message arrives (a region created and filled in the same tick
+  // is often not announced). The visible toast is a separate element.
   let notifyTimer;
+  const liveRegions = {};
+  function liveRegion(kind) {
+    if (liveRegions[kind]) return liveRegions[kind];
+    const node = doc.createElement('div');
+    node.className = 'sr-only';
+    node.setAttribute('aria-live', kind);
+    node.setAttribute('aria-atomic', 'true');
+    doc.body.appendChild(node);
+    liveRegions[kind] = node;
+    return node;
+  }
+  liveRegion('polite'); liveRegion('assertive');
   function notify(message, error = false) {
     let node = doc.getElementById('taskNotification');
     if (!node) {
       node = doc.createElement('div');
       node.id = 'taskNotification'; node.className = 'task-notification';
-      node.setAttribute('role', 'status'); node.setAttribute('aria-live', 'polite');
+      node.setAttribute('aria-hidden', 'true');
       doc.body.appendChild(node);
     }
     clearTimeout(notifyTimer);
     node.textContent = message;
     node.classList.toggle('is-error', error);
-    node.setAttribute('role', error ? 'alert' : 'status');
     node.classList.add('is-visible');
+    const region = liveRegion(error ? 'assertive' : 'polite');
+    region.textContent = '';
+    setTimeout(() => { region.textContent = message; }, 50);
     notifyTimer = setTimeout(() => node.classList.remove('is-visible'), error ? 9000 : 4500);
   }
 
-  // Bring a result into view when it is below the fold (phones). No-op when already visible.
-  function reveal(el) {
+  // How much of the top and bottom of the screen sticky bars cover beside `el`: the site header and
+  // the tool's action bar (sticky on phones). A bar counts whether or not it is stuck right now,
+  // because scrolling can make it stick.
+  function coveredEdges(el) {
+    const box = el.getBoundingClientRect();
+    const ws = el.closest && el.closest('.ws');
+    const bars = [header].concat(ws ? Array.from(ws.querySelectorAll('.ws-action')) : []);
+    let top = 0, bottom = 0;
+    bars.forEach(bar => {
+      if (!bar) return;
+      const cs = getComputedStyle(bar);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || !/^(sticky|fixed)$/.test(cs.position)) return;
+      const r = bar.getBoundingClientRect();
+      if (!r.height || r.right <= box.left || r.left >= box.right) return;
+      if (cs.top === 'auto' && cs.bottom !== 'auto') bottom = Math.max(bottom, r.height + (parseFloat(cs.bottom) || 0));
+      else top = Math.max(top, r.height + (parseFloat(cs.top) || 0));
+    });
+    return { top, bottom };
+  }
+
+  /**
+   * Bring a finished result into view, clear of the sticky header and action bar. `target` is the
+   * control that will get focus (usually Download): it must end up fully visible, which matters
+   * most on phones. Nothing moves when the result's top and the target are already in the clear
+   * band, unless opts.align asks for the result to start at the top of it.
+   */
+  function reveal(el, target, opts) {
     if (!el || typeof el.getBoundingClientRect !== 'function') return;
+    // Measured in the next frame: showing a result changes the workspace state (js/components.js),
+    // which hides and shows other parts above it, so measuring now would aim at the old layout.
+    const run = () => revealNow(el, target, opts || {});
+    if (window.requestAnimationFrame) requestAnimationFrame(run); else setTimeout(run, 0);
+  }
+  function revealNow(el, target, o) {
+    if (!el.isConnected) return;
+    const gap = 12;
+    const edges = coveredEdges(el);
+    // At least the page's own scroll padding (header plus a gap), so a result lands where links to it do.
+    const pad = parseFloat(getComputedStyle(root).scrollPaddingTop) || 0;
+    const lo = Math.max(edges.top + gap, pad), hi = window.innerHeight - edges.bottom - gap;
     const r = el.getBoundingClientRect();
-    if (r.top >= 0 && r.top < window.innerHeight * 0.6) return;
-    el.scrollIntoView({ block: 'start', behavior: reduceMotion() ? 'auto' : 'smooth' });
+    const t = target && typeof target.getBoundingClientRect === 'function' && target.getClientRects().length ? target.getBoundingClientRect() : null;
+    const headVisible = r.top >= edges.top && r.top < lo + (hi - lo) * 0.6;
+    let delta = o.align || !headVisible ? r.top - lo : 0;
+    if (t) {
+      if (t.bottom - delta > hi) delta = t.bottom - hi;   // the target wins over the heading
+      if (t.top - delta < lo) delta = t.top - lo;
+    }
+    if (Math.abs(delta) < 2) return;
+    window.scrollBy({ top: delta, behavior: reduceMotion() ? 'auto' : 'smooth' });
   }
 
   /* ----------------------------------------------------- Confirm dialog */
@@ -215,10 +331,76 @@
     });
   }
 
-  window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, { notify, reveal, confirm: confirmDialog });
+  /* ----------------------------------------------------------- Search */
+  // The index and search code load on first use, so pages that never search pay nothing for it.
+  const scriptBase = (() => { const s = doc.querySelector('script[src*="js/site.js"]'); return s ? s.getAttribute('src').replace(/js\/site\.js.*$/, '') : '/'; })();
+  function loadScript(file) {
+    return new Promise((resolve, reject) => {
+      if (doc.querySelector(`script[data-lazy="${file}"]`)) { resolve(); return; }
+      const el = doc.createElement('script');
+      el.src = scriptBase + file;
+      el.dataset.lazy = file;
+      el.onload = resolve; el.onerror = reject;
+      doc.head.appendChild(el);
+    });
+  }
+  async function openSearch() {
+    try {
+      if (!window.APPLYREADY_TOOL_INDEX) await loadScript('js/tool-index.js');
+      if (!window.ApplyReadySearch) await loadScript('js/search.js');
+      window.ApplyReadySearch.open();
+    } catch (e) {
+      location.href = scriptBase + 'tools.html';
+    }
+  }
+  const searchButton = doc.getElementById('searchOpen');
+  if (searchButton) searchButton.addEventListener('click', () => { if (header && header.dataset.open === 'true') setNav(false); openSearch(); });
+  // "Search tools" at the top of the phone menu: the sheet closes and focus returns to the menu
+  // button when the search closes.
+  const navSearch = doc.getElementById('navSearch');
+  if (navSearch) navSearch.addEventListener('click', () => { setNav(false); if (navToggle) navToggle.focus(); openSearch(); });
+  doc.addEventListener('keydown', e => {
+    const target = e.target;
+    const typing = target && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable);
+    if ((e.key === '/' && !typing && !e.ctrlKey && !e.metaKey && !e.altKey) || ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K'))) {
+      if (doc.querySelector('.dialog-backdrop')) return;
+      e.preventDefault();
+      openSearch();
+    }
+  });
+
+  /* ------------------------------------------------- Recently used tools */
+  // Only the tool's id is kept (for example "merge-pdf"), never a file name or anything typed.
+  // "Your data" can clear the list or switch it off.
+  (function rememberTool() {
+    const meta = doc.querySelector('meta[name="applyready-tool"]');
+    if (!meta) return;
+    try {
+      if (localStorage.getItem('applyready_recent_off') === '1') return;
+      const id = meta.content;
+      const list = JSON.parse(localStorage.getItem('applyready_recent_tools') || '[]').filter(x => typeof x === 'string' && x !== id);
+      list.unshift(id);
+      localStorage.setItem('applyready_recent_tools', JSON.stringify(list.slice(0, 6)));
+    } catch (e) { /* storage may be unavailable; recents are optional */ }
+  })();
+
+  window.ApplyReadyUI = Object.assign(window.ApplyReadyUI || {}, { notify, reveal, confirm: confirmDialog, openSearch });
 
   /* ----------------------------------------------- Offline support (PWA) */
+  // The service worker keeps the pages this browser opens (sw.js). A page loaded before it was in
+  // control tells it which of the site's files it used, and the service worker copies them from the
+  // browser's HTTP cache, so this page works offline without anything being downloaded twice.
   if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-    window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
+    window.addEventListener('load', () => {
+      const controlled = !!navigator.serviceWorker.controller;
+      navigator.serviceWorker.register('/sw.js').then(() => {
+        if (controlled) return null;
+        return navigator.serviceWorker.ready.then(reg => {
+          const loaded = [location.href].concat(performance.getEntriesByType ? performance.getEntriesByType('resource').map(e => e.name) : []);
+          const urls = loaded.filter(u => { try { return new URL(u).origin === location.origin; } catch (e) { return false; } });
+          if (reg.active) reg.active.postMessage({ type: 'cache-page', urls: urls.slice(0, 300) });
+        });
+      }).catch(() => {});
+    });
   }
 })();

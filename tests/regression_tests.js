@@ -26,12 +26,13 @@ check('Valid current backup and legacy version 1 remain supported', () => {
 });
 for (const [name, mutate] of [
   ['non-text name', d => d.personal.fullName = []], ['null entry', d => d.experience = [null]],
-  ['non-text bullet', d => d.experience[0].bulletsText = {}], ['wrong academic list', d => d.academic.publications = 'wrong'],
+  ['non-text bullet', d => d.experience[0].bulletsText = {}], ['wrong academic list', d => d.academic.publications = 'wrong'], ['wrong publications list', d => d.publications = 'wrong'],
+  ['non-boolean references switch', d => d.referencesOnRequest = 'yes'], ['too many custom sections', d => d.customSections = Array(21).fill({ title: 'x' })],
   ['array instead of personal object', d => d.personal = []], ['oversized entry count', d => d.experience = Array(151).fill({role:'Analyst'})]
 ]) check(`Reject ${name} before it reaches the editor`, () => { const data = resumeFixture(); mutate(data); assert.equal(schema.validate(backup(data)),false); });
 check('Future incompatible schema versions are rejected', () => assert.equal(schema.validate({version:99,data:resumeFixture()}),false));
 check('Legacy string entries and missing IDs are safely migrated without losing content', () => {
-  const d=resumeFixture(); assert(d.achievements[0].title==='AWARD_MARKER'); assert(d.academic.publications[0].title==='PUBLICATION_MARKER');
+  const d=resumeFixture(); assert(d.achievements[0].title==='AWARD_MARKER'); assert(d.publications[0].title==='PUBLICATION_MARKER');
   assert.equal(d.academic.grants[0].title,'GRANT_MARKER'); assert(d.experience[0].id);
 });
 check('Unsafe and duplicated entry IDs cannot create HTML attributes or duplicate DOM IDs', () => {
@@ -41,7 +42,7 @@ check('Unsafe and duplicated entry IDs cannot create HTML attributes or duplicat
 });
 check('Partial recommended orders retain every optional section exactly once', () => {
   const order=schema.normalizeSectionOrder(['skills','skills','experience']);
-  assert.equal(order.length,10); assert.equal(order[0],'skills'); assert(order.includes('academic'));
+  assert.equal(order.length,12); assert.equal(order[0],'skills'); assert(order.includes('academic') && order.includes('publications') && order.includes('references'));
 });
 check('Selected font sizes change actual PDF and Word body text', () => {
   const d=resumeFixture();
@@ -124,6 +125,22 @@ check('Template catalogue entries are complete and their thumbnails describe the
     assert(t.recommendedOrder.every(key => schema.sections.includes(key)), id);
     assert(templatesApi.TEMPLATE_GROUPS.some(g => g.id === t.group), id);
   }
+});
+check('No two templates render the same resume identically', () => {
+  // Same content, same section order; each template with its own font and spacing.
+  const seen = new Map();
+  for (const [id, t] of Object.entries(TEMPLATES)) {
+    const d = resumeFixture(); d.template = id; d.design.templateId = id;
+    d.design.fontFamily = t.fontFamily; d.design.density = t.density || 'standard';
+    d.design.sectionOrder = schema.sections.slice();
+    const doc = pdf.generateResumePDF(d);
+    const signature = JSON.stringify(doc.pages.map(p => p.elements.map(e => [e.type, Math.round(e.x || e.x1 || 0), Math.round(e.y || e.y1 || 0), e.text || '', (e.color || []).join(','), e.fontStyle || '', e.fontSize || e.lineWidth || 0])));
+    assert(!seen.has(signature), `${id} renders exactly like ${seen.get(signature)}`);
+    seen.set(signature, id);
+  }
+});
+check('Template descriptions make no guarantee about applicant tracking systems', () => {
+  for (const [id, t] of Object.entries(TEMPLATES)) assert(!/ATS|applicant tracking|guarantee|Workday|Taleo|Lever|ISO 32000|maximum compatibility/i.test(`${t.name} ${t.description} ${t.badge} ${t.category}`), id);
 });
 check('ATS Plain draws no lines and keeps dates on their own line', () => {
   const d = resumeFixture(); d.template = 'ats-strict';
@@ -239,6 +256,129 @@ check('Links written as host:port keep their link; unsafe schemes are still refu
   d.personal.website = 'www.example.com:8080/work';
   const rels = new TextDecoder().decode(docx.generateResumeDOCX(d).files.find(f => f.name === 'word/_rels/document.xml.rels').data);
   assert(rels.includes('Target="https://www.example.com:8080/work"'), 'Word file links the host:port website');
+});
+check('Icon classes in scripts are written whole, so the icon subset includes every icon a page can show', () => {
+  // scripts/build-icons.py finds icons by their "fa-name" class in the source. A class built from a
+  // fragment ("fa-" + name) is invisible to it, which once left the Organise PDF Restore button blank.
+  const fs = require('node:fs'), path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const css = fs.readFileSync(path.join(root, 'css/vendor/icons.min.css'), 'utf8');
+  const has = name => new RegExp(`\\.fa-${name}:before`).test(css);
+  // These take icon names from the tool registry, which is checked below.
+  const registryDriven = new Set(['search.js', 'your-data.js', 'home.js']);
+  const dirs = ['js', 'js/lib', 'js/workers'];
+  for (const dir of dirs) {
+    for (const file of fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.js'))) {
+      if (registryDriven.has(file) && dir === 'js') continue;
+      const src = fs.readFileSync(path.join(root, dir, file), 'utf8');
+      assert(!/fa-\$\{/.test(src), `${dir}/${file} builds an icon class from a fragment; write the whole class name`);
+    }
+  }
+  const { TOOLS, CATEGORIES } = require('../scripts/lib/tools.js');
+  for (const t of TOOLS.concat(CATEGORIES)) if (t.icon) assert(has(t.icon), `registry icon fa-${t.icon} (${t.id}) is in the icon subset`);
+  assert(has('trash-can-arrow-up') && has('trash-can'), 'both Organise PDF delete and restore icons are in the subset');
+});
+check('Scrolling from script respects reduced motion (the CSS rule cannot stop a smooth scroll asked for in script)', () => {
+  const fs = require('node:fs'), path = require('node:path');
+  const root = path.join(__dirname, '..');
+  for (const dir of ['js', 'js/lib']) {
+    for (const file of fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.js'))) {
+      const src = fs.readFileSync(path.join(root, dir, file), 'utf8');
+      assert(!/behavior:\s*['"]smooth['"]/.test(src), `${dir}/${file} asks for a smooth scroll without checking prefers-reduced-motion`);
+    }
+  }
+});
+// A long history: seven roles of five two-line bullets, then projects of two bullets each.
+function longResume(template) {
+  const long = n => `Additional result number ${n}: coordinated a cross-team reporting change that cut turnaround and kept the work on schedule across several teams and quarters while keeping costs flat`;
+  const d = schema.migrate({ template, design: { templateId: template, density: TEMPLATES[template].density || 'standard', fontFamily: TEMPLATES[template].fontFamily }, personal: { fullName: 'Long Case' },
+    experience: Array.from({ length: 7 }, (_, r) => ({ role: `Role ${r + 1}`, company: 'Company', duration: '2019 - 2020', bulletsText: [1, 2, 3, 4, 5].map(long).join('\n') })),
+    projects: Array.from({ length: 4 }, (_, p) => ({ name: `Project ${p + 1}`, tech: 'Python, Pandas, Power BI, Tableau, SQL Server, Airflow', link: 'github.com/someone/project-' + p, bulletsText: `First bullet of project ${p + 1}\nHandled 3,000 bookings in project ${p + 1}` })),
+    education: [{ degree: 'B.Tech', institution: 'College', duration: '2015 - 2019' }] });
+  d.design.sectionOrder = schema.normalizeSectionOrder(['experience', 'projects', 'education'], d);
+  return d;
+}
+check('Page breaks never split a bullet or leave a last bullet alone at the top of a page', () => {
+  for (const template of Object.keys(TEMPLATES)) {
+    const doc = pdf.generateResumePDF(longResume(template));
+    assert(doc.getPageCount() > 1, `${template}: the long case spans pages`);
+    doc.pages.slice(1).forEach((page, i) => {
+      const texts = page.elements.filter(e => e.type === 'text');
+      const first = texts[0];
+      // A page starts with a heading, a bullet sign, or an entry title, never with the middle of a bullet.
+      assert(first.text === '•' || first.fontStyle === 'bold', `${template} page ${i + 2} starts inside a bullet: "${first.text}"`);
+      if (first.text === '•') {
+        // ...and a bullet at the top of a page is never the last of its list: another bullet follows it.
+        const bulletYs = texts.filter(e => e.text === '•').map(e => e.y);
+        const after = texts.find(e => e.y > first.y && e.x < first.x + 4);
+        assert(bulletYs.length > 1 && after && after.text === '•', `${template} page ${i + 2} starts with a lone last bullet`);
+      }
+    });
+  }
+});
+check('Project tools start without a separator when they sit on their own line', () => {
+  for (const template of Object.keys(TEMPLATES)) {
+    const d = schema.migrate(require('../js/resume').SAMPLE_DATA);
+    d.template = template; d.design.templateId = template;
+    const texts = pdf.generateResumePDF(d).pages.flatMap(p => p.elements.filter(e => e.type === 'text'));
+    const tools = texts.find(e => e.text.includes('Jira, Smartsheet'));
+    const name = texts.find(e => e.text.includes('Enterprise Supply Chain'));
+    if (Math.abs(tools.y - name.y) < 1) assert(tools.text.startsWith('|'), `${template}: tools on the name line follow a separator`);
+    else assert(!tools.text.trim().startsWith('|'), `${template}: tools on their own line start with "${tools.text.slice(0, 3)}"`);
+  }
+});
+check('Dates sit in one place per section, with the same spacing either way', () => {
+  const d = schema.migrate({ template: 'classic-professional', personal: { fullName: 'Date Case' }, education: [
+    { degree: 'B.Tech in Computer Science and Engineering', institution: 'RV College of Engineering', duration: '2022 - 2026', location: 'Bengaluru', score: 'CGPA 8.9 / 10' },
+    { degree: 'Class XII (PCM), CBSE', institution: 'Kendriya Vidyalaya', duration: '2022', location: 'Bengaluru', score: '94.2%' }] });
+  const texts = pdf.generateResumePDF(d).pages[0].elements.filter(e => e.type === 'text');
+  const metas = texts.filter(e => /Bengaluru/.test(e.text));
+  assert.equal(metas.length, 2);
+  assert(metas.every(e => Math.abs(e.x - metas[0].x) < 0.5), 'both entries place their details the same way');
+  assert(metas.every(e => e.text.includes('  •  ')), 'details keep their spaced separators');
+  assert(texts.some(e => e.text === 'Class XII (PCM), CBSE  —  Kendriya Vidyalaya'), 'a title that fits keeps its spaced dash');
+});
+check('Characters the PDF fonts cannot write are named', () => {
+  assert.deepEqual(pdf.unsupportedCharacters('Closed ₹12 lakh → done 😀, café – “ok” €5'), ['₹', '→', '😀']);
+  assert.deepEqual(pdf.unsupportedCharacters('Plain​ text'), []);
+});
+check('The review names the character and the field that keep the PDF from downloading', () => {
+  const { generateReviewReport } = require('../js/resume');
+  const d = schema.migrate({ personal: { fullName: 'Asha Verma', email: 'asha@example.com', phone: '+91 98765 43210' },
+    experience: [{ id: 'exp-a', role: 'Analyst', company: 'Firm', duration: '2024', bulletsText: 'Did a thing' }, { id: 'exp-b', role: 'Sales Associate', company: 'Shop', duration: '2023', bulletsText: 'Closed deals worth ₹12 lakh in three months' }] });
+  const item = generateReviewReport(d, null).find(x => x.targetField === 'exp-bul-exp-b');
+  assert(item, 'a finding points at the bullet field that holds ₹');
+  assert(item.message.includes('“₹”'), item.message);
+  assert.equal(item.where, 'Work experience, role 2');
+  assert.deepEqual(item.replace, ['₹']);
+  d.sectionVisibility.experience = false;
+  assert(!generateReviewReport(d, 1).some(x => /built-in fonts/.test(x.message)), 'a hidden section does not print, so it is not reported');
+});
+check('An Indian-script name is named as a script, and only replaceable characters are offered a replacement', () => {
+  const { generateReviewReport, unsupportedDownloadMessage } = require('../js/resume');
+  const d = schema.migrate({ personal: { fullName: 'प्रिया शर्मा', email: 'priya@example.com' },
+    experience: [{ id: 'exp-a', role: 'Analyst', company: 'Firm', duration: '2024', bulletsText: 'Closed deals worth ₹12 lakh' }] });
+  const item = generateReviewReport(d, null).find(x => /built-in fonts/.test(x.message));
+  assert(item.message.startsWith('Devanagari text and “₹” cannot'), item.message);
+  for (const mark of ['्', 'ि', '“प”']) assert(!item.message.includes(mark), `no lone "${mark}" in: ${item.message}`);
+  assert.deepEqual(item.replace, ['₹']);
+  const odd = [{ chars: pdf.unsupportedCharacters('प्रिया शर्मा'), where: 'Contact details, name' }, { chars: ['₹'], where: 'Work experience, role 1' }];
+  const toast = unsupportedDownloadMessage(odd);
+  assert(toast.startsWith('Devanagari text in Contact details, name (and 1 more place) cannot go into this PDF'), toast);
+  assert(toast.endsWith('The Review step shows where the rest is and can replace ₹ with Rs.'), toast);
+  assert(!/replace it\b/.test(toast), toast);
+  assert(unsupportedDownloadMessage([{ chars: ['😀'], where: 'Professional summary' }]).startsWith('Emoji in Professional summary'));
+  assert(unsupportedDownloadMessage([{ chars: ['😀'], where: 'Professional summary' }]).endsWith('The Review step shows where.'));
+  assert(unsupportedDownloadMessage([{ chars: ['₹', '✓'], where: 'Skills, row 1' }]).endsWith('can replace ₹ with Rs. and remove ✓.'));
+});
+check('Job keywords split a title line, skip degree words and match British and American spellings', () => {
+  const keywords = require('../js/keywords');
+  const job = 'Business Analyst - Graduate Programme\nYou will gather requirements from senior stakeholders and own data visualization in Power BI. A degree in any field is required. Organise workshops.';
+  const result = keywords.matchKeywords(job, 'Business Analyst | B.Tech. Visualising sales data in Power BI; organised workshops for stakeholders.');
+  assert(result.found.includes('Business Analyst'), 'the role in the title line is found on its own');
+  assert(!result.keywords.some(term => /graduate programme/i.test(term) && /analyst/i.test(term)), 'the title line is not one long term');
+  for (const filler of ['degree', 'field', 'senior', 'gather']) assert(!result.keywords.includes(filler), filler);
+  for (const term of ['visualization', 'organise']) assert(result.found.some(found => found.toLowerCase() === term), `${term} matches the other spelling`);
 });
 (async () => {
   const { ensureMinKB } = require('../js/resizer');

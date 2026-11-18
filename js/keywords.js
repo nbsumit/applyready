@@ -8,10 +8,31 @@
   // Common English words plus job-advert filler that says nothing about the role.
   const STOPWORDS = new Set(('a about above across after again against all also am an and any are as at be because been before being below between both but by can could did do does doing down during each either etc ever every few for from further get gets given had has have having he her here hers him his how however i if in into is it its itself just least less like made make makes many may me might more most much must my need needs no nor not now of off often on once one only or other our ours out over own per please plus rather same she should since so some such than that the their theirs them then there these they this those through thus to too under until up upon us use used using very via was way we well were what when where whether which while who whom whose why will with within without would yet you your yours ' +
     'ability able across apply applicant applicants applying benefits candidate candidates company competitive culture day days demonstrated desired duties environment equal excellent experience experienced familiarity fast full good great highly ideal ideally including job join key knowledge level looking minimum new opportunity paced plus position preferred proven qualification qualifications related relevant required requirement requirements responsibilities responsibility responsible role salary seeking skill skills strong success successful team teams time understanding work working world year years ' +
-    'achieve assist build building collaborate communicate contribute create creating deliver delivering design develop developing drive ensure help identify implement improve lead maintain manage partner perform provide support write writing').split(/\s+/));
+    'achieve assist build building collaborate communicate contribute create creating deliver delivering design develop developing drive ensure help identify implement improve lead maintain manage partner perform provide support write writing ' +
+    // Words about the degree or seniority asked for, not about the work itself.
+    'bachelor bachelors degree degrees equivalent field fields gather gathering graduates hire hiring junior senior').split(/\s+/));
+
+  // British and American spellings meet in one form (visualise and visualize, colour and color,
+  // modelling and modeling, centre and center, programme and program).
+  function spelling(token) {
+    if (token.length < 5) return token;
+    return token
+      .replace(/^licence/, 'license').replace(/^defence/, 'defense')
+      .replace(/([a-z]{2})is(e|es|ed|ing|ation|ations|er|ers)$/, '$1iz$2')
+      .replace(/([a-z]{2})ys(e|es|ed|ing|er|ers)$/, '$1yz$2')
+      .replace(/([a-z]{2})our(s|ed|ing|ite|ites)?$/, '$1or$2')
+      .replace(/([a-z]{3})ell(ing|ed|er|ers)$/, '$1el$2')
+      .replace(/([a-z]{2})tre(s)?$/, '$1ter$2')
+      .replace(/mme(s)?$/, 'm$1')
+      .replace(/logue(s)?$/, 'log$1');
+  }
 
   // Light stemming so "reports", "reporting" and "reported" match each other.
   function stem(token) {
+    token = spelling(token);
+    // "visualization" meets "visualize", "automation" meets "automate".
+    if (token.length > 7 && /izations?$/.test(token)) return token.replace(/izations?$/, 'iz');
+    if (token.length > 6 && /ations?$/.test(token)) return token.replace(/ations?$/, 'at');
     if (token.length > 5 && /ing$/.test(token)) return token.slice(0, -3);
     if (token.length > 4 && /ed$/.test(token)) return token.slice(0, -2);
     if (token.length > 4 && /ies$/.test(token)) return token.slice(0, -3) + 'y';
@@ -36,9 +57,10 @@
    * filler. Returns at most `limit` terms.
    */
   function extractKeywords(jobText, limit = 30) {
-    // Phrases never span sentences, commas or brackets; only a real sentence
-    // start makes an initial capital meaningless.
-    const chunks = String(jobText || '').split(/[\n\r;:!?•·|]+|\.\s/)
+    // Phrases never span sentences, commas, brackets or a spaced dash (a title line such as
+    // "Business Analyst - Graduate Programme" holds two terms); only a real sentence start makes an
+    // initial capital meaningless.
+    const chunks = String(jobText || '').split(/[\n\r;:!?•·|]+|\.\s|\s[-–—]+\s/)
       .flatMap(sentence => sentence.split(/[()[\],]+/).map((text, index) => ({ text, start: index === 0 })));
     const counts = new Map();
     const display = new Map();

@@ -2,7 +2,7 @@
 
 This document describes what `css/app.css`, the page generators and `js/components.js` implement
 today. The code is the source of truth: if this file and the CSS disagree, the CSS wins and this file
-is wrong. Why the interface looks this way is recorded in `docs/UI_UX_REBUILD_PLAN.md`.
+is wrong. The product plan behind it is in `docs/ROADMAP.md`; earlier design rationale is in the Git history.
 
 ## Character
 
@@ -14,18 +14,26 @@ requirement and I will get the file right", not as a list of features.
 
 | File | Owns |
 |---|---|
-| `css/app.css` | The whole interface, in 17 numbered sections: tokens, base, layout, header, footer, buttons and fields, choice controls, tabs and disclosure, feedback, dialogs and toasts, reading content, page patterns, tool workspace, tool specifics, resume builder, responsive, print and motion. |
+| `css/app.css` | The whole interface, in numbered sections: 0 tokens, 1 base, 2 layout, 3 header (Tools menu, search), 4 footer, 5 buttons and fields, 6 choice controls, 7 tabs and disclosure, 8 feedback, 9 dialogs and toasts, 10 reading content, 11 page patterns (home, directory, guide lists, FAQ), 12 tool workspace, 13 tool specifics, 14 resume builder, 15 responsive, 16 print and motion, 17 file lists and batches, then one section per newer tool (18 resume library and saving, 19 PDF tools, 20 batch images, 21 document tools and your data, 22 applicant workspaces, 23 tutorials). New rules go inside the section for their area, not at the end of the file. |
 | `css/document.css` | The resume paper, its templates and its print layout (resume.html only). It is the output format, not interface, and `tests/content_tests.js` pins its hash. Do not edit it for interface work. |
 | `css/vendor/icons.min.css`, `css/vendor/cropper.min.css` | Icon subset (only the classes listed in it exist) and the cropper, restyled in `app.css`. |
 | `js/site.js` | Theme, header menu and phone sheet, on-screen keyboard state, phone layout of reference tables, `ApplyReadyUI.notify` (toast), `ApplyReadyUI.reveal`, `ApplyReadyUI.confirm` (dialog). |
 | `js/components.js` | Custom select, range fill, segmented-control sync, and the workspace state machine. |
+| `scripts/lib/tools.js` | The tool registry: names, paths, categories, icons, summaries and search keywords. Everything that lists tools reads it. |
 | `scripts/lib/shell.js` | Header, Tools menu, footer and stylesheet links for every page (`node scripts/sync-shell.js`). |
-| `scripts/lib/image-workspace.js` | The image resizer workspace (home, KB pages, exam pages, Hindi pages; `node scripts/build-image-pages.js`). |
+| `js/search.js`, `js/tool-index.js` | Site search (dialog and inline box) and its generated index. |
+| `js/lib/file-kit.js`, `scripts/lib/tool-kit.js` | Shared drop zone, thumbnails, ZIP download and unload guard; matching markup helpers. |
+| `scripts/lib/image-workspace.js` | The image resizer workspace (image resizer, passport and signature resizers, KB pages; `node scripts/build-image-pages.js`). |
 | `scripts/build-tool-pages.js` | Signature cleaner, Image to PDF, Compress PDF and Passport photo print workspaces. |
+| `scripts/build-pdf-pages.js` | The PDF tool pages (merge, split, organise, PDF to images, extract text, page numbers, watermark). |
 
 Markup between `<!-- tool:start -->` and `<!-- tool:end -->`, and between the `shell:` markers, is
-generated. Edit the generator and re-run it; hand edits are overwritten. After CSS or JS changes bump
-`ASSET_VERSION` in `scripts/lib/shell.js` (then sync) and `CACHE_NAME` in `sw.js`.
+generated. Edit the generator and re-run it; hand edits are overwritten, and `npm test` runs every
+generator with `--check`, so a hand edit fails the tests. After CSS or JS changes run
+`node scripts/sync-shell.js`: the service worker's cache name is a hash of the files it caches, so it
+changes by itself (never edit `CACHE_NAME` in `sw.js` by hand; `sync-shell.js --check` fails if you do).
+`ASSET_VERSION` in `scripts/lib/shell.js` is the `?v=` query on stylesheet and script links; change it
+on a release so browsers without the service worker fetch the new files.
 
 ## Tokens (section 0)
 
@@ -51,7 +59,7 @@ status pairing is contrast-checked from the stylesheet by `tests/run_tests.js` (
 
 ### Type
 
-Local Inter with a local Noto Devanagari companion; no network fonts.
+Local Inter with a local Noto Devanagari companion (downloaded only when Devanagari text is on screen, such as a name typed in Hindi); no network fonts.
 
 | Token | Size | Role |
 |---|---|---|
@@ -98,15 +106,39 @@ sides of every former and current breakpoint.
 ## Patterns
 
 ### Shell
-- **Header** (`.site-header`): brand, Tools menu, Resume builder, Guides, हिन्दी, theme. The current
-  page gets a 2 px ink underline. Below 640 px the nav becomes a full-height sheet; on tablets the
-  Tools menu spans the header.
-- **Tools menu** (`.menu`): what you can do, not a site map. The left column lists the five tools with
-  an icon, name and one-line purpose (`.menu__item`), grouped as Image tools and PDF tools; the right
-  column lists the five exams with what each covers. File-size pages are reached from the footer and
-  the resizer itself. Arrow keys, Home, End and Escape work.
-- **Footer** (`.site-footer`): brand statement and four link columns (Tools, Resize to a file size, Exam
-  requirements, ApplyReady), so it divides evenly in every mode (4, 4 under the brand, 2 by 2).
+- **Header** (`.site-header`): brand, Tools menu, Resume builder, Guides; on the right the search
+  control (`.search-trigger`, a field-like button with a `/` hint; an icon button below 1000 px) and the
+  theme toggle. The current page gets a 2 px ink underline. Below 640 px the nav becomes a full-height
+  sheet in DOM order: Search tools, one `.menu__toggle` button per category that shows or hides its
+  tools (the current page's category starts open), All tools, Guides. Opening it moves focus to its
+  first item; Tab stays in the header while it is open; Escape returns focus to the menu button.
+- **Tools menu** (`.menu`): every live tool from the registry, grouped by category in three columns
+  (`.menu__cols--N`), read in registry order: Resume and Image tools, PDF tools, Document, Batch and
+  Cyber cafe tools (tinted). Each category lists the same tools as the home page and the directory
+  (`toolsIn`). Category titles link to their section of `tools.html`; a foot row links "All tools" and
+  teaches the `/` shortcut. Arrow keys, Home, End and Escape work. Two columns on tablets; the menu
+  scrolls when the window is short.
+- **Search** (`js/search.js`): a combobox (`role="combobox"`, `aria-activedescendant`, listbox of
+  `.search-result` options with icon, name, one-line summary and category; an option holds no link, and
+  Enter or a click opens it). In the header it opens as a
+  dialog (full screen on phones); on the home page it is inline (`.search-inline`). With an empty query
+  it lists recently used tools, or the most used ones.
+- **Footer** (`.site-footer`): brand statement and motto, then four link columns generated from the
+  registry (Resume and images, PDF and documents, Batch and help, ApplyReady), each tool once under its
+  own category. The column titles are labels under one visually hidden "Site links" heading. A project page appears in
+  the footer as soon as its file exists. The base row carries the Source code link and the single
+  voluntary donation link.
+
+### Home and directory
+- **Home** (`index.html`): `.home-hero` (eyebrow motto, title, lede, inline search, "Browse all tools")
+  beside `.home-tasks`, a panel of the four most common tasks. Then `#homeContinue` (recent tools and
+  saved resumes, filled by `js/home.js`, hidden when empty), `.cat-grid` of `.cat-card` category entry
+  points with their first four tools, `.tool-grid` of the most used tools, and `.promise-list`.
+- **Directory** (`tools.html`): filter box (same matching as search, `js/directory.js`), `.dir-nav`
+  category chips, then a `.dir-section` per category (stable ids: `#resume`, `#image`, `#pdf`,
+  `#document`, `#batch`, `#cafe`) with a `.tool-grid` of `.tool-card` links. A tool with preset pages
+  (`presetOf` in the registry) lists them as "Common limits" links on its card (`.tool-card--presets`).
+  The filter shows each match once, in its own category, and counts what it shows.
 
 ### Page heads
 `.page-head` holds an optional `.breadcrumb-nav`, `.eyebrow`, `.page-title`, `.page-lede` and on the
@@ -160,10 +192,20 @@ Variants: `data-compact-drop` folds the drop zone into a one-line strip once fil
 PDF). After a file loads, the resizer scrolls the editor into view when most of it is below the screen
 (phones and short laptops).
 
-Language: Hindi pages carry their own wording. Generated labels come from `L.hi` in
-`scripts/lib/image-workspace.js`; sentences written by `js/resizer.js` come from `data-*` attributes
-(process summary, result status and limit) and from its `HINDI_MESSAGES` table (validation and file
-errors), applied when `<html lang="hi">`.
+### Multi-file tools (section 17)
+Batch and PDF tools share one vocabulary: a `.dropzone` built by `scripts/lib/tool-kit.js` and wired by
+`ApplyReadyFileKit.dropzone` (picker, drag and drop, paste, validation by file content), a `.batch-bar`
+with counts and actions, a `.batch-progress` bar, and a `.file-list` of `.file-row` items (thumbnail,
+name and facts, `.file-status` in words with an icon, actions). `data-status` on a row is `queued`,
+`processing`, `done`, `error` or `cancelled`. PDF page thumbnails use `.page-grid` of `.page-tile`.
+Downloads of several results are offered individually and as one ZIP.
+
+The batch image pages (section 20, `scripts/lib/batch-workspace.js`) add a `.batch-panel` for progress
+(count, bar with `role="progressbar"`, time left, Cancel) and for the finished verdict (Download all as
+ZIP, Retry failed), a warning notice when changed settings make finished results stale ("Process
+again"), and rows with a result line (`.file-row__result`) and notes (`.file-row__notes`). Settings that
+matter less for a page sit under one "More settings" disclosure, which opens by itself when a value
+inside it needs fixing.
 
 ### Requirement (image resizer)
 Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, never inside a rail.
@@ -173,8 +215,8 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
   per mode by classes the generator chooses from the number of options: `req-grid--d{2,3,4}` on
   desktops, `req-grid--t{2,3}` on tablets, one column on phones. Cards in a grid share one size, so
   there are no orphans or partial rows (8 options: 4 x 2, 2 x 4, 1 x 8; 3 options: 3, 3, 1).
-- Choice: the home page has no default (`data-require-choice`, `data-req="pending"`); processing waits
-  for a choice and the action line says so, with "Show me". Exam and file-size pages, and links with
+- Choice: the image resizer has no default (`data-require-choice`, `data-req="pending"`); processing waits
+  for a choice and the action line says so, with "Show me". Landing pages (passport, signature, file-size), and links with
   `?preset=` or `?targetKB=`, arrive with their requirement chosen.
 - Summary: once chosen the grid folds to `.req-summary` (name, pixels, KB, format) with a Change
   button (`aria-expanded`, Escape folds it again). It stays visible in every state.
@@ -191,8 +233,32 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
   is announced in `#pageOrderStatus` and focus follows the moved page. Any change hides a stale PDF.
 - **Compress PDF**: `.target-grid` of limit choices plus a typed limit; the result is `.size-compare`
   (Before, After, reduction, pages) under a `.result-status` verdict.
+- **File checker** (section 21): a one-column `.ws.fc-ws`; the optional requirement is a `.disclosure.fc-req`
+  above the list; each file is an `.fc-card` with notices (problem, privacy, check, info), a `.check-table.fc-check`
+  (rule, required, this file, result in words) and `.fc-group` blocks of `.meta-stats`. Risky values use `.fc-risk`.
+- **Text to PDF** (section 21): editor and compact drop zone in the stage, settings in the rail; unsupported characters
+  are a `.notice--warning.ttp-chars` with replace, print and remove actions; the print fallback is `.ttp-print`.
+- **Your data** (section 21): `.yd-grid` of `.yd-panel` blocks (saved resumes, recent tools, theme, storage, offline
+  copy, delete everything as `.yd-panel--danger`).
+- **Applicant workspaces** (section 22): `.wk` holds a permanent `.notice--info.wk-banner`, the session settings
+  (`.disclosure.wk-settings` with `.wk-fieldset` groups and a one-line summary), the start screen (`.wk-start`)
+  and the session: `.wk-nav` (wrapping `.wk-tab` buttons in a `role="tablist"` from 640 px, a select below
+  640 px, New applicant, End session) and the `.wk-panel` (name field and completion tally with Finish, then
+  `.wk-grid`: files with a `.wk-selbar` for combining and `.wk-file` rows whose one-click actions sit on a
+  second line, and work in progress (`.wk-job`) and results (`.wk-result`) in a second column from 1000 px).
+  Finish becomes the primary action only when every result is downloaded; until then the ZIP is. A finished
+  task shows a toast with what was made and its measured facts, never a file or applicant name; a name used by
+  another applicant in the session turns the name hint into a warning (`.field-hint.is-warning`).
 - **Signature cleaner**: `.compare-pair` shows the original and the cleaned result side by side from
   640 px (stacked on phones); the cleaned pane is outlined in ink.
+- **PDF tools** (section 19): one-PDF tools use `.ws--pdf` (the drop zone hides once a file is open), a
+  file bar, `.pdf-loading` while opening, `.pdf-progress` (text, Cancel, bar) for long jobs, and a
+  `.ws-result` above the content. Pages are a `.page-grid` of `.page-tile`s; selectable tiles are
+  toggle buttons (`.page-tile__body[aria-pressed]`, a check beside the label when selected). Merge rows
+  (`.merge-row`) and organise tiles (`.org-tile`) have a drag handle that also moves with the arrow
+  keys, Home and End, plus move buttons. Page numbers choose a position on `.pos-grid`; page numbers
+  and watermark show `.pdf-preview`, the first page made by the same code as the download. Modes are
+  `.choice` cards in `.pdf-choices`. The password dialog (`.pdf-password`) uses the dialog pattern.
 - **Print sheet**: preview on `.ws-preview--desk`, facts in a `.meta-stats--row`, and a reminder to
   print at 100%.
 
@@ -221,7 +287,7 @@ Step 1 of the resizer, in its own band (`.ws-req#reqPanel`) above the file, neve
 | Disabled | `--c-text-4`, no pointer events |
 | Empty | Drop zone, `.entries:empty` message, `.empty` |
 | Selected | `aria-pressed` / `aria-selected` with an ink marker and weight, never colour alone |
-| Saving / saved | Resume `#draftStatusText` (`role="status"`) |
+| Saving / saved | Resume `#saveStatus` (icon and `#saveStatusText` under the resume name, state in `data-state`). It is not a live region, so it does not speak on every keystroke; the first save, a failed save and a change in another tab are announced through `ApplyReadyUI.notify`, and anything that needs a decision appears in `#saveNotice` |
 | Offline | `offline.html` served by the service worker |
 | Temporary confirmation | `.task-notification` toast (`ApplyReadyUI.notify`) |
 
@@ -234,6 +300,11 @@ per row (without script it scrolls sideways instead). `.callout` is a ruled asid
 warning rule). Related guides (`.guide-card-grid`, `.related-guides-grid`) are divided link rows in
 two columns, not cards. FAQ is a ruled `<details>` list. `.toolset` lists the product family after
 the home tool.
+
+Screenshots are `figure.shot`: the picture, then a quiet caption that explains each numbered callout.
+A screenshot comes as a `<picture>` with a phone capture for windows up to 640 px, written by
+`scripts/guide-screenshots.js` (section 10). A wide one in a tutorial is wrapped in `.shot__full`, a link
+to the picture shown, with a visible "Open full size" line (`.shot__zoom`, section 23).
 
 ### Resume builder (`.rb`)
 - App bar (`.rb-head`): title, one-line lede, privacy line, "Review and download".
@@ -248,7 +319,8 @@ the home tool.
 - Review: status line, then findings grouped as Fix before sending, Worth checking, Suggestions; each
   says what, where and why, and Fix opens the section and entry and focuses the exact field.
 - Download: one row per format (PDF recommended, Word, plain text) with what it is for, then print,
-  then Keep your work (device draft, backup file).
+  then Keep your work (the Save on this device switch, the save status, backup file download and
+  import, and My resumes).
 - Preview (`.rb-preview`): sticky paper on `--c-desk` with template name, page count, zoom and PDF. On
   desktops it is the one contained scroll region in the product: it stays beside a long editor, so
   multi-page resumes scroll inside it.

@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- shell:csp:start -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="applyready-tool" content="convert-image">
+  <!-- shell:csp:end -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Image Converter: JPG, PNG and WebP, One or Many | ApplyReady</title>
+  <meta name="description" content="Convert images between JPG, PNG and WebP, one or hundreds at once, free in your browser with nothing uploaded. Choose a background for transparent areas.">
+  <link rel="canonical" href="https://applyready.in/convert-image.html">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ApplyReady">
+  <meta property="og:url" content="https://applyready.in/convert-image.html">
+  <meta property="og:title" content="Image Converter: JPG, PNG and WebP, One or Many">
+  <meta property="og:description" content="Convert images between JPG, PNG and WebP, one or hundreds at once, free in your browser with nothing uploaded. Choose a background for transparent areas.">
+  <meta property="og:image" content="https://applyready.in/assets/social-card.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ApplyReady: free tools for job applications. Resume builder, photo and signature tools and PDF tools that run in your browser; nothing is uploaded.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Image Converter: JPG, PNG and WebP, One or Many">
+  <meta name="twitter:description" content="Convert images between JPG, PNG and WebP, one or hundreds at once, free in your browser with nothing uploaded. Choose a background for transparent areas.">
+  <meta name="twitter:image" content="https://applyready.in/assets/social-card.png">
+
+  <link rel="icon" type="image/x-icon" href="favicon/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+  <link rel="manifest" href="favicon/site.webmanifest">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
+
+  <script src="js/theme.js?v=20261118"></script>
+
+  <!-- shell:styles:start -->
+  <link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/vendor/icons.min.css?v=20261118">
+  <link rel="stylesheet" href="css/app.css?v=20261118">
+  <!-- shell:styles:end -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "ApplyReady Image Converter",
+        "url": "https://applyready.in/convert-image.html",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Any modern browser",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://applyready.in/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Image tools",
+            "item": "https://applyready.in/tools.html#image"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Image converter",
+            "item": "https://applyready.in/convert-image.html"
+          }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How do I convert PNG to JPG?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Choose JPEG under Save as, add the PNG files and press Convert. The pixel size stays the same. Transparent areas are filled with the background colour, white unless you choose another, because JPEG cannot store transparency."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens to transparent areas?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Saved as PNG or WebP, transparency is kept. Saved as JPEG, transparent areas become the background colour you choose under Format. White is the default, which suits most forms and documents."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I convert HEIC photos from an iPhone?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Not reliably. Most browsers other than Safari cannot open HEIC, so the converter refuses HEIC files with a message instead of producing a broken result. On the iPhone, choose Settings, Camera, Formats, Most Compatible to take new photos as JPEG."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does converting JPG to PNG improve quality?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Detail lost when the JPEG was made cannot be brought back. The PNG looks the same and is usually several times larger. Convert to PNG only when a form or program asks for it."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I convert many images at once?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Add up to 500 images, choose the format once and press Convert. Each image gets its own row and result, and Download all as ZIP saves them together with the new file extensions."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body class="content-page">
+  <!-- shell:header:start -->
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <header class="site-header" id="siteHeader">
+    <div class="site-header__inner">
+      <a class="brand" href="/" aria-label="ApplyReady home">
+        <img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28">
+        <span class="brand__name">ApplyReady</span>
+      </a>
+      <nav class="site-nav" id="siteNav" aria-label="Main">
+        <ul class="site-nav__list">
+          <li class="site-nav__search"><button type="button" class="site-nav__search-btn" id="navSearch"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Search tools</button></li>
+          <li class="site-nav__item">
+            <button type="button" class="site-nav__link" id="toolsMenuButton" aria-expanded="false" aria-controls="toolsMenu">Tools <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+            <div class="menu" id="toolsMenu" hidden>
+              <div class="menu__cols menu__cols--3">
+              <div class="menu__group">
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-resume">
+                    <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
+                  </ul>
+                </div>
+                <div class="menu__cat" data-open>
+                  <p class="menu__title"><a href="tools.html#image">Image tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="true" aria-controls="menuList-image">Image tools <span class="menu__count">8<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-image">
+                    <li><a class="menu__item" href="image-resizer.html"><i class="fa-solid fa-crop-simple menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image resizer</span><span class="menu__desc">Exact pixel size and KB limit, with crop and rotate</span></span></a></li>
+                    <li><a class="menu__item" href="passport-photo-resizer.html"><i class="fa-solid fa-id-badge menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo resizer</span><span class="menu__desc">Passport-size photo at the pixel size and KB a form asks for</span></span></a></li>
+                    <li><a class="menu__item" href="signature-resizer.html"><i class="fa-solid fa-signature menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature resizer</span><span class="menu__desc">Signature image at the exact size and KB limit</span></span></a></li>
+                    <li><a class="menu__item" href="compress-image.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image compressor</span><span class="menu__desc">Make photos smaller in KB, one or many at once</span></span></a></li>
+                    <li><a class="menu__item" href="convert-image.html" aria-current="page"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
+                    <li><a class="menu__item" href="signature-cleaner.html"><i class="fa-solid fa-wand-magic-sparkles menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Signature cleaner</span><span class="menu__desc">White paper and dark ink from a phone photo of a signature</span></span></a></li>
+                    <li><a class="menu__item" href="passport-photo-print.html"><i class="fa-solid fa-print menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Passport photo print sheet</span><span class="menu__desc">A printable A4 or 4x6 sheet of passport photos</span></span></a></li>
+                    <li><a class="menu__item" href="batch-image.html"><i class="fa-solid fa-layer-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Batch image processor</span><span class="menu__desc">Resize, compress or convert many photos at once, download a ZIP</span></span></a></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="menu__group">
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#pdf">PDF tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-pdf">PDF tools <span class="menu__count">10<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-pdf">
+                    <li><a class="menu__item" href="merge-pdf.html"><i class="fa-solid fa-object-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Merge PDF</span><span class="menu__desc">Join several PDFs into one, in the order you choose</span></span></a></li>
+                    <li><a class="menu__item" href="split-pdf.html"><i class="fa-solid fa-scissors menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Split PDF</span><span class="menu__desc">Take out pages or split a PDF into parts</span></span></a></li>
+                    <li><a class="menu__item" href="organize-pdf.html"><i class="fa-solid fa-table-cells-large menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Organise PDF pages</span><span class="menu__desc">Reorder, rotate and delete pages</span></span></a></li>
+                    <li><a class="menu__item" href="image-to-pdf.html"><i class="fa-solid fa-file-pdf menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image to PDF</span><span class="menu__desc">Combine photos and scans into one PDF</span></span></a></li>
+                    <li><a class="menu__item" href="compress-pdf.html"><i class="fa-solid fa-file-zipper menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Compress PDF</span><span class="menu__desc">Make a PDF small enough for an upload limit</span></span></a></li>
+                    <li><a class="menu__item" href="pdf-to-image.html"><i class="fa-solid fa-images menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">PDF to images</span><span class="menu__desc">Save PDF pages as JPG or PNG images</span></span></a></li>
+                    <li><a class="menu__item" href="pdf-to-text.html"><i class="fa-solid fa-font menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Extract text from PDF</span><span class="menu__desc">Copy the text out of a PDF</span></span></a></li>
+                    <li><a class="menu__item" href="add-page-numbers.html"><i class="fa-solid fa-list-ol menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Add page numbers</span><span class="menu__desc">Number the pages of a PDF</span></span></a></li>
+                    <li><a class="menu__item" href="watermark-pdf.html"><i class="fa-solid fa-stamp menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Watermark PDF</span><span class="menu__desc">Stamp text such as &quot;Copy&quot; across every page</span></span></a></li>
+                    <li><a class="menu__item" href="text-to-pdf.html"><i class="fa-solid fa-file-export menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Text to PDF</span><span class="menu__desc">Turn typed or pasted text into a clean PDF</span></span></a></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="menu__group">
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#document">Document tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-document">Document tools <span class="menu__count">3<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-document">
+                    <li><a class="menu__item" href="text-to-pdf.html"><i class="fa-solid fa-file-export menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Text to PDF</span><span class="menu__desc">Turn typed or pasted text into a clean PDF</span></span></a></li>
+                    <li><a class="menu__item" href="file-checker.html"><i class="fa-solid fa-file-circle-check menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">File checker</span><span class="menu__desc">See a file’s real type, size, pixels and metadata; remove photo metadata</span></span></a></li>
+                    <li><a class="menu__item" href="pdf-to-text.html"><i class="fa-solid fa-font menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Extract text from PDF</span><span class="menu__desc">Copy the text out of a PDF</span></span></a></li>
+                  </ul>
+                </div>
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#batch">Batch processing</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-batch">Batch processing <span class="menu__count">3<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-batch">
+                    <li><a class="menu__item" href="batch-image.html"><i class="fa-solid fa-layer-group menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Batch image processor</span><span class="menu__desc">Resize, compress or convert many photos at once, download a ZIP</span></span></a></li>
+                    <li><a class="menu__item" href="compress-image.html"><i class="fa-solid fa-compress menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image compressor</span><span class="menu__desc">Make photos smaller in KB, one or many at once</span></span></a></li>
+                    <li><a class="menu__item" href="convert-image.html" aria-current="page"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
+                  </ul>
+                </div>
+                <div class="menu__cat">
+                  <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
+                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+                  <ul class="menu__list" id="menuList-cafe">
+                    <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
+                  </ul>
+                </div>
+              </div>
+              </div>
+              <div class="menu__foot"><a class="menu__all" href="tools.html">All tools <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a><span class="menu__hint">Press <kbd>/</kbd> to search</span></div>
+            </div>
+          </li>
+          <li class="site-nav__resume"><a class="site-nav__link" href="resume.html">Resume builder</a></li>
+          <li><a class="site-nav__link" href="guides/">Guides</a></li>
+        </ul>
+      </nav>
+      <div class="site-header__tools">
+        <button type="button" id="searchOpen" class="search-trigger" aria-haspopup="dialog" aria-keyshortcuts="/ Control+K" aria-label="Search tools"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><span class="search-trigger__label" aria-hidden="true">Search tools</span><kbd class="search-trigger__key" aria-hidden="true">/</kbd></button>
+        <button type="button" id="themeToggle" class="btn btn-ghost btn-icon" aria-label="Switch to dark theme"><i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i></button>
+        <button type="button" id="navMenuToggle" class="btn btn-ghost btn-icon nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+      </div>
+    </div>
+  </header>
+  <!-- shell:header:end -->
+
+  <main id="mainContent" class="page">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      <ol class="breadcrumb-list">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="tools.html#image">Image tools</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Image converter</li>
+      </ol>
+    </nav>
+    <header class="page-head">
+      <h1 class="page-title">Image converter</h1>
+      <p class="page-lede">Convert photos and graphics between JPG, PNG and WebP. The pixel size stays the same unless you choose otherwise. Your images stay on this device.</p>
+    </header>
+    <!-- tool:start -->
+    <section class="tool-section" id="batch-tool" aria-label="Image tool">
+    <section class="ws ws--batch" id="batchApp" data-mode="convert" data-zip="converted-images.zip" data-preset="custom" data-resize="none" data-width="" data-height="" data-format="image/jpeg" data-quality="92" data-max-kb="" data-min-kb="" data-allow-shrink="true" data-naming="keep" data-suffix="-converted" data-prefix="image" data-state="empty" data-keep data-compact-drop data-settings="open" data-ws-file="#batchBar" data-ws-result="#batchResult" data-ws-busy="#batchProgress" aria-label="Image converter">
+      <div class="ws-head">
+        <div class="batch-bar hidden" id="batchBar">
+          <p class="batch-bar__counts" id="batchCounts"></p>
+          <div class="batch-bar__actions">
+            <button type="button" class="btn btn-sm" id="btnBatchAdd"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add images</button>
+            <button type="button" class="btn btn-sm btn-danger-ghost" id="btnBatchClear"><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Clear all</button>
+          </div>
+        </div>
+      </div>
+      <div class="ws-stage">
+        <div class="notice notice--error" id="batchError" role="alert" hidden><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"><p class="batch-msg__title" id="batchErrorTitle"></p><ul class="batch-msg__list" id="batchErrorList"></ul><button type="button" class="btn btn-sm btn-ghost" id="btnBatchErrorClose">Dismiss</button></div></div>
+        <div class="notice notice--warning" id="batchWarning" hidden><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body" id="batchWarningText"></div></div>
+        <div class="dropzone" data-dropzone id="batchDrop" role="group" aria-labelledby="batchDropTitle">
+          <input type="file" id="batchDropInput" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif" multiple class="hidden" tabindex="-1" aria-hidden="true">
+          <span class="dropzone__icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
+          <p class="dropzone__title" id="batchDropTitle">Add the images to convert</p>
+          <p class="dropzone__text dropzone__drag">Drag them here<span class="dropzone__or">, or</span></p>
+          <button type="button" class="btn btn-primary btn-lg" data-browse><i class="fa-solid fa-plus" aria-hidden="true"></i> Choose images</button>
+          <p class="dropzone__hint">JPG, PNG, WebP, GIF, BMP or AVIF, up to 50 MB each and 500 files at a time. You can paste images too. Processed on your device, never uploaded.</p>
+        </div>
+        <div id="batchProgress" class="batch-progress batch-panel hidden">
+          <div class="batch-progress__head">
+            <p class="batch-progress__text" id="batchProgressText">Starting…</p>
+            <button type="button" class="btn btn-sm" id="btnBatchCancel"><i class="fa-solid fa-ban" aria-hidden="true"></i> Cancel</button>
+          </div>
+          <div class="progress" id="batchProgressMeter" role="progressbar" aria-labelledby="batchProgressText" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="progress-bar" id="batchProgressBar" style="width: 0%;"></span></div>
+          <p class="batch-progress__eta" id="batchProgressEta"></p>
+        </div>
+        <div id="batchResult" class="ws-result batch-panel hidden">
+          <div class="ws-result__head">
+            <div class="verdict" id="batchVerdict">
+              <i class="fa-solid fa-check" id="batchVerdictIcon" aria-hidden="true"></i>
+              <div><h2 class="ws-result__title" id="batchVerdictTitle" tabindex="-1"></h2><p class="ws-result__ok" id="batchVerdictText"></p></div>
+            </div>
+          </div>
+          <div class="ws-result__actions">
+            <button type="button" class="btn btn-primary btn-lg" id="btnBatchZip"><i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download all as ZIP</button>
+            <button type="button" class="btn btn-lg hidden" id="btnBatchRetry"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Retry failed</button>
+          </div>
+          <p class="batch-result__note">Every file was read back and checked against your settings before it was listed as done. Saving a new copy removes location (GPS), camera and other hidden details from photos.</p>
+        </div>
+        <div class="notice notice--warning hidden" id="batchStale"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"><p id="batchStaleText">You changed the settings after processing. The finished files still use the old settings.</p><button type="button" class="btn btn-sm" id="btnBatchRerun"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Process again</button></div></div>
+        <ul class="file-list hidden" id="batchList" aria-label="Images in this batch"></ul>
+      </div>
+      <div class="ws-rail">
+      <div class="ws-side">
+        <div class="ws-section" data-section="format">
+          <h2 class="ws-section__title">Format</h2>
+          <div class="field">
+            <label for="bFormat" class="field-label">Save as</label>
+            <select id="bFormat" aria-describedby="bFormatHint"><option value="keep">Same as the original</option><option value="image/jpeg" selected>JPEG (.jpg), accepted everywhere</option><option value="image/png">PNG (.png), sharp edges, transparency</option><option value="image/webp">WebP (.webp), small, not accepted everywhere</option></select>
+            <p class="field-hint" id="bFormatHint">GIF, BMP and AVIF files are saved as JPEG when you keep the format.</p>
+          </div>
+          <div class="field">
+            <label for="bBackground" class="field-label">Background colour</label>
+            <input type="color" id="bBackground" class="input input--colour" value="#ffffff" aria-describedby="bBackgroundHint">
+            <p class="field-hint" id="bBackgroundHint">Fills transparent areas and padding. JPEG has no transparency, so transparent parts of a PNG become this colour.</p>
+          </div>
+        </div>
+        <details class="disclosure batch-more" id="batchMore">
+          <summary>More settings</summary>
+          <div class="disclosure__body">
+            <div class="ws-section" data-section="limit">
+              <h2 class="ws-section__title">File size and quality</h2>
+              <div class="field-row">
+                <div class="field">
+                  <label for="bMaxKB" class="field-label">Maximum <span class="optional">(optional)</span></label>
+                  <div class="input-unit"><input type="number" id="bMaxKB" class="input" min="5" max="20000" step="1" inputmode="numeric" value="" aria-describedby="bMaxKBError"><span class="input-unit__text" aria-hidden="true">KB</span></div>
+                  <p class="field-error hidden" id="bMaxKBError"></p>
+                </div>
+                <div class="field">
+                  <label for="bMinKB" class="field-label">Minimum <span class="optional">(optional)</span></label>
+                  <div class="input-unit"><input type="number" id="bMinKB" class="input" min="1" max="20000" step="1" inputmode="numeric" value="" aria-describedby="bMinKBError"><span class="input-unit__text" aria-hidden="true">KB</span></div>
+                  <p class="field-error hidden" id="bMinKBError"></p>
+                </div>
+              </div>
+              <p class="field-hint">Leave the maximum empty for no limit. A minimum is reached by adding harmless padding inside JPEG files.</p>
+              <div class="field">
+                <div class="range-head"><label for="bQuality" class="field-label">Quality</label><span id="bQualityVal" class="range-value">92%</span></div>
+                <input type="range" id="bQuality" min="40" max="100" step="1" value="92" aria-describedby="bQualityHint">
+                <p class="field-hint" id="bQualityHint">The highest quality to use for JPEG and WebP. With a maximum, it is lowered only as far as needed.</p>
+              </div>
+              <label class="switch" for="bAllowShrink"><span>Allow smaller dimensions to meet the limit</span><input type="checkbox" id="bAllowShrink" role="switch" aria-describedby="bAllowShrinkHint" checked></label>
+              <p class="field-hint" id="bAllowShrinkHint">On: quality stays at 50% or more, and an image that still does not fit is made smaller. Off: the pixel size never changes.</p>
+            </div>
+            <div class="ws-section" data-section="size">
+              <h2 class="ws-section__title">Size</h2>
+              <div class="field">
+                <label for="bPreset" class="field-label">Preset</label>
+                <select id="bPreset" aria-describedby="bPresetHint"><option value="custom" selected>Custom settings</option><option value="passport">Passport photo: 350 × 450 px, under 50 KB</option><option value="signature">Signature: 300 × 100 px, under 30 KB</option><option value="profile">Profile photo: 400 × 400 px, under 100 KB</option><option value="document">Document scan: within 1240 × 1754 px, under 500 KB</option></select>
+                <p class="field-hint" id="bPresetHint">A preset fills in the size, format and file limit. Change any value to make your own.</p>
+              </div>
+              <div class="field">
+                <label for="bResize" class="field-label">Resize</label>
+                <select id="bResize" aria-describedby="bResizeHint"><option value="none" selected>Keep the original size</option><option value="fit">Fit within a box, keep proportions</option><option value="fill">Exact size, crop to fill</option><option value="pad">Exact size, add padding</option><option value="scale">Scale by a percentage</option></select>
+                <p class="field-hint" id="bResizeHint"></p>
+              </div>
+              <div class="field-row" id="bDims">
+                <div class="field">
+                  <label for="bWidth" class="field-label">Width</label>
+                  <div class="input-unit"><input type="number" id="bWidth" class="input" min="16" max="12000" step="1" inputmode="numeric" value="" aria-describedby="bWidthError"><span class="input-unit__text" aria-hidden="true">px</span></div>
+                  <p class="field-error hidden" id="bWidthError"></p>
+                </div>
+                <div class="field">
+                  <label for="bHeight" class="field-label">Height</label>
+                  <div class="input-unit"><input type="number" id="bHeight" class="input" min="16" max="12000" step="1" inputmode="numeric" value="" aria-describedby="bHeightError"><span class="input-unit__text" aria-hidden="true">px</span></div>
+                  <p class="field-error hidden" id="bHeightError"></p>
+                </div>
+              </div>
+              <div class="field hidden" id="bScaleField">
+                <label for="bScale" class="field-label">Scale</label>
+                <div class="input-unit"><input type="number" id="bScale" class="input" min="1" max="400" step="1" inputmode="numeric" value="50" aria-describedby="bScaleError"><span class="input-unit__text" aria-hidden="true">%</span></div>
+                <p class="field-error hidden" id="bScaleError"></p>
+              </div>
+            </div>
+            <div class="ws-section" data-section="naming">
+              <h2 class="ws-section__title">File names</h2>
+              <div class="field">
+                <label for="bNaming" class="field-label">Name the results</label>
+                <select id="bNaming" aria-describedby="bNamingHint"><option value="keep" selected>Keep the original name</option><option value="suffix">Add a word to the end</option><option value="sequence">Number them in order</option></select>
+              </div>
+              <div class="field" id="bSuffixField">
+                <label for="bSuffix" class="field-label">Word to add</label>
+                <input type="text" id="bSuffix" class="input" maxlength="40" value="-converted" autocomplete="off" spellcheck="false">
+              </div>
+              <div class="field" id="bPrefixField">
+                <label for="bPrefix" class="field-label">Name before the number</label>
+                <input type="text" id="bPrefix" class="input" maxlength="40" value="image" autocomplete="off" spellcheck="false">
+              </div>
+              <p class="field-hint" id="bNamingHint">Two results with the same name get (2), (3) and so on, in the list and in the ZIP file.</p>
+              <div class="field">
+                <label for="bZipName" class="field-label">ZIP file name</label>
+                <div class="input-unit"><input type="text" id="bZipName" class="input" maxlength="60" value="converted-images" autocomplete="off" spellcheck="false" aria-describedby="bZipNameHint"><span class="input-unit__text" aria-hidden="true">.zip</span></div>
+                <p class="field-hint" id="bZipNameHint">Name each batch, for example after the class or the date, so the downloads are easy to tell apart.</p>
+              </div>
+            </div>
+          </div>
+        </details>
+        <button type="button" id="btnBatchReset" class="btn btn-sm btn-ghost ws-reset"><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset to defaults</button>
+      </div>
+      <div class="ws-action">
+        <button type="button" id="btnBatchStart" class="btn btn-primary btn-lg btn-block" disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> <span id="btnBatchStartLabel">Process images</span></button>
+        <p class="process-summary" id="batchSettingsSummary"></p>
+      </div>
+      </div>
+    </section>
+    </section>
+    <!-- tool:end -->
+    <section class="section prose" aria-labelledby="howHeading">
+      <h2 id="howHeading">Which format to choose</h2>
+      <ul>
+        <li><strong>JPEG (.jpg)</strong> for photos and for any application form that does not say otherwise. It is accepted almost everywhere and makes small files.</li>
+        <li><strong>PNG (.png)</strong> for screenshots, logos and drawings with sharp edges, and whenever you need a transparent background. Photos saved as PNG are large.</li>
+        <li><strong>WebP (.webp)</strong> is small and sharp, but many portals still refuse it. Use it for your own website, not for forms.</li>
+      </ul>
+      <p>Converting does not add detail: a JPEG turned into PNG looks the same and takes more space. The <a href="guides/image-formats-guide.html">guide to image formats</a> explains the differences in more depth.</p>
+      <h3>Transparent images</h3>
+      <p>JPEG has no transparency. When a PNG or WebP with a transparent background is saved as JPEG, the transparent parts are filled with the <em>Background colour</em>, white unless you choose another. Without that, many programs would show those areas as black. PNG and WebP keep transparency as it is.</p>
+      <h3 id="heic">iPhone photos (HEIC)</h3>
+      <p>iPhones save photos as HEIC by default. Most browsers other than Safari cannot open HEIC, so this converter cannot read them reliably, and a HEIC file is refused with a message rather than converted badly. To get JPEG photos from an iPhone, open Settings, then Camera, then Formats, and choose <em>Most Compatible</em>; new photos are then saved as JPEG. For photos you already took, sharing them by email or choosing them in a website's file picker often gives a JPEG copy.</p>
+      <h3>Good to know</h3>
+      <ul>
+        <li>An animated GIF becomes a still image of its first frame.</li>
+        <li>Some browsers cannot save WebP. If yours cannot, the row says so; choose JPEG or PNG instead.</li>
+        <li>Every result is a new file, so location (GPS), camera and other hidden details are removed.</li>
+        <li>To make files smaller as well, set a maximum under <em>More settings</em>, or open the <a href="compress-image.html">image compressor</a>. To convert and resize a whole folder for a form, use the <a href="batch-image.html">batch image processor</a>.</li>
+      </ul>
+      <p>Signatures photographed on paper convert better after cleaning: run them through the <a href="signature-cleaner.html">signature cleaner</a> first, then the <a href="signature-resizer.html">signature resizer</a> for the form's size.</p>
+    </section>
+    <section class="faq-section" aria-labelledby="faqHeading">
+      <div class="faq-header">
+        <h2 id="faqHeading" class="faq-title">Questions</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary class="faq-question"><span>How do I convert PNG to JPG?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Choose JPEG under Save as, add the PNG files and press Convert. The pixel size stays the same. Transparent areas are filled with the background colour, white unless you choose another, because JPEG cannot store transparency.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>What happens to transparent areas?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Saved as PNG or WebP, transparency is kept. Saved as JPEG, transparent areas become the background colour you choose under Format. White is the default, which suits most forms and documents.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Can I convert HEIC photos from an iPhone?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Not reliably. Most browsers other than Safari cannot open HEIC, so the converter refuses HEIC files with a message instead of producing a broken result. On the iPhone, choose Settings, Camera, Formats, Most Compatible to take new photos as JPEG.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Does converting JPG to PNG improve quality?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>No. Detail lost when the JPEG was made cannot be brought back. The PNG looks the same and is usually several times larger. Convert to PNG only when a form or program asks for it.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Can I convert many images at once?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Yes. Add up to 500 images, choose the format once and press Convert. Each image gets its own row and result, and Download all as ZIP saves them together with the new file extensions.</p></div>
+        </details>
+      </div>
+    </section>
+    <p class="tool-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> Your images are processed in this browser and never leave your device. Nothing is saved after you close the tab.</p>
+  </main>
+
+  <!-- shell:footer:start -->
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <h2 class="sr-only">Site links</h2>
+      <div class="site-footer__brand">
+        <a class="brand" href="/"><img class="brand__mark" src="favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
+        <p>Free tools for job applications: resumes, photos, signatures and PDFs. Everything runs in your browser, and your files are never uploaded.</p>
+        <p class="site-footer__motto">Free. Open source. Forever.</p>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks1">Resume and images</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks1">
+          <li><a href="resume.html">Resume builder</a></li>
+          <li><a href="image-resizer.html">Image resizer</a></li>
+          <li><a href="passport-photo-resizer.html">Passport photo resizer</a></li>
+          <li><a href="signature-resizer.html">Signature resizer</a></li>
+          <li><a href="compress-image.html">Image compressor</a></li>
+          <li><a href="convert-image.html">Image converter</a></li>
+          <li><a href="signature-cleaner.html">Signature cleaner</a></li>
+          <li><a href="passport-photo-print.html">Passport photo print sheet</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks2">PDF and documents</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks2">
+          <li><a href="merge-pdf.html">Merge PDF</a></li>
+          <li><a href="split-pdf.html">Split PDF</a></li>
+          <li><a href="organize-pdf.html">Organise PDF pages</a></li>
+          <li><a href="image-to-pdf.html">Image to PDF</a></li>
+          <li><a href="compress-pdf.html">Compress PDF</a></li>
+          <li><a href="pdf-to-image.html">PDF to images</a></li>
+          <li><a href="pdf-to-text.html">Extract text from PDF</a></li>
+          <li><a href="add-page-numbers.html">Add page numbers</a></li>
+          <li><a href="watermark-pdf.html">Watermark PDF</a></li>
+          <li><a href="text-to-pdf.html">Text to PDF</a></li>
+          <li><a href="file-checker.html">File checker</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks3">Batch and help</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks3">
+          <li><a href="batch-image.html">Batch image processor</a></li>
+          <li><a href="workspace.html">Applicant workspaces</a></li>
+          <li><a href="tools.html">All tools</a></li>
+          <li><a href="guides/">Guides</a></li>
+          <li><a href="how-to-use.html">How to use</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <p class="site-footer__title" id="footerLinks4">ApplyReady</p>
+        <ul class="site-footer__list" aria-labelledby="footerLinks4">
+          <li><a href="about.html">About</a></li>
+          <li><a href="philosophy.html">Our philosophy</a></li>
+          <li><a href="privacy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms of use</a></li>
+          <li><a href="your-data.html">Your data</a></li>
+          <li><a href="contact.html">Contact and support</a></li>
+          <li><a href="feedback.html">Feedback</a></li>
+          <li><a href="changelog.html">Changelog</a></li>
+          <li><a href="contribute.html">Contribute</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__base">
+      <span>No sign-up, no ads, no watermarks. Every feature is free for everyone.</span>
+      <span class="site-footer__ext"><a href="https://github.com/nbsumit/applyready" rel="noopener" target="_blank">Source code<span class="sr-only"> (opens in a new tab)</span></a><a class="site-footer__support" href="https://pages.razorpay.com/support-applyready" rel="noopener" target="_blank"><i class="fa-solid fa-heart" aria-hidden="true"></i> Support ApplyReady<span class="sr-only"> (voluntary contribution, opens in a new tab)</span></a></span>
+    </div>
+  </footer>
+  <!-- shell:footer:end -->
+
+  <script defer src="js/components.js?v=20261118"></script>
+  <script defer src="js/site.js?v=20261118"></script>
+  <script defer src="js/lib/files.js?v=20261118"></script>
+  <script defer src="js/lib/zip.js?v=20261118"></script>
+  <script defer src="js/lib/file-kit.js?v=20261118"></script>
+  <script defer src="js/lib/batch.js?v=20261118"></script>
+  <script defer src="js/lib/image-ops.js?v=20261118"></script>
+  <script defer src="js/lib/image-pool.js?v=20261118"></script>
+  <script defer src="js/batch-image.js?v=20261118"></script>
+</body>
+</html>

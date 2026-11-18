@@ -1,6 +1,7 @@
 /* The contact form has no server: it opens the visitor's email app with the message filled in.
    Nothing is sent from this page. */
 (function () {
+  'use strict';
   const ADDRESS = 'hello@nbsumit.com';
   const form = document.getElementById('contactForm');
   if (!form) return;

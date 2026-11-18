@@ -235,6 +235,21 @@
     return result;
   }
 
+  // Whether one character can be written with the built-in WinAnsi fonts (the test escapePdfText makes).
+  function pdfCharSupported(char) {
+    if (char.length !== 1) return false;
+    const code = char.charCodeAt(0);
+    return (code >= 32 && code <= 126) || !!WINANSI_SPECIAL[code] || (code >= 160 && code <= 255) || /\s/.test(char);
+  }
+
+  // The distinct characters of `text` that the vector PDF cannot write (₹, arrows, emoji, Indic
+  // scripts), in order of appearance. Invisible pasted characters are ignored, as the export drops them.
+  function unsupportedCharacters(text) {
+    const found = [];
+    for (const char of cleanInvisible(String(text || ''))) if (!pdfCharSupported(char) && !found.includes(char)) found.push(char);
+    return found;
+  }
+
   // PDF text string for the document information dictionary (UTF-16BE, BOM).
   function pdfTextString(value) {
     let hexOut = 'FEFF';
@@ -452,6 +467,12 @@
     }
   }
 
+  function schemaApi() {
+    if (typeof ApplyReadySchema !== 'undefined') return ApplyReadySchema;
+    if (typeof require === 'function') { try { return require('./resume-schema.js'); } catch (e) { /* standalone use */ } }
+    return null;
+  }
+
   function templatesApi() {
     if (typeof ApplyReadyTemplates !== 'undefined') return ApplyReadyTemplates;
     if (typeof require === 'function') { try { return require('./templates.js'); } catch (e) { /* standalone use */ } }
@@ -463,13 +484,13 @@
     const api = templatesApi();
     const templateId = api ? api.resolveTemplateId(resumeData, options) : (options.template || resumeData.template || 'classic-professional');
     const fallbackStyle = {
-      headerAlign: ['classic-professional', 'experienced-professional', 'academic-cv'].includes(templateId) ? 'center' : 'left',
+      headerAlign: ['classic-professional', 'experienced-professional'].includes(templateId) ? 'center' : 'left',
       nameCase: 'upper', nameSize: null, headerRule: templateId === 'experienced-professional' ? 'double' : 'single',
       headerRuleColor: [0.1, 0.1, 0.1], headerRuleWidth: 1.2, headingRule: templateId === 'modern-minimal' ? 'none' : 'line',
       headingColor: [0, 0, 0], ruleColor: [0.65, 0.7, 0.75], ruleWidth: 0.6, datePlacement: 'right', contactSeparator: '•',
       linkColor: [0.05, 0.35, 0.75], metaColor: [0.35, 0.4, 0.45]
     };
-    const fallbackLabels = { summary: 'Professional Summary', experience: 'Work Experience', education: 'Education', projects: 'Key Projects', skills: 'Skills & Competencies', certifications: 'Certifications & Credentials', achievements: 'Honors & Achievements', volunteering: 'Community & Leadership', languages: 'Languages', publications: 'Peer-Reviewed Publications', teaching: 'Teaching Experience', presentations: 'Conference Presentations', grants: 'Research Grants' };
+    const fallbackLabels = { summary: 'Professional Summary', experience: 'Work Experience', education: 'Education', projects: 'Key Projects', skills: 'Skills & Competencies', certifications: 'Certifications & Credentials', achievements: 'Honors & Achievements', volunteering: 'Community & Leadership', languages: 'Languages', publications: 'Publications', teaching: 'Teaching Experience', presentations: 'Conference Presentations', grants: 'Research Grants', references: 'References', referencesOnRequest: 'Available on request.' };
     const tmpl = api ? api.getTemplate(templateId) : {};
     return {
       templateId,
@@ -481,12 +502,51 @@
     };
   }
 
-  const ALL_SECTIONS = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'academic'];
+  const ALL_SECTIONS = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'publications', 'academic', 'references'];
+  const CUSTOM_PREFIX = 'custom:';
 
+  // Print order: the saved order, every fixed section once, then every custom section ("custom:<id>").
   function orderedSections(resumeData, options) {
     const order = (resumeData.design && Array.isArray(resumeData.design.sectionOrder)) ? resumeData.design.sectionOrder
       : (Array.isArray(options.sectionOrder) ? options.sectionOrder : []);
-    return [...new Set([...order.filter(key => ALL_SECTIONS.includes(key)), ...ALL_SECTIONS])];
+    const schema = schemaApi();
+    if (schema) return schema.normalizeSectionOrder(order, resumeData);
+    const customs = (Array.isArray(resumeData.customSections) ? resumeData.customSections : []).map(s => CUSTOM_PREFIX + (s && s.id));
+    return [...new Set([...order.filter(key => ALL_SECTIONS.includes(key) || customs.includes(key)), ...ALL_SECTIONS, ...customs])];
+  }
+
+  // Whether a section prints. Data saved before version 3 kept publications inside Academic, so
+  // without its own switch Publications follows Academic. Custom sections carry their own switch.
+  function sectionShown(resumeData, vis, key) {
+    if (key.startsWith(CUSTOM_PREFIX)) { const section = customSectionFor(resumeData, key); return !!section && section.visible !== false; }
+    if (key === 'publications' && typeof vis.publications !== 'boolean') return vis.academic !== false;
+    return vis[key] !== false;
+  }
+
+  function customSectionFor(resumeData, key) {
+    const id = String(key).slice(CUSTOM_PREFIX.length);
+    return (Array.isArray(resumeData.customSections) ? resumeData.customSections : []).find(s => s && s.id === id) || null;
+  }
+
+  // A custom section with something to print: { title, mode, paragraphs, entries }, or null.
+  function customContent(section) {
+    if (!section) return null;
+    const title = clean(section.title) || 'Additional information';
+    if (section.mode === 'text') {
+      const paragraphs = String(section.text || '').split(/\r?\n+/).map(clean).filter(Boolean);
+      return paragraphs.length ? { title, mode: 'text', paragraphs, entries: [] } : null;
+    }
+    const entries = (Array.isArray(section.entries) ? section.entries : []).filter(e => e && (clean(e.title) || clean(e.subtitle) || clean(e.date) || bulletLines(e.bulletsText).length))
+      .map(e => ({ heading: [clean(e.title), clean(e.subtitle)].filter(Boolean).join('  |  '), date: clean(e.date), bullets: bulletLines(e.bulletsText) }));
+    return entries.length ? { title, mode: 'entries', paragraphs: [], entries } : null;
+  }
+
+  // References: the "available on request" line, or one block per referee.
+  function referenceContent(resumeData, labelFor) {
+    if (resumeData.referencesOnRequest === true) return { onRequest: labelFor('referencesOnRequest'), items: [] };
+    const items = (Array.isArray(resumeData.references) ? resumeData.references : []).filter(r => r && clean(r.name))
+      .map(r => ({ name: clean(r.name), details: [clean(r.title), clean(r.organization)].filter(Boolean).join(', '), contact: clean(r.contact) }));
+    return items.length ? { onRequest: '', items } : null;
   }
 
   function visibility(resumeData, options) {
@@ -511,7 +571,7 @@
     if (key === 'volunteering') return (resumeData.volunteering || []).map(v => typeof v === 'string' ? text(v) : join([v.role, v.organization || v.org, v.duration])).filter(Boolean);
     if (key === 'languages') return (resumeData.languages || []).map(l => typeof l === 'string' ? text(l) : (clean(l.name) ? join([l.name, l.proficiency]) : '')).filter(Boolean);
     const acad = resumeData.academic || {};
-    if (key === 'publications') return (acad.publications || []).map(p => typeof p === 'string' ? text(p) : clean(p.title || p.citation)).filter(Boolean);
+    if (key === 'publications') return (Array.isArray(resumeData.publications) ? resumeData.publications : (acad.publications || [])).map(p => typeof p === 'string' ? text(p) : clean(p.title || p.citation)).filter(Boolean);
     if (key === 'teaching') return (acad.teaching || []).map(t => typeof t === 'string' ? text(t) : join([t.role || t.course, t.institution, t.term])).filter(Boolean);
     if (key === 'presentations') return (acad.presentations || []).map(p => typeof p === 'string' ? text(p) : join([p.title, p.event])).filter(Boolean);
     if (key === 'grants') return (acad.grants || []).map(g => typeof g === 'string' ? text(g) : join([g.title || g.name, g.funder, g.year])).filter(Boolean);
@@ -612,6 +672,13 @@
       }
       return false;
     }
+    // Start a block that must not be split (a bullet, a heading with what follows it) on a new page
+    // when it does not fit here. A block taller than a whole page is split after all; `minimum` is
+    // the room still reserved in that case.
+    const usableHeight = pageBottom - marginTop;
+    function keepTogether(height, minimum = 0) {
+      ensureSpace(height <= usableHeight ? Math.max(height, minimum) : minimum);
+    }
 
     function drawWrapped(text, fontSize, style = 'normal', color = [0.15, 0.15, 0.15], align = 'left', url = '') {
       const lines = splitTextToLines(text, fontSize, contentWidth - 8, fontKey, style);
@@ -626,6 +693,7 @@
     }
     function drawBullet(text, fontSize) {
       const lines = splitTextToLines(text, fontSize, contentWidth - 16, fontKey);
+      keepTogether(lines.length * (fontSize + 4));
       lines.forEach((line, index) => {
         ensureSpace(fontSize + 4);
         if (index === 0) doc.drawText('•', marginLeft + 2, currentY + fontSize, { fontSize });
@@ -701,15 +769,19 @@
     /**
      * Render Section Header
      */
-    function renderSectionHeader(title, reserveLines = 2) {
+    // `reserve` is the room the section's first block needs: a number of body lines, or { height }
+    // for an entry, so the heading never ends a page apart from its content.
+    function renderSectionHeader(title, reserve = 2) {
       currentY += pendingGap;
       pendingGap = 0;
       const headingFontSize = baseFontSize + 0.5;
       const headingText = style.headingCase === 'asis' ? title : title.toUpperCase();
       const headingLines = splitTextToLines(headingText, headingFontSize, contentWidth - 8, fontKey, 'bold');
-      // Reserve the actual heading plus two body lines, not a fixed 65pt block.
+      // Reserve the actual heading plus its first block, not a fixed 65pt block.
       // Short final sections can then use the available space on this page.
-      ensureSpace(headingLines.length * (headingFontSize + (isCompact ? 2 : 3)) + (isCompact ? 5 : 8) + reserveLines * (baseFontSize + 4));
+      const headingHeight = headingLines.length * (headingFontSize + (isCompact ? 2 : 3)) + (isCompact ? 5 : 8);
+      const body = typeof reserve === 'number' ? reserve * (baseFontSize + 4) : reserve.height;
+      keepTogether(headingHeight + body, headingHeight + Math.min(2, typeof reserve === 'number' ? reserve : 2) * (baseFontSize + 4));
       for (const line of headingLines) {
         ensureSpace(headingFontSize + 4);
         doc.drawText(line, marginLeft, currentY + headingFontSize, {
@@ -731,19 +803,42 @@
     // Two-part entry heading: bold title on the left, italic dates/location on
     // the right (or on the next line when it does not fit or the template
     // keeps every detail in reading order).
-    function renderEntryHeading(title, meta, gapAfterInline) {
+    // A line that fits is kept exactly as written, so the spaced separators ("  —  ", "  •  ") look
+    // the same whether the details sit on the right or below; only a line that must wrap is split.
+    function wrapKeepingSpaces(text, fontSize, fontStyle) {
+      return measureTextWidth(text, fontSize, fontKey, fontStyle) <= contentWidth - 8 ? [text] : splitTextToLines(text, fontSize, contentWidth - 8, fontKey, fontStyle);
+    }
+    // Whether the details of an entry fit on the right of its title.
+    function headingFitsInline(title, meta) {
+      if (!datesInline) return false;
+      const metaWidth = meta ? measureTextWidth(meta, metaSize, fontKey, 'italic') : 0;
+      const titleWidth = title ? measureTextWidth(title, baseFontSize, fontKey, 'bold') : 0;
+      return titleWidth <= (metaWidth > 0 ? contentWidth - metaWidth - 12 : contentWidth);
+    }
+    // One placement per section: when the details of any entry have to go below its title, they go
+    // below in every entry of that section, so dates never jump between the right and the left.
+    const detailsBelow = entries => !datesInline || entries.some(e => e.title && e.meta && !headingFitsInline(e.title, e.meta));
+    function entryHeadingHeight(title, meta, gapAfterInline, below) {
+      if (!title && !meta) return 0;
+      if (!below && headingFitsInline(title, meta)) return baseFontSize + gapAfterInline;
+      const titleLines = title ? wrapKeepingSpaces(title, baseFontSize, 'bold').length : 0;
+      return titleLines * (baseFontSize + 2) + (meta ? wrapKeepingSpaces(meta, 9, 'italic').length * 13 : 2);
+    }
+
+    // Two-part entry heading: bold title on the left, italic dates/location on
+    // the right, or on the next line when `below` is set, when they do not fit,
+    // or when the template keeps every detail in reading order.
+    function renderEntryHeading(title, meta, gapAfterInline, below = false) {
       if (!title && !meta) return;
       const titleSize = baseFontSize;
-      const metaWidth = meta ? measureTextWidth(meta, metaSize, fontKey, 'italic') : 0;
-      const titleWidth = title ? measureTextWidth(title, titleSize, fontKey, 'bold') : 0;
-      const maxTitleWidth = metaWidth > 0 ? contentWidth - metaWidth - 12 : contentWidth;
-      if (datesInline && titleWidth <= maxTitleWidth) {
+      if (!below && headingFitsInline(title, meta)) {
+        const metaWidth = meta ? measureTextWidth(meta, metaSize, fontKey, 'italic') : 0;
         if (title) doc.drawText(title, marginLeft, currentY + titleSize, { fontSize: titleSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
         if (meta) doc.drawText(meta, pageWidth - marginRight - metaWidth, currentY + titleSize, { fontSize: metaSize, fontStyle: 'italic', color: metaColor });
         currentY += titleSize + gapAfterInline;
         return;
       }
-      const lines = title ? splitTextToLines(title, titleSize, contentWidth - 8, fontKey, 'bold') : [];
+      const lines = title ? wrapKeepingSpaces(title, titleSize, 'bold') : [];
       for (let i = 0; i < lines.length; i++) {
         if (i > 0) ensureSpace(titleSize + 2);
         doc.drawText(lines[i], marginLeft, currentY + titleSize, { fontSize: titleSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
@@ -751,18 +846,29 @@
       }
       if (meta) {
         ensureSpace(12);
-        drawWrapped(meta, 9, 'italic', metaColor);
+        for (const line of wrapKeepingSpaces(meta, 9, 'italic')) {
+          ensureSpace(13);
+          doc.drawText(line, marginLeft, currentY + 9, { fontSize: 9, fontStyle: 'italic', color: metaColor });
+          currentY += 13;
+        }
       } else {
         currentY += 2;
       }
     }
 
-    function renderBullets(text) {
-      const bulletIndent = isCompact ? 10 : 12;
-      const bulletTextWidth = contentWidth - bulletIndent;
+    // Bullets are laid out before drawing, so a page break never falls inside one, and the last
+    // bullet of a list stays with the one before it instead of standing alone on a new page.
+    const bulletIndent = isCompact ? 10 : 12;
+    const bulletLineHeight = baseFontSize + (isCompact ? 3 : 4);
+    const bulletBlocks = text => bulletLines(text).map(line => splitTextToLines(line, baseFontSize, contentWidth - bulletIndent, fontKey));
+    function bulletNeed(blocks, i) {
+      if (i >= blocks.length) return 0;
+      return (blocks[i].length + (i === blocks.length - 2 ? blocks[i + 1].length : 0)) * bulletLineHeight;
+    }
+    function renderBullets(blocks) {
       const bulletFontSize = baseFontSize;
-      for (const bulletText of bulletLines(text)) {
-        const lines = splitTextToLines(bulletText, bulletFontSize, bulletTextWidth, fontKey);
+      blocks.forEach((lines, i) => {
+        keepTogether(bulletNeed(blocks, i));
         for (let bl = 0; bl < lines.length; bl++) {
           ensureSpace(baseFontSize + 4);
           if (bl === 0) {
@@ -773,9 +879,25 @@
             fontStyle: 'normal',
             color: [0.15, 0.15, 0.15]
           });
-          currentY += baseFontSize + (isCompact ? 3 : 4);
+          currentY += bulletLineHeight;
         }
+      });
+    }
+
+    // Entries with a heading and bullet points (work experience, custom sections). Each entry starts
+    // with its heading and first bullet together, and the section heading stays with the first entry.
+    function renderEntries(title, entries) {
+      const below = detailsBelow(entries);
+      const gap = isCompact ? 3 : 4;
+      const need = entry => entryHeadingHeight(entry.title, entry.meta, gap, below) + bulletNeed(entry.blocks, 0);
+      renderSectionHeader(title, { height: need(entries[0]) });
+      for (const entry of entries) {
+        keepTogether(need(entry), isCompact ? 20 : 28);
+        renderEntryHeading(entry.title, entry.meta, gap, below);
+        renderBullets(entry.blocks);
+        currentY += gap;
       }
+      currentY += isCompact ? 2 : 4;
     }
 
     const vis = visibility(resumeData, options);
@@ -807,31 +929,30 @@
       const experience = (Array.isArray(resumeData.experience) ? resumeData.experience : []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || clean(exp.duration) || clean(exp.location) || bulletLines(exp.bulletsText).length));
       if (!experience.length) return;
 
-      renderSectionHeader(layout.title('experience'));
-
-      for (const exp of experience) {
-        ensureSpace(isCompact ? 20 : 28);
-        const roleCompany = [clean(exp.role), clean(exp.company)].filter(Boolean).join('  |  ');
-        const dateLoc = [clean(exp.duration), clean(exp.location)].filter(Boolean).join('  •  ');
-        if (roleCompany || dateLoc) renderEntryHeading(roleCompany, dateLoc, isCompact ? 3 : 4);
-        renderBullets(exp.bulletsText);
-        currentY += (isCompact ? 3 : 4);
-      }
-      currentY += (isCompact ? 2 : 4);
+      renderEntries(layout.title('experience'), experience.map(exp => ({
+        title: [clean(exp.role), clean(exp.company)].filter(Boolean).join('  |  '),
+        meta: [clean(exp.duration), clean(exp.location)].filter(Boolean).join('  •  '),
+        blocks: bulletBlocks(exp.bulletsText)
+      })));
     }
 
     function renderEducation() {
       const education = (Array.isArray(resumeData.education) ? resumeData.education : []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution) || clean(edu.duration) || clean(edu.location) || clean(edu.score)));
       if (!education.length) return;
 
-      renderSectionHeader(layout.title('education'));
+      const entries = education.map(edu => ({
+        title: [clean(edu.degree), clean(edu.institution)].filter(Boolean).join('  —  '),
+        meta: [clean(edu.duration), clean(edu.location), clean(edu.score)].filter(Boolean).join('  •  ')
+      }));
+      const below = detailsBelow(entries);
+      const gap = isCompact ? 4 : 6;
+      const after = isCompact ? 2 : 4;
+      renderSectionHeader(layout.title('education'), { height: entryHeadingHeight(entries[0].title, entries[0].meta, gap, below) });
 
-      for (const edu of education) {
-        ensureSpace(isCompact ? 18 : 24);
-        const degreeInst = [clean(edu.degree), clean(edu.institution)].filter(Boolean).join('  —  ');
-        const metaParts = [clean(edu.duration), clean(edu.location), clean(edu.score)].filter(Boolean).join('  •  ');
-        if (degreeInst || metaParts) renderEntryHeading(degreeInst, metaParts, isCompact ? 4 : 6);
-        currentY += (isCompact ? 2 : 4);
+      for (const entry of entries) {
+        keepTogether(entryHeadingHeight(entry.title, entry.meta, gap, below) + after, isCompact ? 18 : 24);
+        renderEntryHeading(entry.title, entry.meta, gap, below);
+        currentY += after;
       }
       currentY += (isCompact ? 2 : 4);
     }
@@ -840,43 +961,48 @@
       const projects = (Array.isArray(resumeData.projects) ? resumeData.projects : []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || clean(proj.link) || bulletLines(proj.bulletsText).length));
       if (!projects.length) return;
 
-      renderSectionHeader(layout.title('projects'));
+      const projFontSize = baseFontSize;
+      const techFontSize = isCompact ? 8.5 : 9;
+      const linkFontSize = 8.5;
+      const wrappedHeight = (text, size, fontStyle) => (text ? splitTextToLines(text, size, contentWidth - 8, fontKey, fontStyle).length * (size + 4) : 0);
+      const entries = projects.map(proj => {
+        const name = clean(proj.name);
+        const tech = clean(proj.tech);
+        const link = clean(proj.link);
+        const title = name || tech;
+        // The tools follow the name after a separator on the same line; on a line of their own they
+        // start without one.
+        const subTech = name && tech ? tech : '';
+        const nameWidth = title ? measureTextWidth(title, projFontSize, fontKey, 'bold') : 0;
+        const techWidth = subTech ? measureTextWidth('|  ' + subTech, techFontSize, fontKey, 'italic') + 6 : 0;
+        const linkWidth = link ? measureTextWidth(link, linkFontSize, fontKey) : 0;
+        const inline = datesInline && nameWidth + techWidth + (link ? linkWidth + 12 : 0) <= contentWidth - 8;
+        const headHeight = !(title || link) ? 0
+          : inline ? projFontSize + (isCompact ? 3 : 4)
+            : wrappedHeight(title, projFontSize, 'bold') + wrappedHeight(subTech, techFontSize, 'italic') + wrappedHeight(link, linkFontSize, 'normal');
+        return { title, subTech, link, nameWidth, linkWidth, inline, headHeight, blocks: bulletBlocks(proj.bulletsText) };
+      });
+      const need = entry => entry.headHeight + bulletNeed(entry.blocks, 0);
+      renderSectionHeader(layout.title('projects'), { height: need(entries[0]) });
 
-      for (const proj of projects) {
-        ensureSpace(isCompact ? 20 : 28);
-
-        const projName = clean(proj.name);
-        const techText = clean(proj.tech);
-        const linkText = clean(proj.link);
-        const titleText = projName || techText;
-        const subTech = projName && techText ? '|  ' + techText : '';
-        const projFontSize = baseFontSize;
-        const techFontSize = isCompact ? 8.5 : 9;
-        const linkFontSize = 8.5;
-
-        if (titleText || linkText) {
-          const nameWidth = titleText ? measureTextWidth(titleText, projFontSize, fontKey, 'bold') : 0;
-          const techWidth = subTech ? measureTextWidth(subTech, techFontSize, fontKey, 'italic') + 6 : 0;
-          const linkWidth = linkText ? measureTextWidth(linkText, linkFontSize, fontKey) : 0;
-          const inlineWidth = nameWidth + techWidth + (linkText ? linkWidth + 12 : 0);
-
-          if (datesInline && inlineWidth <= contentWidth - 8) {
-            if (titleText) doc.drawText(titleText, marginLeft, currentY + projFontSize, { fontSize: projFontSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
-            if (subTech) doc.drawText(subTech, marginLeft + nameWidth + 6, currentY + projFontSize, { fontSize: techFontSize, fontStyle: 'italic', color: metaColor });
-            if (linkText) {
-              const linkX = pageWidth - marginRight - linkWidth;
-              doc.drawText(linkText, linkX, currentY + projFontSize, { fontSize: linkFontSize, color: style.linkColor });
-              doc.addLink(linkX, currentY, linkWidth, projFontSize + 2, linkText);
-            }
-            currentY += projFontSize + (isCompact ? 3 : 4);
-          } else {
-            if (titleText) drawWrapped(titleText, projFontSize, 'bold', [0.05, 0.05, 0.05]);
-            if (subTech) drawWrapped(subTech, techFontSize, 'italic', metaColor);
-            if (linkText) drawWrapped(linkText, linkFontSize, 'normal', style.linkColor, 'left', linkText);
+      for (const entry of entries) {
+        keepTogether(need(entry), isCompact ? 20 : 28);
+        if (entry.inline) {
+          if (entry.title) doc.drawText(entry.title, marginLeft, currentY + projFontSize, { fontSize: projFontSize, fontStyle: 'bold', color: [0.05, 0.05, 0.05] });
+          if (entry.subTech) doc.drawText('|  ' + entry.subTech, marginLeft + entry.nameWidth + 6, currentY + projFontSize, { fontSize: techFontSize, fontStyle: 'italic', color: metaColor });
+          if (entry.link) {
+            const linkX = pageWidth - marginRight - entry.linkWidth;
+            doc.drawText(entry.link, linkX, currentY + projFontSize, { fontSize: linkFontSize, color: style.linkColor });
+            doc.addLink(linkX, currentY, entry.linkWidth, projFontSize + 2, entry.link);
           }
+          if (entry.headHeight) currentY += entry.headHeight;
+        } else {
+          if (entry.title) drawWrapped(entry.title, projFontSize, 'bold', [0.05, 0.05, 0.05]);
+          if (entry.subTech) drawWrapped(entry.subTech, techFontSize, 'italic', metaColor);
+          if (entry.link) drawWrapped(entry.link, linkFontSize, 'normal', style.linkColor, 'left', entry.link);
         }
 
-        renderBullets(proj.bulletsText);
+        renderBullets(entry.blocks);
         currentY += (isCompact ? 3 : 4);
       }
       currentY += (isCompact ? 2 : 4);
@@ -943,13 +1069,46 @@
       pendingGap = sectionGap;
     }
     function renderAcademic() {
-      for (const key of ['publications', 'teaching', 'presentations', 'grants']) renderBulletSection(key);
+      for (const key of ['teaching', 'presentations', 'grants']) renderBulletSection(key);
+    }
+    function renderParagraphs(paragraphs) {
+      for (const paragraph of paragraphs) {
+        for (const line of splitTextToLines(paragraph, baseFontSize, contentWidth, fontKey)) {
+          ensureSpace(baseFontSize + 3.5);
+          doc.drawText(line, marginLeft, currentY + baseFontSize, { fontSize: baseFontSize, fontStyle: 'normal', color: [0.1, 0.1, 0.1] });
+          currentY += baseFontSize + (isCompact ? 2.5 : 3.5);
+        }
+        currentY += isCompact ? 2 : 3;
+      }
+      currentY += isCompact ? 2 : 3;
+    }
+    function renderReferences() {
+      const refs = referenceContent(resumeData, layout.label);
+      if (!refs) return;
+      renderSectionHeader(layout.label('references'), 1);
+      if (refs.onRequest) { drawWrapped(refs.onRequest, baseFontSize, 'normal', [0.1, 0.1, 0.1]); pendingGap = sectionGap; return; }
+      for (const ref of refs.items) {
+        ensureSpace(isCompact ? 20 : 26);
+        renderEntryHeading(ref.name, '', isCompact ? 2 : 3);
+        if (ref.details) drawWrapped(ref.details, baseFontSize - 0.5, 'normal', [0.2, 0.2, 0.2]);
+        if (ref.contact) drawWrapped(ref.contact, baseFontSize - 0.5, 'normal', [0.2, 0.2, 0.2]);
+        currentY += isCompact ? 3 : 4;
+      }
+      pendingGap = sectionGap;
+    }
+    function renderCustom(key) {
+      const content = customContent(customSectionFor(resumeData, key));
+      if (!content) return;
+      if (content.mode === 'text') { renderSectionHeader(content.title); renderParagraphs(content.paragraphs); return; }
+      renderEntries(content.title, content.entries.map(entry => ({ title: entry.heading, meta: entry.date, blocks: bulletBlocks(entry.bullets.join('\n')) })));
     }
 
     // Render sections in configured order
     for (const secKey of sectionOrder) {
-      if (vis[secKey] === false) continue;
-      if (secKey === 'summary') renderSummary();
+      if (!sectionShown(resumeData, vis, secKey)) continue;
+      if (secKey.startsWith(CUSTOM_PREFIX)) renderCustom(secKey);
+      else if (secKey === 'references') renderReferences();
+      else if (secKey === 'summary') renderSummary();
       else if (secKey === 'experience') renderExperience();
       else if (secKey === 'education') renderEducation();
       else if (secKey === 'projects') renderProjects();
@@ -1002,12 +1161,42 @@
     }
 
     for (const secKey of sectionOrder) {
-      if (vis[secKey] === false) continue;
+      if (!sectionShown(resumeData, vis, secKey)) continue;
 
       if (secKey === 'summary' && clean(resumeData.summary)) {
         addHeader(layout.title('summary'));
         lines.push(clean(resumeData.summary));
       }
+
+      if (secKey.startsWith(CUSTOM_PREFIX)) {
+        const content = customContent(customSectionFor(resumeData, secKey));
+        if (content) {
+          addHeader(content.title);
+          if (content.mode === 'text') content.paragraphs.forEach((paragraph, index) => { if (index) lines.push(''); lines.push(paragraph); });
+          else content.entries.forEach((entry, index) => {
+            if (index) lines.push('');
+            if (entry.heading) lines.push(entry.heading.replace(/\s+\|\s+/g, ' | '));
+            if (entry.date) lines.push(entry.date);
+            entry.bullets.forEach(b => lines.push(`* ${b}`));
+          });
+        }
+      }
+
+      if (secKey === 'references') {
+        const refs = referenceContent(resumeData, layout.label);
+        if (refs) {
+          addHeader(layout.label('references'));
+          if (refs.onRequest) lines.push(refs.onRequest);
+          refs.items.forEach((ref, index) => {
+            if (index) lines.push('');
+            lines.push(ref.name);
+            if (ref.details) lines.push(ref.details);
+            if (ref.contact) lines.push(ref.contact);
+          });
+        }
+      }
+
+      if (secKey === 'publications') addBulletSection(layout.label('publications'), optionalEntries(resumeData, 'publications'));
 
       if (secKey === 'experience') {
         const entries = (resumeData.experience || []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || clean(exp.duration) || clean(exp.location) || bulletLines(exp.bulletsText).length));
@@ -1073,7 +1262,7 @@
       }
 
       if (secKey === 'academic') {
-        for (const key of ['publications', 'teaching', 'presentations', 'grants']) addBulletSection(layout.label(key), optionalEntries(resumeData, key));
+        for (const key of ['teaching', 'presentations', 'grants']) addBulletSection(layout.label(key), optionalEntries(resumeData, key));
       }
     }
 
@@ -1087,9 +1276,15 @@
     measureTextWidth,
     splitTextToLines,
     escapePdfText,
+    unsupportedCharacters,
     sanitizeUrl,
     bulletLines,
     optionalEntries,
+    orderedSections,
+    sectionShown,
+    customSectionFor,
+    customContent,
+    referenceContent,
     cleanInvisible,
     A4_WIDTH,
     A4_HEIGHT,

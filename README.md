@@ -1,78 +1,138 @@
 # ApplyReady
 
-[applyready.in](https://applyready.in) prepares the files that Indian exam and job portals ask for: photos and signatures at an exact pixel size and KB range, PDFs under a size limit, printable passport-photo sheets, and an ATS-friendly resume.
+**Free. Open source. Forever.**
 
-Everything runs in the visitor's browser. Files are never uploaded, there are no accounts, no cookies, no analytics and no advertising.
+[ApplyReady](https://applyready.in) is a free set of tools for preparing job applications: a resume builder,
+photo and signature resizers, and PDF tools. Everything runs in your browser. Files are never uploaded,
+there are no accounts, no cookies, no analytics and no advertising, and every feature is free for everyone.
 
-## What the site does
+> Powerful tools for everyone. No subscriptions. No advertisements. No compromises.
 
-| Tool | Page | Script |
+## What it does
+
+| Tool | Page | Main script |
 |---|---|---|
-| Image resizer and strict compressor (exam presets, KB limits, crop, rotate, name/date strip) | `index.html`, `resize-image-to-*.html`, `*-photo-signature-size.html`, `hi/*.html` | `js/resizer.js`, `js/presets.js` |
+| Resume builder: several resumes saved on the device with autosave (My resumes), templates, live preview, references and custom sections, PDF / Word / text export, JSON backups, review checks, job-description keyword match | `resume.html` | `js/resume.js` (+ `resume-library-ui.js`, `resume-library.js`, `resume-sections.js`, `resume-render.js`, `templates.js`, `pdf-engine.js`, `docx-engine.js`, `keywords.js`, `resume-schema.js`, `lib/store.js`) |
+| Image resizer: exact pixels and KB limits, crop, rotate, format, minimum-size padding | `image-resizer.html`, `resize-image-to-*.html` | `js/resizer.js`, `js/presets.js` |
+| Passport photo and signature resizers (the image resizer with a preset chosen) | `passport-photo-resizer.html`, `signature-resizer.html` | `js/resizer.js` |
+| Batch image processor, image compressor, image converter: one engine, many files, per-file status, cancel, retry, ZIP | `batch-image.html`, `compress-image.html`, `convert-image.html` | `js/batch-image.js` (+ `js/lib/batch.js`, `image-ops.js`, `image-pool.js`, `js/workers/image-worker.js`) |
 | Signature cleaner | `signature-cleaner.html` | `js/signature-cleaner.js` |
 | Passport photo print sheet | `passport-photo-print.html` | `js/passport-photo-print.js` |
 | Image to PDF | `image-to-pdf.html` | `js/image-to-pdf.js` |
-| Compress PDF (scanned / image PDFs) | `compress-pdf.html` | `js/compress-pdf.js` |
-| Resume builder: 15 single-column templates, live preview, PDF / Word / text export, JSON backup, review checks, job-description keyword match | `resume.html` | `js/resume.js`, `js/templates.js`, `js/pdf-engine.js`, `js/docx-engine.js`, `js/keywords.js`, `js/resume-schema.js` |
+| Compress PDF (scanned PDFs) | `compress-pdf.html` | `js/compress-pdf.js` (+ `lib/pdf-kit.js`, `lib/pdf-ui.js`) |
+| PDF tools: merge, split, organise pages, PDF to images, extract text, add page numbers, watermark | `merge-pdf.html`, `split-pdf.html`, `organize-pdf.html`, `pdf-to-image.html`, `pdf-to-text.html`, `add-page-numbers.html`, `watermark-pdf.html` | One script per page with the same name (`js/merge-pdf.js`, `js/split-pdf.js`, `js/organize-pdf.js`, `js/pdf-to-image.js`, `js/pdf-to-text.js`, `js/add-page-numbers.js`, `js/watermark-pdf.js`), all on `lib/pdf-kit.js` (pdf-lib and pdf.js, loaded through `lib/pdf-kit-boot.js`) and `lib/pdf-ui.js` (shared interface) |
+| File checker: real type, size, pixels, DPI, PDF pages, document properties, photo metadata removal | `file-checker.html` | `js/file-checker.js` (+ `lib/inspect.js`) |
+| Text to PDF | `text-to-pdf.html` | `js/text-to-pdf.js` (+ `lib/text-pdf.js`) |
+| Your data: everything stored on the device, resume backup and restore, delete | `your-data.html` | `js/your-data.js` |
+| Applicant workspaces (cyber cafe mode): one temporary, memory-only space per applicant with one-click photo, signature, compress, convert, combine and merge actions, a ZIP per applicant, and a wipe on finish | `workspace.html` | `js/workspace.js` (+ `lib/applicants.js`, `lib/image-pool.js`, `lib/pdf-kit.js`) |
 
-Around the tools: 22 guides (`guides/`), five exam requirement pages with Hindi versions, and the About, Editorial policy, Author, Contact, Privacy and Terms pages.
+Every tool is listed in one registry, `scripts/lib/tools.js`, which generates the header menu, footer,
+the tool directory (`tools.html`), the home page entry points and the site search index. `npm test`
+fails if a tool in the registry is missing from the table above.
+
+Contributing: see [`CONTRIBUTING.md`](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
+The plan and its progress are in [`docs/ROADMAP.md`](docs/ROADMAP.md) and [`docs/PROGRESS.md`](docs/PROGRESS.md).
+
+## Privacy model
+
+- Files are read with the browser's File API and processed with Canvas, Web Workers and in-browser
+  libraries. Nothing is sent to a server; there is no server.
+- A Content Security Policy on every page allows scripts, styles, fonts, images and connections from
+  this origin only, so the page cannot contact third parties.
+- Data kept on the device: the theme preference, the list of recently used tools and whether that list
+  is turned off (`localStorage`), and saved resumes when the resume builder saves them (IndexedDB).
+  `privacy.html` lists every key, and the Your data page shows and deletes all of it.
+- A service worker keeps the pages a visitor opens, with their styles and code, for offline use; the
+  whole site only when the visitor asks for it on the Your data page. It never caches user files.
 
 ## Technology
 
-- Plain HTML, CSS and JavaScript. No framework, no bundler, no runtime dependencies.
-- Hosted as static files on **GitHub Pages** from the `main` branch, custom domain `applyready.in` (`CNAME`).
-- Only third-party code: Cropper.js (`js/vendor/`), a Font Awesome icon subset (`css/vendor/`), Inter and Noto Devanagari fonts (`assets/fonts/`). All are self-hosted; licences are in `docs/licenses/`.
-- No backend, database, authentication, API keys or environment variables. Nothing to configure for deployment.
-- A service worker (`sw.js`) caches the pages and assets so the tools work offline.
-- Every page carries a Content Security Policy (meta tag, because GitHub Pages cannot set headers) that allows scripts, styles, fonts and images from this origin only.
+- Plain HTML, CSS and JavaScript. No framework, no bundler, no backend, no environment variables.
+- Static hosting on GitHub Pages from `main`, custom domain `applyready.in` (`CNAME`).
+- Third-party code, all self-hosted (licences in `docs/licenses/`): Cropper.js, a Font Awesome Free icon
+  subset, Inter and Noto Devanagari fonts, [`@cantoo/pdf-lib`](https://github.com/cantoo-scribe/pdf-lib)
+  (MIT) and [pdf.js](https://github.com/mozilla/pdf.js) (Apache-2.0).
 
 ## Repository layout
 
 ```
-*.html, guides/, hi/, author/   Pages (57, of which 43 are indexable and listed in sitemap.xml)
-css/app.css                     The whole interface: tokens, shell, controls, tools, reading pages, resume builder
-css/document.css                Resume sheet and print layout (resume.html only)
-js/                             One script per tool, plus site.js (header, theme, notifications, dialogs),
-                                components.js (custom select, ranges, segmented controls) and theme.js
-js/vendor/, css/vendor/         Cropper.js and the icon subset
-assets/, favicon/, img/         Fonts, social card, icons, guide screenshots and sample images
-scripts/                        Developer tooling (not served to visitors; disallowed in robots.txt)
-tests/                          Node and Playwright test suites
-docs/                           Design system, SEO setup, research notes and measurements behind page figures
-sw.js, robots.txt, sitemap.xml, 404.html, offline.html
+*.html, guides/          Pages (shared header, footer and CSP are generated into them)
+css/app.css              The whole interface: tokens, components, tools, resume builder
+css/document.css         Resume paper and print layout (resume.html only)
+js/                      One script per tool, plus site.js (shell), search.js, components.js
+js/lib/                  Shared modules: files, zip, store (IndexedDB), batch queue, image ops, worker pool
+js/workers/              Web Worker entry points
+js/vendor/               Cropper.js, pdf-lib, pdf.js
+scripts/                 Build and maintenance scripts (not loaded by pages)
+tests/                   Node and Playwright test suites
+docs/                    Roadmap, progress, design system, SEO setup, licences
 ```
 
 ## Local development
 
-Requirements: Node.js 22 and npm. The pages use root-relative paths, so serve the repository root over HTTP:
+Requirements depend on what you run:
+
+| To | You need |
+|---|---|
+| Open the site and run `npm test` | Node.js 22 and npm (`npm ci`) |
+| Also check or rebuild the icon subset (`npm test` skips that check without it) | Python 3 with `pip install fonttools brotli` |
+| Run `npm run test:browser` | Chromium for Playwright: `npx playwright install chromium`, or set `BROWSER_EXECUTABLE_PATH` to a local Chromium or Chrome; poppler-utils (`pdfinfo`, `pdftotext`), `unzip` and ImageMagick (`identify`, `convert`), which the suites use to check downloaded files; Python 3 with `pip install pillow`, which some suites use to make and check images |
+| Regenerate the sample files and guide screenshots | Python 3 with Pillow and the same Chromium (`pdfinfo` is used to check the sample PDFs when it is installed) |
+
+On Debian or Ubuntu: `sudo apt-get install poppler-utils unzip imagemagick`. On macOS with Homebrew:
+`brew install poppler imagemagick`. CI (`.github/workflows/quality.yml`) installs exactly this list.
+
+Serve the repository root over HTTP, at the root of the host (not `file://` and not a sub-path): the
+service worker is registered at `/sw.js` and caches root paths, the 404 and offline pages and the font
+preloads use root paths (such as `/css/app.css` and `/assets/fonts/`), and browsers block service workers, module scripts and
+Web Workers on `file://` pages. Other pages use relative paths.
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000/. The service worker caches aggressively; use a private window or "Update on reload" in DevTools while editing.
+Open http://localhost:8000/. The service worker caches pages; use a private window or "Update on reload"
+in DevTools while editing.
 
 ## Generated parts of pages
 
-Shared markup is written into the pages by scripts, between marker comments. Edit the generator, not the page:
+Edit the generator, not the generated markup:
 
-| Script | Writes |
+| Command | Writes |
 |---|---|
-| `node scripts/sync-shell.js` | Header, footer, stylesheet links, CSP and asset version (`<!-- shell:*:start -->` markers) on every page, from `scripts/lib/shell.js`. `--check` fails if any page is out of sync. |
-| `node scripts/build-image-pages.js` | The resizer workspace on the image pages, from `scripts/lib/image-workspace.js` |
-| `node scripts/build-tool-pages.js` | The workspace of the four single-file tools (`<!-- tool:start -->` markers) |
-| `node scripts/build-sitemap.js` | `sitemap.xml` from the indexable pages; `--check` verifies it |
-| `node scripts/guide-screenshots.js` | The annotated screenshots in `img/guides/` |
-| `python3 scripts/make-sample-images.py` | The sample images in `img/samples/` |
+| `node scripts/sync-shell.js` | Header, footer, stylesheets, CSP and asset versions on every page; the search index `js/tool-index.js`; the service worker precache list and cache name in `sw.js` |
+| `node scripts/build-directory.js` | Tool listings on the home page and `tools.html` |
+| `node scripts/build-image-pages.js` | The resizer workspace on the image resizer pages, and the batch workspace on the batch, compressor and converter pages (`scripts/lib/batch-workspace.js`) |
+| `node scripts/build-tool-pages.js` | The workspace of the signature cleaner, passport print, image to PDF and compress PDF pages |
+| `node scripts/build-pdf-pages.js` | The PDF tool pages (merge, split, organise, PDF to images, extract text, page numbers, watermark): their workspace, and with `--force` the whole page, including the common requests, the questions and their structured data, and the guide cards |
+| `node scripts/build-sitemap.js` | `sitemap.xml` |
+| `python3 scripts/build-icons.py` | The Font Awesome subset (`css/vendor/icons.min.css`, `css/webfonts/`) |
+| `node scripts/new-page.js <path> "<Title>" "<Description>"` | A new page with the shared head and shell markers |
 
-A new page must contain the four `shell:*` marker pairs (copy them from an existing page).
+Each generator has a `--check` mode that writes nothing and exits 1 if its output is out of date;
+`npm test` runs every one of them, so a hand edit inside generated markup fails the tests. The icon subset changes the
+stylesheet, so run `node scripts/sync-shell.js` once more after `build-icons.py` to refresh the service worker's cache name.
 
-## Releasing a change
+## Guide screenshots and sample files
 
-1. Bump `ASSET_VERSION` in `scripts/lib/shell.js` and run `node scripts/sync-shell.js`, so browsers fetch the new CSS and JS.
-2. Bump `CACHE_NAME` in `sw.js`, so the service worker replaces its cache. Add any new page or asset to `STATIC_ASSETS`.
-3. Run `node scripts/build-sitemap.js` if page text changed.
-4. Run the tests (below), then merge to `main`. GitHub Pages deploys `main` automatically.
+Screenshots in the guides and step-by-step tutorials are taken from the running site, never mocked up.
+The inputs are synthetic samples made by scripts (no real person or document), so every image can be
+regenerated after an interface change:
+
+```bash
+python3 scripts/make-sample-images.py   # test photos and signature (img/samples/), tutorial photos (img/samples/guide/)
+node scripts/make-sample-pdfs.js         # sample PDFs for the tutorials, one protected with the password "sample"
+BROWSER_EXECUTABLE_PATH=/path/to/chrome node scripts/guide-screenshots.js [shot ...]
+```
+
+`guide-screenshots.js` drives each tool with Playwright, draws numbered callouts over real elements, saves
+WebP files in `img/guides/`, records their size and alt text in `img/guides/manifest.json` and updates the
+width, height and alt text of every `<img>` that shows them. Each shot is also taken in a 360 px phone
+window at 2x (`img/guides/phone/`), and pages offer that capture to narrow screens through `<picture>`, so
+a reader on a phone sees the layout they use at a size they can read. `--desktop` or `--phone` takes only
+one of the two; `--sync` only rewrites the page markup from the manifest. `tests/guides_tests.js` (part of `npm test`) checks that
+images, manifest and pages agree, and `tests/tutorial_tests.js` (part of `npm run test:browser`) follows each
+tutorial in the tools and fails when a label, message or measurement quoted in a tutorial no longer matches.
 
 ## Testing
 
@@ -81,24 +141,46 @@ npm ci
 npm test
 ```
 
-`npm test` runs the unit suite (`tests/run_tests.js`: PDF and DOCX engines, templates, schema migration, review checks, resizer validation), behaviour regressions (`tests/regression_tests.js`) and the content checks (`tests/content_tests.js`: titles, descriptions, canonicals, links and anchors, sitemap, offline cache, CSP, structured data, and a guard that fails if any ad-network code reappears).
+`npm test` runs the unit suite, behaviour regressions, the content checks (metadata, links, sitemap,
+offline cache, CSP, the single donation link, and guards that fail if advertising or the retired test-specific pages come back)
+and the guide image checks.
 
 ```bash
-npx playwright install chromium
 npm run test:browser
 ```
 
-The browser suites drive every tool and page in Chromium: exports read back with Poppler (`pdftotext`, `pdfinfo`) and `unzip`, responsive layouts at 32 widths, keyboard and focus checks, axe accessibility scans, and the CSP. Set `BROWSER_EXECUTABLE_PATH` to use a locally installed Chromium, Chrome or Edge. `npm run test:firefox` runs the UI and smoke suites in Firefox.
+The browser suites drive every tool in Chromium with Playwright and check the downloaded files with
+independent tools, so they need the extra programs listed under [Local development](#local-development).
+Set `BROWSER_EXECUTABLE_PATH` to use a locally installed Chromium or Chrome instead of
+`npx playwright install chromium`. Each suite can also be run alone, for example
+`node tests/pdf_tools_tests.js`. CI (`.github/workflows/quality.yml`) runs both on every push and
+pull request to `main`.
 
-CI (`.github/workflows/quality.yml`) runs both commands on every push and pull request to `main`.
+## Deployment
 
-## Further documentation
+GitHub Pages serves `main` as static files. There is nothing to configure: no build step, secrets or
+environment variables. Run `node scripts/sync-shell.js` before committing so the service worker cache
+name changes with the release.
 
-- `docs/DESIGN_SYSTEM.md`: tokens, components, states and the rules the tests enforce.
-- `docs/SEO_SETUP.md`: Search Console, Bing and IndexNow.
-- `docs/PRODUCTION_READINESS.md`: the latest full audit, what changed, and the manual steps that remain.
-- `docs/content-quality/`: how the exam pages were researched, with the official sources; `docs/measurements/` holds the measured tool outputs quoted on the pages.
+## Support the project
 
-## Licence and contact
+ApplyReady is free and open source. If you find it useful and would like to support its continued
+development, you can [contribute voluntarily](https://pages.razorpay.com/support-applyready). Your support
+helps maintain and improve the platform. All features remain free, regardless of contributions.
 
-The code is public at [github.com/nbsumit/applyready](https://github.com/nbsumit/applyready). Third-party licences are in `docs/licenses/`. Questions and corrections: hello@nbsumit.com (also via `contact.html`).
+## Licence
+
+Copyright (C) 2026 Sumit Sengar and contributors.
+
+ApplyReady is free software: you can redistribute it and/or modify it under the terms of the
+[GNU Affero General Public License, version 3](LICENSE) (AGPL-3.0-only). In short: you may use, study,
+change and share it; if you run a modified version as a public website, you must offer its source code
+to its users under the same licence. That keeps ApplyReady and every derivative free and open.
+
+Third-party components keep their own licences (MIT, BSD, Apache-2.0, OFL, CC BY; see
+[`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) and `docs/licenses/`).
+
+## Contact
+
+Questions: hello@nbsumit.com. Bugs and ideas: [GitHub issues](https://github.com/nbsumit/applyready/issues).
+Security problems: see [`SECURITY.md`](SECURITY.md).

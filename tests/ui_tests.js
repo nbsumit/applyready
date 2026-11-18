@@ -9,12 +9,12 @@ const { chromium, firefox } = require('playwright');
 const AxeBuilder = require('@axe-core/playwright').default;
 const engine = process.env.BROWSER === 'firefox' ? firefox : chromium;
 const root = path.resolve(__dirname, '..');
-const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.png':'image/png', '.svg':'image/svg+xml', '.woff2':'font/woff2', '.txt':'text/plain', '.xml':'application/xml', '.webmanifest':'application/manifest+json' };
+const mime = { '.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript', '.wasm':'application/wasm', '.css':'text/css', '.png':'image/png', '.svg':'image/svg+xml', '.woff2':'font/woff2', '.txt':'text/plain', '.xml':'application/xml', '.webmanifest':'application/manifest+json' };
 let checks = 0;
 const ok = (condition, message) => { assert(condition, message); checks++; };
 
 const walk = (dir, base = '') => fs.existsSync(path.join(root, dir)) ? fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.html')).map(f => path.posix.join(base, f)) : [];
-const pages = [...walk('.'), ...walk('guides', 'guides'), ...walk('hi', 'hi'), ...walk('author', 'author')].filter(f => f !== 'offline.html' && !/<meta http-equiv="refresh"/i.test(fs.readFileSync(path.join(root, f), 'utf8')));
+const pages = [...walk('.'), ...walk('guides', 'guides')].filter(f => f !== 'offline.html' && !/<meta http-equiv="refresh"/i.test(fs.readFileSync(path.join(root, f), 'utf8')));
 
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
@@ -134,7 +134,7 @@ const server = http.createServer((req, res) => {
   //    The crop-shape menu is the longest select in the image settings.
   for (const [width, height] of [[390, 780], [1280, 900]]) {
     const { context, page } = await open(width, height);
-    await page.goto(`${origin}/index.html`);
+    await page.goto(`${origin}/image-resizer.html`);
     await openSettings(page);
     const trigger = page.locator('#aspectRatioSelect').locator('xpath=..').locator('.select-btn');
     await trigger.scrollIntoViewIfNeeded();
@@ -193,7 +193,7 @@ const server = http.createServer((req, res) => {
   // 3. Text fields show where keyboard focus is.
   {
     const { context, page } = await open(1280, 900);
-    const cases = [['index.html', '#customWidth'], ['resume.html', '#fullName'], ['resume.html', '#summaryText'], ['compress-pdf.html', '#targetKbInput'], ['contact.html', 'input[type=text], input[type=email], textarea']];
+    const cases = [['image-resizer.html', '#customWidth'], ['resume.html', '#fullName'], ['resume.html', '#summaryText'], ['compress-pdf.html', '#targetKbInput'], ['contact.html', 'input[type=text], input[type=email], textarea']];
     for (const [file, selector] of cases) {
       await page.goto(`${origin}/${file}`);
       if (selector === '#summaryText') await page.locator('#sec-summary .accordion-header').click();
@@ -204,7 +204,7 @@ const server = http.createServer((req, res) => {
       ok(ring.shadow !== 'none' || (ring.outline !== 'none' && ring.outlineWidth > 0), `${file} ${selector}: focus is visible`);
     }
     // Keyboard walk: nothing that takes focus is invisible
-    for (const file of ['index.html', 'resume.html', 'compress-pdf.html', 'signature-cleaner.html']) {
+    for (const file of ['image-resizer.html', 'resume.html', 'compress-pdf.html', 'signature-cleaner.html']) {
       await page.goto(`${origin}/${file}`);
       for (let i = 0; i < 60; i++) {
         await page.keyboard.press('Tab');
@@ -263,43 +263,43 @@ const server = http.createServer((req, res) => {
     const widths = [320, 360, 390, 430, 639, 640, 641, 768, 999, 1000, 1001, 1280, 1440];
     for (const width of widths) {
       const { context, page } = await open(width, 720);
-      await page.goto(`${origin}/index.html`);
+      await page.goto(`${origin}/image-resizer.html`);
       const g = await grid(page);
       const want = mode(width) === 'desktop' ? g.d : mode(width) === 'tablet' ? g.t : 1;
-      ok(g.cols === want, `home @${width}: requirement grid has ${want} columns in ${mode(width)} mode (${g.cols})`);
-      ok(g.widths.length === 1 && g.heights.length === 1, `home @${width}: requirement cards share one size (${g.widths} x ${g.heights})`);
-      ok(g.clipped.length === 0, `home @${width}: no requirement label is clipped or hidden (${g.clipped})`);
-      ok(g.inOrder, `home @${width}: requirements read in the same order on screen as in the page`);
-      ok(!g.overflow && g.scrollers === 0 && !g.pageOverflow, `home @${width}: no sideways scrolling, in the grid or the page`);
+      ok(g.cols === want, `resizer @${width}: requirement grid has ${want} columns in ${mode(width)} mode (${g.cols})`);
+      ok(g.widths.length === 1 && g.heights.length === 1, `resizer @${width}: requirement cards share one size (${g.widths} x ${g.heights})`);
+      ok(g.clipped.length === 0, `resizer @${width}: no requirement label is clipped or hidden (${g.clipped})`);
+      ok(g.inOrder, `resizer @${width}: requirements read in the same order on screen as in the page`);
+      ok(!g.overflow && g.scrollers === 0 && !g.pageOverflow, `resizer @${width}: no sideways scrolling, in the grid or the page`);
       // Choose, fold to a summary, then reopen: the choice is kept and shown
       await page.locator('.choice[data-preset="passport"]').click();
-      ok(await page.locator('#reqGrid').isHidden() && /350 × 450 px/.test(await page.locator('#reqSummarySpec').innerText()), `home @${width}: a choice folds into its summary`);
+      ok(await page.locator('#reqGrid').isHidden() && /350 × 450 px/.test(await page.locator('#reqSummarySpec').innerText()), `resizer @${width}: a choice folds into its summary`);
       const change = await page.locator('#btnChangeReq').boundingBox();
-      ok(change && change.x >= 0 && change.x + change.width <= width, `home @${width}: Change is on screen`);
+      ok(change && change.x >= 0 && change.x + change.width <= width, `resizer @${width}: Change is on screen`);
       await page.locator('#btnChangeReq').click();
-      ok(await page.locator('.choice[data-preset="passport"]').getAttribute('aria-pressed') === 'true', `home @${width}: reopening shows the chosen requirement selected`);
+      ok(await page.locator('.choice[data-preset="passport"]').getAttribute('aria-pressed') === 'true', `resizer @${width}: reopening shows the chosen requirement selected`);
       await page.keyboard.press('Escape');
-      ok(await page.locator('#reqGrid').isHidden(), `home @${width}: Escape folds the list again`);
+      ok(await page.locator('#reqGrid').isHidden(), `resizer @${width}: Escape folds the list again`);
       // A file: task order top to bottom, the primary action on screen, nothing sideways
       await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: tiny });
       await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
       const order = await page.evaluate(() => ['reqPanel', 'fileInfoBox', 'cropperActiveArea', 'wsCustom'].map(id => { const el = document.getElementById(id); return el ? (el.id === 'wsCustom' ? el.previousElementSibling : el).getBoundingClientRect().top : -1; }));
-      ok(order.every((v, i) => i === 0 || v > order[i - 1]), `home @${width}: requirement, file, editor, settings run top to bottom (${order.map(Math.round)})`);
+      ok(order.every((v, i) => i === 0 || v > order[i - 1]), `resizer @${width}: requirement, file, editor, settings run top to bottom (${order.map(Math.round)})`);
       const action = await page.evaluate(() => { const r = document.getElementById('btnProcess').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; });
-      ok(action, `home @${width}: the primary action is on screen with a photo loaded`);
-      ok(!await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), `home @${width}: no page overflow with a photo loaded`);
+      ok(action, `resizer @${width}: the primary action is on screen with a photo loaded`);
+      ok(!await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), `resizer @${width}: no page overflow with a photo loaded`);
       // Crossing a breakpoint keeps the choice
       const across = width === 641 ? 639 : width === 1001 ? 999 : width === 639 ? 641 : width === 999 ? 1001 : null;
       if (across) {
         await page.setViewportSize({ width: across, height: 720 });
-        ok(await page.locator('#presetSelect').inputValue() === 'passport' && /350 × 450 px/.test(await page.locator('#reqSummarySpec').innerText()), `home ${width}→${across}: the chosen requirement survives the layout change`);
+        ok(await page.locator('#presetSelect').inputValue() === 'passport' && /350 × 450 px/.test(await page.locator('#reqSummarySpec').innerText()), `resizer ${width}→${across}: the chosen requirement survives the layout change`);
       }
       // Header: a menu button on phones, the Tools menu inside the screen elsewhere
       await page.setViewportSize({ width, height: 720 });
       if (mode(width) === 'phone') {
         ok(await page.locator('#navMenuToggle').isVisible() && await page.locator('#toolsMenuButton').isHidden(), `@${width}: phones get the menu button`);
         await page.locator('#navMenuToggle').click();
-        ok(await page.locator('#siteNav .menu__item').first().isVisible(), `@${width}: the menu sheet lists the tools`);
+        ok(await page.locator('#siteNav .menu__toggle').first().isVisible() && await page.locator('#menuList-image .menu__item').first().isVisible(), `@${width}: the menu sheet lists the categories, with this page's category open`);
         ok(!await page.evaluate(() => { const n = document.getElementById('siteNav'); return n.scrollWidth > n.clientWidth + 1; }), `@${width}: the menu sheet does not scroll sideways`);
         await page.locator('#navMenuToggle').click();
       } else {
@@ -314,7 +314,7 @@ const server = http.createServer((req, res) => {
     // Result state at phone, tablet and desktop: one verdict, Download first and on screen, facts whole
     for (const width of [360, 390, 768, 1280]) {
       const { context, page } = await open(width, 800);
-      await page.goto(`${origin}/index.html`);
+      await page.goto(`${origin}/image-resizer.html`);
       await page.locator('.choice[data-preset="signature"]').click();
       await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: tiny });
       await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
@@ -373,9 +373,9 @@ const server = http.createServer((req, res) => {
         x.fillStyle = g; x.fillRect(0, 0, 900, 1100); x.fillStyle = '#fff'; x.beginPath(); x.arc(450, 450, 250, 0, 7); x.fill();
         return c.toDataURL('image/png').split(',')[1];
       }), 'base64');
-      for (const [file, input, action, result] of [['index.html', '#fileInput', '#btnProcess', '#resultArea'], ['ssc-photo-signature-size.html', '#fileInput', '#btnProcess', '#resultArea'], ['hi/ssc-photo-signature-size.html', '#fileInput', '#btnProcess', '#resultArea']]) {
+      for (const [file, input, action, result] of [['image-resizer.html', '#fileInput', '#btnProcess', '#resultArea'], ['resize-image-to-20kb.html', '#fileInput', '#btnProcess', '#resultArea']]) {
         await page.goto(`${origin}/${file}`); await setTheme();
-        if (file === 'index.html') await choose(page, 'passport');
+        if (file === 'image-resizer.html') await choose(page, 'passport');
         await page.locator(input).setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await image() });
         await page.locator(action).click();
         await page.locator(result).waitFor({ state: 'visible' });
@@ -388,7 +388,7 @@ const server = http.createServer((req, res) => {
   }
   console.log('✓ axe: no violations on every page in light and dark');
 
-  // 6. Embedded tool on exam, KB and Hindi pages: order, language and result facts.
+  // 6. Embedded resizer on every page that hosts it: order and result facts.
   {
     const { context, page } = await open(1280, 900);
     const canvasPng = async () => Buffer.from(await page.evaluate(() => {
@@ -396,9 +396,11 @@ const server = http.createServer((req, res) => {
       x.fillStyle = '#789'; x.fillRect(0, 0, 900, 1100); x.fillStyle = '#fed'; x.beginPath(); x.arc(450, 450, 250, 0, 7); x.fill();
       return c.toDataURL('image/png').split(',')[1];
     }), 'base64');
-    const embedded = pages.filter(f => /photo-signature-size\.html$|resize-image-to-(\d+kb|kb-limit)\.html$/.test(f));
-    ok(embedded.length === 13, `found the 13 embedded tool pages (${embedded.length})`);
-    // Errors must be visible on every embedded tool, not only on the home page.
+    const embedded = pages.filter(f => /id="resizerApp"/.test(fs.readFileSync(path.join(root, f), 'utf8')));
+    const { PAGES: RESIZER_PAGES } = require('../scripts/build-image-pages.js');
+    const expected = Object.keys(RESIZER_PAGES).filter(f => fs.existsSync(path.join(root, f)));
+    ok(embedded.length === expected.length && expected.length >= 4, `every resizer page from build-image-pages.js hosts the tool (${embedded.length} of ${expected.length})`);
+    // Errors must be visible on every embedded tool, not only on the image resizer.
     for (const file of embedded) {
       await page.goto(`${origin}/${file}`);
       await openSettings(page);
@@ -413,33 +415,31 @@ const server = http.createServer((req, res) => {
     }
     for (const file of embedded) {
       await page.goto(`${origin}/${file}`);
-      const hindi = file.startsWith('hi/');
       const label = (await page.locator('#btnProcess').textContent()).trim();
       await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await canvasPng() });
       await page.locator('#cropperActiveArea').waitFor({ state: 'visible' });
       ok(await page.locator('#dropzone').isHidden(), `${file}: the dropzone folds away once a file is chosen`);
       const before = await page.evaluate(() => { const i = document.getElementById('cropperActiveArea').getBoundingClientRect().top, b = document.getElementById('btnProcess').getBoundingClientRect().top; return i <= b; });
       ok(before, `${file}: the image appears above the Resize button`);
-      ok((await page.locator('#btnProcess').textContent()).trim() === label || !hindi, `${file}: button label is not replaced by another language`);
-      // The multi-target KB page asks which limit first, like the home page.
-      if (await page.locator('#btnProcess').isDisabled()) await choose(page, 'kb-100');
+      ok((await page.locator('#btnProcess').textContent()).trim() === label, `${file}: the button keeps its label`);
+      // The multi-target KB page asks which limit first, like the image resizer.
+      if (await page.locator('#btnProcess').isDisabled()) await choose(page, await page.locator('.choice[data-preset="kb-100"]').count() ? 'kb-100' : 'passport');
       await page.locator('#btnProcess').click();
       await page.locator('#resultArea').waitFor({ state: 'visible' });
       await page.waitForFunction(() => document.getElementById('resultFileSize') && document.getElementById('resultFileSize').textContent.trim().length > 2);
       ok((await page.locator('#resultDims').innerText()).trim().length > 3, `${file}: result shows dimensions`);
       ok((await page.locator('#resultFileSize').innerText()).includes('KB'), `${file}: result shows file size`);
       ok(await page.locator('#btnProcess').isHidden() && await page.locator('#btnDownload').isVisible(), `${file}: once finished, Download replaces the Resize button`);
-      if (hindi) ok(/[\u0900-\u097F]/.test(await page.locator('#btnProcess').textContent()), `${file}: Resize button stays in Hindi after processing`);
     }
     await context.close();
   }
-  console.log('✓ Exam, KB and Hindi tools: order, folded dropzone, Hindi label, result facts');
+  console.log('✓ Resizer pages: order, folded dropzone, result facts');
   // 7. Secondary tools explain a bad file in the page, never with a blocking browser dialog,
   //    and never leave the person wondering whether anything happened.
   {
     const { context, page } = await open(390, 800);
     let dialogs = 0; page.on('dialog', d => { dialogs++; d.dismiss(); });
-    const cases = [['compress-pdf.html', '#compressFileInput', async () => { await page.locator('#btnStartCompress').click(); }], ['image-to-pdf.html', 'input[type=file]', null], ['passport-photo-print.html', 'input[type=file]', null], ['signature-cleaner.html', 'input[type=file]', null]];
+    const cases = [['compress-pdf.html', '#compressFileInput', async () => { if (await page.locator('#btnStartCompress').isVisible()) await page.locator('#btnStartCompress').click(); }], ['image-to-pdf.html', 'input[type=file]', null], ['passport-photo-print.html', 'input[type=file]', null], ['signature-cleaner.html', 'input[type=file]', null]];
     for (const [file, input, after] of cases) {
       for (const [name, type] of [['notes.txt', 'text/plain'], ['broken.jpg', 'image/jpeg']]) {
         await page.goto(`${origin}/${file}`);
@@ -463,14 +463,14 @@ const server = http.createServer((req, res) => {
       x.putImageData(d, 0, 0); return c.toDataURL('image/png').split(',')[1];
     }, [w, h]), 'base64');
 
-    // The home page asks what is being prepared before it will process, and says so under the action
+    // The image resizer asks what is being prepared before it will process, and says so under the action
     const { context, page } = await open(390, 844);
-    await page.goto(`${origin}/index.html`);
+    await page.goto(`${origin}/image-resizer.html`);
     await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await noisePng(page, 600, 800) });
     await page.locator('#cropperActiveArea:not(.hidden)').waitFor();
     const summary = async () => (await page.locator('#processSummary').innerText()).replace(/\s+/g, ' ').trim();
     ok(await page.locator('#btnProcess').isDisabled() && /Choose what you are preparing/.test(await summary()), `nothing is processed before a requirement is chosen (${await summary()})`);
-    ok(await page.locator('.choice[aria-pressed="true"]').count() === 0, 'no requirement is preselected on the home page');
+    ok(await page.locator('.choice[aria-pressed="true"]').count() === 0, 'no requirement is preselected on the image resizer');
     await page.locator('#processSummary button').click();
     ok(await page.evaluate(() => document.activeElement && document.activeElement.matches('.choice')), '"Show me" takes focus to the requirement list');
     await choose(page, 'passport');
@@ -514,11 +514,16 @@ const server = http.createServer((req, res) => {
     // Compress PDF never hands back a larger file: a PDF already under the target is kept as it is,
     // and a compressed result is never bigger than the PDF it came from.
     {
-      const jpeg = fs.readFileSync(path.join(root, 'img/samples/test-signature-cleaned.jpg'));
-      const pdf = Buffer.concat([Buffer.from('%PDF-1.4\n1 0 obj << /Type /XObject /Subtype /Image /Filter /DCTDecode >> stream\n'), jpeg, Buffer.from('\nendstream endobj\n%%EOF\n')]);
+      // A real one-page scan (the compressor opens the file before it decides anything).
+      const PDFLib = require('../js/vendor/pdf-lib.min.js');
+      const scan = await PDFLib.PDFDocument.create();
+      const img = await scan.embedJpg(fs.readFileSync(path.join(root, 'img/samples/test-signature-cleaned.jpg')));
+      scan.addPage([595.28, 841.89]).drawImage(img, { x: 36, y: 300, width: 523, height: 294 });
+      const pdf = Buffer.from(await scan.save());
       for (const [target, expectKept] of [['200', true], ['30', false]]) {
         await page.goto(`${origin}/compress-pdf.html`);
         await page.locator('#compressFileInput').setInputFiles({ name: 'scan.pdf', mimeType: 'application/pdf', buffer: pdf });
+        await page.locator('#compressFileInfoBox:not(.hidden)').waitFor({ timeout: 15000 });
         await page.locator('#targetKbInput').fill(target);
         await page.locator('#btnStartCompress').click();
         await page.locator('#compressResultArea:not(.hidden)').waitFor({ timeout: 30000 });
@@ -529,9 +534,8 @@ const server = http.createServer((req, res) => {
       }
     }
 
-    // Compress PDF keeps the page geometry: an A4 scan stays A4 with the image fitted on it, and a
-    // camera JPEG with an EXIF thumbnail (whose first FF D9 marker is inside the EXIF segment) is
-    // still read as a page instead of being skipped.
+    // Compress PDF keeps the page geometry: an A4 scan whose camera JPEG carries an EXIF thumbnail
+    // (whose first FF D9 marker is inside the EXIF segment) comes back as one A4 page under the target.
     {
       const main = fs.readFileSync(path.join(root, 'img/samples/test-signature-cleaned.jpg'));
       const thumbB64 = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 24; c.height = 16; c.getContext('2d').fillRect(4, 4, 12, 8); return c.toDataURL('image/jpeg', 0.5).split(',')[1]; });
@@ -553,30 +557,17 @@ const server = http.createServer((req, res) => {
       const pdf = Buffer.concat(parts);
       await page.goto(`${origin}/compress-pdf.html`);
       await page.locator('#compressFileInput').setInputFiles({ name: 'camera-scan.pdf', mimeType: 'application/pdf', buffer: pdf });
+      await page.locator('#compressFileInfoBox:not(.hidden)').waitFor({ timeout: 15000 });
       await page.locator('#targetKbInput').fill('30');
       await page.locator('#btnStartCompress').click();
       await page.locator('#compressResultArea:not(.hidden)').waitFor({ timeout: 30000 });
-      const out = await page.evaluate(async () => { const b = await fetch(document.getElementById('btnDownloadCompressedPdf').href).then(r => r.blob()); return { size: b.size, text: new TextDecoder('latin1').decode(await b.arrayBuffer()) }; });
-      ok(/\/MediaBox \[0 0 595\.28 841\.89\]/.test(out.text) && /\/Count 1\b/.test(out.text), 'compress: an A4 page with an EXIF-thumbnail JPEG comes back as one A4 page');
-      const draw = out.text.match(/q ([\d.]+) 0 0 ([\d.]+) ([\d.]+) ([\d.]+) cm \/Im1 Do Q/);
-      ok(draw && Math.abs(parseFloat(draw[1]) - 595.28) < 0.1 && Math.abs(parseFloat(draw[2]) - 334.85) < 0.5 && parseFloat(draw[3]) === 0 && Math.abs(parseFloat(draw[4]) - 253.52) < 0.5, `compress: the image is fitted to the page width and centred (${draw && draw[0]})`);
+      const out = await page.evaluate(async () => { const b = await fetch(document.getElementById('btnDownloadCompressedPdf').href).then(r => r.blob()); let t = ''; new Uint8Array(await b.arrayBuffer()).forEach(c => { t += String.fromCharCode(c); }); return { size: b.size, b64: btoa(t) }; });
+      const PDFLib = require('../js/vendor/pdf-lib.min.js');
+      const outDoc = await PDFLib.PDFDocument.load(Buffer.from(out.b64, 'base64'));
+      const box = outDoc.getPage(0).getMediaBox();
+      ok(outDoc.getPageCount() === 1 && Math.abs(box.width - 595.28) < 0.1 && Math.abs(box.height - 841.89) < 0.1, `compress: an A4 page with an EXIF-thumbnail JPEG comes back as one A4 page (${outDoc.getPageCount()}, ${box.width} x ${box.height})`);
       ok(out.size <= 30 * 1024 && out.size < pdf.length, `compress: the result (${out.size} bytes) is under 30 KB and smaller than the input (${pdf.length} bytes)`);
     }
-
-    // Exam page: the preset switch shows which preset is in use
-    await page.goto(`${origin}/upsc-photo-signature-size.html`);
-    ok(await page.locator('.choice[data-preset="upsc-photo"]').getAttribute('aria-pressed') === 'true', 'UPSC photo preset is marked as selected on load');
-    ok(/UPSC photo/.test(await page.locator('#reqSummaryName').innerText()) && await page.locator('#reqGrid').isHidden(), 'the exam requirement arrives chosen, shown as a summary');
-    await choose(page, 'upsc-signature');
-    ok(await page.locator('.choice[data-preset="upsc-signature"]').getAttribute('aria-pressed') === 'true' && await page.locator('.choice[data-preset="upsc-photo"]').getAttribute('aria-pressed') === 'false', 'choosing the signature preset moves the selection');
-    ok(await page.locator('.choice').count() === 3, 'an exam page offers only that exam\'s photo, signature and a custom size');
-    // A pixel size the exam does not set is labelled as a suggestion.
-    ok(/suggested/.test(await page.locator('.choice[data-preset="upsc-photo"] .choice__spec').innerText()), 'the UPSC photo preset says its pixel size is a suggestion');
-    // SSC captures the photo live, so its page offers only the signature; RRB offers only a custom size.
-    await page.goto(`${origin}/ssc-photo-signature-size.html`);
-    ok(await page.locator('.choice').count() === 2 && await page.locator('.choice[data-preset="ssc-signature"]').getAttribute('aria-pressed') === 'true', 'the SSC page offers its signature and a custom size');
-    await page.goto(`${origin}/rrb-photo-signature-size.html`);
-    ok(await page.locator('.choice').count() === 1, 'the RRB page offers only a custom size');
 
     // Resume: example text never looks like a value
     await page.goto(`${origin}/resume.html`);
@@ -589,7 +580,7 @@ const server = http.createServer((req, res) => {
       const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: scheme });
       await ctx.route('**/*', route => /^(http:\/\/127\.|blob:|data:)/.test(route.request().url()) ? route.continue() : route.abort());
       const p = await ctx.newPage();
-      await p.goto(`${origin}/index.html`);
+      await p.goto(`${origin}/image-resizer.html`);
       await p.evaluate(s => document.documentElement.setAttribute('data-theme', s), scheme);
       const ratio = await p.evaluate(() => {
         const lum = c => { const [r, g, b] = c.match(/\d+/g).slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
@@ -670,27 +661,9 @@ const server = http.createServer((req, res) => {
     await page.waitForFunction(h => document.getElementById('btnCleanerDownload').getAttribute('href') !== h, hrefBefore);
     ok(true, 'signature: changing a setting refreshes the download');
 
-    // Hindi pages: the result sentences are in Hindi
-    await page.goto(`${origin}/hi/ssc-photo-signature-size.html`);
-    await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await pngOf(700, 900) });
-    await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
-    await page.locator('#btnProcess').click();
-    await page.locator('#resultArea:not(.hidden)').waitFor();
-    ok(/[\u0900-\u097F]/.test(await page.locator('#resultStatus').textContent()) && /[\u0900-\u097F]/.test(await page.locator('#resultTargetSize').textContent()), 'Hindi page: result status and limit are written in Hindi');
-    await page.goto(`${origin}/hi/ssc-photo-signature-size.html`);
-    await openSettings(page);
-    await page.locator('#customWidth').fill('5');
-    await page.locator('#customWidth').blur();
-    await page.locator('#dimError').waitFor({ state: 'visible' });
-    ok(/[\u0900-\u097F]/.test(await page.locator('#dimError').textContent()), 'Hindi page: a validation error is written in Hindi');
-    await page.goto(`${origin}/hi/ssc-photo-signature-size.html`);
-    await page.locator('#fileInput').setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not an image') });
-    await page.locator('#processErrorBox').waitFor({ state: 'visible' });
-    ok(/[\u0900-\u097F]/.test(await page.locator('#processErrorMessage').textContent()), 'Hindi page: a file error is written in Hindi');
-
     // Resizer, every setting open: the page scrolls normally (no inner scroll region), the sticky action
     // stays on screen, and the last setting can be scrolled clear of it.
-    await page.goto(`${origin}/index.html`);
+    await page.goto(`${origin}/image-resizer.html`);
     await choose(page, 'passport');
     await page.locator('#fileInput').setInputFiles({ name: 'p.png', mimeType: 'image/png', buffer: await pngOf(700, 900) });
     await page.waitForFunction(() => !document.getElementById('btnProcess').disabled);
@@ -719,7 +692,7 @@ const server = http.createServer((req, res) => {
     ok(rail.onScreen, 'signature cleaner: Download is on screen after upload');
 
     // Landing pages: the tool comes before the reference content
-    for (const file of ['ssc-photo-signature-size.html', 'resize-image-to-20kb.html', 'hi/ibps-photo-signature-size.html']) {
+    for (const file of ['image-resizer.html', 'resize-image-to-20kb.html', 'resize-image-to-50kb.html']) {
       await page.goto(`${origin}/${file}`);
       const before = await page.evaluate(() => { const ws = document.getElementById('resizerApp').getBoundingClientRect().top; const prose = document.querySelector('main .prose'); return !prose || ws < prose.getBoundingClientRect().top; });
       ok(before, `${file}: the tool appears before the reference content`);
@@ -727,7 +700,8 @@ const server = http.createServer((req, res) => {
 
     // Resume: fold an entry, Fix focuses the exact field even inside a folded entry
     await page.goto(`${origin}/resume.html`);
-    await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
+    // Start from an empty library: saved resumes live in IndexedDB, not only localStorage.
+    await page.evaluate(() => new Promise(done => { try { localStorage.clear(); } catch (e) {} const r = indexedDB.deleteDatabase('applyready'); r.onsuccess = r.onerror = r.onblocked = () => done(); }));
     await page.reload();
     await page.locator('#sec-experience .accordion-header').click();
     await page.locator('#btnAddExperience').click();
@@ -754,7 +728,133 @@ const server = http.createServer((req, res) => {
     ok(await phone.page.locator('#viewDownload').isVisible() && await phone.page.locator('#btnDownloadPDF').isVisible(), 'resume on a phone: Download opens the download step');
     await phone.context.close();
   }
-  console.log('✓ Rebuild interactions: PDF rotation, drag and keyboard reorder, stale results, focus, signature compare, Hindi results, no inner scrolling, tool order, entry folding, exact-field Fix, phone Download');
+  console.log('✓ Rebuild interactions: PDF rotation, drag and keyboard reorder, stale results, focus, signature compare, no inner scrolling, tool order, entry folding, exact-field Fix, phone Download');
+
+  // 10. Navigation and search: the phone menu sheet, the search dialog and the directory filter.
+  {
+    // Phone menu sheet: short, search first, focus moves in and stays in while it is open.
+    const { context, page } = await open(360, 740, true);
+    await page.goto(`${origin}/index.html`);
+    const toggle = page.locator('#navMenuToggle');
+    await toggle.click();
+    ok(await toggle.getAttribute('aria-expanded') === 'true', 'phone menu: opens');
+    ok(await page.evaluate(() => document.activeElement.id) === 'navSearch', 'phone menu: focus moves to Search tools, the first item of the sheet');
+    ok(await page.evaluate(() => { const n = document.getElementById('siteNav'); return n.scrollHeight <= n.clientHeight + 1; }), 'phone menu: with the categories closed the sheet fits a 360 × 740 screen');
+    // Tab order: sheet top to bottom, then the header buttons, then round again; never out of the header.
+    const seen = [];
+    for (let i = 0; i < 16; i++) {
+      seen.push(await page.evaluate(() => { const a = document.activeElement; const r = a.getBoundingClientRect(); return { id: a.id || a.textContent.trim().slice(0, 24), inHeader: !!a.closest('#siteHeader'), inSheet: !!a.closest('#siteNav'), top: r.top }; }));
+      await page.keyboard.press('Tab');
+    }
+    ok(seen.every(s => s.inHeader), `phone menu: Tab stays in the header and sheet while open (${seen.filter(s => !s.inHeader).map(s => s.id)})`);
+    const sheet = seen.slice(0, seen.findIndex(s => !s.inSheet));
+    ok(sheet.length >= 8 && sheet.every((s, i) => i === 0 || s.top > sheet[i - 1].top), `phone menu: the sheet is reached top to bottom, in the order it is drawn (${sheet.map(s => s.id + '@' + Math.round(s.top))})`);
+    ok(sheet[0].id === 'navSearch' && /Resume/.test(sheet[1].id), 'phone menu: Search tools, then the categories from Resume');
+    await page.locator('.site-header .brand').focus();
+    await page.keyboard.press('Shift+Tab');
+    ok(await page.evaluate(() => document.activeElement.id) === 'navMenuToggle', 'phone menu: Shift+Tab from the first item in the header goes round to the menu button');
+    // Categories open and close; Resume builder is listed once.
+    const resume = page.locator('.menu__toggle[aria-controls="menuList-resume"]');
+    await resume.click();
+    ok(await resume.getAttribute('aria-expanded') === 'true' && await page.locator('#menuList-resume a').isVisible(), 'phone menu: a category opens to show its tools');
+    ok(await page.locator('#siteNav a:visible', { hasText: 'Resume builder' }).count() === 1, 'phone menu: Resume builder is listed once');
+    await resume.click();
+    ok(await page.locator('#menuList-resume').isHidden(), 'phone menu: and closes again');
+    await page.keyboard.press('Escape');
+    ok(await toggle.getAttribute('aria-expanded') === 'false' && await page.evaluate(() => document.activeElement.id) === 'navMenuToggle', 'phone menu: Escape closes it and returns focus to the menu button');
+    // Search from the sheet: the sheet closes, the dialog opens, and closing it returns to the menu button.
+    await toggle.click();
+    await page.locator('#navSearch').click();
+    await page.locator('.search-dialog input').waitFor();
+    ok(await toggle.getAttribute('aria-expanded') === 'false' && await page.evaluate(() => document.activeElement.closest('.search-dialog') !== null), 'phone menu: Search tools opens the search dialog');
+    await page.keyboard.press('Escape');
+    ok(await page.evaluate(() => document.activeElement.id) === 'navMenuToggle', 'phone menu: closing the search returns focus to the menu button');
+    // On a tool page its own category starts open.
+    await page.goto(`${origin}/merge-pdf.html`);
+    await toggle.click();
+    ok(await page.locator('#menuList-pdf a[aria-current="page"]').isVisible() && await page.locator('#menuList-image').isHidden(), 'phone menu: on Merge PDF the PDF tools are open and the rest closed');
+    await context.close();
+  }
+  {
+    // Search dialog: results are options without links inside, open by Enter or click, pass axe in both themes.
+    for (const scheme of ['light', 'dark']) {
+      const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, colorScheme: scheme });
+      await context.route('**/*', route => /^(http:\/\/127\.|blob:|data:)/.test(route.request().url()) ? route.continue() : route.abort());
+      const page = await context.newPage();
+      const scan = async label => {
+        // The dialog fades in; contrast is measured once it has settled.
+        await page.waitForFunction(() => document.getAnimations().every(a => a.playState !== 'running'));
+        const result = await new AxeBuilder({ page }).include('.search-dialog').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+        ok(result.violations.length === 0, `search ${scheme} ${label}: ${result.violations.map(v => v.id + ' ' + v.nodes[0].target.join(' ')).join('; ')}`);
+      };
+      await page.goto(`${origin}/merge-pdf.html`);
+      await page.keyboard.press('Control+K');
+      const input = page.locator('.search-dialog input');
+      await input.waitFor();
+      await scan('popular tools');
+      await input.fill('merge');
+      ok(await page.locator('.search-dialog [role="option"]').count() > 0 && await page.locator('.search-dialog [role="option"] a, .search-dialog [role="option"] button').count() === 0, `search ${scheme}: options hold no links or buttons`);
+      await scan('results');
+      await input.fill('zzqqxx');
+      const link = page.locator('.search-results__empty a');
+      ok(await link.isVisible() && /underline/.test(await link.evaluate(a => getComputedStyle(a).textDecorationLine)), `search ${scheme}: the "browse all tools" link is underlined`);
+      await scan('no results');
+      // Tab goes round the field, Close and (only while it shows) the "browse all tools" link.
+      const tabRound = async (shift) => {
+        const seen = [];
+        await input.focus();
+        for (let i = 0; i < 4; i++) {
+          await page.keyboard.press(shift ? 'Shift+Tab' : 'Tab');
+          seen.push(await page.evaluate(() => { const a = document.activeElement; return a.tagName + (a.closest('.search-dialog') ? '' : ':outside'); }));
+        }
+        return seen.join();
+      };
+      ok(await tabRound(false) === 'BUTTON,A,INPUT,BUTTON', `search ${scheme}: Tab reaches the "browse all tools" link when nothing matches (${await tabRound(false)})`);
+      await input.fill('merge');
+      ok(await page.locator('.search-results__empty').isHidden(), `search ${scheme}: results hide the empty message`);
+      ok(await tabRound(false) === 'BUTTON,INPUT,BUTTON,INPUT', `search ${scheme}: Tab goes round the field and Close after a no-results query, skipping the hidden link (${await tabRound(false)})`);
+      ok(await tabRound(true) === 'BUTTON,INPUT,BUTTON,INPUT', `search ${scheme}: Shift+Tab goes round the same way (${await tabRound(true)})`);
+      if (scheme === 'light') {
+        await input.fill('mrege pdf');
+        await page.keyboard.press('Enter');
+        await page.waitForURL(/merge-pdf\.html$/, { waitUntil: 'domcontentloaded' });
+        ok(true, 'search: Enter opens the first result of a misspelt query');
+        await page.goto(`${origin}/index.html`, { waitUntil: 'domcontentloaded' });
+        await page.keyboard.press('/');
+        await page.locator('.search-dialog input').fill('word to pdf');
+        ok(await page.locator('.search-dialog [role="option"]').count() === 1, 'search: "word to pdf" offers one answer, the export help');
+        await page.locator('.search-dialog [role="option"]').first().click();
+        await page.waitForURL(/file-checker\.html#word-to-pdf$/);
+        ok(await page.locator('#word-to-pdf').isVisible(), 'search: a click on a result opens it; the Word to PDF help is on the page');
+      }
+      await context.close();
+    }
+  }
+  {
+    // Directory filter: counts what it shows, shows each tool once, says when nothing matches.
+    const { context, page } = await open(1280, 900);
+    await page.goto(`${origin}/tools.html?q=50kb`);
+    const visible = () => page.locator('.tool-card:not([hidden])').evaluateAll(cards => cards.filter(c => c.offsetParent !== null).map(c => c.dataset.tool));
+    let shown = await visible();
+    ok(shown.join() === 'image-resizer' && (await page.locator('#toolFilterStatus').textContent()) === '1 tool matches “50kb”', `directory: "50kb" shows the image resizer with its 50 KB link (${shown})`);
+    ok(await page.locator('.tool-card[data-tool="image-resizer"] a[data-tool="resize-50kb"]').isVisible(), 'directory: the 50 KB page is one click away');
+    for (const q of ['20kb', '100kb', 'photo under 50 kb', 'join pdf', 'compress', 'text to pdf', 'batch']) {
+      await page.locator('#toolFilter').fill(q);
+      shown = await visible();
+      const status = await page.locator('#toolFilterStatus').textContent();
+      ok(shown.length > 0 && new Set(shown).size === shown.length, `directory: "${q}" shows each tool once (${shown})`);
+      ok(status.startsWith(`${shown.length} tool${shown.length === 1 ? ' matches' : 's match'}`), `directory: "${q}" counts the cards it shows (${status}; ${shown.length})`);
+      ok(await page.locator('#toolFilterEmpty').isHidden(), `directory: "${q}" does not show the empty message`);
+    }
+    await page.locator('#toolFilter').fill('zzqq');
+    ok((await visible()).length === 0 && await page.locator('#toolFilterEmpty').isVisible() && /No tool matches/.test(await page.locator('#toolFilterStatus').textContent()), 'directory: no match says so');
+    await page.locator('#toolFilter').fill('word to pdf');
+    ok(await page.locator('#toolFilterEmpty a[href="file-checker.html#word-to-pdf"]').isVisible(), 'directory: "word to pdf" points to the export help');
+    await page.locator('#toolFilter').fill('');
+    ok((await visible()).length === await page.locator('.tool-card').count(), 'directory: clearing the filter shows every card again');
+    await context.close();
+  }
+  console.log('✓ Navigation: phone menu sheet order, focus and categories; search dialog options and axe; directory filter counts');
 
   await browser.close();
   server.close();

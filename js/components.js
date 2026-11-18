@@ -36,6 +36,8 @@
     } else if (native.getAttribute('aria-label')) {
       btn.setAttribute('aria-label', native.getAttribute('aria-label'));
     }
+    // The field's hint (and error) is read with the button, as it would be with the native select.
+    if (native.getAttribute('aria-describedby')) btn.setAttribute('aria-describedby', native.getAttribute('aria-describedby'));
 
     const list = doc.createElement('div');
     list.className = 'select-list';
