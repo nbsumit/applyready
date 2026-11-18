@@ -425,6 +425,14 @@
     return !hasText({ personal: resumeData.personal, summary: resumeData.summary, experience: resumeData.experience, education: resumeData.education, projects: resumeData.projects, skills: resumeData.skills, certifications: resumeData.certifications, achievements: resumeData.achievements, volunteering: resumeData.volunteering, languages: resumeData.languages, publications: resumeData.publications, academic: resumeData.academic, references: resumeData.references, custom });
   }
 
+  /* A saved resume holds at most SCHEMA.MAX_ENTRIES entries in one list (and the library cannot open a
+     record with more), so the Add and Duplicate buttons stop there and say why. */
+  function roomForEntry(list) {
+    if (!Array.isArray(list) || list.length < SCHEMA.MAX_ENTRIES) return true;
+    notify(`A section can hold up to ${SCHEMA.MAX_ENTRIES} entries.`, true);
+    return false;
+  }
+
   function newEntryId(prefix) {
     return prefix + '-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
   }
@@ -2027,6 +2035,60 @@
    * Attach All Event Listeners
    */
   function attachEventListeners() {
+    /* Every box in the Write step holds at most SCHEMA.MAX_TEXT characters, the most a saved resume
+       keeps (the library cannot open a record with more). Boxes without a smaller limit get it as
+       maxlength when focused, so typing and pasting stop there, and the person is told when text was
+       left out. Nothing else in the editor can make a box longer than that. */
+    const limited = el => !!(el && el.closest && el.closest('#viewContent')
+      && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && ['text', 'email', 'url', 'tel', 'search'].includes(el.type))));
+    // The reason stays under the box (a toast can be replaced a moment later by "Saved") until the
+    // text is shorter than the limit again.
+    let limitNoteAt = 0, limitNoteField = null, limitNoteCount = 0;
+    const limitNoteOf = el => (el.nextElementSibling && el.nextElementSibling.classList.contains('rb-limit-note') ? el.nextElementSibling : null);
+    const tellLimit = (el, pasted) => {
+      const message = `This box holds up to ${el.maxLength.toLocaleString('en')} characters, so ${pasted ? 'the end of the pasted text was left out' : 'nothing more can be added'}.`;
+      let note = limitNoteOf(el);
+      if (!note) {
+        note = document.createElement('p');
+        note.className = 'field-error rb-limit-note';
+        note.id = `rbLimitNote${++limitNoteCount}`;
+        el.insertAdjacentElement('afterend', note);
+        el.setAttribute('aria-describedby', `${el.getAttribute('aria-describedby') || ''} ${note.id}`.trim());
+      }
+      note.textContent = message;
+      const now = Date.now();
+      if (el === limitNoteField && now - limitNoteAt < 4000) return;
+      limitNoteField = el; limitNoteAt = now;
+      notify(message, true);
+    };
+    const clearLimitNote = el => {
+      const note = limitNoteOf(el);
+      if (!note || el.value.length >= el.maxLength) return;
+      const rest = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter(id => id && id !== note.id).join(' ');
+      if (rest) el.setAttribute('aria-describedby', rest); else el.removeAttribute('aria-describedby');
+      note.remove();
+    };
+    document.addEventListener('focusin', e => {
+      if (limited(e.target) && !(e.target.maxLength > 0)) e.target.maxLength = SCHEMA.MAX_TEXT;
+    }, true);
+    document.addEventListener('beforeinput', e => {
+      const el = e.target;
+      if (!limited(el) || !(el.maxLength > 0) || !/^insert/.test(e.inputType || '')) return;
+      const added = typeof e.data === 'string' ? e.data : (e.dataTransfer ? e.dataTransfer.getData('text/plain') : '');
+      const selected = Math.max(0, (el.selectionEnd || 0) - (el.selectionStart || 0));
+      if (el.value.length - selected + Math.max(added.length, 1) > el.maxLength) tellLimit(el, added.length > 1);
+    }, true);
+    // A value set without the limit (for example by a browser extension) is cut before it is used.
+    document.addEventListener('input', e => {
+      const el = e.target;
+      if (!limited(el)) return;
+      clearLimitNote(el);
+      if (el.value.length <= SCHEMA.MAX_TEXT) return;
+      el.value = el.value.slice(0, SCHEMA.MAX_TEXT);
+      if (!(el.maxLength > 0)) el.maxLength = SCHEMA.MAX_TEXT;
+      tellLimit(el, true);
+    }, true);
+
     // Dirty flag on typing
     let lastTypingField, lastTypingAt = 0;
     document.addEventListener('input', e => {
@@ -2217,6 +2279,7 @@
       const btn = getEl(id);
       if (!btn) return;
       btn.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.academic && resumeData.academic[key])) return;
         pushHistoryState();
         if (!resumeData.academic) resumeData.academic = {};
         if (!Array.isArray(resumeData.academic[key])) resumeData.academic[key] = [];
@@ -2231,6 +2294,7 @@
     const btnAddExp = getEl('btnAddExperience');
     if (btnAddExp) {
       btnAddExp.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.experience)) return;
         pushHistoryState();
         resumeData.experience.push({
           id: newEntryId('exp'),
@@ -2249,6 +2313,7 @@
     const btnAddEdu = getEl('btnAddEducation');
     if (btnAddEdu) {
       btnAddEdu.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.education)) return;
         pushHistoryState();
         resumeData.education.push({
           id: newEntryId('edu'),
@@ -2267,6 +2332,7 @@
     const btnAddProj = getEl('btnAddProject');
     if (btnAddProj) {
       btnAddProj.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.projects)) return;
         pushHistoryState();
         resumeData.projects.push({
           id: newEntryId('proj'),
@@ -2334,6 +2400,7 @@
     const btnAddCert = getEl('btnAddCertification');
     if (btnAddCert) {
       btnAddCert.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.certifications)) return;
         pushHistoryState();
         if (!resumeData.certifications) resumeData.certifications = [];
         resumeData.certifications.push({ id: newEntryId('cert'), name: '', issuer: '', year: '' });
@@ -2345,6 +2412,7 @@
     const btnAddAch = getEl('btnAddAchievement');
     if (btnAddAch) {
       btnAddAch.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.achievements)) return;
         pushHistoryState();
         if (!resumeData.achievements) resumeData.achievements = [];
         resumeData.achievements.push('');
@@ -2356,6 +2424,7 @@
     const btnAddVol = getEl('btnAddVolunteering');
     if (btnAddVol) {
       btnAddVol.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.volunteering)) return;
         pushHistoryState();
         if (!resumeData.volunteering) resumeData.volunteering = [];
         resumeData.volunteering.push({ id: newEntryId('vol'), role: '', organization: '', duration: '' });
@@ -2367,6 +2436,7 @@
     const btnAddLang = getEl('btnAddLanguage');
     if (btnAddLang) {
       btnAddLang.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.languages)) return;
         pushHistoryState();
         if (!resumeData.languages) resumeData.languages = [];
         resumeData.languages.push({ id: newEntryId('lang'), name: '', proficiency: '' });
@@ -2378,6 +2448,7 @@
     const btnAddPub = getEl('btnAddPublication');
     if (btnAddPub) {
       btnAddPub.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.publications)) return;
         pushHistoryState();
         if (!Array.isArray(resumeData.publications)) resumeData.publications = [];
         resumeData.publications.push({ id: newEntryId('pub'), title: '' });
@@ -2389,6 +2460,7 @@
     const btnAddTeach = getEl('btnAddTeaching');
     if (btnAddTeach) {
       btnAddTeach.addEventListener('click', () => {
+        if (!roomForEntry(resumeData.academic && resumeData.academic.teaching)) return;
         pushHistoryState();
         if (!resumeData.academic) resumeData.academic = {};
         if (!resumeData.academic.teaching) resumeData.academic.teaching = [];
@@ -2491,6 +2563,7 @@
     const id = btn.dataset.id;
     const idx = resumeData.experience.findIndex(x => x.id === id);
     if (idx === -1) return;
+    if (action === 'duplicate-exp' && !roomForEntry(resumeData.experience)) return;
 
     pushHistoryState();
     if (action === 'remove-exp') {
@@ -2551,6 +2624,7 @@
     const id = btn.dataset.id;
     const idx = resumeData.education.findIndex(x => x.id === id);
     if (idx === -1) return;
+    if (action === 'duplicate-edu' && !roomForEntry(resumeData.education)) return;
 
     pushHistoryState();
     if (action === 'remove-edu') {
@@ -2610,6 +2684,7 @@
     const id = btn.dataset.id;
     const idx = resumeData.projects.findIndex(x => x.id === id);
     if (idx === -1) return;
+    if (action === 'duplicate-proj' && !roomForEntry(resumeData.projects)) return;
 
     pushHistoryState();
     if (action === 'remove-proj') {

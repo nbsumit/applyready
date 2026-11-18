@@ -187,7 +187,10 @@
     if (!good.length) return;
     Files.download(new Blob([JSON.stringify(Lib.libraryBackup(good), null, 2)], { type: 'application/json' }), Lib.fileName('ApplyReady', `resumes_backup_${new Date().toISOString().slice(0, 10)}.json`));
     const skipped = records.length - good.length;
-    done(`Backup of ${plural(good.length, 'resume')} downloaded.${skipped ? ` ${plural(skipped, 'damaged record')} ${skipped === 1 ? 'was' : 'were'} not included; use Download raw copy for ${skipped === 1 ? 'it' : 'them'}.` : ''} Keep the file somewhere safe.`);
+    // Resumes saved by an earlier release with text over the limits are backed up shortened (js/resume-library.js inspect).
+    const trimmed = good.filter(rec => rec.trimmed).length;
+    const shortened = trimmed ? ` ${plural(trimmed, 'resume')} ${trimmed === 1 ? 'has' : 'have'} text over the limits and ${trimmed === 1 ? 'is' : 'are'} shortened in the file; open ${trimmed === 1 ? 'it' : 'each one'} in the resume builder and use Download the original for the full text.` : '';
+    done(`Backup of ${plural(good.length, 'resume')} downloaded.${skipped ? ` ${plural(skipped, 'damaged record')} ${skipped === 1 ? 'was' : 'were'} not included; use Download raw copy for ${skipped === 1 ? 'it' : 'them'}.` : ''}${shortened} Keep the file somewhere safe.`);
   });
 
   let importing = false;

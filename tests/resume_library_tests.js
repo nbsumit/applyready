@@ -528,6 +528,128 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     await ctx.close();
   }
 
+  /* ---------------------------------------------------------------- 15. Limits: what is saved always reopens */
+  {
+    const ctx = await newContext();
+    const p = watch(await ctx.newPage());
+    await p.goto(`${origin}/resume.html`);
+    await ready(p);
+    await p.locator('#fullName').fill('Limit Tester');
+    await openSection(p, 'summary');
+    // An old CV pasted into one box: 52,000 characters. The box keeps 50,000 and says the rest was left out.
+    const para = 'Experienced coordinator who managed schedules, vendors and budgets for regional events and trained new staff. ';
+    await p.locator('#summaryText').focus();
+    await p.keyboard.insertText(para.repeat(Math.ceil(52000 / para.length)).slice(0, 52000));
+    ok((await p.locator('#summaryText').inputValue()).length === schema.MAX_TEXT, 'A box stops at the 50,000 characters a saved resume can hold');
+    const limitNote = p.locator('#summaryText + .rb-limit-note');
+    ok(/50,000 characters, so the end of the pasted text was left out/.test(await limitNote.textContent()), 'Pasting past the limit says under the box that the end was left out');
+    ok((await p.locator('#summaryText').getAttribute('aria-describedby')).includes(await limitNote.getAttribute('id')), 'The note is read with the box');
+    await waitSaved(p);
+    ok(await limitNote.isVisible(), 'The note stays after the save message');
+    await p.locator('#summaryText').press('End');
+    await p.locator('#summaryText').press('Backspace');
+    ok(await limitNote.count() === 0, 'The note goes once the box is under the limit again');
+    await p.locator('#summaryText').press('x');
+    await p.waitForTimeout(800);
+    await p.reload();
+    await ready(p);
+    ok(await p.locator('#fullName').inputValue() === 'Limit Tester', 'A resume with a full box reopens after reload');
+    ok((await p.locator('#summaryText').inputValue()).length === schema.MAX_TEXT, 'The full box comes back whole');
+    await p.locator('#tabDownload').click();
+    const fullBackup = await save(p, () => p.locator('#btnExportJSON').click(), 'limit-backup.json');
+    await p.locator('#tabContent').click();
+    ok(JSON.parse(fs.readFileSync(fullBackup, 'utf8')).data.summary.length === schema.MAX_TEXT, 'The backup holds every character of the box');
+    await openLibrary(p);
+    ok(await p.locator('#libList .rl-row.is-damaged').count() === 0, 'A resume at the limits is never listed as damaged');
+    await closeLibrary(p);
+
+    // Lists stop at 150 entries, for Add and for Duplicate, with a message.
+    await p.evaluate(n => {
+      const ed = window.ApplyReadyResumeEditor;
+      const d = JSON.parse(JSON.stringify(ed.getData()));
+      d.experience = Array.from({ length: n }, (_, i) => ({ id: 'exp-' + i, role: 'Role ' + i, company: '', duration: '', location: '', bulletsText: '' }));
+      ed.setResume(d);
+    }, schema.MAX_ENTRIES - 1);
+    await openSection(p, 'experience');
+    await p.locator('#btnAddExperience').click();
+    const expCount = () => p.evaluate(() => window.ApplyReadyResumeEditor.getData().experience.length);
+    ok(await expCount() === schema.MAX_ENTRIES, 'Add role works up to 150 roles');
+    await p.locator('#btnAddExperience').click();
+    ok(await expCount() === schema.MAX_ENTRIES, 'Add role stops at 150 roles');
+    await p.waitForFunction(() => /up to 150 entries/.test(document.body.textContent));
+    await p.locator('#experienceList [data-action="duplicate-exp"]').first().click();
+    ok(await expCount() === schema.MAX_ENTRIES, 'Duplicate stops at 150 roles too');
+    await waitSaved(p);
+
+    // Defence in depth: data over the limit that reached the editor anyway is not stored and the status says so.
+    await p.evaluate(() => { window.ApplyReadyResumeEditor.getData().summary = 'x'.repeat(50001); });
+    await p.locator('#targetTitle').fill('Coordinator');
+    await p.waitForFunction(() => /too long to store/.test(document.getElementById('saveStatusText').textContent), null, { timeout: 8000 });
+    ok(await p.locator('#saveNotice').filter({ hasText: 'Shorten it' }).isVisible(), 'A resume over the limits says what to do instead of claiming it is saved');
+    ok(!(await records(p)).some(r => r.data.summary.length > schema.MAX_TEXT), 'A resume over the limits is never written');
+    await p.evaluate(() => { window.ApplyReadyResumeEditor.getData().summary = 'Back to a normal summary.'; });
+    await p.locator('#targetTitle').fill('Coordinator II');
+    await waitSaved(p);
+    ok((await records(p)).some(r => r.data.summary === 'Back to a normal summary.'), 'Saving resumes once the text is short enough');
+
+    // A record saved by an earlier release with more than the limits opens shortened, says so, and
+    // keeps the stored original until the resume is changed.
+    await p.evaluate(async () => {
+      await window.ApplyReadyStore.put('resumes', { id: 'r_over_limits', name: 'Over Limits', createdAt: 5, updatedAt: Date.now() + 5000, schemaVersion: 3, data: {
+        personal: { fullName: 'Over Limits' }, summary: 'y'.repeat(60000), education: [], projects: [],
+        experience: Array.from({ length: 160 }, (_, i) => ({ id: 'e' + i, role: 'Role ' + i, bulletsText: '' }))
+      } });
+    });
+    await p.goto(`${origin}/resume.html?id=r_over_limits`);
+    await ready(p);
+    ok(await p.locator('#fullName').inputValue() === 'Over Limits', 'A record over the limits from an earlier release opens instead of being damaged');
+    ok((await p.locator('#summaryText').inputValue()).length === schema.MAX_TEXT && await expCount() === schema.MAX_ENTRIES, 'It opens shortened to the limits');
+    ok(await p.locator('#saveNotice').filter({ hasText: 'too long to open in full' }).isVisible(), 'A notice says that part of it was too long to open');
+    const original = await save(p, () => p.locator('#saveNotice [data-notice="original"]').click(), 'original.json');
+    const originalRecord = JSON.parse(fs.readFileSync(original, 'utf8')).record;
+    ok(originalRecord.data.summary.length === 60000 && originalRecord.data.experience.length === 160, 'Download the original saves the full stored text');
+    ok((await records(p)).find(r => r.id === 'r_over_limits').data.summary.length === 60000, 'Opening it does not overwrite the stored original');
+    await openLibrary(p);
+    ok(await p.locator('#libList .rl-row.is-damaged').count() === 0, 'It is not listed as damaged');
+    await save(p, () => p.locator('#libraryDialog [data-act="export-all"]').click(), 'all-limits.json');
+    await p.waitForFunction(() => /shortened in the backup/.test(document.body.textContent));
+    ok(true, 'Export all says which resumes it holds shortened');
+    await closeLibrary(p);
+    await p.locator('#targetTitle').fill('Edited');
+    await waitSaved(p);
+    ok(await p.locator('#saveNotice').filter({ hasText: 'too long to open in full' }).count() === 0, 'The notice goes once the shortened resume is saved');
+    const stored = (await records(p)).find(r => r.id === 'r_over_limits');
+    ok(schema.validate({ data: stored.data }), 'What is saved after editing passes the strict check, so it always reopens');
+    await audit(p, 'builder at the limits');
+    await ctx.close();
+  }
+
+  /* ---------------------------------------------------------------- 16. Quitting the browser right after typing */
+  {
+    const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-quit-'));
+    const exePath = process.env.BROWSER_EXECUTABLE_PATH;
+    const launchProfile = () => chromium.launchPersistentContext(profile, { headless: true, ...(exePath ? { executablePath: exePath } : {}), args: ['--no-sandbox', '--disable-dev-shm-usage'], viewport: { width: 1280, height: 900 } });
+    let ctx = await launchProfile();
+    let p = watch(ctx.pages()[0] || await ctx.newPage());
+    await p.goto(`${origin}/resume.html`);
+    await ready(p);
+    await p.locator('#fullName').fill('Quick Quitter');
+    await waitSaved(p);
+    await openSection(p, 'summary');
+    await p.locator('#summaryText').fill('Typed just before quitting.');
+    await ctx.close(); // the whole browser, at once, while the save would still be waiting
+    ctx = await launchProfile();
+    p = watch(ctx.pages()[0] || await ctx.newPage());
+    await p.goto(`${origin}/resume.html`);
+    await ready(p);
+    ok(await p.locator('#fullName').inputValue() === 'Quick Quitter', 'The resume reopens after the browser was quit');
+    ok(await p.locator('#summaryText').inputValue() === 'Typed just before quitting.', 'The last edit before quitting the browser is kept');
+    ok(await p.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('applyready_resume_unsaved:')).length) === 0, 'The temporary copy is removed once the save is finished');
+    ok((await records(p)).length === 1, 'Finishing the cut-short save adds no extra resume');
+    await ctx.close();
+    fs.rmSync(profile, { recursive: true, force: true });
+  }
+
   ok(errors.length === 0, 'No page errors: ' + errors.join(' | '));
   await browser.close();
   server.close();

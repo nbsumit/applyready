@@ -1073,6 +1073,21 @@ console.log('SUITE 17: Schema version 3 and the resume library');
   assert(LIB.readLegacyDraft('{oops').raw === '{oops', 'An unreadable old draft is kept raw rather than dropped');
   assert(LIB.relativeTime(1000000, 1000000 + 10000) === 'just now' && LIB.relativeTime(1000000, 1000000 + 120000) === '2 min ago' && LIB.relativeTime(1000000, 1000000 + 7200000) === '2 hours ago', 'Relative times read naturally');
   assert(LIB.cleanName('  A\u0000  very\n long ') === 'A very long' && LIB.cleanName('x'.repeat(300)).length === 120, 'Names are cleaned and limited to 120 characters');
+  // Limits (RES-01): a record over them, saved by an earlier release, opens shortened instead of
+  // being damaged, and migrate() shortens text rather than emptying it.
+  const big = { personal: { fullName: 'Big One' }, summary: 's'.repeat(SCHEMA.MAX_TEXT + 2000), education: [], projects: [],
+    experience: Array.from({ length: SCHEMA.MAX_ENTRIES + 10 }, (_, i) => ({ id: 'e' + i, role: 'R' + i, bulletsText: 'b'.repeat(i === 0 ? SCHEMA.MAX_TEXT + 1 : 5) })) };
+  assert(SCHEMA.MAX_TEXT === 50000 && SCHEMA.MAX_ENTRIES === 150, 'The limits are 50,000 characters per box and 150 entries per list');
+  assert(!SCHEMA.validate({ data: big }) && SCHEMA.validate({ data: big }, { lenient: true }), 'Lenient validation ignores only the length and count limits');
+  assert(!SCHEMA.validate({ data: { personal: 'x', experience: [], education: [], projects: [] } }, { lenient: true }), 'Lenient validation still refuses malformed data');
+  const shortened = SCHEMA.migrate(big);
+  assert(shortened.summary.length === SCHEMA.MAX_TEXT && shortened.experience.length === SCHEMA.MAX_ENTRIES && shortened.experience[0].bulletsText.length === SCHEMA.MAX_TEXT, 'migrate() shortens text over the limit instead of emptying it');
+  assert(SCHEMA.validate({ data: shortened }), 'A shortened resume passes the strict check');
+  assert(SCHEMA.migrate({ summary: 'a'.repeat(SCHEMA.MAX_TEXT - 1) + '\u{1F600}' }).summary.length === SCHEMA.MAX_TEXT - 1, 'Shortening never leaves half of a character');
+  const opened = LIB.inspect({ id: 'r_big', name: 'Big One', createdAt: 1, updatedAt: 2, data: big });
+  assert(opened.ok && opened.record.trimmed === true && opened.record.data.summary.length === SCHEMA.MAX_TEXT, 'The library opens a record over the limits, shortened and marked as such');
+  assert(LIB.inspect({ id: 'r_fit', data: shortened }).record.trimmed === undefined, 'A record within the limits is not marked as shortened');
+  assert(!LIB.inspect({ id: 'r_bad', data: { personal: 7 } }).ok, 'A malformed record is still damaged');
 }
 
 console.log('');
