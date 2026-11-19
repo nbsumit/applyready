@@ -164,10 +164,14 @@ ${cols}
 // style-src keeps 'unsafe-inline' for style attributes the tools set while cropping and previewing.
 // blob: and data: cover generated previews and downloads, which never leave the browser.
 // The tool meta lets js/site.js remember recently used tools (tool ids only, never file names).
+// Workers are started from blob: URLs so that they take this policy too (a <meta> policy does not
+// reach a worker started from a file URL); see workerSource() in js/lib/pdf-kit.js and image-pool.js.
+// 'wasm-unsafe-eval' lets the pdf.js worker compile its WebAssembly image decoders (JPEG 2000, JBIG2,
+// colour profiles), which load from this origin only; it does not allow eval() or any other script.
 function cspMeta(page) {
   const policy = [
     "default-src 'self'",
-    "script-src 'self'",
+    "script-src 'self' 'wasm-unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",

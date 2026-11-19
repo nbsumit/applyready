@@ -4,7 +4,8 @@
    Posts { type: 'ready' } once it has loaded, so the pool can tell a worker that never started
    from one that failed on a file. Files never leave the browser. */
 'use strict';
-importScripts('../lib/image-ops.js');
+// Started from a blob: script (js/lib/image-pool.js), image-ops.js is already loaded by then.
+if (!self.ApplyReadyImageOps) importScripts('../lib/image-ops.js');
 
 self.onmessage = async (event) => {
   const { id, blob, options } = event.data || {};

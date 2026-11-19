@@ -35,7 +35,9 @@ the visitor's own browser or extensions.
 ## How the site is protected
 
 - A Content Security Policy on every page allows scripts, styles, fonts, images and connections from the
-  site's own origin only, with no `eval` and no inline scripts.
+  site's own origin only, with no `eval` and no inline scripts. Only WebAssembly compilation is allowed
+  (`'wasm-unsafe-eval'`), for the PDF reader's image decoders. Workers are started from `blob:` URLs so
+  that the same policy applies inside them.
 - Files are identified by their content, size-limited per tool, and decoded by the browser or by
   maintained libraries (pdf.js, pdf-lib) running in workers where possible.
 - User text and file names are escaped before being shown; imported resumes are rebuilt from an

@@ -30,7 +30,7 @@
     tooManyPages: n => `This PDF has ${K.grouped(n)} pages. Organise works on up to ${K.grouped(MAX_PAGES)} pages at a time. ${K.splitFirst(n, 'organise each part')}`,
     onOpen(state) {
       reset(true);
-      sources = [{ name: state.file.name, bytes: state.bytes, password: state.password, libDoc: state.libDoc, jsDoc: state.jsDoc, count: state.pageCount }];
+      sources = [{ name: state.file.name, bytes: state.bytes, password: state.password, libDoc: state.libDoc, jsDoc: state.jsDoc, count: state.pageCount, unreadable: state.unreadable || [], incomplete: state.incomplete || [], previewError: state.previewError }];
       tiles = Array.from({ length: state.pageCount }, (_, i) => ({ key: `0:${i}`, src: 0, index: i, turn: 0, deleted: false }));
       els.name.value = `${UI.stem(state.file.name)}-organised`;
       els.pages.classList.remove('hidden');
@@ -239,12 +239,14 @@
       const opened = await UI.openPdf(file, { lib: true, js: true });
       if (tiles.length + opened.pageCount > MAX_PAGES) { K.closeJs(opened.jsDoc); throw new K.PdfError('toolarge', `${file.name} has ${K.grouped(opened.pageCount)} pages, which would bring the total over ${K.grouped(MAX_PAGES)}. ${opened.pageCount <= K.LIMITS.pages ? 'Split it first and insert only the pages you need.' : K.splitFirst(opened.pageCount)}`); }
       const src = sources.length;
-      sources.push({ name: file.name, bytes: opened.bytes, password: opened.password, libDoc: opened.libDoc, jsDoc: opened.jsDoc, count: opened.pageCount });
+      sources.push({ name: file.name, bytes: opened.bytes, password: opened.password, libDoc: opened.libDoc, jsDoc: opened.jsDoc, count: opened.pageCount, unreadable: opened.unreadable || [], incomplete: opened.incomplete || [], previewError: opened.previewError });
       const first = tiles.length;
       for (let i = 0; i < opened.pageCount; i++) tiles.push({ key: `${src}:${i}`, src, index: i, turn: 0, deleted: false });
       changed({ key: tiles[first].key, act: 'handle' });
       els.status.textContent = `${UI.plural(opened.pageCount, 'page')} from ${file.name} added at the end.`;
       Kit.announce(`${UI.plural(opened.pageCount, 'page')} from ${file.name} added at the end.`);
+      const damage = UI.damageNotice(opened);
+      if (damage) tool.error.show(damage);
     } catch (e) {
       tool.error.show(e && e.name === 'PdfError' ? e.message : `${file.name} could not be opened. Check that it opens on your device.`);
     } finally {
@@ -274,7 +276,9 @@
       const c = changeCounts();
       els.statChanges.textContent = [c.moved && 'Reordered', c.turned && `${c.turned} turned`, c.deleted && `${c.deleted} deleted`, c.inserted && `${c.inserted} added`].filter(Boolean).join(', ') || 'None';
       els.statSize.textContent = Files.formatBytes(bytes.length);
-      els.resultText.textContent = `${UI.plural(keep.length, 'page')} in the order shown, checked after saving. Your original file is unchanged.`;
+      // Pages that could not be read are blank in the new file too; say so for the pages kept.
+      const damage = sources.map((s, i) => UI.damageNote({ name: s.name, pageCount: s.count, unreadable: s.unreadable, incomplete: s.incomplete, previewError: s.previewError }, keep.filter(t => t.src === i).map(t => t.index))).filter(Boolean).join(' ');
+      els.resultText.textContent = `${UI.plural(keep.length, 'page')} in the order shown, checked after saving. Your original file is unchanged.${damage ? ` ${damage}` : ''}`;
       tool.showResult(els.download);
       Kit.announce(`New PDF ready: ${UI.plural(keep.length, 'page')}.`);
       els.download.focus({ preventScroll: true });

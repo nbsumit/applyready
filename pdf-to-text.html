@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="applyready-tool" content="pdf-to-text">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -114,6 +114,14 @@
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "The PDF uses a font that does not say which letter each shape stands for. The text looks right on screen but cannot be read back reliably from that file."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can it read Hindi or other Indian scripts?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Only partly. Vowel signs (such as ि), nasal marks (such as ं) and joined letters (such as क्ष or द्य) can come out missing or in the wrong place, because many PDFs store the shapes a font draws, in the order they are drawn, rather than the letters themselves. The tool says when a text includes an Indian script; check those words before you use them, and type them again where they are wrong."
             }
           },
           {
@@ -336,7 +344,7 @@
       <p>A PDF made from a word processor stores its text, and that text is read page by page as soon as you add the file. Lines are rebuilt from the position of each word on the page, so headings, lines and paragraphs come out separately; columns and tables are read from left to right and may need tidying. With <strong>Mark where each page starts</strong> on, each page begins with a line such as "Page 2".</p>
       <p>A scanned document is different: each page is a picture of text, so there are no words to copy. ApplyReady does not read pictures of text (this is called OCR), and it tells you which pages had no text instead of guessing. To keep a scanned page as an image, use <a href="pdf-to-image.html">PDF to images</a>; to make it smaller for a portal, use <a href="compress-pdf.html">Compress PDF</a>. If you are copying details into a resume, the <a href="resume.html">resume builder</a> takes plain text well.</p>
       <h3>Limits</h3>
-      <p>Files up to 100 MB. Text written in a font without a proper character map can come out as wrong characters; that is a fault in how the PDF was made, and the only cure is the original document.</p>
+      <p>Files up to 100 MB. Text written in a font without a proper character map can come out as wrong characters; that is a fault in how the PDF was made, and the only cure is the original document. Hindi and other Indian scripts often come out incomplete: vowel signs (such as ि), nasal marks (such as ं) and joined letters (such as क्ष) can be missing or out of place, because many PDFs store the shapes a font draws rather than the letters. Check those words before you paste them, and type them again where they are wrong.</p>
       <p class="tool-privacy"><i class="fa-solid fa-lock" aria-hidden="true"></i> Your files are processed in this browser and never leave your device. Closing the tab clears them.</p>
     </section>
 
@@ -370,6 +378,10 @@
         <details class="faq-item">
           <summary class="faq-question"><span>Some characters come out wrong. Why?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
           <div class="faq-answer"><p>The PDF uses a font that does not say which letter each shape stands for. The text looks right on screen but cannot be read back reliably from that file.</p></div>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question"><span>Can it read Hindi or other Indian scripts?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
+          <div class="faq-answer"><p>Only partly. Vowel signs (such as ि), nasal marks (such as ं) and joined letters (such as क्ष or द्य) can come out missing or in the wrong place, because many PDFs store the shapes a font draws, in the order they are drawn, rather than the letters themselves. The tool says when a text includes an Indian script; check those words before you use them, and type them again where they are wrong.</p></div>
         </details>
         <details class="faq-item">
           <summary class="faq-question"><span>How do I save the text?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>

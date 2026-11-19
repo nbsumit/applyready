@@ -78,7 +78,8 @@
     let js = null;
     try {
       const one = await K.extract(state.libDoc, [0]);
-      await K.addWatermark(one, o);
+      const report = {};
+      await K.addWatermark(one, Object.assign({ report }, o));
       const bytes = await K.save(one);
       if (ticket !== previewTicket) return;
       js = await K.openJs(bytes);
@@ -89,11 +90,17 @@
       els.preview.src = t.url;
       els.preview.width = t.width; els.preview.height = t.height;
       els.preview.alt = `Page 1 with the watermark "${o.text}"`;
-      els.caption.textContent = `Preview of page 1 with "${o.text}".`;
+      els.caption.textContent = `Preview of page 1 with "${o.text}".${report.fitted ? ` ${smaller(report, o)}` : ''}`;
       els.previewBox.classList.remove('hidden');
     } catch (e) {
       if (ticket === previewTicket) els.previewBox.classList.add('hidden');
     } finally { K.closeJs(js); }
+  }
+
+  /** Plain words for a watermark that was made smaller so that all of it stays on the page. */
+  function smaller(report, o, pages) {
+    const where = pages ? ` on ${UI.plural(report.fitted, 'page')}` : '';
+    return `The text is too long for the chosen size, so it was made smaller${where} (down to ${Math.round(report.smallest)} pt instead of ${o.size} pt) to fit on the page.`;
   }
 
   els.quick.addEventListener('click', e => {
@@ -113,7 +120,8 @@
     runner.run(async (signal, progress) => {
       progress(0.05, 'Opening a fresh copy…');
       const fresh = await K.openLib(state.bytes, { password: state.encrypted ? state.password : undefined, name: state.file.name });
-      await K.addWatermark(fresh, o, (d, n) => progress(0.1 + d / n * 0.6, `Stamping page ${d} of ${n}…`), signal);
+      const report = {};
+      await K.addWatermark(fresh, Object.assign({ report }, o), (d, n) => progress(0.1 + d / n * 0.6, `Stamping page ${d} of ${n}…`), signal);
       progress(0.75, 'Saving…');
       const bytes = await K.save(fresh);
       progress(0.9, 'Checking the new file…');
@@ -125,7 +133,7 @@
       els.statPages.textContent = String(state.pageCount);
       els.statText.textContent = o.text;
       els.statSize.textContent = Files.formatBytes(bytes.length);
-      els.resultText.textContent = `"${o.text}" on ${UI.plural(state.pageCount, 'page')}. The file was checked after saving.`;
+      els.resultText.textContent = `"${o.text}" on ${UI.plural(state.pageCount, 'page')}.${report.fitted ? ` ${smaller(report, o, true)}` : ''} The file was checked after saving.${UI.damageNote(state) ? ` ${UI.damageNote(state)}` : ''}`;
       tool.showResult(els.download);
       Kit.announce(`Watermark added to ${UI.plural(state.pageCount, 'page')}.`);
       els.download.focus({ preventScroll: true });
