@@ -3,14 +3,19 @@
 Plan: [`ROADMAP.md`](ROADMAP.md). This file records what is done, how it was verified and what remains.
 It is updated at the end of each phase.
 
-## Current state (18 Nov 2026)
+## Current state (19 Nov 2026)
 
 All nine phases of the roadmap are implemented and reviewed. The work was merged into `main` as pull
 request #16 (commit 92f7ef0) and is what https://applyready.in serves from GitHub Pages. The GitHub
 Actions workflow (`.github/workflows/quality.yml`) runs on every pull request to `main` and every push
-to it. An independent audit of the live site followed the release; its verified findings are being
-fixed on separate branches. Remaining owner actions and known limitations are listed at the end of
-this file.
+to it.
+
+An independent audit of the live site followed the release and verified 61 defects. They were fixed
+in five packages (resume, image, PDF, batch and cafe, site), each checked by a separate verifier, and
+merged at commit c86b919. A second review of the merged fixes found 33 further issues (mostly where one
+package's fix had not reached the same code in another tool); those were fixed on `fix/post-merge`.
+The user-visible changes are in the public changelog (changelog.html, "fixes after an independent
+review"). Remaining owner actions and known limitations are listed at the end of this file.
 
 ## Phase 9: final review by persona, and fixes (complete, 18 Nov 2026)
 
@@ -111,6 +116,22 @@ visit, the service worker serves every file it has seen from this device.
   save switch.
 - **A resume draft from a release before the resume library** is listed on Your data, where it can be
   downloaded or deleted, but it is not deleted automatically when saving is switched off.
+- **Kilobytes:** every tool counts 1 KB as 1,000 bytes and keeps a maximum at N x 1,000 bytes (a
+  minimum at N x 1,024), so a result meets a limit however the portal counts. Measured figures in the
+  guides that were not re-measured were converted from the older 1,024-byte KB (x 1.024, rounded up).
+- **Hindi text from PDFs (PDF-04):** pdf.js maps the vowel sign ि to U+0000. The control character is
+  removed and counted, and PDF to text warns about Indian scripts, but the vowel sign is not recovered.
+- **Blocked downloads (BAT-09):** a page cannot detect a download the browser blocked; the ZIP message
+  says what to do if nothing arrives.
+- **Chinese, Japanese and Korean PDFs offline:** the pdf.js character maps (1.7 MB) are not part of
+  "Save every tool", so such text needs a connection the first time it is read or drawn; Your data says
+  so. Without them the text is silently left out (no detection yet).
+- **Search (NAV-05, partly done):** everyday words and common misspellings are covered by a synonym list
+  and one-letter typo correction; words outside it can still give a weak match.
+- **Donation link (LIVE-03, declined):** the one Razorpay link appears in the footer and on About,
+  Philosophy and Contribute by design.
+- **File checker and GIF frames:** a GIF whose frame is larger than its logical screen is refused for
+  preview, but the facts table still shows the screen size.
 - **Browsers:** tested automatically in Chromium only in this environment; Firefox suites exist but were
   not run here, and Safari/iOS has not been tested.
 

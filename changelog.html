@@ -153,6 +153,24 @@
         <p class="page-lede">Important changes to ApplyReady, newest first. Every change is also visible in the <a href="https://github.com/nbsumit/applyready/commits/main">public code history</a>.</p>
       </header>
       <section class="section prose">
+        <h2 id="2026-11-fixes">November 2026: fixes after an independent review</h2>
+        <p>An independent review of the live site found problems, which were fixed. The changes you may notice:</p>
+        <h3>Changed</h3>
+        <ul>
+          <li><strong>One way of counting a kilobyte.</strong> Every tool now shows sizes with 1 KB = 1,000 bytes, rounded up, with the exact byte count beside it, so the same file shows the same size everywhere. A maximum of N KB is kept at N × 1,000 bytes and a minimum at N × 1,024 bytes, so a file meets the limit whether the portal counts 1 KB as 1,000 or 1,024 bytes. File size limits are counted the same way (50 MB is 50,000,000 bytes).</li>
+          <li><strong>Resume limits.</strong> A text box holds up to 50,000 characters and a list up to 150 entries. An older resume or backup over these limits opens or imports shortened, and says so.</li>
+          <li><strong>Downloads in applicant workspaces</strong> start with the applicant's name (or number), and Finish asks before it wipes an applicant with files not yet downloaded.</li>
+          <li><strong>The offline page</strong> lists the pages kept on this device, and marks PDF tools that still need their PDF library.</li>
+          <li><strong>PDF to text</strong> warns that Hindi and other Indian scripts can come out with vowel signs missing or out of place.</li>
+        </ul>
+        <h3>Fixed</h3>
+        <ul>
+          <li>Damaged PDFs are named, with the pages that will come out blank, in every PDF tool and in applicant workspaces; a PDF none of whose pages can be read is refused. Blank pages made on purpose are no longer called damaged.</li>
+          <li>Pictures over 50 megapixels, or whose pixel size cannot be read from the file, are refused before they are opened, in every image tool, so a small file can no longer use up the browser's memory.</li>
+          <li>Truncated or damaged pictures are refused when they are added, with the same message in every tool.</li>
+          <li>Unsaved changes to a resume are listed on Your data, turning saving off in one tab turns it off in every open tab, and the resume builder opens at once after a reload.</li>
+          <li>Search finds the right tools for "mark sheet", and keyword matching no longer lists job-advert filler (such as "passionate" or "immediate joiners") and finds C++ in "C/C++".</li>
+        </ul>
         <h2 id="2026-11">November 2026: ApplyReady becomes a free, open-source job application toolkit</h2>
         <p>ApplyReady was rebuilt around one purpose: helping people prepare job applications with free tools that keep their files on their own device. Every feature is free for everyone, with no account, no advertising and no usage quotas.</p>
         <h3>New</h3>
@@ -173,7 +191,7 @@
           <li><strong>Compress PDF</strong> now redraws every page, so it keeps every page (including text pages) in order, at its size and rotation. Pages become images, which the tool now says clearly.</li>
           <li>The <strong>image resizer</strong> moved to its own address, <a href="image-resizer.html">image-resizer.html</a>.</li>
           <li>Resume templates were made genuinely different from one another, and claims about applicant tracking systems that could not be verified were removed.</li>
-          <li>Pages are lighter (the icon font went from 156 KB to under 10 KB) and the pages you have opened work offline.</li>
+          <li>Pages are lighter (the icon fonts went from 156 KB to about 12 KB) and the pages you have opened work offline.</li>
           <li>The <a href="privacy.html">privacy policy</a> and <a href="terms.html">terms</a> were rewritten to describe exactly what the site does.</li>
         </ul>
         <h3>Removed</h3>
