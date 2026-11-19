@@ -159,6 +159,36 @@ function mixedPdf(jpeg) {
   off = await offlinePage('/split-pdf.html');
   ok(off.saved.includes('/merge-pdf.html') && !off.saved.includes('/split-pdf.html') && !off.saved.includes('/tools.html'), `offline page: other kept tools are listed (${JSON.stringify(off.saved)})`);
   await context.setOffline(false);
+  // Pages outside the footer (a KB preset page, a guide: common landing pages from a search) are
+  // listed too, named by their heading. The list once came from the footer alone, so a visitor who
+  // had opened only those pages was told that nothing was kept.
+  for (const p of ['/resize-image-to-50kb.html', '/guides/how-to-merge-pdf-files.html']) {
+    await page.goto(origin + p);
+    await page.waitForFunction(() => window.ApplyReadyUI);
+    await page.waitForTimeout(1500);
+  }
+  await context.setOffline(true);
+  off = await offlinePage('/compress-image.html');
+  const names = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#offlineSaved a')].map(a => [a.getAttribute('href'), a.textContent])));
+  ok(names['/resize-image-to-50kb.html'] === 'Resize image to 50 KB' && /^How to Merge PDF Files/.test(names['/guides/how-to-merge-pdf-files.html'] || '') && names['/merge-pdf.html'] === 'Merge PDF',
+    `offline page: kept preset pages and guides are listed by their heading (${JSON.stringify(names)})`);
+  ok(!off.saved.includes('/compress-image.html') && !off.saved.includes('/offline.html') && !off.saved.some(h => /\.(js|css|woff2|png)$/.test(h)), `offline page: lists pages only, never the page asked for (${JSON.stringify(off.saved)})`);
+  ok(/kept on this device and open without a connection/.test(off.status), `offline page: the status line says what is kept (${off.status})`);
+  await page.click('#offlineSaved a[href="/resize-image-to-50kb.html"]');
+  await page.waitForURL(/resize-image-to-50kb\.html$/);
+  ok(!/Offline/.test(await page.title()), 'offline page: a listed preset page opens from the cache');
+  // With the buttons hidden, the status line, the list and the note keep their spacing.
+  await offlinePage('/compress-image.html');
+  const gaps = await page.evaluate(() => {
+    document.getElementById('offlineActions').hidden = true;
+    const box = id => document.getElementById(id).getBoundingClientRect();
+    const note = document.querySelector('.status-page > p.muted').getBoundingClientRect();
+    const withList = [box('offlineSavedBox').top - box('offlineStatus').bottom, note.top - box('offlineSavedBox').bottom];
+    document.getElementById('offlineSavedBox').hidden = true;
+    return withList.concat(document.querySelector('.status-page > p.muted').getBoundingClientRect().top - box('offlineStatus').bottom);
+  });
+  ok(gaps.every(g => g >= 16), `offline page: with the buttons hidden, the status line stands apart from the list and the note (${gaps})`);
+  await context.setOffline(false);
   keys = await cachedPaths();
   ok(keys.every(u => !/[?&]v=/.test(u)) && new Set(keys.map(u => new URL(u).pathname)).size === keys.length, 'still one entry per file after browsing');
 

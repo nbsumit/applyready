@@ -787,6 +787,10 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .status-page__list { list-style: none; margin-top: var(--s-2); display: grid; gap: var(--s-1); }
 .status-page__list a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
 .status-page p.muted a { text-decoration: underline; text-underline-offset: .2em; }
+/* With the buttons or the list hidden, the status line still stands apart from what follows (a
+   collapsed margin, so the spacing is unchanged when the buttons show). */
+.status-page__note ~ .status-page__saved { margin-top: var(--s-4); }
+.status-page__note ~ p.muted { margin-top: var(--s-5); }
 
 /* ================================================================== 12. TOOL WORKSPACE */
 /* One frame for every tool. data-state is empty | ready | done (set by components.js), data-busy
