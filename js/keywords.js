@@ -12,7 +12,15 @@
     // Verbs and fillers of job adverts ("Must know", "is a bonus", "will include", "juniors").
     'bonus e.g expect expected exposure hands i.e include includes juniors know known knows nice offer offers run running seniors want wants ' +
     // Words about the degree or seniority asked for, not about the work itself.
-    'bachelor bachelors degree degrees equivalent field fields gather gathering graduates hire hiring junior senior').split(/\s+/));
+    'bachelor bachelors degree degrees equivalent field fields gather gathering graduates hire hiring junior senior ' +
+    // Praise words, duties and terms of the offer common in Indian job adverts ("immediate joiners",
+    // "CTC 3 LPA", "go-getter attitude", "handle day-to-day tasks"), which name no skill or role.
+    'assigned attitude back ctc day-to-day dedicated detail-oriented dynamic eager energetic ensuring enthusiastic essential ethic extra ' +
+    'fast-paced fresher freshers go-getter handle handling hard-working hardworking immediate immediately incentive incentives independent ' +
+    'independently interview interviews joiner joiners joining location locations lpa male male/female female mile month months motivated opening openings package passionate punctual ' +
+    'result-oriented results-oriented self-motivated self-starter sincere task tasks timely urgent urgently vacancies vacancy walk-in').split(/\s+/));
+  // Pay and counts written as numbers ("15k", "25k-40k", "3.5 LPA", "2-4") say nothing about skills.
+  const AMOUNT = /^\d[\d.,]*(k|l|lpa|lakhs?|cr|\+)?(-\d[\d.,]*(k|l|lpa|lakhs?|cr|\+)?)?$/i;
 
   // British and American spellings meet in one form (visualise and visualize, colour and color,
   // modelling and modeling, centre and center, programme and program).
@@ -52,7 +60,7 @@
     return rawTokens(text).map(token => token.toLowerCase());
   }
 
-  const meaningful = token => token.length > 1 && !STOPWORDS.has(token) && !/^\d+$/.test(token);
+  const meaningful = token => token.length > 1 && !STOPWORDS.has(token) && !/^\d+$/.test(token) && !AMOUNT.test(token);
 
   /* Short names that are skills only as written: the languages R, C and Go (capitalised, not at the
      start of a sentence, where "Go" is a verb) and a short list of two-letter skill acronyms in
@@ -102,7 +110,8 @@
         run = [];
       };
       tokens.forEach((token, i) => {
-        if (/^[\p{Lu}\d]/u.test(originals[i]) && isTerm(token)) run.push(i); else flushRun();
+        // A capitalised run is one name (Power BI); .NET Core counts too, so "Core" is not a term alone.
+        if (/^\.?[\p{Lu}\d]/u.test(originals[i]) && isTerm(token)) run.push(i); else flushRun();
         if (token.length <= 2 && shortName(originals[i], chunk.start && i === 0)) { bump(token, 1, originals[i], false); return; }
         if (!isTerm(token)) return;
         if (token.length > 2 || /[+#]/.test(token)) bump(token, 1, originals[i], chunk.start && i === 0);
@@ -123,14 +132,18 @@
     return chosen.map(term => (display.get(term) || { shown: term }).shown);
   }
 
-  function containsTerm(stems, term, originals) {
+  function containsTerm(stems, term, originals, slashParts) {
     // R, C, Go, AI: only the same word in the same capitals counts.
     if (isShortTerm(term) && originals) return originals.some(word => word === term || word.split('/').includes(term));
     const parts = tokenize(term).map(stem);
+    // A single term also counts inside a slash group of the resume: C/C++ and C++/Qt both hold C++.
+    if (parts.length === 1 && slashParts && slashParts.includes(parts[0])) return true;
     // .NET is matched by .NET or by a name that ends in it (ASP.NET), never by the word "net".
     if (parts.length === 1 && parts[0].startsWith('.')) return stems.some(s => s === parts[0] || s.endsWith(parts[0]));
+    // A phrase that starts with .NET also matches after a prefix (ASP.NET Core holds .NET Core).
+    const same = (s, part, j) => s === part || (j === 0 && part.startsWith('.') && s.endsWith(part));
     for (let i = 0; i <= stems.length - parts.length; i++) {
-      if (parts.every((part, j) => stems[i + j] === part)) return true;
+      if (parts.every((part, j) => same(stems[i + j], part, j))) return true;
     }
     return false;
   }
@@ -140,8 +153,9 @@
     const keywords = extractKeywords(jobText, limit);
     const originals = rawTokens(resumeText);
     const stems = originals.map(token => stem(token.toLowerCase()));
+    const slashParts = originals.filter(token => token.includes('/')).flatMap(token => token.split('/')).filter(Boolean).map(part => stem(part.toLowerCase()));
     const found = [], missing = [];
-    keywords.forEach(term => (containsTerm(stems, term, originals) ? found : missing).push(term));
+    keywords.forEach(term => (containsTerm(stems, term, originals, slashParts) ? found : missing).push(term));
     return { keywords, found, missing };
   }
 
