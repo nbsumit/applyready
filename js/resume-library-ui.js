@@ -217,7 +217,7 @@
     // Copy the change at once as well: a browser that is quit hard, crashes or is killed fires no
     // pagehide, so a copy made only then would miss the last edit. Very large resumes skip this
     // per-edit copy to keep typing fast; they still get the copy on pagehide.
-    stashUnsaved({ maxChars: STASH_EVERY_EDIT_MAX });
+    if (!state.switching) stashUnsaved({ maxChars: STASH_EVERY_EDIT_MAX });
     state.timer = setTimeout(() => { flush(); }, SAVE_DELAY);
   }
 
@@ -425,7 +425,10 @@
   function useResume(rec, options) {
     const o = options || {};
     clearTimeout(state.timer);
-    state.editor.setResume(rec.data);
+    // setResume() reports a change while state.current is still the previous resume: no copy of the
+    // new content may be made under the previous resume's id (see scheduleSave).
+    state.switching = true;
+    try { state.editor.setResume(rec.data); } finally { state.switching = false; }
     state.current = { id: rec.id, name: rec.name, nameBase: rec.name, createdAt: rec.createdAt, updatedAt: rec.updatedAt };
     state.stored = !!o.stored;
     state.baseUpdatedAt = o.stored ? rec.updatedAt : 0;
