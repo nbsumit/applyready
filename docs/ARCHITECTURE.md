@@ -92,7 +92,7 @@ Everything stays on the device. Nothing below is ever sent anywhere.
 | `localStorage` | `applyready_recent_off` | `1` when the visitor turned recent tools off | Your data page |
 | IndexedDB `applyready` v1 | `resumes` (keyPath `id`, index `updatedAt`) | saved resumes, see below | resume builder |
 | IndexedDB `applyready` v1 | `meta` (keyPath `key`) | small app records, e.g. `{ key: 'lastResumeId', value }`, `{ key: 'resumeSaving', value: 'off' }` | resume builder |
-| `localStorage` | `applyready_resume_unsaved:<id>` | `{ id, name, createdAt, baseUpdatedAt, savedAt, json }`: unsaved changes of one resume, copied when the page is hidden or closed; removed when the save completes, otherwise written back on the next visit (a separate copy if the resume changed meanwhile). Not written while saving is off | resume builder (`js/resume-library-ui.js`) |
+| `localStorage` | `applyready_resume_unsaved:<id>` | `{ id, name, createdAt, baseUpdatedAt, savedAt, json }`: unsaved changes of one resume, copied on each edit (resumes up to 200,000 characters) and when the page is hidden or closed; removed when the save completes, otherwise written back on the next visit (a separate copy if the resume changed meanwhile). Not written while saving is off | resume builder (`js/resume-library-ui.js`) |
 | `localStorage` | `applyready_resume_draft`, `applyready_draft_enabled` | a draft from releases before the resume library; no longer written | moved into the library by the resume builder (saving on); listed, downloadable and deletable on Your data |
 | Cache Storage | `applyready-files`, `applyready-vendor-<hash>` | the site's own pages and code for offline use: the pages this browser opened, or the whole site when the visitor asks | `sw.js` |
 

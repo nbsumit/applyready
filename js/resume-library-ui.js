@@ -214,6 +214,10 @@
     // An untouched new resume is not written: opening the builder must not fill the list with blanks.
     if (!state.stored && state.editor.isEmpty()) { refreshStatus(); return; }
     setPhase(state.persistent ? 'pending' : 'memory');
+    // Copy the change at once as well: a browser that is quit hard, crashes or is killed fires no
+    // pagehide, so a copy made only then would miss the last edit. Very large resumes skip this
+    // per-edit copy to keep typing fast; they still get the copy on pagehide.
+    stashUnsaved({ maxChars: STASH_EVERY_EDIT_MAX });
     state.timer = setTimeout(() => { flush(); }, SAVE_DELAY);
   }
 
@@ -233,13 +237,16 @@
     STORE.requestPersistence();
   }
 
-  /* Copy the open resume's unsaved changes to localStorage at once (see UNSAVED_PREFIX). Called when
-     the page is hidden or closed, just before the asynchronous save starts. */
-  function stashUnsaved() {
+  /* Copy the open resume's unsaved changes to localStorage at once (see UNSAVED_PREFIX). Called on
+     every edit (resumes up to STASH_EVERY_EDIT_MAX characters) and when the page is hidden or closed,
+     just before the asynchronous save starts. */
+  const STASH_EVERY_EDIT_MAX = 200000;
+  function stashUnsaved(options) {
     const cur = state.current;
     if (!state.loaded || !cur || !canWrite() || !state.persistent || !hasUnsaved()) return;
     if (!state.stored && state.editor.isEmpty()) return;
     const json = editorJSON();
+    if (options && options.maxChars && json.length > options.maxChars) return;
     if (!SCHEMA.validate({ data: JSON.parse(json) })) return;
     try {
       localStorage.setItem(UNSAVED_PREFIX + cur.id, JSON.stringify({ id: cur.id, name: cur.name, createdAt: cur.createdAt, baseUpdatedAt: state.stored ? state.baseUpdatedAt : 0, savedAt: Date.now(), json }));
