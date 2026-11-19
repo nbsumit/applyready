@@ -797,7 +797,7 @@
     // One see-through graphics state for the whole file, named once on each page. pdf-lib would add a
     // new one to the page for every stamp drawn with an opacity (up to 400 on a tiled page).
     const see = o.opacity < 1 ? doc.context.register(doc.context.obj({ Type: 'ExtGState', ca: o.opacity })) : null;
-    let fitted = 0, smallest = o.size;
+    let fitted = 0, smallest = o.size, overflow = 0;
     for (let i = 0; i < pages.length; i++) {
       if (only && !only.has(i)) continue;
       throwIfAborted(signal);
@@ -810,6 +810,9 @@
       const room = Math.min(1, (W * 0.9) / boxW, Math.min(H * 0.9, H - 2 * pad) / boxH);
       const size = room < 1 ? Math.max(4, Math.floor(o.size * room * 10) / 10) : o.size;
       if (size < o.size) { fitted++; smallest = Math.min(smallest, size); }
+      // Even the 4 pt floor can be too big on a tiny page with a long text: then part of it is off the
+      // page, and the report says so instead of claiming it fits.
+      if (room < 1 && o.size * room < 4) overflow++;
       const tw = font.widthOfTextAtSize(text, size);
       const cap = font.heightAtSize(size, { descender: false });
       // Start of the baseline so that the text's centre lands on (cx, cy) after rotation.
@@ -839,7 +842,7 @@
       if (see) page.pushOperators(P.popGraphicsState());
       if (onProgress && i % 10 === 0) { onProgress(i + 1, pages.length); await tick(); }
     }
-    if (o.report) { o.report.fitted = fitted; o.report.smallest = smallest; }
+    if (o.report) { o.report.fitted = fitted; o.report.smallest = smallest; o.report.overflow = overflow; }
     if (onProgress) onProgress(pages.length, pages.length);
     return doc;
   }

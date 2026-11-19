@@ -233,6 +233,14 @@ async function auditUnits() {
   const small = { };
   await Kit.addWatermark(await Kit.openLib(new Uint8Array(fs.readFileSync(path.join(tmp, 'text.pdf')))), { text: 'Copy', size: 48, report: small });
   ok(small.fitted === 0 && small.smallest === 48, 'watermark: a short text keeps the chosen size');
+  // TOOL-4: on a business-card page even 4 pt is too big for 60 characters at 45°: reported as cut off.
+  {
+    const card = await P.PDFDocument.create(); card.addPage([144, 144]);
+    const cut = {};
+    await Kit.addWatermark(await Kit.openLib(await card.save()), { text: 'W'.repeat(60), size: 72, angle: 45, report: cut });
+    ok(cut.fitted === 1 && cut.overflow === 1, `watermark: a text that cannot fit even at 4 pt is reported as running off the page (${JSON.stringify(cut)})`);
+    ok(small.overflow === 0, 'watermark: a text that fits is never reported as running off');
+  }
 
   // PDF-04: control characters (pdf.js writes U+0000 for some Hindi vowel signs) never reach the text.
   const info = {};
@@ -478,7 +486,7 @@ const server = http.createServer((req, res) => {
     await page.setInputFiles('#mergeDropInput', bombFile);
     await page.waitForFunction(() => !document.getElementById('mergeError').hidden, null, { timeout: 30000 });
     const msg = await errorText(page, '#mergeError');
-    ok(/pagebomb\.pdf has 2,00,000 pages/.test(msg) && /Up to 2,000 pages can be merged into one file in a browser, so it cannot be added/.test(msg) && !/split/i.test(msg), `merge: a file claiming 200000 pages is refused, without sending it to Split PDF (${msg})`);
+    ok(/pagebomb\.pdf has 200,000 pages/.test(msg) && /Up to 2,000 pages can be merged into one file in a browser, so it cannot be added/.test(msg) && !/split/i.test(msg), `merge: a file claiming 200000 pages is refused, without sending it to Split PDF (${msg})`);
     ok(await page.locator('.merge-row').count() === 2 && Date.now() - started < 20000, `merge: nothing added, refused in ${Date.now() - started} ms`);
     const t = Date.now();
     await page.evaluate(() => 1);
@@ -492,7 +500,7 @@ const server = http.createServer((req, res) => {
 
     // Tools that open one PDF refuse the same file instead of trying to number or split 200,000 pages.
     // Split PDF refuses it too, so none of them may send the person there.
-    for (const [file, input, re] of [['split-pdf.html', '#splitDropInput', /has 2,00,000 pages\. Split works on up to 2,000 pages[\s\S]*desktop PDF program/], ['add-page-numbers.html', '#pnDropInput', /has 2,00,000 pages\. This tool works on up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages[\s\S]*desktop PDF program/], ['watermark-pdf.html', '#wmDropInput', /up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages/]]) {
+    for (const [file, input, re] of [['split-pdf.html', '#splitDropInput', /has 200,000 pages\. Split works on up to 2,000 pages[\s\S]*desktop PDF program/], ['add-page-numbers.html', '#pnDropInput', /has 200,000 pages\. This tool works on up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages[\s\S]*desktop PDF program/], ['watermark-pdf.html', '#wmDropInput', /up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages/]]) {
       const tool = await open(file);
       await tool.page.setInputFiles(input, bombFile);
       await tool.page.waitForFunction(() => { const e = document.querySelector('[data-pdf-error]'); return e && !e.hidden && !e.classList.contains('hidden') && /pages/.test(e.textContent); }, null, { timeout: 30000 });
