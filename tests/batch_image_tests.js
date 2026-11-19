@@ -813,6 +813,9 @@ Image.new('RGB', (1, 1), (200, 150, 120)).save(sys.argv[1])
     const { context: c2, page: p2 } = await open('batch-image.html');
     await p2.setInputFiles('#batchDropInput', Array.from({ length: 6 }, (_, i) => fix(`tiny_${String(i).padStart(2, '0')}.jpg`)));
     await p2.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 6);
+    // The rows exist before the next repaint lays out the list and folds the drop zone: wait for it.
+    await p2.waitForFunction(() => document.getElementById('batchList').getBoundingClientRect().height > 0);
+    await p2.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     const d = await p2.evaluate(() => { const l = document.getElementById('batchList').getBoundingClientRect(), s = document.querySelector('.ws-side').getBoundingClientRect(), z = document.getElementById('batchDrop').getBoundingClientRect(); return { beside: l.right <= s.left, below: l.top >= z.bottom, overlap: l.top < s.bottom }; });
     ok(d.beside && d.below && d.overlap, `desktop: the list is under the drop zone, beside the settings (${JSON.stringify(d)})`);
     await c2.close();

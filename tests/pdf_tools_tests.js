@@ -1068,7 +1068,11 @@ const server = http.createServer((req, res) => {
         await page.waitForTimeout(1500);
         after.push(rendererMB());
       }
-      ok(after[5] - after[1] < 40, `merge: memory after Remove all stays level over rounds of 10 scanned PDFs (${after.join(', ')} MB)`);
+      // Single samples swing by about 30 MB with garbage collection, so the first and last two rounds are
+      // averaged. The leak this guards against grew about 150 MB per round; 60 MB over three rounds still
+      // catches anything above about 20 MB a round.
+      const growth = (after[4] + after[5]) / 2 - (after[1] + after[2]) / 2;
+      ok(growth < 60, `merge: memory after Remove all stays level over rounds of 10 scanned PDFs (${after.join(', ')} MB; growth ${Math.round(growth)} MB)`);
       await context.close();
     }
     {
