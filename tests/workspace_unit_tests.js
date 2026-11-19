@@ -147,6 +147,10 @@ const blob = (type) => ({ type: type || 'image/jpeg', size: 10 });
     const a = s.add();
     const d = new Date(2026, 10, 18, 9, 5);
     ok(Model.zipName('{applicant}-{date}', a, d) === 'Applicant-1-2026-11-18.zip', 'default pattern with the default label');
+    // SECU-4: names leave the announcement only as whole words, so a short name does not garble it.
+    const said = Model.withoutNames('Compress PDF did not work: a needs its password. Open this applicant and run the task again.', ['a']);
+    ok(said === 'Compress PDF did not work: the file needs its password. Open this applicant and run the task again.', `a one-letter file name is replaced as a word only (${said})`);
+    ok(Model.withoutNames('ravi_aadhaar.pdf could not be read. scan.pdf (2 pages) and scan too.', ['scan', 'ravi_aadhaar.pdf', 'scan.pdf']) === 'The file could not be read. The file (2 pages) and the file too.', 'longer names first, a sentence start capitalised');
     a.name = 'Ravi Kumar';
     ok(Model.zipName('{applicant}-{date}', a, d) === 'Ravi-Kumar-2026-11-18.zip', 'spaces in the name become hyphens');
     ok(Model.zipName('cafe-{n}-{applicant}.zip', a, d) === 'cafe-1-Ravi-Kumar.zip', '{n} and an explicit .zip are handled');

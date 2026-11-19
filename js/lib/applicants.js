@@ -344,5 +344,19 @@
     return session;
   }
 
-  return { createSession, zipName, uniqueName, MAX_FILES };
+  /**
+   * `text` with each of `names` replaced by "the file", for the screen-reader announcement of an
+   * applicant's failed task (file names stay out of the page's live regions). A name is replaced only
+   * where it stands as a whole word, so a short name such as "a" is not cut out of "password" or
+   * "applicant". Longer names first, so "scan.pdf" goes before "scan".
+   */
+  function withoutNames(text, names) {
+    const list = (names || []).filter(Boolean).slice().sort((x, y) => y.length - x.length);
+    const esc = n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    let out = String(text);
+    list.forEach(n => { out = out.replace(new RegExp(`(^|[\\s(“"'])${esc(n)}(?=$|[\\s.,:;!?)”"'])`, 'g'), (m, lead) => `${lead}the file`); });
+    return out.replace(/(^|[.!?]\s+)the file/g, (m, lead) => `${lead}The file`);
+  }
+
+  return { createSession, zipName, uniqueName, withoutNames, MAX_FILES };
 });

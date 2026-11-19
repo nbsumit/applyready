@@ -249,8 +249,8 @@
     const zipKey = x => Model.zipName('{applicant}', x).toLowerCase();
     const same = a.name.trim() && session.applicants.some(x => x !== a && zipKey(x) === zipKey(a));
     el.nameHint.textContent = same
-      ? 'Another applicant in this session has the same name, so their ZIP files would be named alike. Add an initial or a number to tell them apart.'
-      : `Shown in the list and in the ZIP name. Leave it empty to keep “Applicant ${a.number}”.`;
+      ? 'Another applicant in this session has the same name, so their ZIP files and downloads would be named alike. Add an initial or a number to tell them apart.'
+      : `Shown in the list, in the ZIP name and at the start of every file downloaded on its own. Leave it empty to keep “Applicant ${a.number}”.`;
     el.nameHint.classList.toggle('is-warning', !!same);
   }
 
@@ -422,7 +422,7 @@
 
   function fileSig(a, f, s) {
     const i = a.files.indexOf(f);
-    return JSON.stringify([f.name, f.size, f.width, f.height, f.pages, f.encrypted, f.checking, f.thumb, f.selected, f.error, f.actionError || '', a.busyFile(f.id), i === 0, i === a.files.length - 1, s.imgKB, s.pdfKB]);
+    return JSON.stringify([f.name, f.size, f.width, f.height, f.pages, f.encrypted, f.checking, f.thumb, f.selected, f.error, f.actionError || '', f.damage ? f.damage.unreadable.join() + '/' + f.damage.incomplete.join() : '', a.busyFile(f.id), i === 0, i === a.files.length - 1, s.imgKB, s.pdfKB]);
   }
 
   function fileRow(a, f, s) {
@@ -451,6 +451,7 @@
     text.append(name, node('span', 'file-row__meta', fileFacts(f)));
     if (f.error) text.appendChild(node('span', 'file-row__error', f.error));
     else if (f.actionError) text.appendChild(node('span', 'file-row__error', f.actionError));
+    if (!f.error && f.damage && PdfUI.damageNotice(f.damage)) text.appendChild(node('span', 'file-row__error', PdfUI.damageNotice(f.damage)));
     if (busy) { const st = node('span', 'file-status'); st.append(icon('fa-clock'), ' Working…'); text.appendChild(st); }
 
     const tools = node('div', 'file-row__actions');
@@ -527,7 +528,7 @@
 
   /**
    * The name a result is saved under on its own: the applicant's name (or "Applicant-3") first, the
-   * same label as in their ZIP name, so files of different people never share a name in the
+   * same label as in their ZIP name, so it is easy to tell whose a file is in the
    * Downloads folder (customers often bring files all called photo.jpg).
    */
   function downloadName(a, r) {
@@ -602,8 +603,21 @@
   async function readFile(a, f) {
     if (!alive(a, f)) return;
     if (f.kind === 'image') {
+      // The same intake check as Image to PDF, Compress PDF and Merge PDF (ApplyReadyImageOps.openImage):
+      // a truncated or damaged picture is refused now, with the same words, instead of being offered
+      // every action and failing only once one is pressed. (Pictures over 50 MP, or whose size cannot
+      // be read, never get here: the drop zone refuses them from their header, checkPixels.)
+      try { (await Ops.openImage(f.file, { name: f.name })).close(); }
+      catch (e) {
+        if (!alive(a, f)) return;
+        f.error = (e && e.message) || `${f.name} could not be opened.`;
+        f.selected = false;
+        schedule();
+        return;
+      }
+      if (!alive(a, f)) return;
       try {
-        const head = Ops.readHeader(new Uint8Array(await f.file.slice(0, 512 * 1024).arrayBuffer()));
+        const head = await Ops.readHeaderFrom(f.file);
         if (head && alive(a, f)) { f.width = head.width; f.height = head.height; }
       } catch (e) { /* the size shows once processed */ }
       if (!alive(a, f)) return;
@@ -621,6 +635,8 @@
       if (!alive(a, f)) return;
       f.pages = facts.pageCount;
       f.encrypted = facts.encrypted;
+      await checkDamage(f, bytes);
+      if (!alive(a, f)) return;
     } catch (e) {
       if (!alive(a, f)) return;
       f.error = e && e.name === 'PdfError' ? e.message : `${f.name} could not be read as a PDF. Open it on your device to check it, then add it again.`;
@@ -630,6 +646,34 @@
     schedule();
   }
 
+  /**
+   * The same damage check as every PDF tool (ApplyReadyPdf.pageDamage, as in pdf-ui openPdf): a file
+   * none of whose pages can be read is refused, since anything made from it would be blank; a file
+   * with some pages damaged is kept, and every result made from it says which pages (damageWarning).
+   * A file that needs a password is checked once it is opened with it (rememberDamage).
+   */
+  async function checkDamage(f, bytes) {
+    let doc;
+    try { doc = await Pdf.openLib(bytes, { password: f.encrypted ? '' : undefined, name: f.name }); }
+    catch (e) { if (f.encrypted) return; throw e; }
+    const damage = await Pdf.pageDamage(doc);
+    rememberDamage(f, { pageCount: f.pages || doc.getPageCount(), unreadable: damage.unreadable, incomplete: damage.incomplete });
+  }
+
+  function rememberDamage(f, d) {
+    f.damage = { name: f.name, pageCount: d.pageCount, unreadable: d.unreadable || [], incomplete: d.incomplete || [] };
+    if (f.damage.pageCount && f.damage.unreadable.length === f.damage.pageCount) {
+      const n = f.damage.pageCount;
+      throw new Pdf.PdfError('damaged', `${f.name} is damaged: the content of ${n === 1 ? 'its page' : `all ${Pdf.grouped(n)} pages`} is missing or broken, so anything made from it would be blank. Open it on your device to check it, or get a fresh copy from where it came from.`);
+    }
+  }
+
+  /** What a result made from these files must say about their damaged pages, or ''. */
+  function damageWarning(a, ids) {
+    return a.files.filter(f => ids.includes(f.id) && f.damage).map(f => PdfUI.damageNote(f.damage)).filter(Boolean).join(' ');
+  }
+  const withWarning = (...parts) => parts.filter(Boolean).join(' ');
+
   const dz = Kit.dropzone(el.drop, {
     accept: ['image', 'pdf'],
     multiple: true,
@@ -637,6 +681,9 @@
     maxFiles: a => { const target = a || session.active; return target ? roomFor(target) : Model.MAX_FILES; },
     tooMany,
     context: () => session.active,
+    // Pictures over 50 MP, or whose pixel size cannot be read, are refused from their header when they
+    // are added, with the same message as every other image tool (IMG-09).
+    checkPixels: true,
     onFiles: (files, infos, a) => addFiles(a || session.active, files, infos),
     onReject: (messages, a) => { const target = a || session.active; if (target) messages.forEach(m => target.addError(m)); }
   });
@@ -671,10 +718,7 @@
 
   /** `text` with every file and result name of applicant `a` replaced by "the file". */
   function withoutNames(text, a) {
-    const names = a.files.map(f => f.name).concat(a.results.map(r => r.name)).filter(Boolean).sort((x, y) => y.length - x.length);
-    let out = String(text);
-    names.forEach(n => { out = out.split(n).join('the file'); });
-    return out.replace(/(^|[.!?]\s+)the file/g, (m, lead) => `${lead}The file`);
+    return Model.withoutNames(text, a.files.map(f => f.name).concat(a.results.map(r => r.name)));
   }
 
   /* Engine messages are written for the batch tools; some point to settings that live elsewhere
@@ -733,6 +777,7 @@
       if (session.active !== a) throw new Pdf.PdfError('password', `${f.name} needs its password. Open this applicant and run the task again.`);
       const opened = await PdfUI.openPdf(f.file, needs);
       f.password = opened.password;
+      if (needs.lib) rememberDamage(f, opened);
       if (needs.js && !opened.jsDoc) throw opened.previewError || new Pdf.PdfError('damaged', `${f.name} could not be drawn. It may be damaged.`);
       return { libDoc: opened.libDoc, jsDoc: opened.jsDoc };
     }
@@ -769,20 +814,20 @@
       const stem = stemOf(f.name);
       if (!f.encrypted && bytes.length <= limit) {
         const check = await Pdf.verify(bytes, {});
-        finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: check.pageCount, bytes: bytes.length, limit }, notes: [`Already under ${s.pdfKB} KB, so the original is kept unchanged.`] });
+        finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: check.pageCount, bytes: bytes.length, limit }, warning: damageWarning(a, [f.id]), notes: [`Already under ${s.pdfKB} KB, so the original is kept unchanged.`] });
         return;
       }
       jsDoc = (await openDoc(a, f, bytes, { lib: false, js: true })).jsDoc;
       const fitted = await fitPdf(jsDoc, limit, job, a, 0.05, 0.85, f.encrypted ? null : bytes, `${ACTION_VERB.pdf}: ${f.name}`);
       a.progress(job, 0.95, 'Checking the finished file…');
       if (!fitted) {
-        finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: f.pages, bytes: bytes.length, limit }, warning: `Compressing would not make this PDF smaller, so the original is kept. It is over ${s.pdfKB} KB: try a higher limit or fewer pages.` });
+        finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: f.pages, bytes: bytes.length, limit }, warning: withWarning(`Compressing would not make this PDF smaller, so the original is kept. It is over ${s.pdfKB} KB: try a higher limit or fewer pages.`, damageWarning(a, [f.id])) });
         return;
       }
       finishResult(a, job, {
         blob: new Blob([fitted.bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}-${s.pdfKB}kb.pdf`, sourceIds: [f.id],
         facts: { pages: fitted.pages, bytes: fitted.bytes.length, limit },
-        warning: fitted.fits ? '' : `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.`,
+        warning: withWarning(fitted.fits ? '' : `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.`, damageWarning(a, [f.id])),
         notes: ['Pages are now pictures, so the text cannot be selected. Zoom in to check that it is easy to read.']
       });
     } catch (e) { failJob(a, job, e, f, label); }
@@ -802,6 +847,7 @@
         const opened = await PdfUI.openPdf(f.file, { lib: true, js: false });
         if (!alive(a, f)) return false;
         f.password = opened.password;
+        rememberDamage(f, opened);
       } catch (e) {
         if (!alive(a, f)) return false;
         f.actionError = `${label} did not work: ${e && e.message ? e.message : 'the PDF could not be opened.'}`;
@@ -861,7 +907,7 @@
         blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: images ? 'combine' : 'merge',
         name: `${stem}-${images ? 'combined' : 'merged'}.pdf`, sourceIds: files.map(f => f.id),
         facts: { pages: check.pageCount, bytes: bytes.length, limit },
-        warning: over ? (images ? `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.` : `Over the ${s.pdfKB} KB limit. Use Compress to ${s.pdfKB} KB on this result if the form needs it.`) : '',
+        warning: withWarning(over ? (images ? `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.` : `Over the ${s.pdfKB} KB limit. Use Compress to ${s.pdfKB} KB on this result if the form needs it.`) : '', damageWarning(a, files.map(f => f.id))),
         notes: notes.concat(images ? [`Pictures are placed on A4 pages in the order of the list.`] : [])
       });
     } catch (e) { failJob(a, job, e, null, label); }
@@ -884,7 +930,7 @@
       finishResult(a, job, {
         blob: new Blob([fitted.bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stemOf(r.name)}-${s.pdfKB}kb.pdf`, sourceIds: r.sourceIds,
         facts: { pages: fitted.pages, bytes: fitted.bytes.length, limit },
-        warning: fitted.fits ? '' : `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.`,
+        warning: withWarning(fitted.fits ? '' : `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.`, damageWarning(a, r.sourceIds || [])),
         notes: ['Pages are now pictures, so the text cannot be selected. Zoom in to check that it is easy to read.']
       });
     } catch (e) { failJob(a, job, e, null, label); }
