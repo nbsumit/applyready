@@ -1066,6 +1066,12 @@ console.log('SUITE 17: Schema version 3 and the resume library');
   try { LIB.parseBackup('x'.repeat(10), 6 * 1024 * 1024); assert(false, 'Over 5 MB is refused'); } catch (e) { assert(/larger than 5 MB/.test(e.message), 'A file over 5 MB is refused'); }
   const partial = LIB.parseBackup(JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 1, resumes: [{ name: 'Good', data: v3 }, { name: 'Bad', data: { personal: 7 } }] }));
   assert(partial.resumes.length === 1 && partial.skipped === 1, 'A library backup with one damaged resume imports the rest and counts what it skipped');
+  // RESU-3: a backup one character or one entry over the limits opens shortened, as the same data does from storage.
+  const overText = LIB.parseBackup(JSON.stringify({ app: 'ApplyReady', version: 3, data: Object.assign({}, v3, { summary: 'x'.repeat(SCHEMA.MAX_TEXT + 1) }) }));
+  assert(overText.trimmed === 1 && overText.resumes[0].data.summary.length === SCHEMA.MAX_TEXT, 'A single backup with a box over 50,000 characters imports shortened and is counted as trimmed');
+  const overList = LIB.parseBackup(JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 1, resumes: [{ name: 'Long', data: { personal: { fullName: 'L' }, experience: Array.from({ length: SCHEMA.MAX_ENTRIES + 1 }, (_, i) => ({ role: 'R' + i })), education: [], projects: [] } }] }));
+  assert(overList.trimmed === 1 && overList.skipped === 0 && overList.resumes[0].data.experience.length === SCHEMA.MAX_ENTRIES, 'A library backup with a list over 150 entries imports shortened, not refused as damaged');
+  assert(LIB.parseBackup(JSON.stringify({ app: 'ApplyReady', version: 3, data: v3 })).trimmed === 0, 'A backup within the limits is not marked trimmed');
   const many = LIB.parseBackup(JSON.stringify({ app: 'ApplyReady', kind: 'resume-library', version: 1, resumes: Array.from({ length: LIB.MAX_IMPORT_RESUMES + 5 }, (_, i) => ({ name: 'R' + i, data: { personal: { fullName: 'R' + i }, experience: [], education: [], projects: [] } })) }));
   assert(many.resumes.length === LIB.MAX_IMPORT_RESUMES && many.overLimit === 5 && many.skipped === 0, 'Resumes beyond the import limit are counted apart from damaged ones');
   const draft = LIB.readLegacyDraft(JSON.stringify({ version: 2, app: 'ApplyReady', savedAt: '2026-11-01T10:00:00.000Z', data: { personal: { fullName: 'Old Draft' }, experience: [], education: [], projects: [] } }));

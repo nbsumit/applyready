@@ -548,19 +548,25 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await page.evaluate(() => window.ApplyReadyStore.remove('meta', 'resumeSaving'));
 
     // Delete everything, with the offline copy and service worker in place
-    await page.evaluate(async ({ data }) => { await window.ApplyReadyStore.put('resumes', { id: 'r_again', name: 'Again', createdAt: 1, updatedAt: 2, schemaVersion: 3, data }); localStorage.setItem('applyready_theme', 'light'); localStorage.setItem('applyready_recent_tools', '["resume"]'); }, { data });
+    await page.evaluate(async ({ data }) => { await window.ApplyReadyStore.put('resumes', { id: 'r_again', name: 'Again', createdAt: 1, updatedAt: 2, schemaVersion: 3, data }); localStorage.setItem('applyready_theme', 'light'); localStorage.setItem('applyready_recent_tools', '["resume"]');
+      // A copy of unsaved changes left by a browser that closed mid-save (the resume builder's UNSAVED_PREFIX).
+      localStorage.setItem('applyready_resume_unsaved:r_left', JSON.stringify({ id: 'r_left', name: 'Ravi Kumar', createdAt: 1, baseUpdatedAt: 0, savedAt: Date.now(), json: JSON.stringify(data) })); }, { data });
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => caches.keys().then(k => k.some(n => n.startsWith('applyready-'))), null, { timeout: 30000 });
     await page.waitForTimeout(1500);
     await page.reload();
     await page.waitForFunction(() => /resume/.test(document.getElementById('ydResumeCount').textContent) && !/Checking/.test(document.getElementById('ydOfflineSize').textContent));
     ok(/files?, /.test(await page.locator('#ydOfflineSize').innerText()), 'offline copy size shown');
+    // RESU-2 / SECU-3 / COPY-7: the leftover copy is listed with the resumes, not hidden or called a setting.
+    ok(/unsaved changes of 1 resume/.test(await page.locator('#ydResumeCount').innerText()) && /Unsaved changes: Ravi Kumar/.test(await page.locator('#ydResumeList').innerText()) && await page.locator('#ydDeleteResumes').isVisible(), `your data: unsaved changes are listed with the resumes (${await page.locator('#ydResumeCount').innerText()})`);
     await page.click('#ydDeleteAll');
-    ok(/1 saved resume/.test(await page.locator('.dialog').innerText()), 'delete everything: the confirmation says what will go');
+    const confirmText = await page.locator('.dialog').innerText();
+    ok(/1 saved resume/.test(confirmText) && /the unsaved changes of 1 resume/.test(confirmText) && /2 settings/.test(confirmText), `delete everything: the confirmation says what will go, unsaved changes with the resumes (${confirmText.replace(/\s+/g, ' ')})`);
     await page.click('.dialog [data-act="ok"]');
     await page.locator('#ydDone').waitFor({ state: 'visible' });
     const summary = await page.locator('#ydDoneText').innerText();
     ok(/1 saved resume and the resume database/.test(summary) && /setting/.test(summary) && /offline copy/.test(summary) && /offline service/.test(summary), `delete everything: final confirmation lists what was removed (${summary})`);
+    ok(/the unsaved changes of 1 resume/.test(summary) && !/unsaved:r/.test(summary), 'delete everything: the unsaved changes are named in plain words, not as a setting');
     const left = await page.evaluate(async () => ({
       dbs: indexedDB.databases ? (await indexedDB.databases()).map(d => d.name) : null,
       keys: Object.keys(localStorage).filter(k => k.startsWith('applyready')),
