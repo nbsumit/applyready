@@ -348,13 +348,20 @@
    * `text` with each of `names` replaced by "the file", for the screen-reader announcement of an
    * applicant's failed task (file names stay out of the page's live regions). A name is replaced only
    * where it stands as a whole word, so a short name such as "a" is not cut out of "password" or
-   * "applicant". Longer names first, so "scan.pdf" goes before "scan".
+   * "applicant". A name with an extension ("scan.pdf") is replaced wherever it stands. One without
+   * (such as "50", "1" or "the") could be an ordinary word or number of the message too, so it is
+   * replaced only where messages put a file name: at the start of a sentence or after a colon
+   * ("X could not be opened"), or after "of" ("pages 2-3 of X"). Longer names first.
    */
   function withoutNames(text, names) {
     const list = (names || []).filter(Boolean).slice().sort((x, y) => y.length - x.length);
     const esc = n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const after = '(?=$|[\\s.,:;!?)”"\'])';
     let out = String(text);
-    list.forEach(n => { out = out.replace(new RegExp(`(^|[\\s(“"'])${esc(n)}(?=$|[\\s.,:;!?)”"'])`, 'g'), (m, lead) => `${lead}the file`); });
+    list.forEach(n => {
+      const lead = /\.[A-Za-z0-9]{1,5}$/.test(n) ? '(^|[\\s(“"\'])' : '(^|:\\s+|[.!?]\\s+|\\bof\\s+)';
+      out = out.replace(new RegExp(`${lead}${esc(n)}${after}`, 'g'), (m, before) => `${before}the file`);
+    });
     return out.replace(/(^|[.!?]\s+)the file/g, (m, lead) => `${lead}The file`);
   }
 

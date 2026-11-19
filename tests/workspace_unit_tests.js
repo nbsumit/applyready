@@ -150,7 +150,17 @@ const blob = (type) => ({ type: type || 'image/jpeg', size: 10 });
     // SECU-4: names leave the announcement only as whole words, so a short name does not garble it.
     const said = Model.withoutNames('Compress PDF did not work: a needs its password. Open this applicant and run the task again.', ['a']);
     ok(said === 'Compress PDF did not work: the file needs its password. Open this applicant and run the task again.', `a one-letter file name is replaced as a word only (${said})`);
-    ok(Model.withoutNames('ravi_aadhaar.pdf could not be read. scan.pdf (2 pages) and scan too.', ['scan', 'ravi_aadhaar.pdf', 'scan.pdf']) === 'The file could not be read. The file (2 pages) and the file too.', 'longer names first, a sentence start capitalised');
+    ok(Model.withoutNames('ravi_aadhaar.pdf could not be read. scan.pdf (2 pages) and scan.pdf too.', ['scan', 'ravi_aadhaar.pdf', 'scan.pdf']) === 'The file could not be read. The file (2 pages) and the file too.', 'longer names first, a name with an extension wherever it stands, a sentence start capitalised');
+    // PF-7: a name without an extension that is also a word or number of the message ("50", "1",
+    // "the") is replaced only where messages put a file name, so the rest of the message stays whole.
+    const mp = Model.withoutNames('Photo did not work: 50 is 60.2 megapixels, more than the 50 MP limit.', ['50']);
+    ok(mp === 'Photo did not work: the file is 60.2 megapixels, more than the 50 MP limit.', `a file named 50 leaves "50 MP" alone (${mp})`);
+    const tiny = Model.withoutNames('Photo did not work: 1 is 1 × 1 px, smaller than the 1 px minimum.', ['1']);
+    ok(tiny === 'Photo did not work: the file is 1 × 1 px, smaller than the 1 px minimum.', `a file named 1 leaves the pixel sizes alone (${tiny})`);
+    const word = Model.withoutNames('Compress PDF did not work: the needs its password. Open the applicant and run the task again.', ['the']);
+    ok(word === 'Compress PDF did not work: the file needs its password. Open the applicant and run the task again.', `a file named "the" is replaced as the name only (${word})`);
+    const pages = Model.withoutNames('PDF did not work: Pages 2-3 of scan could not be read. scan is damaged.', ['scan']);
+    ok(pages === 'PDF did not work: Pages 2-3 of the file could not be read. The file is damaged.', `a name without an extension goes after "of" and at a sentence start (${pages})`);
     a.name = 'Ravi Kumar';
     ok(Model.zipName('{applicant}-{date}', a, d) === 'Ravi-Kumar-2026-11-18.zip', 'spaces in the name become hyphens');
     ok(Model.zipName('cafe-{n}-{applicant}.zip', a, d) === 'cafe-1-Ravi-Kumar.zip', '{n} and an explicit .zip are handled');
