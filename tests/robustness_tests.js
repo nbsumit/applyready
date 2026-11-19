@@ -202,10 +202,18 @@ function mixedPdf(jpeg) {
   await page.goto(origin + '/merge-pdf.html');
   for (const f of fs.readdirSync(path.join(root, 'js/vendor'), { recursive: true })) if (/^pdf/.test(f)) unreachable.add('/js/vendor/' + f.split(path.sep).join('/'));
   await page.setInputFiles('#mergeDropInput', { name: 'mixed.pdf', mimeType: 'application/pdf', buffer: mixedPdf(sample('test-portrait.jpg')) });
-  await page.waitForFunction(() => /offline/.test(document.getElementById('mergeError').textContent), null, { timeout: 20000 })
-    .catch(async e => { throw new Error(`merge offline: no offline message; mergeError="${await page.locator('#mergeError').innerText().catch(() => '')}" (${e.message})`); });
+  // The message follows what the browser reports: navigator.onLine false gives the offline message;
+  // a browser that still reports a connection (Wi-Fi with no internet, or some Chromium builds under
+  // Playwright's offline mode) gets the plain "could not load, check your connection" message.
+  await page.waitForFunction(() => document.getElementById('mergeError').textContent.trim().length > 0, null, { timeout: 20000 })
+    .catch(async e => { throw new Error(`merge offline: no error message (${e.message})`); });
   unreachable.clear();
-  ok(/This device is offline, and the PDF library this tool needs is not kept on it yet/.test(await page.locator('#mergeError').innerText()), `merge offline: the message says the PDF library is not kept yet (${await page.locator('#mergeError').innerText()})`);
+  const mergeMsg = await page.locator('#mergeError').innerText();
+  const reportsOnline = await page.evaluate(() => navigator.onLine);
+  ok(reportsOnline
+    ? /A part of the PDF tool could not load\. Check your connection and reload the page\./.test(mergeMsg)
+    : /This device is offline, and the PDF library this tool needs is not kept on it yet/.test(mergeMsg),
+  `merge offline: the message matches what the browser reports (navigator.onLine ${reportsOnline}): ${mergeMsg}`);
   await context.setOffline(false);
   keys = await cachedPaths();
   ok(keys.every(u => !/[?&]v=/.test(u)) && new Set(keys.map(u => new URL(u).pathname)).size === keys.length, 'still one entry per file after browsing');
