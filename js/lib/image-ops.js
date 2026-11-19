@@ -43,6 +43,7 @@
   const MAX_PIXELS = 50e6;         // decoded source, about 50 megapixels
   const MIN_SIDE = 20;             // a picture smaller than this on a side is too small to make one from
   const ENLARGE_WARN = 1.5;        // enlarged this much or more, a picture looks blurred (as in the resizer)
+  const MAX_JPEG_STRAY = 64 * 1024; // stray bytes skipped between JPEG segments before giving up
   const HEADER_BYTES = 512 * 1024; // enough to pass a large EXIF block and reach the JPEG frame header
   const LOSSY = new Set(['image/jpeg', 'image/webp']);
   // With allowShrink on, quality is not lowered below this: a 12 MP photo squeezed to 100 KB at
@@ -121,12 +122,19 @@
    * The JPEG frame header: walks the segments from offset 2. Returns { width, height, orientation }
    * once the frame header (SOFn) is found, { next } when the bytes ran out first (the offset of the
    * next segment, so the caller can read on from there), or null when the layout is broken.
+   * Stray bytes between segments (zero padding after APP0, say) are skipped up to the next marker,
+   * as libjpeg and so the browser do (it only warns), within a bound.
    */
   function scanJpeg(b, from, orientationIn) {
     const n = b.length;
-    let i = from, orientation = orientationIn || 1;
+    let i = from, orientation = orientationIn || 1, stray = 0;
     while (i + 4 <= n) {
-      if (b[i] !== 0xFF) return null;
+      // 0xFF 0x00 is a stuffed byte, not a marker: stray too.
+      if (b[i] !== 0xFF || b[i + 1] === 0x00) {
+        if (++stray > MAX_JPEG_STRAY) return null;
+        i++;
+        continue;
+      }
       const marker = b[i + 1];
       if (marker === 0xFF) { i++; continue; }            // fill byte
       if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) { i += 2; continue; }

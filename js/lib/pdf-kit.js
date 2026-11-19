@@ -23,6 +23,7 @@
   // Sizes, size limits and number grouping follow the one rule in js/lib/files.js (1 KB = 1,000 bytes).
   const Files = isNode ? require('./files.js') : root.ApplyReadyFiles;
   const MB = 1024 * 1024; // internal memory budgets
+  const MAX_JPEG_STRAY = 64 * 1024; // stray bytes skipped between JPEG segments (as js/lib/image-ops.js)
   const LIMITS = {
     fileBytes: 100 * Files.MB, // one PDF (100 MB, counted as the site counts sizes)
     totalBytes: 500 * Files.MB, // all files in one job (merge)
@@ -855,10 +856,12 @@
   function jpegOrientation(bytes) {
     const b = bytes;
     if (b[0] !== 0xFF || b[1] !== 0xD8) return 1;
-    let p = 2;
+    let p = 2, stray = 0;
     while (p + 4 < b.length) {
-      if (b[p] !== 0xFF) return 1;
+      // Stray bytes between segments are skipped to the next marker, as browsers do (FF00 is not a marker).
+      if (b[p] !== 0xFF || b[p + 1] === 0x00) { if (++stray > MAX_JPEG_STRAY) return 1; p++; continue; }
       const marker = b[p + 1];
+      if (marker === 0xFF) { p++; continue; }
       const len = (b[p + 2] << 8) | b[p + 3];
       if (marker === 0xDA || marker === 0xD9) return 1;
       if (marker === 0xE1 && b[p + 4] === 0x45 && b[p + 5] === 0x78 && b[p + 6] === 0x69 && b[p + 7] === 0x66) {
@@ -895,10 +898,12 @@
     if (!b || b[0] !== 0xFF || b[1] !== 0xD8) return null;
     const ascii = (at, s) => { for (let k = 0; k < s.length; k++) if (b[at + k] !== s.charCodeAt(k)) return false; return true; };
     const parts = [b.subarray(0, 2)];
-    let p = 2, guard = 0, total = 2;
+    let p = 2, guard = 0, total = 2, stray = 0;
     const keep = (from, to) => { parts.push(b.subarray(from, to)); total += to - from; };
     while (p < b.length) {
-      if (++guard > 100000 || b[p] !== 0xFF) return null;
+      // Stray bytes between segments are skipped to the next marker (and left out), as browsers do.
+      if (b[p] !== 0xFF || b[p + 1] === 0x00) { if (++stray > MAX_JPEG_STRAY) return null; p++; continue; }
+      if (++guard > 100000) return null;
       const m = b[p + 1];
       if (m === undefined) return null;
       if (m === 0xFF) { p++; continue; }

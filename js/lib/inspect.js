@@ -207,6 +207,7 @@
   }
 
   /* ------------------------------------------------------------------ JPEG */
+  const MAX_JPEG_STRAY = 64 * 1024; // stray bytes skipped between segments (as js/lib/image-ops.js)
   const SOF = new Set([0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF]);
 
   /**
@@ -217,10 +218,15 @@
   function walkJpeg(b, onSegment) {
     if (!(b[0] === 0xFF && b[1] === 0xD8)) return { damaged: true, reason: 'The file does not start like a JPEG.' };
     let i = 2;
-    let guard = 0;
+    let guard = 0, stray = 0;
     while (i < b.length) {
       if (++guard > 100000) return { damaged: true, reason: 'Too many segments.' };
-      if (b[i] !== 0xFF) return { damaged: true, reason: 'Unexpected data between JPEG segments.', at: i };
+      // Stray bytes between segments (zero padding, say): browsers skip them to the next marker, so
+      // do the same, within a bound. FF00 is a stuffed byte, not a marker. Skipped bytes are not kept.
+      if (b[i] !== 0xFF || b[i + 1] === 0x00) {
+        if (++stray > MAX_JPEG_STRAY) return { damaged: true, reason: 'Unexpected data between JPEG segments.', at: i };
+        i++; guard--; continue;
+      }
       const m = b[i + 1];
       if (m === undefined) return { damaged: true, reason: 'The file ends in the middle of a segment.' };
       if (m === 0xFF) { i++; continue; }

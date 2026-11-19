@@ -73,6 +73,11 @@ Image.new('RGB', (8000, 8000), (200, 10, 10)).save(d + '/big.jpg', quality=50)
 j = open(d + '/big.jpg', 'rb').read()
 app2 = b''.join(b'\\xff\\xe2' + (65535).to_bytes(2, 'big') + bytes(65533) for _ in range(11))
 open(d + '/padded.jpg', 'wb').write(j[:2] + app2 + j[2:])
+Image.new('RGB', (300, 200), (30, 140, 90)).save(d + '/prog.jpg', quality=85, progressive=True)
+p = open(d + '/prog.jpg', 'rb').read()
+a0 = 4 + int.from_bytes(p[4:6], 'big')
+open(d + '/pad0.jpg', 'wb').write(p[:a0] + bytes(4) + p[a0:])
+open(d + '/padstray.jpg', 'wb').write(j[:2] + app2 + bytes(40) + j[2:])
 `, tmp);
   const box = (type, ...parts) => { const body = Buffer.concat(parts); const h = Buffer.alloc(8); h.writeUInt32BE(8 + body.length); h.write(type, 4, 'latin1'); return Buffer.concat([h, body]); };
   const ispe = (w, h) => { const b = Buffer.alloc(12); b.writeUInt32BE(w, 4); b.writeUInt32BE(h, 8); return box('ispe', b); };
@@ -90,6 +95,14 @@ open(d + '/padded.jpg', 'wb').write(j[:2] + app2 + j[2:])
     ok(Ops.readHeader(new Uint8Array(padded.subarray(0, 512 * 1024))) === null, 'padded JPEG: the frame header is past the first 512 KB');
     const pj = await Ops.checkHeader(blobOf(padded), 'padded.jpg');
     ok(pj.code === 'toolarge' && pj.header.width === 8000, `padded JPEG: read on past 720 KB of metadata and refused (${JSON.stringify(pj.header)})`);
+    // Stray bytes between JPEG segments (zero padding after APP0): browsers skip to the next marker
+    // and decode the picture, so its size is read the same way, in the first window and past it.
+    const pad0 = fs.readFileSync(path.join(tmp, 'pad0.jpg'));
+    const p0 = Ops.readHeader(new Uint8Array(pad0));
+    ok(p0 && p0.width === 300 && p0.height === 200, `JPEG with 4 stray bytes after APP0: size read (${JSON.stringify(p0)})`);
+    ok((await Ops.checkHeader(blobOf(pad0), 'pad0.jpg')).code === '', 'JPEG with stray bytes after APP0 is accepted');
+    const ps = await Ops.checkHeader(blobOf(fs.readFileSync(path.join(tmp, 'padstray.jpg'))), 'padstray.jpg');
+    ok(ps.code === 'toolarge' && ps.header && ps.header.width === 8000, `stray bytes past the first 512 KB: read on and refused (${JSON.stringify(ps.header)})`);
     const unknown = await Ops.checkHeader(blobOf(Buffer.from([0xFF, 0xD8, 0xFF, 0xDA, 0, 4, 1, 2, 3, 4])), 'odd.jpg');
     ok(unknown.code === 'unknown' && /could not be opened safely: its pixel size could not be read/.test(unknown.message), 'a picture whose size cannot be read is refused, not decoded');
     // COPY-5: a size just over the limit never reads as the limit itself.

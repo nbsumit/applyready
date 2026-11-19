@@ -65,6 +65,24 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     assert.throws(() => Inspect.stripMetadata(cut, 'jpg'), /incomplete|damaged/);
     checks++;
 
+    // Stray bytes between segments (zero padding after APP0): browsers skip them to the next marker,
+    // so the file is read, not called damaged, and the copies made from it leave the stray bytes out.
+    {
+      const app0 = 4 + base.readUInt16BE(4);
+      const padded = new Uint8Array(Buffer.concat([base.subarray(0, app0), Buffer.alloc(4), base.subarray(app0)]));
+      const rp = Inspect.parseJpeg(padded);
+      ok(rp.width === plain.width && rp.height === plain.height && !rp.damaged, `JPEG with stray bytes between segments parses (${rp.reason || 'not damaged'})`);
+      const sp = Inspect.stripMetadata(new Uint8Array(F.jpegWithSegments(Buffer.from(padded), [F.commentSegment('note')])), 'jpg');
+      ok(sp.bytes.length === base.length && !Inspect.parseJpeg(sp.bytes).damaged, 'cleaning a JPEG with stray bytes leaves them out');
+      const Kit = require('../js/lib/pdf-kit.js');
+      const kc = Kit.jpegWithoutMetadata(padded);
+      ok(kc && kc.length === base.length && Kit.jpegOrientation(padded) === 1, 'pdf-kit copies a JPEG with stray bytes without them');
+      const Files = require('../js/lib/files.js');
+      ok(Array.isArray(Files.hiddenParts(padded)), 'hidden details of a JPEG with stray bytes are read');
+      const junk = new Uint8Array(Buffer.concat([base.subarray(0, app0), Buffer.alloc(70000), base.subarray(app0)]));
+      ok(Inspect.parseJpeg(junk).damaged && Kit.jpegWithoutMetadata(junk) === null && Files.hiddenParts(junk) === null, 'more than 64 KB of stray bytes is still damaged');
+    }
+
     // JFIF density
     const jfif = Inspect.parseJpeg(sample('test-signature.jpg'));
     ok(jfif.width > 0, 'second sample JPEG parses');

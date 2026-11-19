@@ -113,8 +113,9 @@
     const le32 = i => b[i] + (b[i + 1] << 8) + (b[i + 2] << 16) + ((b[i + 3] << 24) >>> 0);
     if (startsWith(b, [0xFF, 0xD8, 0xFF])) {
       // Segments up to the image data. Plain: APP0 (JFIF), APP2 colour profile, APP14 (Adobe colour).
-      for (let i = 2; i + 4 <= n;) {
-        if (b[i] !== 0xFF) return null;
+      for (let i = 2, stray = 0; i + 4 <= n;) {
+        // Stray bytes between segments are skipped to the next marker, as browsers do (FF00 is not a marker).
+        if (b[i] !== 0xFF || b[i + 1] === 0x00) { if (++stray > 64 * 1024) return null; i++; continue; }
         const m = b[i + 1];
         if (m === 0xFF) { i++; continue; }
         if (m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { i += 2; continue; }
