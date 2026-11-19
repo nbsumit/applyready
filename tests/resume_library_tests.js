@@ -286,7 +286,8 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     ['other.json', JSON.stringify({ app: 'SomeOtherApp', version: 2, data: { personal: {}, experience: [], education: [], projects: [] } }), /different app/],
     ['newer.json', JSON.stringify({ app: 'ApplyReady', version: 7, data: { personal: {}, experience: [], education: [], projects: [] } }), /newer version/],
     ['damaged.json', JSON.stringify({ app: 'ApplyReady', version: 2, data: { personal: { fullName: ['x'] }, experience: [], education: [], projects: [] } }), /not an ApplyReady resume backup/],
-    ['empty.json', '', /empty/]
+    ['empty.json', '', /empty/],
+    ['raw-damaged.json', JSON.stringify({ app: 'ApplyReady', kind: 'damaged-resume-record', reason: 'x', record: { id: 'r_x', data: { personal: 'not an object' } } }), /raw copy of a saved resume that could not be read/]
   ];
   await openLibrary(page);
   for (const [name, body, pattern] of badFiles) {
@@ -294,7 +295,8 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     await page.locator('#libError [role="alert"]').waitFor();
     ok(pattern.test(await page.locator('#libError [role="alert"]').textContent()), `${name} is refused with a plain message`);
   }
-  await page.locator('#libImportInput').setInputFiles({ name: 'huge.json', mimeType: 'application/json', buffer: Buffer.alloc(5 * 1024 * 1024 + 10, 32) });
+  // 5.2 MB as the site counts sizes, though under 5 x 1,024 x 1,024 bytes.
+  await page.locator('#libImportInput').setInputFiles({ name: 'huge.json', mimeType: 'application/json', buffer: Buffer.alloc(5200000, 32) });
   await page.waitForFunction(() => /larger than 5 MB/.test(document.getElementById('libError').textContent));
   ok(true, 'A file over 5 MB is refused before it is read');
   ok((await records(page)).length === libCount, 'Refused files leave the saved resumes unchanged');
@@ -620,6 +622,12 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     ok(await p.locator('#saveNotice').filter({ hasText: 'too long to open in full' }).count() === 0, 'The notice goes once the shortened resume is saved');
     const stored = (await records(p)).find(r => r.id === 'r_over_limits');
     ok(schema.validate({ data: stored.data }), 'What is saved after editing passes the strict check, so it always reopens');
+    // The downloaded original imports again, shortened to fit, rather than being refused as damaged.
+    await openLibrary(p);
+    await p.locator('#libImportInput').setInputFiles(original);
+    await p.locator('#libraryDialog').waitFor({ state: 'hidden' });
+    await p.waitForFunction(() => /so it was shortened to fit/.test(document.body.textContent));
+    ok((await p.locator('#summaryText').inputValue()).length === schema.MAX_TEXT && await expCount() === schema.MAX_ENTRIES, 'The downloaded original imports shortened to the limits');
     await audit(p, 'builder at the limits');
     await ctx.close();
   }
@@ -648,6 +656,53 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     ok((await records(p)).length === 1, 'Finishing the cut-short save adds no extra resume');
     await ctx.close();
     fs.rmSync(profile, { recursive: true, force: true });
+  }
+
+  /* ---------------------------------------------------------------- 17. Leftover copies: no wait, saving off in every tab */
+  {
+    const ctx = await newContext();
+    const p = watch(await ctx.newPage());
+    await p.goto(`${origin}/resume.html`);
+    await ready(p);
+    await p.locator('#fullName').fill('Asha Original');
+    await waitSaved(p);
+    // RESU-1: a copy made a moment ago whose save did complete (a reload) is removed at once, with no wait.
+    const stored = (await records(p))[0];
+    await p.evaluate(rec => localStorage.setItem('applyready_resume_unsaved:' + rec.id, JSON.stringify({ id: rec.id, name: rec.name, createdAt: rec.createdAt, baseUpdatedAt: rec.updatedAt, savedAt: Date.now(), json: JSON.stringify(rec.data) })), stored);
+    const t0 = Date.now();
+    await p.reload();
+    await ready(p);
+    const took = Date.now() - t0;
+    ok(took < 2000 && await p.locator('#fullName').inputValue() === 'Asha Original', `The builder opens at once after a reload that left a fresh copy (${took} ms)`);
+    ok(await p.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('applyready_resume_unsaved:')).length) === 0, 'The fresh copy of a finished save is removed');
+    // A fresh copy that differs, with no other builder tab open, is a leftover: finished at once.
+    await p.evaluate(rec => localStorage.setItem('applyready_resume_unsaved:' + rec.id, JSON.stringify({ id: rec.id, name: rec.name, createdAt: rec.createdAt, baseUpdatedAt: rec.updatedAt, savedAt: Date.now(), json: JSON.stringify(Object.assign({}, rec.data, { summary: 'Typed before the reload.' })) })), (await records(p))[0]);
+    const t1 = Date.now();
+    await p.reload();
+    await ready(p);
+    await openSection(p, 'summary');
+    ok(Date.now() - t1 < 2000 && await p.locator('#summaryText').inputValue() === 'Typed before the reload.' && (await records(p)).length === 1, 'A fresh copy left by this tab is saved and shown at once, without a second resume');
+    // SECU-2: turning saving off in one tab turns it off in the other open tabs too.
+    const other = watch(await ctx.newPage());
+    await other.goto(`${origin}/resume.html`);
+    await ready(other);
+    await other.locator('#tabDownload').click();
+    await other.locator('#chkSaveDevice').uncheck();
+    await p.waitForFunction(() => !document.getElementById('chkSaveDevice').checked, null, { timeout: 5000 });
+    ok(true, 'Saving turned off in another tab shows as off here');
+    const before = JSON.stringify(await records(p));
+    await p.locator('#tabContent').click();
+    await p.locator('#fullName').fill('Previous Customer');
+    await p.evaluate(() => { Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+    await p.waitForTimeout(1500);
+    ok(JSON.stringify(await records(p)) === before && await p.evaluate(() => !JSON.stringify(localStorage).includes('Previous Customer')), 'After saving was turned off in another tab, this tab stores nothing and copies nothing');
+    await other.close();
+    // A leftover copy found while saving is off is removed, never written back.
+    await p.evaluate(() => localStorage.setItem('applyready_resume_unsaved:r_abcdefgh12345678', JSON.stringify({ id: 'r_abcdefgh12345678', name: 'Untitled resume', createdAt: 1, baseUpdatedAt: 0, savedAt: Date.now() - 60000, json: JSON.stringify({ personal: { fullName: 'Leftover Person' }, experience: [], education: [], projects: [] }) })));
+    await p.reload();
+    await ready(p);
+    ok(await p.evaluate(() => Object.keys(localStorage).filter(k => k.startsWith('applyready_resume_unsaved:')).length) === 0 && !JSON.stringify(await records(p)).includes('Leftover Person'), 'With saving off, a leftover copy is removed when the builder opens');
+    await ctx.close();
   }
 
   ok(errors.length === 0, 'No page errors: ' + errors.join(' | '));

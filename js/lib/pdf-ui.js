@@ -146,6 +146,17 @@
       if (n.js) {
         try { out.jsDoc = await K.openJs(bytes, { password, name }); }
         catch (e) {
+          if (!n.lib && e.code === 'damaged') {
+            // A tool that only draws or reads cannot go on without pdf.js. When pdf-lib can read the
+            // file and finds no page content at all, say so as every other tool does (usable).
+            try {
+              const libDoc = await K.openLib(bytes, { password, name });
+              const damage = await K.pageDamage(libDoc);
+              const count = libDoc.getPageCount();
+              if (count && damage.unreadable.length === count) { out.pageCount = count; out.unreadable = damage.unreadable; out.libDoc = libDoc; return out; }
+            } catch (e2) { /* pdf-lib cannot read it either: pdf.js's message stands */ }
+            throw e;
+          }
           if (!n.lib || e.code === 'unsupported') throw e;
           // pdf-lib opened it but pdf.js could not read it: the file is damaged. The tool can still
           // try, without previews, and says what that means (damageNotice, damageNote).
@@ -153,13 +164,23 @@
         }
         if (!out.pageCount && out.jsDoc) out.pageCount = out.jsDoc.numPages;
       }
+      if (!n.lib && out.jsDoc) {
+        // Tools that only draw or read (PDF to text, PDF to image) make the same damage check as the
+        // others, so every tool says the same about the same file. pdf-lib is loaded only for it; a
+        // file it cannot open is left to pdf.js, which already opened it.
+        try {
+          const damage = await K.pageDamage(await K.openLib(bytes, { password, name }));
+          out.unreadable = damage.unreadable;
+          out.incomplete = damage.incomplete;
+        } catch (e) { /* no check possible: pdf.js reads it, so the tool goes ahead */ }
+      }
       out.password = password || '';
       return out;
     }
     // A file none of whose pages gives any content would only give blank pages: refuse it plainly.
     // A page with part of its content broken is not counted here (readers still show the rest).
     function usable(r) {
-      if (r.libDoc && r.pageCount && r.unreadable.length === r.pageCount) {
+      if ((r.libDoc || r.jsDoc) && r.pageCount && r.unreadable.length === r.pageCount) {
         if (r.jsDoc) K.closeJs(r.jsDoc);
         throw new K.PdfError('damaged', `${name} is damaged: the content of ${r.pageCount === 1 ? 'its page' : `all ${K.grouped(r.pageCount)} pages`} is missing or broken, so anything made from it would be blank. Open it on your device to check it, or get a fresh copy from where it came from.`);
       }

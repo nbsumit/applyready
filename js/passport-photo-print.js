@@ -137,7 +137,7 @@
     const token = ++loadToken;
     // Identify the file by its content, not its name or the type the browser reports.
     if (window.ApplyReadyFiles) {
-      const check = await window.ApplyReadyFiles.validate(file, ['image'], 50 * 1024 * 1024);
+      const check = await window.ApplyReadyFiles.validate(file, ['image'], window.ApplyReadyFiles.LIMITS.image);
       if (token !== loadToken) return;
       if (!check.ok) { notifyError(check.error); return; }
     } else if (!file.type.startsWith('image/')) {
@@ -151,7 +151,7 @@
     const Ops = window.ApplyReadyImageOps;
     let opened;
     try {
-      opened = Ops ? await Ops.openImage(file, { name: file.name }) : await openWithImg(file);
+      opened = Ops ? await Ops.openImage(file, { name: file.name, minSide: Ops.MIN_SIDE }) : await openWithImg(file);
     } catch (e) {
       if (token === loadToken) notifyError((e && e.message) || 'That photo could not be read. Choose a JPG or PNG that opens on your device, then try again.');
       return;

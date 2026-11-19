@@ -100,6 +100,11 @@
   /** Plain words for a watermark that was made smaller so that all of it stays on the page. */
   function smaller(report, o, pages) {
     const where = pages ? ` on ${UI.plural(report.fitted, 'page')}` : '';
+    // On a very small page even the smallest size (4 pt) can be too big: say that part is cut off.
+    if (report.overflow) {
+      const off = pages ? ` on ${UI.plural(report.overflow, 'page')}` : '';
+      return `The text is too long for ${pages ? 'these pages' : 'this page'}: even at the smallest size (4 pt instead of ${o.size} pt), part of it runs off the page${off}. Use a shorter text.`;
+    }
     return `The text is too long for the chosen size, so it was made smaller${where} (down to ${Math.round(report.smallest)} pt instead of ${o.size} pt) to fit on the page.`;
   }
 

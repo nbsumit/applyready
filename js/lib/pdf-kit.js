@@ -20,10 +20,13 @@
 })(typeof self !== 'undefined' ? self : this, function (root, isNode) {
   'use strict';
 
-  const MB = 1024 * 1024;
+  // Sizes, size limits and number grouping follow the one rule in js/lib/files.js (1 KB = 1,000 bytes).
+  const Files = isNode ? require('./files.js') : root.ApplyReadyFiles;
+  const MB = 1024 * 1024; // internal memory budgets
+  const MAX_JPEG_STRAY = 64 * 1024; // stray bytes skipped between JPEG segments (as js/lib/image-ops.js)
   const LIMITS = {
-    fileBytes: 100 * MB,      // one PDF
-    totalBytes: 500 * MB,     // all files in one job (merge)
+    fileBytes: 100 * Files.MB, // one PDF (100 MB, counted as the site counts sizes)
+    totalBytes: 500 * Files.MB, // all files in one job (merge)
     maxFiles: 50,             // files in one merge
     // Pages in one job that copies or changes pages (merge, split, page numbers, watermark). A small
     // crafted file can claim hundreds of thousands of pages, and copying them would freeze the tab.
@@ -38,7 +41,7 @@
   };
 
   // Numbers in messages are grouped the way the rest of the site writes them (2,000 pages).
-  const grouped = n => Number(n).toLocaleString('en-IN');
+  const grouped = n => Files.grouped(n);
   /**
    * What to tell someone whose PDF has more pages than a tool takes. Splitting it first helps only
    * when Split PDF can open the file; past LIMITS.pages it cannot either, so say that plainly instead
@@ -88,6 +91,13 @@
     return { ok: !missing.length, render, missing: modules ? missing : missing.concat('JavaScript modules') };
   }
 
+  /* A part of the PDF tool did not load. Offline, that is because the PDF library is not kept on this
+     device yet (it is kept once a PDF tool was used online, or with "Save every tool" on Your data),
+     not because of the browser or the file. */
+  const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+  const OFFLINE_LOAD = 'This device is offline, and the PDF library this tool needs is not kept on it yet. Connect to the internet and reload the page. To use the PDF tools offline later, open Your data and save every tool for offline use.';
+  const loadFailed = () => (offline() ? OFFLINE_LOAD : 'A part of the PDF tool could not load. Check your connection and reload the page.');
+
   function injectScript(src, type) {
     return new Promise((resolve, reject) => {
       const el = document.createElement('script');
@@ -95,7 +105,7 @@
       el.src = src;
       el.onload = () => resolve();
       // detail 'load': the library itself is missing, so every file would fail the same way.
-      el.onerror = () => { el.remove(); reject(new PdfError('unsupported', 'A part of the PDF tool could not load. Check your connection and reload the page.', 'load')); };
+      el.onerror = () => { el.remove(); reject(new PdfError('unsupported', loadFailed(), 'load')); };
       document.head.appendChild(el);
     });
   }
@@ -131,7 +141,7 @@
         root.addEventListener('applyready:pdfjs', onReady);
         // A browser that cannot parse pdf.js reports the module as failed, or never runs it.
         const timer = setTimeout(() => done(reject, new PdfError('unsupported', 'The PDF reader took too long to start. Reload the page and try again; if it keeps happening, update your browser.')), 30000);
-        injectScript(asset('js/lib/pdf-kit-boot.js'), 'module').catch(() => done(reject, new PdfError('unsupported', 'The PDF reader could not load in this browser. Update it, or use a recent Chrome, Edge, Firefox or Safari.')));
+        injectScript(asset('js/lib/pdf-kit-boot.js'), 'module').catch(() => done(reject, new PdfError('unsupported', offline() ? OFFLINE_LOAD : 'The PDF reader could not load in this browser. Update it, or use a recent Chrome, Edge, Firefox or Safari.')));
       }).then(lib => {
         lib.GlobalWorkerOptions.workerSrc = workerSource();
         return lib;
@@ -282,8 +292,9 @@
    * unreadable: pages none of whose content can be read (the /Contents names an object that is
    * missing or not a stream, or Flate data that gives nothing at all), which come out blank.
    * incomplete: pages with some content broken, for example a stream with its end cut off, where
-   * readers still show the part before the damage. A page with no /Contents is blank by design and is
-   * not reported. Flate streams are checked up to a total of 16 MB.
+   * readers still show the part before the damage. A page with no /Contents, an empty /Contents array
+   * or an empty content stream is blank by design and is not reported. Flate streams are checked up
+   * to a total of 16 MB.
    */
   async function damagedPages(P, doc, partly) {
     const ctx = doc.context;
@@ -298,7 +309,8 @@
       if (obj instanceof P.PDFRawStream && budget > 0 && typeof P.decodePDFRawStream === 'function') {
         const f = obj.dict.lookup(FILTER);
         const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
-        if (flate) {
+        // An empty stream (0 bytes) is a blank page by design, like a page with no /Contents.
+        if (flate && obj.contents.length) {
           budget -= obj.contents.length;
           try { P.decodePDFRawStream(obj).decode(); }
           catch (e) { result = (await partly(obj.contents)) === false ? 'bad' : 'partial'; }
@@ -316,7 +328,8 @@
       const parts = c instanceof P.PDFArray ? c.asArray().map(x => ctx.lookup(x)) : [c];
       const states = [];
       for (const part of parts) states.push(await state(part));
-      if (!states.length || states.every(x => x === 'bad')) unreadable.push(i);
+      if (!states.length) continue; // /Contents [] is a blank page by design too
+      if (states.every(x => x === 'bad')) unreadable.push(i);
       else if (states.some(x => x !== 'ok')) incomplete.push(i);
     }
     return { unreadable, incomplete };
@@ -392,7 +405,7 @@
         // A worker that never started is replaced on the next open, once the connection is back.
         // (Not one that was only told to drop this document: other open files still use it.)
         if (/fake worker|worker failed/i.test(msg)) dropWorker();
-        throw new PdfError('unsupported', 'A part of the PDF tool could not load. Check your connection and reload the page.', e && e.message);
+        throw new PdfError('unsupported', loadFailed(), e && e.message);
       }
       throw new PdfError('damaged', `${label} ${DAMAGED}`, e && e.message);
     }
@@ -786,7 +799,7 @@
     // One see-through graphics state for the whole file, named once on each page. pdf-lib would add a
     // new one to the page for every stamp drawn with an opacity (up to 400 on a tiled page).
     const see = o.opacity < 1 ? doc.context.register(doc.context.obj({ Type: 'ExtGState', ca: o.opacity })) : null;
-    let fitted = 0, smallest = o.size;
+    let fitted = 0, smallest = o.size, overflow = 0;
     for (let i = 0; i < pages.length; i++) {
       if (only && !only.has(i)) continue;
       throwIfAborted(signal);
@@ -799,6 +812,9 @@
       const room = Math.min(1, (W * 0.9) / boxW, Math.min(H * 0.9, H - 2 * pad) / boxH);
       const size = room < 1 ? Math.max(4, Math.floor(o.size * room * 10) / 10) : o.size;
       if (size < o.size) { fitted++; smallest = Math.min(smallest, size); }
+      // Even the 4 pt floor can be too big on a tiny page with a long text: then part of it is off the
+      // page, and the report says so instead of claiming it fits.
+      if (room < 1 && o.size * room < 4) overflow++;
       const tw = font.widthOfTextAtSize(text, size);
       const cap = font.heightAtSize(size, { descender: false });
       // Start of the baseline so that the text's centre lands on (cx, cy) after rotation.
@@ -828,7 +844,7 @@
       if (see) page.pushOperators(P.popGraphicsState());
       if (onProgress && i % 10 === 0) { onProgress(i + 1, pages.length); await tick(); }
     }
-    if (o.report) { o.report.fitted = fitted; o.report.smallest = smallest; }
+    if (o.report) { o.report.fitted = fitted; o.report.smallest = smallest; o.report.overflow = overflow; }
     if (onProgress) onProgress(pages.length, pages.length);
     return doc;
   }
@@ -840,10 +856,12 @@
   function jpegOrientation(bytes) {
     const b = bytes;
     if (b[0] !== 0xFF || b[1] !== 0xD8) return 1;
-    let p = 2;
+    let p = 2, stray = 0;
     while (p + 4 < b.length) {
-      if (b[p] !== 0xFF) return 1;
+      // Stray bytes between segments are skipped to the next marker, as browsers do (FF00 is not a marker).
+      if (b[p] !== 0xFF || b[p + 1] === 0x00) { if (++stray > MAX_JPEG_STRAY) return 1; p++; continue; }
       const marker = b[p + 1];
+      if (marker === 0xFF) { p++; continue; }
       const len = (b[p + 2] << 8) | b[p + 3];
       if (marker === 0xDA || marker === 0xD9) return 1;
       if (marker === 0xE1 && b[p + 4] === 0x45 && b[p + 5] === 0x78 && b[p + 6] === 0x69 && b[p + 7] === 0x66) {
@@ -880,10 +898,12 @@
     if (!b || b[0] !== 0xFF || b[1] !== 0xD8) return null;
     const ascii = (at, s) => { for (let k = 0; k < s.length; k++) if (b[at + k] !== s.charCodeAt(k)) return false; return true; };
     const parts = [b.subarray(0, 2)];
-    let p = 2, guard = 0, total = 2;
+    let p = 2, guard = 0, total = 2, stray = 0;
     const keep = (from, to) => { parts.push(b.subarray(from, to)); total += to - from; };
     while (p < b.length) {
-      if (++guard > 100000 || b[p] !== 0xFF) return null;
+      // Stray bytes between segments are skipped to the next marker (and left out), as browsers do.
+      if (b[p] !== 0xFF || b[p + 1] === 0x00) { if (++stray > MAX_JPEG_STRAY) return null; p++; continue; }
+      if (++guard > 100000) return null;
       const m = b[p + 1];
       if (m === undefined) return null;
       if (m === 0xFF) { p++; continue; }
@@ -949,10 +969,13 @@
   async function prepareImage(file, info) {
     const bytes = await readBytes(file);
     const kind = info && info.ext;
-    // A small file can declare a huge picture; decoding it would take gigabytes of memory.
+    // A small file can declare a huge picture; decoding it would take gigabytes of memory. A picture
+    // whose size cannot be read from its header is refused too (ApplyReadyImageOps.checkHeader).
     const Ops = root.ApplyReadyImageOps;
-    const header = Ops ? Ops.readHeader(bytes.subarray(0, 512 * 1024)) : null;
-    if (header && header.width * header.height > Ops.MAX_PIXELS) throw new PdfError('toolarge', `${file.name} is ${Math.round(header.width * header.height / 1e6)} megapixels (${header.width} × ${header.height} px), more than the ${Ops.MAX_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`);
+    if (Ops) {
+      const checked = await Ops.checkHeader(new Blob([bytes]), file.name);
+      if (checked.message) throw new PdfError(checked.code === 'toolarge' ? 'toolarge' : 'damaged', checked.message);
+    }
     if (kind === 'png') return { bytes, type: 'png' };
     if (kind === 'jpg' && jpegOrientation(bytes) === 1) {
       const clean = jpegWithoutMetadata(bytes);
@@ -1240,11 +1263,12 @@
     return { bytes, pageCount: 1, fits: bytes.length <= o.targetBytes, allPagesFit: enc.fits, minDpi: Math.round(enc.dpi) };
   }
 
-  /* A size limit typed in KB is met when the file is at most kb x 1,000 bytes, the smaller of the
-     two ways portals count a KB, so it is accepted either way. Sizes shown next to that limit use the
-     same 1,000-byte KB and are rounded up, so a size can never read as under a limit it is over. */
+  /* A size limit typed in KB is met when the file is at most kb x 1,000 bytes (Files.maxBytes), the
+     smaller of the two ways portals count a KB, so it is accepted either way. Sizes use the site's one
+     size format (Files.formatBytes: 1 KB = 1,000 bytes, rounded up), so a size can never read as under
+     a limit it is over, and the same file shows the same size in every tool. */
   const limitKB = bytes => (Math.ceil(bytes / 100) / 10).toFixed(1);
-  const limitSize = bytes => (bytes < 1000 * 1000 ? `${limitKB(bytes)} KB` : `${(Math.ceil(bytes / 100000) / 10).toFixed(1)} MB`);
+  const limitSize = bytes => Files.formatBytes(bytes);
 
   /**
    * The result line of Compress PDF. bytes: the size offered; kb: the limit; kept: '' (compressed),
@@ -1252,9 +1276,9 @@
    * Returns { met, text }.
    */
   function compressResult(bytes, kb, kept) {
-    const met = bytes <= kb * 1000;
+    const met = bytes <= Files.maxBytes(kb);
     const exact = `${grouped(bytes)} bytes, under ${kb} KB whether a KB is counted as 1,000 or 1,024 bytes`;
-    const size = `${grouped(bytes)} bytes, ${limitKB(bytes)} KB`;
+    const size = `${limitSize(bytes)}, ${grouped(bytes)} bytes`;
     // Over kb x 1,000 bytes but not over kb x 1,024: some portals take it, some do not.
     const either = !met && bytes <= kb * 1024 ? ` A portal that counts 1 KB as 1,024 bytes would accept it (up to ${grouped(kb * 1024)} bytes); one that counts 1,000 bytes would not.` : '';
     let text;

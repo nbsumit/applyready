@@ -22,6 +22,7 @@ const AxeBuilder = require('@axe-core/playwright').default;
 const root = path.resolve(__dirname, '..');
 const P = require('../js/vendor/pdf-lib.min.js');
 const Kit = require('../js/lib/pdf-kit.js');
+const Files = require('../js/lib/files.js');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-pdf-'));
 let checks = 0;
 const ok = (c, m) => { assert(c, m); checks++; };
@@ -232,6 +233,15 @@ async function auditUnits() {
   const small = { };
   await Kit.addWatermark(await Kit.openLib(new Uint8Array(fs.readFileSync(path.join(tmp, 'text.pdf')))), { text: 'Copy', size: 48, report: small });
   ok(small.fitted === 0 && small.smallest === 48, 'watermark: a short text keeps the chosen size');
+  // TOOL-4: on a business-card page even 4 pt is too big for 60 characters at 45°: reported as cut off.
+  {
+    const card = await P.PDFDocument.create(); card.addPage([144, 144]);
+    fs.writeFileSync(path.join(tmp, 'card.pdf'), await card.save());
+    const cut = {};
+    await Kit.addWatermark(await Kit.openLib(await card.save()), { text: 'W'.repeat(60), size: 72, angle: 45, report: cut });
+    ok(cut.fitted === 1 && cut.overflow === 1, `watermark: a text that cannot fit even at 4 pt is reported as running off the page (${JSON.stringify(cut)})`);
+    ok(small.overflow === 0, 'watermark: a text that fits is never reported as running off');
+  }
 
   // PDF-04: control characters (pdf.js writes U+0000 for some Hindi vowel signs) never reach the text.
   const info = {};
@@ -266,16 +276,34 @@ async function auditUnits() {
     '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 600] /Contents 8 0 R >>',
     '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 600] /Contents 9 0 R >>'
   ]));
+  // A copy overwritten from inside its first content stream to the start of its cross-reference
+  // table: pdf.js cannot open it at all ("Invalid PDF structure"), while pdf-lib reads its three
+  // pages and finds that none has any content left. The tools that only read or draw say the same
+  // as every other tool: the content of all 3 pages is missing (PF-3).
+  {
+    const objs = ['<< /Type /Catalog /Pages 2 0 R >>', '<< /Type /Pages /Kids [3 0 R 4 0 R 5 0 R] /Count 3 >>'];
+    for (let i = 0; i < 3; i++) objs.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 600] /Resources << /Font << /F1 9 0 R >> >> /Contents ${6 + i} 0 R >>`);
+    for (let i = 0; i < 3; i++) objs.push(content(`BT /F1 20 Tf 40 500 Td (PAGE ${i + 1}) Tj ET`));
+    objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+    const over = rawPdf(objs);
+    over.fill(0x78, over.indexOf('6 0 obj\n<<') + 10, over.indexOf('xref') + 9);
+    const damage = await Kit.pageDamage(await Kit.openLib(new Uint8Array(over)));
+    ok(damage.unreadable.join() === '0,1,2', `overwritten PDF: pdf-lib reads it and finds no page content (${JSON.stringify(damage)})`);
+    fs.writeFileSync(path.join(tmp, 'overwritten.pdf'), over);
+  }
   // PDF-07: the limit is met at kb x 1,000 bytes, and every size shown next to it uses the same KB,
   // rounded up, so a result over the limit never reads as under it.
   {
     const over = Kit.compressResult(505000, 500, '');
-    ok(!over.met && /could not get under 500 KB\. The smallest readable version is 5,05,000 bytes, 505\.0 KB\. A portal that counts 1 KB as 1,024 bytes would accept it/.test(over.text), `compress: a result between 500,000 and 512,000 bytes is not called smaller than 500 KB (${over.text})`);
+    ok(!over.met && /could not get under 500 KB\. The smallest readable version is 505 KB, 505,000 bytes\. A portal that counts 1 KB as 1,024 bytes would accept it/.test(over.text), `compress: a result between 500,000 and 512,000 bytes is not called smaller than 500 KB (${over.text})`);
     const kept = Kit.compressResult(505000, 500, 'larger');
-    ok(!kept.met && /your original \(5,05,000 bytes, 505\.0 KB\) is kept/.test(kept.text), `compress: the kept original gives the same size (${kept.text})`);
+    ok(!kept.met && /your original \(505 KB, 505,000 bytes\) is kept/.test(kept.text), `compress: the kept original gives the same size (${kept.text})`);
     ok(!/1,024 bytes would accept/.test(Kit.compressResult(600000, 500, '').text), 'compress: no 1,024-byte note when no portal would accept it');
     ok(Kit.compressResult(500000, 500, '').met && !Kit.compressResult(500001, 500, '').met, 'compress: 500 KB means at most 500,000 bytes');
-    ok(Kit.limitKB(500001) === '500.1' && Kit.limitKB(505000) === '505.0' && Kit.limitKB(499000) === '499.0' && Kit.limitSize(2000000) === '2.0 MB', `compress: sizes next to the limit are 1,000-byte KB rounded up (${Kit.limitKB(500001)}, ${Kit.limitSize(2000000)})`);
+    ok(Kit.limitKB(500001) === '500.1' && Kit.limitKB(505000) === '505.0' && Kit.limitKB(499000) === '499.0' && Kit.limitSize(2000000) === '2 MB' && Kit.limitSize(505001) === '505.1 KB', `compress: sizes next to the limit are 1,000-byte KB rounded up (${Kit.limitKB(500001)}, ${Kit.limitSize(2000000)})`);
+    // TOOL-3: the size format is the site's one format, so a file reads the same in every tool, and a
+    // file just over 1 MB is not shown a whole 0.1 MB larger.
+    ok(Kit.limitSize(1000001) === '1.01 MB' && Kit.limitSize(4544210) === Files.formatBytes(4544210) && Kit.limitSize(5317) === Files.formatBytes(5317), `compress: sizes use Files.formatBytes (${Kit.limitSize(1000001)}, ${Kit.limitSize(4544210)})`);
   }
 
   // A one-page PDF whose Flate content stream lost its last 10 bytes: readers still show 59 of its
@@ -474,7 +502,7 @@ const server = http.createServer((req, res) => {
     await page.setInputFiles('#mergeDropInput', bombFile);
     await page.waitForFunction(() => !document.getElementById('mergeError').hidden, null, { timeout: 30000 });
     const msg = await errorText(page, '#mergeError');
-    ok(/pagebomb\.pdf has 2,00,000 pages/.test(msg) && /Up to 2,000 pages can be merged into one file in a browser, so it cannot be added/.test(msg) && !/split/i.test(msg), `merge: a file claiming 200000 pages is refused, without sending it to Split PDF (${msg})`);
+    ok(/pagebomb\.pdf has 200,000 pages/.test(msg) && /Up to 2,000 pages can be merged into one file in a browser, so it cannot be added/.test(msg) && !/split/i.test(msg), `merge: a file claiming 200000 pages is refused, without sending it to Split PDF (${msg})`);
     ok(await page.locator('.merge-row').count() === 2 && Date.now() - started < 20000, `merge: nothing added, refused in ${Date.now() - started} ms`);
     const t = Date.now();
     await page.evaluate(() => 1);
@@ -488,7 +516,7 @@ const server = http.createServer((req, res) => {
 
     // Tools that open one PDF refuse the same file instead of trying to number or split 200,000 pages.
     // Split PDF refuses it too, so none of them may send the person there.
-    for (const [file, input, re] of [['split-pdf.html', '#splitDropInput', /has 2,00,000 pages\. Split works on up to 2,000 pages[\s\S]*desktop PDF program/], ['add-page-numbers.html', '#pnDropInput', /has 2,00,000 pages\. This tool works on up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages[\s\S]*desktop PDF program/], ['watermark-pdf.html', '#wmDropInput', /up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages/]]) {
+    for (const [file, input, re] of [['split-pdf.html', '#splitDropInput', /has 200,000 pages\. Split works on up to 2,000 pages[\s\S]*desktop PDF program/], ['add-page-numbers.html', '#pnDropInput', /has 200,000 pages\. This tool works on up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages[\s\S]*desktop PDF program/], ['watermark-pdf.html', '#wmDropInput', /up to 2,000 pages at a time\. Split PDF also works on up to 2,000 pages/]]) {
       const tool = await open(file);
       await tool.page.setInputFiles(input, bombFile);
       await tool.page.waitForFunction(() => { const e = document.querySelector('[data-pdf-error]'); return e && !e.hidden && !e.classList.contains('hidden') && /pages/.test(e.textContent); }, null, { timeout: 30000 });
@@ -1138,6 +1166,54 @@ const server = http.createServer((req, res) => {
       ok(/Pages 2-3 of broken-pages\.pdf could not be read/.test(await page.locator('#mergeResultText').innerText()), 'merge: the result says which pages are blank');
       await context.close();
     }
+    // TOOL-1 (PDF): the tools that only read or draw (PDF to text, PDF to image) and Compress PDF make
+    // the same damage check, and PDF to text does not call damaged pages scans.
+    {
+      const { context, page } = await open('pdf-to-text.html');
+      await page.setInputFiles('#textDropInput', path.join(tmp, 'all-broken.pdf'));
+      await page.waitForFunction(() => /all-broken/.test(document.getElementById('textError').textContent), null, { timeout: 20000 });
+      ok(/all-broken\.pdf is damaged: the content of all 2 pages is missing or broken/.test(await errorText(page, '#textError')), `pdf to text: a PDF with no readable page is refused (${await errorText(page, '#textError')})`);
+      await page.setInputFiles('#textDropInput', path.join(tmp, 'broken-pages.pdf'));
+      await waitShown(page, '#textResult');
+      const notes = await page.locator('#textEmptyBody').innerText();
+      ok(/Pages 2-3 could not be read; the PDF may be damaged there/.test(notes) && !/2-3[^.]*scanned/.test(notes), `pdf to text: damaged pages are named as damaged, not as scans (${notes})`);
+      // PF-3: a file pdf.js cannot open at all, but pdf-lib can, is refused with the shared words.
+      await page.setInputFiles('#textDropInput', path.join(tmp, 'overwritten.pdf'));
+      await page.waitForFunction(() => /overwritten/.test(document.getElementById('textError').textContent), null, { timeout: 20000 });
+      ok(/overwritten\.pdf is damaged: the content of all 3 pages is missing or broken/.test(await errorText(page, '#textError')), `pdf to text: a file pdf.js cannot open says what every tool says (${await errorText(page, '#textError')})`);
+      // PF-3: a page cut short is read, and the result says it is partly damaged (the notice shown on
+      // opening is replaced by the result, which reads at once).
+      await page.setInputFiles('#textDropInput', path.join(tmp, 'cut-stream.pdf'));
+      await page.waitForFunction(() => document.getElementById('textFileName').textContent.includes('cut-stream') && !document.getElementById('textResult').classList.contains('hidden'), null, { timeout: 20000 });
+      const said = await page.locator('#textResultText').innerText();
+      ok(/The page of cut-stream\.pdf is partly damaged, so check it here\./.test(said) && await page.locator('#textResult').evaluate(e => e.classList.contains('is-warning')), `pdf to text: the result says a page cut short is partly damaged (${said})`);
+      await context.close();
+    }
+    {
+      const { context, page } = await open('pdf-to-image.html');
+      await page.setInputFiles('#imgDropInput', path.join(tmp, 'broken-pages.pdf'));
+      await page.waitForFunction(() => /broken-pages\.pdf is damaged/.test(document.getElementById('imgError').textContent), null, { timeout: 20000 });
+      ok(true, 'pdf to image: a PDF with broken pages is reported as damaged when it opens');
+      await page.click('#imgRun');
+      await waitShown(page, '#imgResult');
+      ok(/Pages 2-3 of broken-pages\.pdf could not be read, so they are blank here too/.test(await page.locator('#imgResultText').innerText()), 'pdf to image: the result says which pages are blank');
+      await page.goto(`${origin}/pdf-to-image.html`);
+      await page.setInputFiles('#imgDropInput', path.join(tmp, 'overwritten.pdf'));
+      await page.waitForFunction(() => /overwritten/.test(document.getElementById('imgError').textContent), null, { timeout: 20000 });
+      ok(/overwritten\.pdf is damaged: the content of all 3 pages is missing or broken/.test(await errorText(page, '#imgError')), `pdf to image: a file pdf.js cannot open says what every tool says (${await errorText(page, '#imgError')})`);
+      await context.close();
+    }
+    {
+      const { context, page } = await open('compress-pdf.html');
+      await page.setInputFiles('#compressFileInput', path.join(tmp, 'broken-pages.pdf'));
+      await page.waitForFunction(() => /broken-pages\.pdf is damaged/.test(document.getElementById('compressError').textContent), null, { timeout: 20000 });
+      ok(true, 'compress: a PDF with broken pages is reported as damaged when it opens');
+      await page.fill('#targetKbInput', '500');
+      await page.click('#btnStartCompress');
+      await waitShown(page, '#compressResultArea');
+      ok(/Pages 2-3 of broken-pages\.pdf could not be read, so they are blank here too/.test(await page.locator('#compressStatus').innerText()), 'compress: the result says which pages are blank');
+      await context.close();
+    }
     {
       const { context, page } = await open('file-checker.html');
       await page.locator('input[type=file]').first().setInputFiles(path.join(tmp, 'broken-pages.pdf'));
@@ -1186,6 +1262,12 @@ const server = http.createServer((req, res) => {
       await page.waitForFunction(() => !document.getElementById('mergeError').hidden, null, { timeout: 20000 });
       const msg = await errorText(page, '#mergeError');
       ok((msg.match(/could not load/g) || []).length === 1 && /None of the other 2 files could be added either/.test(msg), `merge: a library that cannot load is reported once (${msg})`);
+      // PF-10: with two files the sentence is about the other file, not "the other 1 file".
+      await page.goto(`${origin}/merge-pdf.html`);
+      await page.setInputFiles('#mergeDropInput', [F['text.pdf'], F['second.pdf']]);
+      await page.waitForFunction(() => !document.getElementById('mergeError').hidden, null, { timeout: 20000 });
+      const two = await errorText(page, '#mergeError');
+      ok(/The other file could not be added either\./.test(two) && !/other 1 file/.test(two), `merge: one other file is named in plain words (${two})`);
       await context.close();
     }
 
@@ -1200,6 +1282,15 @@ const server = http.createServer((req, res) => {
       await page.click('#wmRun');
       await waitShown(page, '#wmResult');
       ok(/made smaller on 6 pages \(down to \d+ pt instead of 96 pt\) to fit on the page/.test(await page.locator('#wmResultText').innerText()), `watermark: the result says the text was made smaller (${await page.locator('#wmResultText').innerText()})`);
+      // PF-4: on a business-card page even 4 pt is too big: the advice is a shorter text only (a level
+      // angle gives centred text no more room than 45°).
+      await page.goto(`${origin}/watermark-pdf.html`);
+      await page.setInputFiles('#wmDropInput', path.join(tmp, 'card.pdf'));
+      await waitShown(page, '#wmPreviewBox');
+      await page.fill('#wmText', 'W'.repeat(60));
+      await page.waitForFunction(() => /runs off the page/.test(document.getElementById('wmPreviewCaption').textContent), null, { timeout: 15000 });
+      const caption = await page.locator('#wmPreviewCaption').innerText();
+      ok(/part of it runs off the page\. Use a shorter text\.$/.test(caption) && !/angle/.test(caption), `watermark: an impossible fit asks for a shorter text only (${caption})`);
       await context.close();
     }
     console.log('✓ Audit: one shared pdf.js worker reused across files; workers under the CSP; pages cut short not called blank; damaged pages reported; repeats noted; load failure once; long watermarks fit');

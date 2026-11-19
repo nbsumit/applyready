@@ -101,7 +101,7 @@
             "name": "Why does the portal say my photo is too small?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Because it is below the minimum. At 200 × 230 px our test photo was only 9.1 KB at full quality, under a 20 KB minimum. Enter the minimum in Minimum (KB) and the tool pads the JPEG to reach it without changing the picture."
+              "text": "Because it is below the minimum. At 200 × 230 px our test photo was only 9.4 KB at full quality, under a 20 KB minimum. Enter the minimum in Minimum (KB) and the tool pads the JPEG to reach it without changing the picture."
             }
           },
           {
@@ -109,7 +109,7 @@
             "name": "What pixel size gives the best 50 KB photo?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The size the form gives. Without one, a passport-photo size such as 350 × 450 px fitted in 50 KB at full quality in our test, while the full 1200 × 1600 photo needed quality 0.55."
+              "text": "The size the form gives. Without one, a passport-photo size such as 350 × 450 px fitted in 50 KB at full quality in our test, while the full 1200 × 1600 photo needed quality 0.54."
             }
           },
           {
@@ -117,7 +117,7 @@
             "name": "Is 50 KB the same as 50,000 bytes?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Not necessarily. With 1 KB counted as 1,024 bytes, 50 KB is 51,200 bytes. The result shows the exact byte count; if unsure how a portal counts, set the maximum to 49 KB."
+              "text": "Not quite: portals count 1 KB as either 1,000 or 1,024 bytes, so a 50 KB limit is 50,000 or 51,200 bytes. This tool keeps a 50 KB maximum at 50,000 bytes or less, so the file fits either way, and the result shows the exact byte count."
             }
           },
           {
@@ -260,7 +260,7 @@
 
       <header class="page-head">
         <h1 class="page-title">Resize image to 50 KB</h1>
-        <p class="page-lede">Fifty kilobytes is a common photo limit on job portals and application forms. The limit below is set to 50 KB (51,200 bytes): choose what you are preparing, add the image and download. It all happens in your browser; nothing is uploaded.</p>
+        <p class="page-lede">Fifty kilobytes is a common photo limit on job portals and application forms. The limit below is set to 50 KB, kept at 50,000 bytes or less so the file fits however the portal counts a kilobyte: choose what you are preparing, add the image and download. It all happens in your browser; nothing is uploaded.</p>
       </header>
       <!-- tool:start -->
     <section class="tool-section" id="resize-tool" aria-label="Image resizer">
@@ -518,21 +518,21 @@
 
       <section class="section prose" aria-labelledby="kb50DataHeading">
         <h2 id="kb50DataHeading">What fits in 50 KB: measured with this tool</h2>
-        <p>50 KB is 51,200 bytes. We ran this page's compressor, with a 50 KB maximum and JPEG output, on the synthetic test portrait (1200 × 1600 px, 428.9 KB) and test signature (1600 × 900 px) in our <a href="img/samples/test-portrait.jpg">sample set</a>. The tool starts at quality 0.95 and lowers it only when the file is too large. Measured in Chromium 141 on 24 October 2026.</p>
+        <p>A 50 KB maximum here means at most 50,000 bytes, and sizes are in KB of 1,000 bytes. We ran this page's compressor, with a 50 KB maximum and JPEG output, on the synthetic test portrait (1200 × 1600 px, 439.2 KB) and test signature (1600 × 900 px) in our <a href="img/samples/test-portrait.jpg">sample set</a>. The tool starts at quality 0.95 and lowers it only when the file is too large. Measured in Chromium 153 on 19 November 2026.</p>
         <div class="table-wrap"><table>
           <thead><tr><th>Image</th><th>Output pixels</th><th>Size at quality 0.95</th><th>Final size</th><th>Quality used</th></tr></thead>
           <tbody>
-            <tr><td>Portrait</td><td>200 × 230</td><td>9.1 KB</td><td>9.1 KB, or 20.0 KB with a 20 KB minimum</td><td>0.95</td></tr>
-            <tr><td>Portrait</td><td>350 × 450</td><td>26.5 KB</td><td>26.5 KB</td><td>0.95</td></tr>
-            <tr><td>Portrait</td><td>413 × 531</td><td>38.0 KB</td><td>38.0 KB</td><td>0.95</td></tr>
-            <tr><td>Portrait</td><td>600 × 800</td><td>94.7 KB</td><td>46.1 KB</td><td>0.89</td></tr>
-            <tr><td>Portrait</td><td>900 × 1200</td><td>262.5 KB</td><td>48.7 KB</td><td>0.73</td></tr>
-            <tr><td>Portrait</td><td>1200 × 1600</td><td>443.9 KB</td><td>48.1 KB</td><td>0.55</td></tr>
-            <tr><td>Signature</td><td>800 × 400</td><td>55.6 KB</td><td>48.0 KB</td><td>0.94</td></tr>
-            <tr><td>Signature</td><td>1600 × 800</td><td>243.0 KB</td><td>48.3 KB</td><td>0.70</td></tr>
+            <tr><td>Portrait</td><td>200 × 230</td><td>9.4 KB</td><td>9.4 KB, or 20.5 KB with a 20 KB minimum</td><td>0.95</td></tr>
+            <tr><td>Portrait</td><td>350 × 450</td><td>27.2 KB</td><td>27.2 KB</td><td>0.95</td></tr>
+            <tr><td>Portrait</td><td>413 × 531</td><td>39.1 KB</td><td>39.1 KB</td><td>0.95</td></tr>
+            <tr><td>Portrait</td><td>600 × 800</td><td>97.0 KB</td><td>47.3 KB</td><td>0.89</td></tr>
+            <tr><td>Portrait</td><td>900 × 1200</td><td>268.9 KB</td><td>49.9 KB</td><td>0.73</td></tr>
+            <tr><td>Portrait</td><td>1200 × 1600</td><td>464.1 KB</td><td>49.5 KB</td><td>0.54</td></tr>
+            <tr><td>Signature</td><td>800 × 400</td><td>57.0 KB</td><td>49.2 KB</td><td>0.94</td></tr>
+            <tr><td>Signature</td><td>1600 × 800</td><td>254.4 KB</td><td>48.1 KB</td><td>0.69</td></tr>
           </tbody>
         </table></div>
-        <p>Up to about 400 × 530 px, our test portrait fitted in 50 KB at full quality, with room to spare. The full-resolution 1200 × 1600 photo also fitted, but only at quality 0.55, where fine detail such as hair starts to smear. A small size such as 200 × 230 px is the opposite problem: the photo is far lighter than a 20 KB minimum. With 20 entered as the minimum, the tool padded the same JPEG to exactly 20.0 KB without changing the picture. Real phone photos carry more detail than our synthetic portrait, so expect somewhat larger numbers.</p>
+        <p>Up to about 400 × 530 px, our test portrait fitted in 50 KB at full quality, with room to spare. The full-resolution 1200 × 1600 photo also fitted, but only at quality 0.54, where fine detail such as hair starts to smear. A small size such as 200 × 230 px is the opposite problem: the photo is far lighter than a 20 KB minimum. With 20 entered as the minimum, the tool padded the same JPEG to 20.5 KB (20,484 bytes, at least 20 KB however a portal counts) without changing the picture. Real phone photos carry more detail than our synthetic portrait, so expect somewhat larger numbers.</p>
       </section>
 
       <section class="section prose" aria-labelledby="kb50FixHeading">
@@ -562,21 +562,21 @@
         <details class="faq-item">
           <summary class="faq-question">Why does the portal say my photo is too small?</summary>
           <div class="faq-answer">
-            <p>Because it is below the minimum. At 200 × 230 px our test photo was only 9.1 KB at full quality, under a 20 KB minimum. Enter the minimum in Minimum (KB) and the tool pads the JPEG to reach it without changing the picture.</p>
+            <p>Because it is below the minimum. At 200 × 230 px our test photo was only 9.4 KB at full quality, under a 20 KB minimum. Enter the minimum in Minimum (KB) and the tool pads the JPEG to reach it without changing the picture.</p>
           </div>
         </details>
 
         <details class="faq-item">
           <summary class="faq-question">What pixel size gives the best 50 KB photo?</summary>
           <div class="faq-answer">
-            <p>The size the form gives. Without one, a passport-photo size such as 350 × 450 px fitted in 50 KB at full quality in our test, while the full 1200 × 1600 photo needed quality 0.55.</p>
+            <p>The size the form gives. Without one, a passport-photo size such as 350 × 450 px fitted in 50 KB at full quality in our test, while the full 1200 × 1600 photo needed quality 0.54.</p>
           </div>
         </details>
 
         <details class="faq-item">
           <summary class="faq-question">Is 50 KB the same as 50,000 bytes?</summary>
           <div class="faq-answer">
-            <p>Not necessarily. With 1 KB counted as 1,024 bytes, 50 KB is 51,200 bytes. The result shows the exact byte count; if unsure how a portal counts, set the maximum to 49 KB.</p>
+            <p>Not quite: portals count 1 KB as either 1,000 or 1,024 bytes, so a 50 KB limit is 50,000 or 51,200 bytes. This tool keeps a 50 KB maximum at 50,000 bytes or less, so the file fits either way, and the result shows the exact byte count.</p>
           </div>
         </details>
 

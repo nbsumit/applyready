@@ -152,13 +152,21 @@
       body.append(p);
     }
     if (others.length) {
-      // Each reason already says what to choose instead, so no general advice is added after them.
-      const reasons = others.filter(o => o.reason).slice(0, 3);
-      const p = doc.createElement('p');
-      p.textContent = reasons.length
-        ? (others.length === 1 ? '' : others.length + ' files were not added. ') + reasons.map(o => o.reason).join(' ') + (others.length > reasons.length ? ' ' + (others.length - reasons.length) + ' more could not be used either.' : '')
-        : (others.length === 1 ? nameList(others.map(o => o.file)) + ' was not added' : others.length + ' files were not added: ' + nameList(others.map(o => o.file))) + '. Choose JPG, PNG or WebP images.';
-      body.append(p);
+      // Every refused file is named, each with its own reason on its own line (the reasons already
+      // say what to choose instead), as the batch tools list them.
+      const reasonOf = o => o.reason || `${o.file.name} could not be used. Choose JPG, PNG or WebP images.`;
+      if (others.length === 1) {
+        const p = doc.createElement('p');
+        p.textContent = reasonOf(others[0]);
+        body.append(p);
+      } else {
+        const p = doc.createElement('p');
+        p.textContent = `${others.length} files were not added:`;
+        const ul = doc.createElement('ul');
+        ul.className = 'notice__list';
+        others.forEach(o => { const li = doc.createElement('li'); li.textContent = reasonOf(o); ul.append(li); });
+        body.append(p, ul);
+      }
     }
     skippedNotice.append(icon, body);
     const stage = dropzone.parentElement;
@@ -219,7 +227,7 @@
   // The pixel size of an image after a full decode (the decoded copy is freed at once).
   async function measure(file, Ops) {
     if (Ops) {
-      const opened = await Ops.openImage(file, { name: file.name });
+      const opened = await Ops.openImage(file, { name: file.name, minSide: Ops.MIN_SIDE });
       const size = { width: opened.width, height: opened.height };
       opened.close();
       return size;
@@ -262,7 +270,7 @@
         <img class="page-row__thumb" src="${item.url}" alt="" style="transform: rotate(${item.rotation}deg)${item.rotation % 180 ? ' scale(.75)' : ''};">
         <div class="page-row__text">
           <strong class="page-row__name">${escapeHTML(item.name)}</strong>
-          <span class="page-row__meta">${dims.w} × ${dims.h} px · ${(item.file.size / 1024).toFixed(1)} KB</span>
+          <span class="page-row__meta">${dims.w} × ${dims.h} px · ${window.ApplyReadyFiles.formatBytes(item.file.size)}</span>
         </div>
         <div class="page-row__actions">
           <button type="button" class="btn btn-sm btn-icon page-row__handle" data-idx="${index}" title="Drag to reorder" aria-label="Reorder page ${index + 1}. Drag it, or use the arrow keys." aria-describedby="pageOrderHint">
@@ -543,7 +551,7 @@
       btnDownload.download = `Document_${items.length}_Pages.pdf`;
 
       if (statPages) statPages.textContent = `${items.length} ${items.length === 1 ? 'Page' : 'Pages'}`;
-      if (statSize) statSize.textContent = `${(blob.size / 1024).toFixed(1)} KB (${blob.size.toLocaleString()} bytes)`;
+      if (statSize) statSize.textContent = window.ApplyReadyFiles.formatExact(blob.size);
 
       if (resultArea) {
         resultArea.classList.remove('hidden');

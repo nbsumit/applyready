@@ -18,11 +18,13 @@
 })(typeof self !== 'undefined' ? self : this, function (Files) {
   'use strict';
 
-  const KB = 1024;
-  const MB = 1024 * 1024;
+  // Sizes follow the site's one rule (js/lib/files.js): 1 KB = 1,000 bytes and 1 MB = 1,000,000 bytes.
+  const KB = 1000;
+  const SITE_MB = 1000 * 1000;
+  const MB = 1024 * 1024; // internal reading budgets only
   // Deep inspection reads the whole file into memory; these limits keep a phone responsive.
   // Larger files still get their real type and size.
-  const DEEP_LIMITS = { image: 50 * MB, pdf: 100 * MB, zip: 500 * MB, text: 5 * MB };
+  const DEEP_LIMITS = { image: 50 * SITE_MB, pdf: 100 * SITE_MB, zip: 500 * SITE_MB, text: 5 * SITE_MB };
   const MAX_XML = 2 * MB; // largest docProps part we inflate (protects against ZIP bombs)
 
   /* ------------------------------------------------------------------ small helpers */
@@ -89,9 +91,13 @@
     return int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (frac ? '.' + frac : '');
   }
 
-  /** Sizes the way upload forms state them: bytes, KB of 1,024 bytes, MB of 1,048,576 bytes. */
+  /**
+   * Sizes the way the whole site shows them: exact bytes, KB of 1,000 bytes and MB of 1,000,000
+   * bytes, rounded up, so a size never reads as under a limit it is over (see Files.formatBytes).
+   */
   function sizes(n) {
-    return { bytes: n, kb: n / KB, mb: n / MB, text: `${group(n)} bytes`, kbText: `${group((n / KB).toFixed(1))} KB`, mbText: `${(n / MB).toFixed(n < 0.1 * MB ? 3 : n < 10 * MB ? 2 : 1)} MB` };
+    const up = (v, d) => (Math.ceil(v * 10 ** d - 1e-9) / 10 ** d).toFixed(d);
+    return { bytes: n, kb: n / KB, mb: n / SITE_MB, text: `${group(n)} bytes`, kbText: `${group(up(n / KB, 1).replace(/\.0$/, ''))} KB`, mbText: `${up(n / SITE_MB, n < 0.1 * SITE_MB ? 3 : 2)} MB` };
   }
 
   /* ------------------------------------------------------------------ TIFF / EXIF */
@@ -201,6 +207,7 @@
   }
 
   /* ------------------------------------------------------------------ JPEG */
+  const MAX_JPEG_STRAY = 64 * 1024; // stray bytes skipped between segments (as js/lib/image-ops.js)
   const SOF = new Set([0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF]);
 
   /**
@@ -211,10 +218,15 @@
   function walkJpeg(b, onSegment) {
     if (!(b[0] === 0xFF && b[1] === 0xD8)) return { damaged: true, reason: 'The file does not start like a JPEG.' };
     let i = 2;
-    let guard = 0;
+    let guard = 0, stray = 0;
     while (i < b.length) {
       if (++guard > 100000) return { damaged: true, reason: 'Too many segments.' };
-      if (b[i] !== 0xFF) return { damaged: true, reason: 'Unexpected data between JPEG segments.', at: i };
+      // Stray bytes between segments (zero padding, say): browsers skip them to the next marker, so
+      // do the same, within a bound. FF00 is a stuffed byte, not a marker. Skipped bytes are not kept.
+      if (b[i] !== 0xFF || b[i + 1] === 0x00) {
+        if (++stray > MAX_JPEG_STRAY) return { damaged: true, reason: 'Unexpected data between JPEG segments.', at: i };
+        i++; guard--; continue;
+      }
       const m = b[i + 1];
       if (m === undefined) return { damaged: true, reason: 'The file ends in the middle of a segment.' };
       if (m === 0xFF) { i++; continue; }
@@ -505,7 +517,8 @@
    * page's content can be read (its /Contents names a missing object or a non-stream, or Flate data
    * that gives nothing at all), so it shows blank. incomplete: some of it is broken, for example a
    * stream whose end is cut off; readers still show the part before the damage. A page with no
-   * /Contents is blank by design and is not reported. Flate streams are checked up to 16 MB in all.
+   * /Contents, an empty /Contents array or an empty content stream is blank by design and is not
+   * reported. Flate streams are checked up to 16 MB in all.
    * Same rules as ApplyReadyPdf.pageDamage (js/lib/pdf-kit.js), which the PDF tools use.
    */
   async function damagedPdfPages(PDFLib, doc) {
@@ -520,7 +533,8 @@
       if (obj instanceof P.PDFRawStream && budget > 0 && typeof P.decodePDFRawStream === 'function') {
         const f = obj.dict.lookup(FILTER);
         const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
-        if (flate) {
+        // An empty stream (0 bytes) is a blank page by design, like a page with no /Contents.
+        if (flate && obj.contents.length) {
           budget -= obj.contents.length;
           try { P.decodePDFRawStream(obj).decode(); }
           catch (e) { result = (await inflatesPartly(obj.contents)) === false ? 'bad' : 'partial'; }
@@ -538,7 +552,8 @@
       const parts = c instanceof P.PDFArray ? c.asArray().map(x => ctx.lookup(x)) : [c];
       const states = [];
       for (const part of parts) states.push(await state(part));
-      if (!states.length || states.every(x => x === 'bad')) unreadable.push(i);
+      if (!states.length) continue; // /Contents [] is a blank page by design too
+      if (states.every(x => x === 'bad')) unreadable.push(i);
       else if (states.some(x => x !== 'ok')) incomplete.push(i);
     }
     return { unreadable, incomplete };
@@ -899,7 +914,7 @@
     const limit = DEEP_LIMITS[real.kind === 'heic' || real.kind === 'tiff' ? 'image' : real.kind];
     if (limit && size > limit) {
       report.deep = false;
-      warn('info', `This file is ${sizes(size).mbText}, larger than the ${Math.round(limit / MB)} MB the checker reads in a browser. Only its type and size are shown.`);
+      warn('info', `This file is ${sizes(size).mbText}, larger than the ${Math.round(limit / SITE_MB)} MB the checker reads in a browser. Only its type and size are shown.`);
     }
 
     try {
@@ -1018,9 +1033,11 @@
     }
     const minKB = Number(r.minKB) || 0, maxKB = Number(r.maxKB) || 0;
     if (minKB || maxKB) {
-      const kb = report.size.kb;
+      // The site-wide rule (Files.maxBytes / Files.minBytes): a maximum is met at kb x 1,000 bytes and a
+      // minimum at kb x 1,024 bytes, so the verdict holds whichever way the portal counts a KB.
+      const limitBytes = Files && Files.maxBytes ? { max: Files.maxBytes, min: Files.minBytes } : { max: kb => Math.floor(kb * 1000), min: kb => Math.ceil(kb * 1024) };
       const required = minKB && maxKB ? `${group(minKB)} to ${group(maxKB)} KB` : minKB ? `At least ${group(minKB)} KB` : `At most ${group(maxKB)} KB`;
-      rows.push({ id: 'size', label: 'File size', required, actual: report.size.kbText, bytes: report.size.text, pass: (!minKB || report.size.bytes >= minKB * KB) && (!maxKB || report.size.bytes <= maxKB * KB) && report.size.bytes > 0 });
+      rows.push({ id: 'size', label: 'File size', required, actual: report.size.kbText, bytes: report.size.text, pass: (!minKB || report.size.bytes >= limitBytes.min(minKB, maxKB)) && (!maxKB || report.size.bytes <= limitBytes.max(maxKB)) && report.size.bytes > 0 });
     }
     const W = Number(r.width) || 0, H = Number(r.height) || 0;
     if (W || H) {

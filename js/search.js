@@ -45,7 +45,13 @@
 
   const devanagari = s => (/[\u0900-\u097F]/.test(s) ? DEVANAGARI.reduce((t, [hi, en]) => t.split(hi).join(` ${en} `), s.normalize('NFC')) : s);
   const norm = s => devanagari(String(s || '')).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
-    .replace(/(\d+)\s*(kb|mb|px|cm)\b/g, '$1$2').replace(/[^a-z0-9.\s]/g, ' ').replace(/\s+/g, ' ').trim();
+    .replace(/(\d+)\s*(kb|mb|px|cm)\b/g, '$1$2').replace(/[^a-z0-9.\s]/g, ' ').replace(/\s+/g, ' ').trim()
+    // "mark sheet", "marks card" and "mark list" are how a marksheet is often written (the PDF pages
+    // say "mark sheet" too): one word, so "sheet" does not pull in the passport photo print sheet.
+    .replace(/\bmarks? ?(sheets?|cards?|lists?)\b/g, 'marksheet');
+  // The site's light and dark themes are a switch in the header, not a tool: a search for them finds
+  // nothing, rather than a typo correction ("light" or "night" read as "right") picking a guide.
+  const THEME = /\b(dark|light|night|day|black|white)\s*(mode|theme)\b|\btheme\b/;
   // A file size typed with its unit ("300kb", "2mb"): a size limit. It matches the preset page for
   // that size when there is one ("50kb"), and otherwise reads as the unit, which names the tools
   // that make files smaller ("pdf 300kb" is a search for Compress PDF, not for every PDF tool).
@@ -192,7 +198,7 @@
     const index = root.APPLYREADY_TOOL_INDEX;
     if (!index) return [];
     const typed = norm(query);
-    if (!typed) return [];
+    if (!typed || THEME.test(typed)) return [];
     const tokens = words(typed).filter(w => !STOP.has(w));
     if (!tokens.length) return [];
     const known = vocabulary(index.items);

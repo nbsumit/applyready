@@ -18,6 +18,10 @@
   // Releases before the resume library kept one draft in localStorage. The resume builder moves it
   // into the library when it opens with saving on; until then it is listed here like a resume.
   const LEGACY = { draft: 'applyready_resume_draft', flag: 'applyready_draft_enabled' };
+  // Changes to a resume typed just before the page closed, copied by the resume builder in case its
+  // save was cut short (js/resume-library-ui.js, UNSAVED_PREFIX). They hold a whole resume, so they
+  // are listed, exported and deleted with the resumes, never counted as a setting.
+  const UNSAVED = 'applyready_resume_unsaved:';
 
   const ls = {
     get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -29,6 +33,16 @@
   let wiped = false;   // after "Delete everything" the database is not opened (and so not recreated) again
   let records = [];
   let legacy = null;   // { data, savedAt } or { raw } from LEGACY.draft, or null
+  let unsaved = [];    // [{ key, id, name, savedAt, data }] from UNSAVED copies
+
+  function readUnsaved() {
+    return ls.keys().filter(k => k.startsWith(UNSAVED)).map(key => {
+      let stash = null, data = null;
+      try { stash = JSON.parse(ls.get(key)); data = stash && typeof stash.json === 'string' ? JSON.parse(stash.json) : null; } catch (e) { stash = stash || null; }
+      const name = (stash && typeof stash.name === 'string' && stash.name.trim()) || (data ? Lib.suggestName(data) : Lib.DEFAULT_NAME);
+      return { key, id: stash && typeof stash.id === 'string' ? stash.id : '', name, savedAt: stash && stash.savedAt, data };
+    });
+  }
 
   // Opening the database creates it, so it is opened only when it already exists: looking at this
   // page must not store anything. Browsers that cannot list databases open it as before.
@@ -79,6 +93,7 @@
   async function loadResumes() {
     panelNotice('ydResumeError', '');
     legacy = Lib.readLegacyDraft(ls.get(LEGACY.draft));
+    unsaved = readUnsaved();
     if (!(await databaseExists())) { records = []; savingOff = false; renderResumes(); return; }
     try {
       records = sortRecords(await Store.getAll('resumes'));
@@ -110,15 +125,34 @@
       </li>`;
   }
 
+  function unsavedRows() {
+    return unsaved.map((u, i) => {
+      const when = u.savedAt ? ` (${fmtDate(u.savedAt)})` : '';
+      const what = savingOff
+        ? `Changes typed just before the page closed${when}, not saved. Saving is off on this device, so the resume builder removes them when it opens.`
+        : `Changes typed just before the page closed${when}, not saved yet. The resume builder saves them the next time it opens.`;
+      return `
+      <li class="file-row" data-unsaved="${i}">
+        <span class="file-row__thumb" aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span>
+        <div class="file-row__text"><span class="file-row__name">Unsaved changes: ${esc(u.name)}</span><span class="file-row__meta">${esc(what)}</span></div>
+        <div class="file-row__actions">
+          ${u.data ? `<button type="button" class="btn btn-sm" data-act="unsaved-download" aria-label="Download the unsaved changes of ${esc(u.name)}">Download</button>` : ''}
+          <button type="button" class="btn btn-sm btn-danger-ghost" data-act="unsaved-delete" aria-label="Delete the unsaved changes of ${esc(u.name)}">Delete</button>
+        </div>
+      </li>`;
+    }).join('');
+  }
+
   function renderResumes() {
     const list = $('ydResumeList');
     const n = records.length;
     const damaged = records.filter(r => !r.ok).length;
     const count = n ? plural(n, 'resume') + (damaged ? `, ${damaged} damaged` : '') : '';
-    $('ydResumeCount').textContent = [count, legacy ? '1 earlier draft' : ''].filter(Boolean).join(', ') || 'None';
-    $('ydResumeEmpty').hidden = n > 0 || !!legacy;
+    const pending = unsaved.length ? `unsaved changes of ${plural(unsaved.length, 'resume')}` : '';
+    $('ydResumeCount').textContent = [count, legacy ? '1 earlier draft' : '', pending].filter(Boolean).join(', ') || 'None';
+    $('ydResumeEmpty').hidden = n > 0 || !!legacy || unsaved.length > 0;
     $('ydSavingOff').hidden = !savingOff;
-    list.hidden = n === 0 && !legacy;
+    list.hidden = n === 0 && !legacy && !unsaved.length;
     list.innerHTML = records.map((r, i) => r.ok ? `
       <li class="file-row" data-index="${i}" data-id="${esc(r.id)}">
         <span class="file-row__thumb" aria-hidden="true"><i class="fa-solid fa-file-lines"></i></span>
@@ -132,16 +166,34 @@
           <button type="button" class="btn btn-sm" data-act="raw" aria-label="Download a raw copy of ${esc(r.name)}">Download raw copy</button>
           <button type="button" class="btn btn-sm btn-danger-ghost" data-act="delete" aria-label="Delete ${esc(r.name)}">Delete</button>
         </div>
-      </li>`).join('') + legacyRow();
+      </li>`).join('') + legacyRow() + unsavedRows();
     const good = records.filter(r => r.ok).length;
-    $('ydExport').hidden = good === 0;
-    $('ydDeleteResumes').hidden = n === 0 && !legacy;
+    $('ydExport').hidden = good === 0 && !unsaved.some(u => u.data);
+    $('ydDeleteResumes').hidden = n === 0 && !legacy && !unsaved.length;
+  }
+
+  function unsavedAction(act, u) {
+    if (!u) return;
+    if (act === 'unsaved-download') {
+      const at = u.savedAt || Date.now();
+      Files.download(new Blob([JSON.stringify(Lib.singleBackup({ name: u.name, data: u.data, createdAt: at, updatedAt: at }), null, 2)], { type: 'application/json' }), Lib.fileName(u.name, 'unsaved_changes_backup.json'));
+      announce('Unsaved changes downloaded as a backup file. You can import it in the resume builder or on this page.');
+      return;
+    }
+    return (async () => {
+      const okay = ui().confirm ? await ui().confirm({ title: 'Delete these unsaved changes?', message: `The changes to “${u.name}” typed just before the page closed will be removed from this browser. A saved version of that resume, if there is one, is not touched.`, confirmLabel: 'Delete', danger: true }) : true;
+      if (!okay) return;
+      ls.remove(u.key);
+      await loadResumes();
+      done(`Deleted the unsaved changes of “${u.name}”.`);
+    })();
   }
 
   $('ydResumeList').addEventListener('click', async e => {
     const btn = e.target.closest('button[data-act]');
     if (!btn) return;
     if (btn.dataset.act === 'legacy-download' || btn.dataset.act === 'legacy-delete') { legacyAction(btn.dataset.act); return; }
+    if (btn.dataset.act === 'unsaved-download' || btn.dataset.act === 'unsaved-delete') { unsavedAction(btn.dataset.act, unsaved[Number(btn.closest('[data-unsaved]').dataset.unsaved)]); return; }
     const r = records[Number(btn.closest('[data-index]').dataset.index)];
     if (!r || r.ok) return;
     if (btn.dataset.act === 'raw') {
@@ -153,7 +205,7 @@
       const okay = ui().confirm ? await ui().confirm({ title: 'Delete this damaged resume?', message: `“${r.name}” will be removed from this browser. Download a raw copy first if you want to try to recover it.`, confirmLabel: 'Delete', danger: true }) : true;
       if (!okay) return;
       if (!r.id) { panelNotice('ydResumeError', 'This damaged entry has no usable identifier, so it can only be removed with Delete all resumes.', true); return; }
-      try { await Store.remove('resumes', r.id); postDeleted([r]); await loadResumes(); done(`Deleted “${r.name}”.`); }
+      try { await Store.remove('resumes', r.id); ls.remove(UNSAVED + r.id); postDeleted([r]); await loadResumes(); done(`Deleted “${r.name}”.`); }
       catch (err) { panelNotice('ydResumeError', 'That resume could not be deleted. Close other ApplyReady tabs and try again.', true); }
     }
   });
@@ -184,13 +236,15 @@
 
   $('ydExport').addEventListener('click', () => {
     const good = records.filter(r => r.ok).map(r => r.rec);
-    if (!good.length) return;
-    Files.download(new Blob([JSON.stringify(Lib.libraryBackup(good), null, 2)], { type: 'application/json' }), Lib.fileName('ApplyReady', `resumes_backup_${new Date().toISOString().slice(0, 10)}.json`));
+    // Unsaved changes go in too, as entries of their own, so the backup holds everything listed here.
+    const pending = unsaved.filter(u => u.data).map(u => ({ name: `${u.name} (unsaved changes)`, data: u.data, createdAt: u.savedAt || Date.now(), updatedAt: u.savedAt || Date.now() }));
+    if (!good.length && !pending.length) return;
+    Files.download(new Blob([JSON.stringify(Lib.libraryBackup(good.concat(pending)), null, 2)], { type: 'application/json' }), Lib.fileName('ApplyReady', `resumes_backup_${new Date().toISOString().slice(0, 10)}.json`));
     const skipped = records.length - good.length;
     // Resumes saved by an earlier release with text over the limits are backed up shortened (js/resume-library.js inspect).
     const trimmed = good.filter(rec => rec.trimmed).length;
     const shortened = trimmed ? ` ${plural(trimmed, 'resume')} ${trimmed === 1 ? 'has' : 'have'} text over the limits and ${trimmed === 1 ? 'is' : 'are'} shortened in the file; open ${trimmed === 1 ? 'it' : 'each one'} in the resume builder and use Download the original for the full text.` : '';
-    done(`Backup of ${plural(good.length, 'resume')} downloaded.${skipped ? ` ${plural(skipped, 'damaged record')} ${skipped === 1 ? 'was' : 'were'} not included; use Download raw copy for ${skipped === 1 ? 'it' : 'them'}.` : ''}${shortened} Keep the file somewhere safe.`);
+    done(`Backup of ${plural(good.length, 'resume')}${pending.length ? ` and the unsaved changes of ${plural(pending.length, 'resume')}` : ''} downloaded.${skipped ? ` ${plural(skipped, 'damaged record')} ${skipped === 1 ? 'was' : 'were'} not included; use Download raw copy for ${skipped === 1 ? 'it' : 'them'}.` : ''}${shortened} Keep the file somewhere safe.`);
   });
 
   let importing = false;
@@ -228,6 +282,7 @@
         let msg = `Added ${plural(added, 'resume')} from ${file.name} as new entries; nothing was overwritten.`;
         if (parsed.skipped) msg += ` ${plural(parsed.skipped, 'resume')} could not be read and ${parsed.skipped === 1 ? 'was' : 'were'} skipped.`;
         if (parsed.overLimit) msg += ` One import holds at most ${Lib.MAX_IMPORT_RESUMES} resumes, so the last ${parsed.overLimit} in the file ${parsed.overLimit === 1 ? 'was' : 'were'} not imported.`;
+        if (parsed.trimmed) msg += ` ${parsed.trimmed === 1 ? (parsed.resumes.length === 1 ? 'It had' : 'One had') : `${parsed.trimmed} had`} text over the limits (a box over 50,000 characters or a list over 150 entries), so ${parsed.trimmed === 1 ? 'it was' : 'they were'} shortened to fit; the file you imported is unchanged.`;
         panelNotice('ydImportResult', msg);
       }
       await renderStorage();
@@ -243,9 +298,10 @@
     await loadResumes(); // count what is stored now, not when the page opened
     const n = records.length;
     const hadDraft = !!legacy;
-    if (!n && !hadDraft) return;
-    const what = [n ? plural(n, 'saved resume') : '', hadDraft ? 'the draft from an earlier version' : ''].filter(Boolean).join(' and ');
-    const okay = ui().confirm ? await ui().confirm({ title: `Delete ${what}?`, message: `Every saved resume${hadDraft ? ', and the draft from an earlier version,' : ''} will be removed from this browser. This cannot be undone. Download a backup first if you might need ${n + (hadDraft ? 1 : 0) === 1 ? 'it' : 'them'} again.`, confirmLabel: 'Delete all resumes', danger: true }) : true;
+    const pending = unsaved.slice();
+    if (!n && !hadDraft && !pending.length) return;
+    const what = [n ? plural(n, 'saved resume') : '', hadDraft ? 'the draft from an earlier version' : '', pending.length ? `the unsaved changes of ${plural(pending.length, 'resume')}` : ''].filter(Boolean).join(' and ');
+    const okay = ui().confirm ? await ui().confirm({ title: `Delete ${what}?`, message: `Every saved resume${hadDraft ? ', and the draft from an earlier version,' : ''}${pending.length ? ', and every unsaved change,' : ''} will be removed from this browser. This cannot be undone. Download a backup first if you might need ${n + (hadDraft ? 1 : 0) + pending.length === 1 ? 'it' : 'them'} again.`, confirmLabel: 'Delete all resumes', danger: true }) : true;
     if (!okay) return;
     const gone = records.slice();
     try {
@@ -255,6 +311,7 @@
         postDeleted(gone);
       }
       if (hadDraft) { ls.remove(LEGACY.draft); ls.remove(LEGACY.flag); }
+      pending.forEach(u => ls.remove(u.key));
       await loadResumes();
       await renderStorage();
       done(`Deleted ${what}.`);
@@ -413,7 +470,7 @@
     btn.hidden = all;
     note.hidden = false;
     note.textContent = all
-      ? 'Every tool and guide is saved for offline use.'
+      ? 'Every tool and guide is saved for offline use. One exception: the character maps for PDFs whose text is in Chinese, Japanese or Korean are not saved (they are large), so such text in a PDF needs a connection the first time it is read or drawn.'
       : `${info.saved} of the site’s ${info.files} files are saved. Saving every tool and guide downloads up to about ${Files.formatBytes(info.transfer)} and keeps about ${Files.formatBytes(info.bytes)} on this device.`;
   }
   let savingSite = false;
@@ -434,7 +491,7 @@
     progress.hidden = true;
     await renderOffline();
     await renderStorage();
-    if (result && result.failed === 0) done('Every tool and guide is saved for offline use on this device.');
+    if (result && result.failed === 0) done('Every tool and guide is saved for offline use on this device. One exception: the character maps for PDFs whose text is in Chinese, Japanese or Korean are not saved (they are large), so such text in a PDF needs a connection the first time it is read or drawn.');
     else if (result && result.failed > 0) done(`${result.saved} of ${result.files} files are saved for offline use; ${plural(result.failed, 'file')} could not be downloaded. Check your connection and select Save every tool for offline use again.`);
     else done('The files could not be saved for offline use. Check your connection, reload the page and try again.');
   });
@@ -450,10 +507,13 @@
   /* ---------------------------------------------------------------- delete everything */
   $('ydDeleteAll').addEventListener('click', async () => {
     await loadResumes(); // count what is stored now, not when the page opened
-    const keys = ls.keys().filter(k => k !== LEGACY.draft); // the draft is listed with the resumes
+    // The draft and unsaved changes are listed with the resumes, not as settings.
+    const keys = ls.keys().filter(k => k !== LEGACY.draft && !k.startsWith(UNSAVED));
+    const pending = unsaved.slice();
     const n = records.length;
     const parts = [plural(n, 'saved resume')];
     if (legacy) parts.push('a draft from an earlier version');
+    if (pending.length) parts.push(`the unsaved changes of ${plural(pending.length, 'resume')}`);
     if (keys.length) parts.push(plural(keys.length, 'setting'));
     if (offlineInfo.files) parts.push(`the offline copy (${Files.formatBytes(offlineInfo.bytes)})`);
     parts.push('the offline service');
@@ -472,6 +532,9 @@
     wiped = true;
     ls.remove(LEGACY.draft);
     if (legacy) { removed.push('the draft from an earlier version'); legacy = null; }
+    pending.forEach(u => ls.remove(u.key));
+    if (pending.length) removed.push(`the unsaved changes of ${plural(pending.length, 'resume')}`);
+    unsaved = [];
     // 2. Settings in localStorage and sessionStorage
     keys.forEach(k => ls.remove(k));
     try { Object.keys(sessionStorage).filter(k => k.startsWith('applyready_')).forEach(k => sessionStorage.removeItem(k)); } catch (e) { /* unavailable */ }

@@ -496,6 +496,17 @@ check('Job keywords keep .NET, Go, R and two-letter acronyms, and match them onl
   for (const term of ['CV', 'HR', 'DL']) assert(!adMatch.missing.includes(term), `${term} is not listed as missing`);
   const acronyms = keywords.extractKeywords('Designer for UI and UX work, with QA, BI dashboards and CI pipelines.');
   for (const term of ['UI', 'UX', 'QA', 'BI', 'CI']) assert(acronyms.includes(term), `${term} is a key term`);
+  // RESU-4: common job-advert filler and pay figures are not key terms.
+  const filler = keywords.extractKeywords('We are looking for a passionate, dynamic and motivated candidate to join our fast-paced team. The ideal candidate will have a strong work ethic and the ability to work independently. Responsibilities include handling day-to-day tasks, ensuring timely delivery and other duties as assigned. Immediate joiners preferred. Go-getter attitude, go the extra mile. Location: Pune. CTC 3.5 LPA, salary 15k, 25k-40k per month.').map(t => t.toLowerCase());
+  for (const term of ['passionate', 'dynamic', 'motivated', 'fast-paced', 'ethic', 'independently', 'handling', 'day-to-day', 'tasks', 'ensuring', 'timely', 'assigned', 'immediate', 'joiners', 'go-getter', 'attitude', 'extra', 'mile', 'location', 'ctc', 'lpa', '15k', '25k-40k', 'month']) assert(!filler.includes(term), `"${term}" is not a key term (${filler.join(', ')})`);
+  // .NET Core stays one term, and ASP.NET Core in a resume holds it.
+  const core = keywords.matchKeywords('Skills: Python, .NET Core, Power BI.', 'Built services in ASP.NET Core.');
+  assert(core.keywords.includes('.NET Core') && !core.keywords.includes('Core') && core.found.includes('.NET Core'), `.NET Core is one term, found in ASP.NET Core (${JSON.stringify(core)})`);
+  // RESU-5: C++ counts inside a slash group, as C does.
+  for (const text of ['C/C++ embedded work', 'Experience in C++/Qt']) {
+    const m = keywords.matchKeywords('Must know C++, C#, .NET, Go, R and AI.', text);
+    assert(m.found.includes('C++') && !m.missing.includes('C++'), `"${text}" holds C++ (${JSON.stringify(m.found)})`);
+  }
 });
 (async () => {
   const { ensureMinKB } = require('../js/resizer');

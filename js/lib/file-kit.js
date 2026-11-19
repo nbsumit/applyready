@@ -11,12 +11,13 @@
                   holds files; tooMany(room, offered, context) => the message when more are offered,
                   onFiles(files, infos, context), onReject(messages, context), paste: true,
                   validate: false to accept any file unchecked (infos are then null),
-                  checkPixels: true to also refuse images over 50 MP, from their header (tooManyPixels),
+                  checkPixels: true to also refuse images over 50 MP, or whose pixel size cannot
+                  be read, from their header (tooManyPixels),
                   context: () => value, read when files arrive and passed back after checking,
                   so a tool can deliver them where they were dropped (applicant workspaces) }
    ApplyReadyFileKit.thumbnail(file, size) -> Promise<objectURL|null>   small JPEG preview; null when
                   the browser cannot decode it or the image is too large to decode safely
-   ApplyReadyFileKit.tooManyPixels(file) -> Promise<message|''>          refuses images over 50 MP
+   ApplyReadyFileKit.tooManyPixels(file) -> Promise<message|''>          refuses images over 50 MP or of unknown size
    ApplyReadyFileKit.downloadZip(entries, name, { button, signal })      ZIP with progress
    ApplyReadyFileKit.guardUnload(() => boolean)                          warn before losing results
    ApplyReadyFileKit.announce(message)                                   polite screen-reader update
@@ -118,26 +119,15 @@
   }
 
   /**
-   * The pixel size an image declares in its header, read from its first bytes without decoding it
-   * ({ width, height } or null when it cannot be read).
-   */
-  async function imageHeader(file) {
-    const Ops = root.ApplyReadyImageOps;
-    if (!Ops || !file || !file.slice) return null;
-    try { return Ops.readHeader(new Uint8Array(await file.slice(0, 512 * 1024).arrayBuffer())); }
-    catch (e) { return null; }
-  }
-
-  /**
-   * A message when an image declares more pixels than the tools decode safely (the same 50 MP limit
-   * as the image tools), otherwise ''. A small file can declare a huge size, and decoding it, even
-   * for a preview, can take gigabytes of memory and close the tab on a phone.
+   * A message when an image cannot be decoded safely, otherwise '': it declares more pixels than the
+   * tools decode (the same 50 MP limit as the image tools), or its pixel size cannot be read from its
+   * header at all. A small file can declare a huge size, and decoding it, even for a preview, can take
+   * gigabytes of memory and close the tab on a phone (ApplyReadyImageOps.checkHeader).
    */
   async function tooManyPixels(file) {
     const Ops = root.ApplyReadyImageOps;
-    const h = await imageHeader(file);
-    if (!h || !Ops || h.width * h.height <= Ops.MAX_PIXELS) return '';
-    return `${file.name || 'This image'} is ${Math.round(h.width * h.height / 1e6)} megapixels (${h.width} × ${h.height} px), more than the ${Ops.MAX_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`;
+    if (!Ops || !file || !file.slice) return '';
+    return (await Ops.checkHeader(file, file.name || 'This image')).message;
   }
 
   /**

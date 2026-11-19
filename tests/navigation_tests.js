@@ -92,6 +92,9 @@ for (const [q, id] of [['thumb impression', 'signature-resizer'], ['left thumb',
 ok(search('backup').includes('guide:how-to-back-up-and-restore-resumes'), 'search: "backup" also offers the backup guide');
 for (const q of ['marksheet', 'aadhaar']) ok(['image-to-pdf', 'compress-pdf'].includes(search(q)[0]), `search: "${q}" offers a PDF tool (${search(q)})`);
 for (const q of ['dark mode', 'mode']) ok(!search(q).includes('organize-pdf'), `search: "${q}" is not corrected to "move" (${search(q)})`);
+// RESU-9: "mark sheet" (the site's own spelling) is a marksheet, and the theme switch is not a tool.
+for (const q of ['mark sheet', 'marks card', 'mark list', 'compress mark sheet']) ok(['image-to-pdf', 'compress-pdf'].includes(search(q)[0]) && !search(q).includes('passport-photo-print'), `search: "${q}" offers a PDF tool, not the print sheet (${search(q)})`);
+for (const q of ['light mode', 'night mode', 'dark theme', 'dark mode', 'theme']) ok(search(q).length === 0, `search: "${q}" finds no tool (${search(q)})`);
 // The home row and the empty search dialog do not suggest that use is measured.
 ok(/id="homePopularTitle">Common tasks</.test(read('index.html')) && !/Popular tools|Most used/.test(read('index.html') + read('js/search.js')), 'home and search: the hand-picked list is not called "most used" or "popular"');
 const index = sandbox.APPLYREADY_TOOL_INDEX.items;
