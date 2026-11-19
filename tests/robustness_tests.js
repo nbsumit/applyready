@@ -15,8 +15,13 @@ const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/jav
 // how much the offline service downloads. swOverride replaces sw.js to simulate a new release.
 const served = { bytes: 0, paths: [] };
 let swOverride = null;
+// Paths the server refuses (the connection is dropped, as with no network). Playwright's offline mode
+// does not stop requests a service worker makes in every Chromium build, so a step that needs a file to
+// be unreachable while offline also refuses it here.
+const unreachable = new Set();
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+  if (unreachable.has(pathname)) { req.socket.destroy(); return; }
   const file = path.resolve(root, '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname));
   if (!file.startsWith(root + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (e, d) => {
@@ -195,8 +200,11 @@ function mixedPdf(jpeg) {
   ok(/opens, but needs a connection the first time it works on a file/.test(mergeItem) && /PDF tool marked below opens, but cannot work on files until the PDF library is kept/.test(off.status), `offline page: a PDF tool without its library is marked (${mergeItem} | ${off.status})`);
   ok(!/needs a connection/.test(await page.evaluate(() => { const a = document.querySelector('#offlineSaved a[href="/resize-image-to-50kb.html"]'); return a ? a.parentElement.textContent : ''; })), 'offline page: an image tool is not marked');
   await page.goto(origin + '/merge-pdf.html');
+  for (const f of fs.readdirSync(path.join(root, 'js/vendor'), { recursive: true })) if (/^pdf/.test(f)) unreachable.add('/js/vendor/' + f.split(path.sep).join('/'));
   await page.setInputFiles('#mergeDropInput', { name: 'mixed.pdf', mimeType: 'application/pdf', buffer: mixedPdf(sample('test-portrait.jpg')) });
-  await page.waitForFunction(() => /offline/.test(document.getElementById('mergeError').textContent), null, { timeout: 20000 });
+  await page.waitForFunction(() => /offline/.test(document.getElementById('mergeError').textContent), null, { timeout: 20000 })
+    .catch(async e => { throw new Error(`merge offline: no offline message; mergeError="${await page.locator('#mergeError').innerText().catch(() => '')}" (${e.message})`); });
+  unreachable.clear();
   ok(/This device is offline, and the PDF library this tool needs is not kept on it yet/.test(await page.locator('#mergeError').innerText()), `merge offline: the message says the PDF library is not kept yet (${await page.locator('#mergeError').innerText()})`);
   await context.setOffline(false);
   keys = await cachedPaths();
