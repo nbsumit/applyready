@@ -284,7 +284,7 @@
   "width": 986,
   "height": 649,
   "alt": "The My resumes window of the ApplyReady resume builder listing three resumes saved in this browser, each with when it was edited, its template, and Open, Rename, Duplicate, Export and Delete buttons.",
-  "bytes": 38048,
+  "bytes": 37992,
   "phone": {
    "file": "img/guides/phone/tut-library.webp",
    "width": 720,
@@ -298,7 +298,7 @@
   "width": 901,
   "height": 649,
   "alt": "The top of My resumes with the Import backup and Export all buttons, the list of saved resumes, the switch for saving on this device and the Delete all saved resumes button.",
-  "bytes": 38596,
+  "bytes": 38620,
   "phone": {
    "file": "img/guides/phone/tut-library-backup.webp",
    "width": 720,
@@ -318,7 +318,7 @@
    "width": 620,
    "height": 1380,
    "scale": 2,
-   "bytes": 40624
+   "bytes": 40648
   }
  },
  "tut-merge-order": {
