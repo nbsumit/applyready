@@ -20,10 +20,12 @@
 })(typeof self !== 'undefined' ? self : this, function (root, isNode) {
   'use strict';
 
-  const MB = 1024 * 1024;
+  // Sizes, size limits and number grouping follow the one rule in js/lib/files.js (1 KB = 1,000 bytes).
+  const Files = isNode ? require('./files.js') : root.ApplyReadyFiles;
+  const MB = 1024 * 1024; // internal memory budgets
   const LIMITS = {
-    fileBytes: 100 * MB,      // one PDF
-    totalBytes: 500 * MB,     // all files in one job (merge)
+    fileBytes: 100 * Files.MB, // one PDF (100 MB, counted as the site counts sizes)
+    totalBytes: 500 * Files.MB, // all files in one job (merge)
     maxFiles: 50,             // files in one merge
     // Pages in one job that copies or changes pages (merge, split, page numbers, watermark). A small
     // crafted file can claim hundreds of thousands of pages, and copying them would freeze the tab.
@@ -38,7 +40,7 @@
   };
 
   // Numbers in messages are grouped the way the rest of the site writes them (2,000 pages).
-  const grouped = n => Number(n).toLocaleString('en-IN');
+  const grouped = n => Files.grouped(n);
   /**
    * What to tell someone whose PDF has more pages than a tool takes. Splitting it first helps only
    * when Split PDF can open the file; past LIMITS.pages it cannot either, so say that plainly instead
@@ -1242,11 +1244,12 @@
     return { bytes, pageCount: 1, fits: bytes.length <= o.targetBytes, allPagesFit: enc.fits, minDpi: Math.round(enc.dpi) };
   }
 
-  /* A size limit typed in KB is met when the file is at most kb x 1,000 bytes, the smaller of the
-     two ways portals count a KB, so it is accepted either way. Sizes shown next to that limit use the
-     same 1,000-byte KB and are rounded up, so a size can never read as under a limit it is over. */
+  /* A size limit typed in KB is met when the file is at most kb x 1,000 bytes (Files.maxBytes), the
+     smaller of the two ways portals count a KB, so it is accepted either way. Sizes use the site's one
+     size format (Files.formatBytes: 1 KB = 1,000 bytes, rounded up), so a size can never read as under
+     a limit it is over, and the same file shows the same size in every tool. */
   const limitKB = bytes => (Math.ceil(bytes / 100) / 10).toFixed(1);
-  const limitSize = bytes => (bytes < 1000 * 1000 ? `${limitKB(bytes)} KB` : `${(Math.ceil(bytes / 100000) / 10).toFixed(1)} MB`);
+  const limitSize = bytes => Files.formatBytes(bytes);
 
   /**
    * The result line of Compress PDF. bytes: the size offered; kb: the limit; kept: '' (compressed),
@@ -1254,9 +1257,9 @@
    * Returns { met, text }.
    */
   function compressResult(bytes, kb, kept) {
-    const met = bytes <= kb * 1000;
+    const met = bytes <= Files.maxBytes(kb);
     const exact = `${grouped(bytes)} bytes, under ${kb} KB whether a KB is counted as 1,000 or 1,024 bytes`;
-    const size = `${grouped(bytes)} bytes, ${limitKB(bytes)} KB`;
+    const size = `${limitSize(bytes)}, ${grouped(bytes)} bytes`;
     // Over kb x 1,000 bytes but not over kb x 1,024: some portals take it, some do not.
     const either = !met && bytes <= kb * 1024 ? ` A portal that counts 1 KB as 1,024 bytes would accept it (up to ${grouped(kb * 1024)} bytes); one that counts 1,000 bytes would not.` : '';
     let text;

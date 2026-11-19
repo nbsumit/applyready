@@ -262,7 +262,7 @@
         <img class="page-row__thumb" src="${item.url}" alt="" style="transform: rotate(${item.rotation}deg)${item.rotation % 180 ? ' scale(.75)' : ''};">
         <div class="page-row__text">
           <strong class="page-row__name">${escapeHTML(item.name)}</strong>
-          <span class="page-row__meta">${dims.w} × ${dims.h} px · ${(item.file.size / 1024).toFixed(1)} KB</span>
+          <span class="page-row__meta">${dims.w} × ${dims.h} px · ${window.ApplyReadyFiles.formatBytes(item.file.size)}</span>
         </div>
         <div class="page-row__actions">
           <button type="button" class="btn btn-sm btn-icon page-row__handle" data-idx="${index}" title="Drag to reorder" aria-label="Reorder page ${index + 1}. Drag it, or use the arrow keys." aria-describedby="pageOrderHint">
@@ -543,7 +543,7 @@
       btnDownload.download = `Document_${items.length}_Pages.pdf`;
 
       if (statPages) statPages.textContent = `${items.length} ${items.length === 1 ? 'Page' : 'Pages'}`;
-      if (statSize) statSize.textContent = `${(blob.size / 1024).toFixed(1)} KB (${blob.size.toLocaleString()} bytes)`;
+      if (statSize) statSize.textContent = window.ApplyReadyFiles.formatExact(blob.size);
 
       if (resultArea) {
         resultArea.classList.remove('hidden');

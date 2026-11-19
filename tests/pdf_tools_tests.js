@@ -22,6 +22,7 @@ const AxeBuilder = require('@axe-core/playwright').default;
 const root = path.resolve(__dirname, '..');
 const P = require('../js/vendor/pdf-lib.min.js');
 const Kit = require('../js/lib/pdf-kit.js');
+const Files = require('../js/lib/files.js');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ar-pdf-'));
 let checks = 0;
 const ok = (c, m) => { assert(c, m); checks++; };
@@ -270,12 +271,15 @@ async function auditUnits() {
   // rounded up, so a result over the limit never reads as under it.
   {
     const over = Kit.compressResult(505000, 500, '');
-    ok(!over.met && /could not get under 500 KB\. The smallest readable version is 5,05,000 bytes, 505\.0 KB\. A portal that counts 1 KB as 1,024 bytes would accept it/.test(over.text), `compress: a result between 500,000 and 512,000 bytes is not called smaller than 500 KB (${over.text})`);
+    ok(!over.met && /could not get under 500 KB\. The smallest readable version is 505 KB, 505,000 bytes\. A portal that counts 1 KB as 1,024 bytes would accept it/.test(over.text), `compress: a result between 500,000 and 512,000 bytes is not called smaller than 500 KB (${over.text})`);
     const kept = Kit.compressResult(505000, 500, 'larger');
-    ok(!kept.met && /your original \(5,05,000 bytes, 505\.0 KB\) is kept/.test(kept.text), `compress: the kept original gives the same size (${kept.text})`);
+    ok(!kept.met && /your original \(505 KB, 505,000 bytes\) is kept/.test(kept.text), `compress: the kept original gives the same size (${kept.text})`);
     ok(!/1,024 bytes would accept/.test(Kit.compressResult(600000, 500, '').text), 'compress: no 1,024-byte note when no portal would accept it');
     ok(Kit.compressResult(500000, 500, '').met && !Kit.compressResult(500001, 500, '').met, 'compress: 500 KB means at most 500,000 bytes');
-    ok(Kit.limitKB(500001) === '500.1' && Kit.limitKB(505000) === '505.0' && Kit.limitKB(499000) === '499.0' && Kit.limitSize(2000000) === '2.0 MB', `compress: sizes next to the limit are 1,000-byte KB rounded up (${Kit.limitKB(500001)}, ${Kit.limitSize(2000000)})`);
+    ok(Kit.limitKB(500001) === '500.1' && Kit.limitKB(505000) === '505.0' && Kit.limitKB(499000) === '499.0' && Kit.limitSize(2000000) === '2 MB' && Kit.limitSize(505001) === '505.1 KB', `compress: sizes next to the limit are 1,000-byte KB rounded up (${Kit.limitKB(500001)}, ${Kit.limitSize(2000000)})`);
+    // TOOL-3: the size format is the site's one format, so a file reads the same in every tool, and a
+    // file just over 1 MB is not shown a whole 0.1 MB larger.
+    ok(Kit.limitSize(1000001) === '1.01 MB' && Kit.limitSize(4544210) === Files.formatBytes(4544210) && Kit.limitSize(5317) === Files.formatBytes(5317), `compress: sizes use Files.formatBytes (${Kit.limitSize(1000001)}, ${Kit.limitSize(4544210)})`);
   }
 
   // A one-page PDF whose Flate content stream lost its last 10 bytes: readers still show 59 of its

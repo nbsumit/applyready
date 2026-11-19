@@ -97,7 +97,7 @@
             "name": "Is a 50 KB limit the same as 50,000 bytes?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Usually not. Most portals count 1 KB as 1,024 bytes, so 50 KB is 51,200 bytes. The checker shows the size in bytes, in KB of 1,024 bytes and in MB, so you can compare it with the limit exactly. If a file is just under the limit, leave a little room, because some portals count 1 KB as 1,000 bytes."
+              "text": "Not always: portals count 1 KB as either 1,000 or 1,024 bytes, so a 50 KB limit is 50,000 or 51,200 bytes. The checker shows the exact size in bytes, and in KB and MB the way every ApplyReady tool does (1 KB = 1,000 bytes, rounded up). When you enter a limit, a file passes only if it is at most 50,000 bytes, which fits however the portal counts."
             }
           },
           {
@@ -324,7 +324,7 @@
       <p>Upload forms usually reject a file for one of four reasons: the wrong type, the wrong size, the wrong pixel size or page count, or a file that is damaged. The checker reads each of these from the file itself, the way a strict portal would, and shows them in plain words.</p>
       <ul>
         <li><strong>Real type.</strong> The type is read from the first bytes of the file, not from its name. A PNG renamed to <code>photo.jpg</code> is still a PNG, and the checker says so. Renaming never converts a file; to get a real JPEG, open it in the <a href="image-resizer.html">image resizer</a> and download it as JPEG.</li>
-        <li><strong>Size.</strong> Shown in bytes, in KB of 1,024 bytes and in MB. A 50 KB limit is 51,200 bytes on most portals.</li>
+        <li><strong>Size.</strong> Shown in exact bytes, and in KB and MB with 1 KB = 1,000 bytes, rounded up, as in every ApplyReady tool. A 50 KB limit is 50,000 bytes on some portals and 51,200 on others; a file passes the check only if it fits both.</li>
         <li><strong>Photos and signatures.</strong> Pixel size, the DPI stored in the file (if any), colour type, transparency, orientation, camera details, and whether EXIF data or a GPS location is stored. A GPS location is shown as a privacy warning, because anyone who receives the photo can see where it was taken.</li>
         <li><strong>PDFs.</strong> PDF version, page count, every page size in millimetres and inches (mixed sizes are flagged), whether it is encrypted or needs a password, and the document information: title, author, the program that created it, and dates.</li>
         <li><strong>Word, Excel and PowerPoint files.</strong> The document properties saved inside the file: title, author, who saved it last, dates, and the page and word counts as last saved by the program. Older .doc files and password-protected Office files are identified but not opened.</li>
@@ -357,7 +357,7 @@
         </details>
         <details class="faq-item">
           <summary class="faq-question"><span>Is a 50 KB limit the same as 50,000 bytes?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>
-          <div class="faq-answer"><p>Usually not. Most portals count 1 KB as 1,024 bytes, so 50 KB is 51,200 bytes. The checker shows the size in bytes, in KB of 1,024 bytes and in MB, so you can compare it with the limit exactly. If a file is just under the limit, leave a little room, because some portals count 1 KB as 1,000 bytes.</p></div>
+          <div class="faq-answer"><p>Not always: portals count 1 KB as either 1,000 or 1,024 bytes, so a 50 KB limit is 50,000 or 51,200 bytes. The checker shows the exact size in bytes, and in KB and MB the way every ApplyReady tool does (1 KB = 1,000 bytes, rounded up). When you enter a limit, a file passes only if it is at most 50,000 bytes, which fits however the portal counts.</p></div>
         </details>
         <details class="faq-item">
           <summary class="faq-question"><span>What DPI is my photo, and does it matter?</span><i class="fa-solid fa-chevron-down faq-chevron" aria-hidden="true"></i></summary>

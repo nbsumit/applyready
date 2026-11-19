@@ -18,6 +18,7 @@
      quality:  0.05-1 (lossy formats): the highest quality to use
      maxBytes: target upper limit; quality is searched and, if allowShrink, the image is scaled down
      minBytes: JPEG only; the file is padded with a comment segment to reach it
+     minKB:    the minimum as the person typed it, for notes (minBytes is minKB x 1,024)
      allowShrink: when maxBytes cannot be met at 50% quality, reduce the pixel size instead of
                 lowering quality further (without it, quality goes down to 5%)
      background: #rrggbb for transparent areas and padding when the output has no alpha
@@ -350,7 +351,12 @@
     return new Blob([bytes.slice(0, insertAt), ...segments, bytes.slice(insertAt)], { type: 'image/jpeg' });
   }
 
-  const kb = n => `${Math.round(n / 1024)} KB`;
+  // Sizes in the site's one format (js/lib/files.js formatBytes, which this file cannot load inside a
+  // worker): 1 KB = 1,000 bytes, rounded up to 0.1 KB, so a size never reads as under a limit it is over.
+  // A maximum of N KB arrives as N x 1,000 bytes and reads "N KB". A minimum arrives as N x 1,024
+  // bytes (met however a portal counts), so its label is the KB the person typed (opts.minKB).
+  const kb = n => (n < 1000 * 1000 ? `${String(Math.ceil(n / 100) / 10)} KB` : `${String(Math.ceil(n / 10000) / 100)} MB`);
+  const minLabel = o => (o.minKB ? `${o.minKB} KB` : kb(o.minBytes));
 
   /** The same layout at a fraction k of the pixel size (at least 16 px a side). */
   function scaledPlan(p, k) {
@@ -497,9 +503,9 @@
       let out = res.blob;
       if (opts.minBytes && mime === 'image/jpeg' && out.size < opts.minBytes) {
         const padded = await padJpeg(out, opts.minBytes);
-        if (!opts.maxBytes || padded.size <= opts.maxBytes) { out = padded; notes.push(`Padded to ${kb(out.size)} to meet the ${kb(opts.minBytes)} minimum; the picture is unchanged.`); }
+        if (!opts.maxBytes || padded.size <= opts.maxBytes) { out = padded; notes.push(`Padded to ${kb(out.size)} to meet the ${minLabel(opts)} minimum; the picture is unchanged.`); }
       }
-      if (opts.minBytes && out.size < opts.minBytes) notes.push(`The file is ${kb(out.size)}, below the ${kb(opts.minBytes)} minimum. Choose JPEG, or a larger size, to reach it.`);
+      if (opts.minBytes && out.size < opts.minBytes) notes.push(`The file is ${kb(out.size)}, below the ${minLabel(opts)} minimum. Choose JPEG, or a larger size, to reach it.`);
       if (signal && signal.aborted) throw cancelled();
       progress(0.92);
       let verified = false;

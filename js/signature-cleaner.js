@@ -148,7 +148,7 @@
     const token = ++loadToken;
     // Identify the file by its content, not its name or the type the browser reports.
     if (window.ApplyReadyFiles) {
-      const check = await window.ApplyReadyFiles.validate(file, ['image'], 50 * 1024 * 1024);
+      const check = await window.ApplyReadyFiles.validate(file, ['image'], window.ApplyReadyFiles.LIMITS.image);
       if (token !== loadToken) return;
       if (!check.ok) { notifyError(check.error); return; }
     } else if (!file.type.startsWith('image/')) {
@@ -189,7 +189,7 @@
     originalFile = file;
     const { source, width: naturalW, height: naturalH } = opened;
     if (fileInfoBox) fileInfoBox.classList.remove('hidden');
-    if (fileInfoText) fileInfoText.textContent = `${file.name} (${naturalW} × ${naturalH} px, ${(file.size / 1024).toFixed(1)} KB)`;
+    if (fileInfoText) fileInfoText.textContent = `${file.name} (${naturalW} × ${naturalH} px, ${window.ApplyReadyFiles.formatBytes(file.size)})`;
     // The drop zone (and the button that opened the picker) is about to be hidden: keep keyboard focus
     // on the page, on the file bar's Replace button.
     const a = doc.activeElement;
@@ -443,7 +443,7 @@
       btnDownload.download = filename;
 
       if (statDimensions) statDimensions.textContent = `${canvas.width} × ${canvas.height} px`;
-      if (statFileSize) statFileSize.textContent = `${(blob.size / 1024).toFixed(1)} KB (${blob.size.toLocaleString()} bytes)`;
+      if (statFileSize) statFileSize.textContent = window.ApplyReadyFiles.formatExact(blob.size);
       if (statFormat) statFormat.textContent = isTransparent ? 'PNG (Transparent)' : mimeType === 'image/png' ? 'PNG (White)' : 'JPEG (White)';
     }, mimeType, quality);
   }

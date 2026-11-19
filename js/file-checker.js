@@ -276,7 +276,7 @@
   function cleanHTML(item, r, res) {
     const c = res.cleaned;
     if (c) {
-      const removed = c.removed.map(x => `${x.what} (${x.bytes < 1024 ? Inspect.group(x.bytes) + " bytes" : Inspect.sizes(x.bytes).kbText})`).join(', ');
+      const removed = c.removed.map(x => `${x.what} (${x.bytes < 1000 ? Inspect.group(x.bytes) + " bytes" : Inspect.sizes(x.bytes).kbText})`).join(', ');
       return `<div class="fc-clean fc-clean--done">
         <div class="verdict"><i class="fa-solid fa-check" aria-hidden="true"></i><div>
           <h4 class="fc-clean__title">Metadata removed</h4>

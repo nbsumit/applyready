@@ -17,7 +17,7 @@
   const $ = id => document.getElementById(id);
 
   const MODE = app.dataset.mode || 'batch';
-  const MB = 1024 * 1024;
+  const MB = Files.MB; // 1 MB = 1,000,000 bytes, as every size on the site is counted
   const MAX_ITEMS = 500;
   const LIMIT_BYTES = 50 * MB;
   const WARN_BYTES = 300 * MB;
@@ -114,8 +114,11 @@
       scale: s.resize === 'scale' ? s.scale : undefined,
       format: s.format,
       quality: s.quality / 100,
-      maxBytes: s.maxKB ? Math.floor(s.maxKB * 1024) : undefined,
-      minBytes: s.minKB ? Math.ceil(s.minKB * 1024) : undefined,
+      // The site-wide rule (Files.maxBytes, Files.minBytes): a maximum is met at kb x 1,000 bytes and a
+      // minimum at kb x 1,024 bytes, so both hold whichever way a portal counts a KB.
+      maxBytes: s.maxKB ? Files.maxBytes(s.maxKB) : undefined,
+      minBytes: s.minKB ? Files.minBytes(s.minKB, s.maxKB) : undefined,
+      minKB: s.minKB || undefined,
       allowShrink: s.allowShrink,
       background: s.background
     };
@@ -411,7 +414,7 @@
     if (done) {
       const r = item.result;
       const name = (names || outputNames()).get(item.id) || item.name;
-      resultLine.textContent = `Result: ${name} · ${r.width} × ${r.height} px · ${fmt(r.bytes)} (${r.bytes.toLocaleString('en')} bytes)`;
+      resultLine.textContent = `Result: ${name} · ${r.width} × ${r.height} px · ${Files.formatExact(r.bytes)}`;
       notesLine.textContent = r.notes.join(' ');
       li.querySelector('[data-action="download"]').setAttribute('aria-label', `Download ${name}`);
       li.querySelector('[data-action="download"]').title = `Download ${name}`;

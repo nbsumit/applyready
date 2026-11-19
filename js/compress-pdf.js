@@ -42,8 +42,8 @@
   $('compressCancel').setAttribute('data-cancel', '');
   const runner = UI.runner(box, { error, button: els.start, busyLabel: 'Compressing…', onState: busy => { els.replace.disabled = busy; els.remove.disabled = busy; } });
 
-  // Every size here uses the limit's unit: 1 KB = 1,000 bytes, rounded up (ApplyReadyPdf.limitSize),
-  // so a size never reads as under a limit it is over.
+  // Every size here uses the site's one size format: 1 KB = 1,000 bytes, rounded up
+  // (ApplyReadyFiles.formatBytes), so a size never reads as under a limit it is over.
   const sized = bytes => K.limitSize(bytes);
 
   function dropResult() {
@@ -177,9 +177,9 @@
   els.start.addEventListener('click', () => {
     if (!current || !validateTarget()) return;
     // Some portals count 1 KB as 1,000 bytes and others as 1,024: aim under the smaller figure, so a
-    // "500 KB" result is accepted either way.
+    // "500 KB" result is accepted either way (ApplyReadyFiles.maxBytes, the rule every tool uses).
     const kb = targetKB();
-    const target = Math.floor(kb * 1000);
+    const target = window.ApplyReadyFiles.maxBytes(kb);
     const state = current;
     const dpi = Number(els.dpi.value);
     const grey = els.grey.checked;

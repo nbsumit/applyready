@@ -121,12 +121,21 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
   {
     const r = await Inspect.inspect(sample('test-portrait.jpg'), { name: 'p.jpg' });
     const kb = r.size.kb;
-    const pass = Inspect.checkRequirements(r, { formats: ['jpg', 'png'], minKB: Math.floor(kb) - 1, maxKB: Math.ceil(kb) + 1, width: r.image.width, height: r.image.height, pixelMode: 'exact' });
+    // A minimum is met at minKB x 1,024 bytes and a maximum at maxKB x 1,000 bytes (the site-wide rule).
+    const pass = Inspect.checkRequirements(r, { formats: ['jpg', 'png'], minKB: Math.floor(r.size.bytes / 1024) - 1, maxKB: Math.ceil(kb) + 1, width: r.image.width, height: r.image.height, pixelMode: 'exact' });
     ok(pass.pass && pass.rows.length === 3 && pass.rows.every(x => x.pass), 'requirement met: format, size and exact pixels');
     const fail = Inspect.checkRequirements(r, { maxKB: 50, width: r.image.width + 1, pixelMode: 'min', maxPages: 1 });
     ok(!fail.pass && fail.rows.find(x => x.id === 'size').pass === false && fail.rows.find(x => x.id === 'pixels').pass === false && fail.rows.find(x => x.id === 'pages').pass === true, 'requirement failed: size and minimum pixels; an image counts as one page');
     ok(Inspect.checkRequirements(r, {}).rows.length === 0, 'no requirement, no rows');
-    ok(Inspect.sizes(245760).kbText === '240.0 KB' && Inspect.sizes(245760).text === '245,760 bytes' && Inspect.sizes(1048576).mbText === '1.00 MB', 'sizes in bytes, KB (1,024) and MB');
+    // INTE-1: one rule for 'under N KB' across the site. A maximum is met however a portal counts a KB
+    // (at most N x 1,000 bytes); a minimum too (at least N x 1,024 bytes).
+    const sized = n => ({ size: Inspect.sizes(n), real: { label: 'PDF document' } });
+    const sizeRow = (n, q) => Inspect.checkRequirements(sized(n), q).rows.find(x => x.id === 'size');
+    ok(sizeRow(500000, { maxKB: 500 }).pass === true && sizeRow(500001, { maxKB: 500 }).pass === false && sizeRow(505000, { maxKB: 500 }).pass === false, 'size: a 500 KB maximum is met at 500,000 bytes, not at 500,001 or 505,000');
+    ok(sizeRow(505000, { maxKB: 500 }).actual === '505 KB' && sizeRow(505000, { maxKB: 500 }).bytes === '505,000 bytes', 'size: a 505,000-byte file reads 505 KB, as in every other tool');
+    ok(sizeRow(20479, { minKB: 20, maxKB: 50 }).pass === false && sizeRow(20480, { minKB: 20, maxKB: 50 }).pass === true, 'size: a 20 KB minimum is met at 20,480 bytes');
+    ok(sizeRow(49000, { minKB: 49, maxKB: 50 }).pass === true, 'size: a 49 to 50 KB range still has room (the minimum counts 1,000 bytes when 1,024 would leave none)');
+    ok(Inspect.sizes(245760).kbText === '245.8 KB' && Inspect.sizes(245760).text === '245,760 bytes' && Inspect.sizes(1000000).mbText === '1.00 MB' && Inspect.sizes(505000).kbText === '505 KB' && Inspect.sizes(505001).kbText === '505.1 KB' && Inspect.sizes(1048576).mbText === '1.05 MB', 'sizes in bytes, KB (1,000, rounded up) and MB, the same as every other tool');
   }
 
   // ------------------------------------------------------------------ PDF
@@ -390,14 +399,14 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     const started = Date.now();
     let refused = null;
     try { await Kit.merge([{ doc: small }, { doc: bombDoc }]); } catch (e) { refused = e; }
-    ok(refused && refused.code === 'toolarge' && /2,00,001 pages\. Up to 2,000 pages/.test(refused.message) && Date.now() - started < 2000, `merge refuses more than ${Kit.LIMITS.pages} pages at once, quickly (${refused && refused.message}, ${Date.now() - started} ms)`);
+    ok(refused && refused.code === 'toolarge' && /200,001 pages\. Up to 2,000 pages/.test(refused.message) && Date.now() - started < 2000, `merge refuses more than ${Kit.LIMITS.pages} pages at once, quickly (${refused && refused.message}, ${Date.now() - started} ms)`);
     let extractRefused = null;
     try { await Kit.extract(bombDoc, Array.from({ length: Kit.LIMITS.pages + 1 }, () => 0)); } catch (e) { extractRefused = e; }
     ok(extractRefused && extractRefused.code === 'toolarge', 'extract refuses more than the page limit');
     const fine = await Kit.merge([{ doc: small }, { doc: small }]);
     ok(fine.getPageCount() === 2, 'merging within the limit still works');
     // Page-limit advice: Split PDF is suggested only for a file it can open itself.
-    ok(Kit.grouped(2000) === '2,000' && Kit.grouped(200000) === '2,00,000', `page counts are grouped like the rest of the site (${Kit.grouped(2000)}, ${Kit.grouped(200000)})`);
+    ok(Kit.grouped(2000) === '2,000' && Kit.grouped(200000) === '200,000' && Kit.grouped(505000) === '505,000', `page counts and bytes are grouped like the rest of the site (${Kit.grouped(2000)}, ${Kit.grouped(200000)})`);
     ok(/with Split PDF first, then compress each part/.test(Kit.splitFirst(400, 'compress each part')), 'a file Split PDF can open is sent to Split PDF');
     const tooLong = Kit.splitFirst(Kit.LIMITS.pages + 1, 'use this tool on each part');
     ok(!/with Split PDF first/.test(tooLong) && /Split PDF also works on up to 2,000 pages/.test(tooLong) && /desktop PDF program/.test(tooLong), `a file Split PDF would refuse is not sent there (${tooLong})`);

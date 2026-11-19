@@ -236,7 +236,7 @@
 <tr><td>Lower JPEG quality</td><td>Large at first, then small</td><td>Fine until letter edges turn fuzzy</td></tr>
 </tbody>
 </table></div>
-<p>Removing pages and borders costs nothing, so do it first. If you are building the PDF from images, choosing a lower quality setting in <a href="../image-to-pdf.html">image to PDF</a> is the simplest fix: in our test, the same two pages came to 618.4 KB at High, 227.5 KB at Balanced and 136.3 KB at Compact. Use the compressor when you only have the PDF.</p>
+<p>Removing pages and borders costs nothing, so do it first. If you are building the PDF from images, choosing a lower quality setting in <a href="../image-to-pdf.html">image to PDF</a> is the simplest fix: in our test, the same two pages came to 633.3 KB at High, 233.0 KB at Balanced and 139.6 KB at Compact. Use the compressor when you only have the PDF.</p>
 </section>
 
 <section class="section prose">
@@ -246,7 +246,7 @@
 <picture><source media="(max-width: 640px)" srcset="../img/guides/phone/compress-pdf.webp" width="355" height="896"><img src="../img/guides/compress-pdf.webp" width="700" height="647" alt="The ApplyReady PDF compressor showing the file size before and after compression and the maximum file size choices." loading="lazy" decoding="async"></picture>
 <figcaption>The compressor shows the size before and after, against the maximum you choose.</figcaption>
 </figure>
-<p>In our test, a three-page A4 scan of 431 KB compressed to a 100 KB maximum came out at 97.8 KB, still at 150 DPI. Check the result against your limit and read it at 100% zoom: if the smallest text is not readable, the limit is too tight for that many pages.</p>
+<p>In our test, a three-page A4 scan of 441.4 KB compressed to a 100 KB maximum came out just under 100,000 bytes, still at 150 DPI. Check the result against your limit and read it at 100% zoom: if the smallest text is not readable, the limit is too tight for that many pages.</p>
 <p><strong>Only compress a file that is over the limit.</strong> Re-encoding pages that are already compressed loses detail and may not save anything. The compressor therefore keeps your original PDF, unchanged, when it is already under the limit you set or when compressing would not make it smaller, and says so.</p>
 </section>
 

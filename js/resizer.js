@@ -7,6 +7,12 @@
 (function () {
   'use strict';
 
+  // The site's one size rule (js/lib/files.js): a maximum of N KB is met at N x 1,000 bytes and a
+  // minimum at N x 1,024 bytes, so both hold whichever way a portal counts a KB, and every size is
+  // shown with 1 KB = 1,000 bytes, rounded up.
+  const SizeRule = () => (typeof window !== 'undefined' && window.ApplyReadyFiles)
+    || (typeof module !== 'undefined' && module.exports ? require('./lib/files.js') : null);
+
   // Built-in presets, used only when js/presets.js has not loaded (it is the source of truth).
   const FALLBACK_PRESETS = {
     'custom': {
@@ -1242,7 +1248,7 @@
     // Identify the file by its first bytes, not its name or the type the browser reports.
     if (window.ApplyReadyFiles && file.size > 0) {
       const ticket = ++validationTicket;
-      const check = await window.ApplyReadyFiles.validate(file, ['image'], 50 * 1024 * 1024);
+      const check = await window.ApplyReadyFiles.validate(file, ['image'], window.ApplyReadyFiles.LIMITS.image);
       if (ticket !== validationTicket) return;   // a newer file was chosen meanwhile
       if (!check.ok) { showProcessError(check.error); return; }
       if (check.info && check.info.mime && !file.type) {
@@ -1255,9 +1261,9 @@
       return;
     }
 
-    const MAX_SOURCE_BYTES = 50 * 1024 * 1024; // 50 MB
+    const MAX_SOURCE_BYTES = 50 * 1000 * 1000; // 50 MB
     if (file.size > MAX_SOURCE_BYTES) {
-      const mbSize = (file.size / (1024 * 1024)).toFixed(1);
+      const mbSize = (file.size / (1000 * 1000)).toFixed(1);
       showProcessError(`The selected file is too large (${mbSize} MB). Please choose an image under 50 MB to prevent device memory exhaustion.`);
       return;
     }
@@ -1349,9 +1355,9 @@
         };
 
         // Display Source File Info
-        const kbSize = (file.size / 1024).toFixed(1);
+        const kbSize = SizeRule().formatBytes(file.size);
         if (fileInfoBox && fileInfoText) {
-          fileInfoText.textContent = `${file.name} (${testImg.naturalWidth} × ${testImg.naturalHeight} px, ${kbSize} KB)`;
+          fileInfoText.textContent = `${file.name} (${testImg.naturalWidth} × ${testImg.naturalHeight} px, ${kbSize})`;
           fileInfoBox.classList.remove('hidden');
         }
 
@@ -1697,8 +1703,8 @@
    */
   async function ensureMinKB(blob, minKB, maxKB) {
     if (!minKB || minKB <= 0) return blob;
-    const minBytes = minKB * 1024;
-    const maxBytes = maxKB * 1024;
+    const minBytes = SizeRule().minBytes(minKB, maxKB);
+    const maxBytes = SizeRule().maxBytes(maxKB);
     if (blob.size >= minBytes) return blob;
 
     const padNeeded = minBytes - blob.size;
@@ -1747,7 +1753,7 @@
   async function compressStrictly(canvas, maxKB, mimeType, isCancelled, reserveBytes) {
     // reserveBytes: room kept for what is added to the file afterwards (a PNG's pHYs chunk).
     const reserve = reserveBytes > 0 ? reserveBytes : 0;
-    const maxBytes = maxKB * 1024 - reserve;
+    const maxBytes = SizeRule().maxBytes(maxKB) - reserve;
     const encode = quality => new Promise((resolve, reject) => {
       try {
         canvas.toBlob(blob => {
@@ -1761,10 +1767,10 @@
     if (isCancelled && isCancelled()) return best;
     if (best.size <= maxBytes) return best;
     // Rounded up, so a file just over the limit never reads as "needs 50.0 KB" under a 50 KB limit.
-    if (mimeType === 'image/png') throw new Error(`PNG needs ${(Math.ceil((best.size + reserve) / 102.4) / 10).toFixed(1)} KB at this size. Increase the file limit, reduce dimensions, or choose WebP or JPEG.`);
+    if (mimeType === 'image/png') throw new Error(`PNG needs ${SizeRule().formatBytes(best.size + reserve)} at this size. Increase the file limit, reduce dimensions, or choose WebP or JPEG.`);
     best = await encode(0.05);
     if (isCancelled && isCancelled()) return best;
-    if (best.size > maxBytes) throw new Error(`The smallest result is ${(best.size / 1024).toFixed(1)} KB. Increase the file limit or reduce the dimensions to preserve a usable image.`);
+    if (best.size > maxBytes) throw new Error(`The smallest result is ${SizeRule().formatBytes(best.size)}. Increase the file limit or reduce the dimensions to preserve a usable image.`);
     // Find the highest quality that really meets the byte limit.
     let low = 0.05, high = 0.95;
     for (let i = 0; i < 7; i++) {
@@ -1777,7 +1783,7 @@
     return best;
   }
 
-  // "50 KB (51,200 bytes)": the byte count is the exact proof, shown on its own quieter line.
+  // "50 KB (50,000 bytes)": the byte count is the exact proof, shown on its own quieter line.
   function setWithBytes(el, text) {
     if (!el) return;
     const m = /^(.*?)\s*(\([^)]*bytes\))$/.exec(text);
@@ -1837,7 +1843,7 @@
 
       // The minimum, or a higher pad target when a preset sets one, so a file does not sit exactly on the limit.
       const floorKB = specs.padToKB > specs.minKB && specs.padToKB < specs.maxKB ? specs.padToKB : specs.minKB;
-      if (floorKB > 0 && compressedBlob.size < floorKB * 1024) {
+      if (floorKB > 0 && compressedBlob.size < SizeRule().minBytes(floorKB, specs.maxKB)) {
         compressedBlob = await ensureMinKB(compressedBlob, floorKB, specs.maxKB);
         if (opId !== currentOpId || revision !== configRevision) return;
       }
@@ -1849,7 +1855,7 @@
       }
 
       // 4. Post-Compression Validation: Decode blob and check dimensions, bytes, and MIME
-      if (compressedBlob.size > specs.maxKB * 1024) {
+      if (compressedBlob.size > SizeRule().maxBytes(specs.maxKB)) {
         throw new Error(`Output file size (${compressedBlob.size} bytes) exceeds limit.`);
       }
 
@@ -1895,9 +1901,10 @@
       // Pages in other languages supply their own result wording through data-* attributes.
       const words = (resultArea && resultArea.dataset) || {};
       const fill = (template, values) => template.replace(/\{(\w+)\}/g, (m, k) => (k in values ? values[k] : m));
-      const nums = { min: specs.minKB, max: specs.maxKB, minBytes: (specs.minKB * 1024).toLocaleString(), maxBytes: (specs.maxKB * 1024).toLocaleString() };
+      const Sizes = SizeRule();
+      const nums = { min: specs.minKB, max: specs.maxKB, minBytes: Sizes.grouped(Sizes.minBytes(specs.minKB, specs.maxKB)), maxBytes: Sizes.grouped(Sizes.maxBytes(specs.maxKB)) };
       if (resultOrigDims) {
-        resultOrigDims.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px${currentFile ? ` · ${(currentFile.size / 1024).toFixed(1)} KB` : ''}`;
+        resultOrigDims.textContent = `${sourceDimensions.width} × ${sourceDimensions.height} px${currentFile ? ` · ${Sizes.formatBytes(currentFile.size)}` : ''}`;
       }
       if (resultTargetDims) {
         resultTargetDims.textContent = specs.printSize ? `${specs.width} × ${specs.height} px (${specs.printSize})` : `${specs.width} × ${specs.height} px`;
@@ -1924,16 +1931,16 @@
       }
 
       const actualBytes = compressedBlob.size;
-      const actualKB = (actualBytes / 1024).toFixed(2);
+      const actualKB = Sizes.formatBytes(actualBytes);
       if (resultFileSize) {
-        setWithBytes(resultFileSize, `${actualKB} KB (${actualBytes.toLocaleString()} bytes)`);
+        setWithBytes(resultFileSize, `${actualKB} (${Sizes.grouped(actualBytes)} bytes)`);
       }
 
       if (compProcessedKB) {
-        compProcessedKB.textContent = `${actualKB} KB`;
+        compProcessedKB.textContent = actualKB;
       }
       if (compOriginalKB && currentFile) {
-        compOriginalKB.textContent = `${(currentFile.size / 1024).toFixed(1)} KB`;
+        compOriginalKB.textContent = Sizes.formatBytes(currentFile.size);
       }
 
       const formatNames = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };

@@ -18,11 +18,13 @@
 })(typeof self !== 'undefined' ? self : this, function (Files) {
   'use strict';
 
-  const KB = 1024;
-  const MB = 1024 * 1024;
+  // Sizes follow the site's one rule (js/lib/files.js): 1 KB = 1,000 bytes and 1 MB = 1,000,000 bytes.
+  const KB = 1000;
+  const SITE_MB = 1000 * 1000;
+  const MB = 1024 * 1024; // internal reading budgets only
   // Deep inspection reads the whole file into memory; these limits keep a phone responsive.
   // Larger files still get their real type and size.
-  const DEEP_LIMITS = { image: 50 * MB, pdf: 100 * MB, zip: 500 * MB, text: 5 * MB };
+  const DEEP_LIMITS = { image: 50 * SITE_MB, pdf: 100 * SITE_MB, zip: 500 * SITE_MB, text: 5 * SITE_MB };
   const MAX_XML = 2 * MB; // largest docProps part we inflate (protects against ZIP bombs)
 
   /* ------------------------------------------------------------------ small helpers */
@@ -89,9 +91,13 @@
     return int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (frac ? '.' + frac : '');
   }
 
-  /** Sizes the way upload forms state them: bytes, KB of 1,024 bytes, MB of 1,048,576 bytes. */
+  /**
+   * Sizes the way the whole site shows them: exact bytes, KB of 1,000 bytes and MB of 1,000,000
+   * bytes, rounded up, so a size never reads as under a limit it is over (see Files.formatBytes).
+   */
   function sizes(n) {
-    return { bytes: n, kb: n / KB, mb: n / MB, text: `${group(n)} bytes`, kbText: `${group((n / KB).toFixed(1))} KB`, mbText: `${(n / MB).toFixed(n < 0.1 * MB ? 3 : n < 10 * MB ? 2 : 1)} MB` };
+    const up = (v, d) => (Math.ceil(v * 10 ** d - 1e-9) / 10 ** d).toFixed(d);
+    return { bytes: n, kb: n / KB, mb: n / SITE_MB, text: `${group(n)} bytes`, kbText: `${group(up(n / KB, 1).replace(/\.0$/, ''))} KB`, mbText: `${up(n / SITE_MB, n < 0.1 * SITE_MB ? 3 : n < 10 * SITE_MB ? 2 : 1)} MB` };
   }
 
   /* ------------------------------------------------------------------ TIFF / EXIF */
@@ -902,7 +908,7 @@
     const limit = DEEP_LIMITS[real.kind === 'heic' || real.kind === 'tiff' ? 'image' : real.kind];
     if (limit && size > limit) {
       report.deep = false;
-      warn('info', `This file is ${sizes(size).mbText}, larger than the ${Math.round(limit / MB)} MB the checker reads in a browser. Only its type and size are shown.`);
+      warn('info', `This file is ${sizes(size).mbText}, larger than the ${Math.round(limit / SITE_MB)} MB the checker reads in a browser. Only its type and size are shown.`);
     }
 
     try {
@@ -1021,9 +1027,11 @@
     }
     const minKB = Number(r.minKB) || 0, maxKB = Number(r.maxKB) || 0;
     if (minKB || maxKB) {
-      const kb = report.size.kb;
+      // The site-wide rule (Files.maxBytes / Files.minBytes): a maximum is met at kb x 1,000 bytes and a
+      // minimum at kb x 1,024 bytes, so the verdict holds whichever way the portal counts a KB.
+      const limitBytes = Files && Files.maxBytes ? { max: Files.maxBytes, min: Files.minBytes } : { max: kb => Math.floor(kb * 1000), min: kb => Math.ceil(kb * 1024) };
       const required = minKB && maxKB ? `${group(minKB)} to ${group(maxKB)} KB` : minKB ? `At least ${group(minKB)} KB` : `At most ${group(maxKB)} KB`;
-      rows.push({ id: 'size', label: 'File size', required, actual: report.size.kbText, bytes: report.size.text, pass: (!minKB || report.size.bytes >= minKB * KB) && (!maxKB || report.size.bytes <= maxKB * KB) && report.size.bytes > 0 });
+      rows.push({ id: 'size', label: 'File size', required, actual: report.size.kbText, bytes: report.size.text, pass: (!minKB || report.size.bytes >= limitBytes.min(minKB, maxKB)) && (!maxKB || report.size.bytes <= limitBytes.max(maxKB)) && report.size.bytes > 0 });
     }
     const W = Number(r.width) || 0, H = Number(r.height) || 0;
     if (W || H) {

@@ -32,7 +32,7 @@ const EXPECTED = {
   "status": "Under the 50 KB limit, at the exact size requested.",
   "dims": "350 × 450 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 50 KB (51,200 bytes)",
+  "limit": "Under 50 KB (50,000 bytes)",
   "bytesOk": true
  },
  "preset:signature:fields": {
@@ -53,7 +53,7 @@ const EXPECTED = {
   "status": "Under the 30 KB limit, at the exact size requested.",
   "dims": "300 × 100 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 30 KB (30,720 bytes)",
+  "limit": "Under 30 KB (30,000 bytes)",
   "bytesOk": true
  },
  "preset:thumb:fields": {
@@ -74,7 +74,7 @@ const EXPECTED = {
   "status": "Within the 20–50 KB range, at the exact size requested.",
   "dims": "240 × 240 px, verified",
   "fmt": "JPEG",
-  "limit": "20–50 KB (20,480 – 51,200 bytes)",
+  "limit": "20–50 KB (20,480 – 50,000 bytes)",
   "bytesOk": true
  },
  "preset:declaration:fields": {
@@ -95,7 +95,7 @@ const EXPECTED = {
   "status": "Within the 50–100 KB range, at the exact size requested.",
   "dims": "800 × 400 px, verified",
   "fmt": "JPEG",
-  "limit": "50–100 KB (51,200 – 102,400 bytes)",
+  "limit": "50–100 KB (51,200 – 100,000 bytes)",
   "bytesOk": true
  },
  "preset:avatar:fields": {
@@ -116,7 +116,7 @@ const EXPECTED = {
   "status": "Under the 100 KB limit, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 100 KB (102,400 bytes)",
+  "limit": "Under 100 KB (100,000 bytes)",
   "bytesOk": true
  },
  "preset:web-banner:fields": {
@@ -137,7 +137,7 @@ const EXPECTED = {
   "status": "Under the 300 KB limit, at the exact size requested.",
   "dims": "1200 × 630 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 300 KB (307,200 bytes)",
+  "limit": "Under 300 KB (300,000 bytes)",
   "bytesOk": true
  },
  "preset:document:fields": {
@@ -158,7 +158,7 @@ const EXPECTED = {
   "status": "Under the 500 KB limit, at the exact size requested.",
   "dims": "1240 × 1754 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 500 KB (512,000 bytes)",
+  "limit": "Under 500 KB (500,000 bytes)",
   "bytesOk": true
  },
  "unit:cm:dpiVisible": true,
@@ -180,7 +180,7 @@ const EXPECTED = {
   "status": "Under the 60 KB limit, at the exact size requested.",
   "dims": "413 × 350 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 60 KB (61,440 bytes)",
+  "limit": "Under 60 KB (60,000 bytes)",
   "bytesOk": true
  },
  "unit:cm:label": "413 × 350 px (3.5 × 2.96 cm at 300 DPI)",
@@ -200,7 +200,7 @@ const EXPECTED = {
   "status": "Under the 40 KB limit, at the exact size requested.",
   "dims": "300 × 300 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 40 KB (40,960 bytes)",
+  "limit": "Under 40 KB (40,000 bytes)",
   "bytesOk": true
  },
  "unit:back:fields": {
@@ -262,7 +262,7 @@ const EXPECTED = {
   "status": "Under the 100 KB limit, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 100 KB (102,400 bytes)",
+  "limit": "Under 100 KB (100,000 bytes)",
   "bytesOk": true
  },
  "retry:cropVisible": true,
@@ -276,7 +276,7 @@ const EXPECTED = {
   "status": "Within the 20–50 KB range, at the exact size requested.",
   "dims": "240 × 240 px, verified",
   "fmt": "JPEG",
-  "limit": "20–50 KB (20,480 – 51,200 bytes)",
+  "limit": "20–50 KB (20,480 – 50,000 bytes)",
   "bytesOk": true
  },
  "format:png:5kb": {
@@ -294,7 +294,7 @@ const EXPECTED = {
   "status": "Under the 20000 KB limit, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "PNG",
-  "limit": "Under 20000 KB (20,480,000 bytes)",
+  "limit": "Under 20000 KB (20,000,000 bytes)",
   "bytesOk": true
  },
  "format:webp:50": {
@@ -307,7 +307,7 @@ const EXPECTED = {
   "status": "Under the 50 KB limit, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "WebP",
-  "limit": "Under 50 KB (51,200 bytes)",
+  "limit": "Under 50 KB (50,000 bytes)",
   "bytesOk": true
  },
  "minmax:30-60": {
@@ -320,7 +320,7 @@ const EXPECTED = {
   "status": "Within the 30–60 KB range, at the exact size requested.",
   "dims": "400 × 400 px, verified",
   "fmt": "JPEG",
-  "limit": "30–60 KB (30,720 – 61,440 bytes)",
+  "limit": "30–60 KB (30,720 – 60,000 bytes)",
   "bytesOk": true
  },
  "minmax:invalid": {
@@ -345,7 +345,7 @@ const EXPECTED = {
   "status": "Under the 200 KB limit, at the exact size requested.",
   "dims": "900 × 1100 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 200 KB (204,800 bytes)",
+  "limit": "Under 200 KB (200,000 bytes)",
   "bytesOk": true
  },
  "annot:crop": {
@@ -361,7 +361,7 @@ const EXPECTED = {
   "status": "Under the 50 KB limit, at the exact size requested.",
   "dims": "350 × 450 px, verified",
   "fmt": "JPEG",
-  "limit": "Under 50 KB (51,200 bytes)",
+  "limit": "Under 50 KB (50,000 bytes)",
   "bytesOk": true
  },
  "drop:loaded": {
@@ -689,12 +689,12 @@ const EXPECTED = {
         done(new Blob([bytes.subarray(0, bytes.length - 12), chunk, bytes.subarray(bytes.length - 12)], { type: 'image/png' }));
       }, type, quality);
     };
-    window.__padPngTo = 2000 * 1024 - 21;
+    window.__padPngTo = 2000 * 1000 - 21;
   });
   await runProc('png:dpiRoom');
-  yes(rec['png:dpiRoom'].resultShown && rec['png:dpiRoom'].bytes === 2000 * 1024, `a PNG 21 bytes under the limit, with its DPI chunk, is exactly at the limit (${rec['png:dpiRoom'].bytes} bytes, ${rec['png:dpiRoom'].error})`);
+  yes(rec['png:dpiRoom'].resultShown && rec['png:dpiRoom'].bytes === 2000 * 1000, `a PNG 21 bytes under the limit, with its DPI chunk, is exactly at the limit (${rec['png:dpiRoom'].bytes} bytes, ${rec['png:dpiRoom'].error})`);
   await again();
-  await page.evaluate(() => { window.__padPngTo = 2000 * 1024 - 10; });
+  await page.evaluate(() => { window.__padPngTo = 2000 * 1000 - 10; });
   await runProc('png:dpiOver');
   yes(!rec['png:dpiOver'].resultShown && /PNG needs 2000\.1 KB at this size\. Increase the file limit/.test(rec['png:dpiOver'].error) && !/exceeds limit/.test(rec['png:dpiOver'].error), `a PNG that would go over the limit with its DPI chunk is explained, not failed on the final check (${rec['png:dpiOver'].error})`);
   await page.evaluate(() => { window.__padPngTo = 0; });
@@ -705,7 +705,7 @@ const EXPECTED = {
   await page.locator('#fileInput').setInputFiles({ name: 'link.jpg', mimeType: 'image/jpeg', buffer: buf(made.jpeg) });
   await ready('link.jpg');
   await runProc('url:result');
-  yes(rec['url:result'].w === 300 && rec['url:result'].h === 400 && rec['url:result'].bytes <= 15 * 1024, `the file follows the link (${rec['url:result'].w} × ${rec['url:result'].h}, ${rec['url:result'].bytes} bytes)`);
+  yes(rec['url:result'].w === 300 && rec['url:result'].h === 400 && rec['url:result'].bytes <= 15 * 1000, `the file follows the link (${rec['url:result'].w} × ${rec['url:result'].h}, ${rec['url:result'].bytes} bytes)`);
   await page.goto(`${origin}/resize-image-to-20kb.html?targetKB=12`);
   yes(await val('customMaxKB') === '12' && await val('customWidth') === '350', 'a limit in the link replaces the page preset limit and keeps its size');
   await page.goto(`${origin}/resize-image-to-kb-limit.html?width=abc&targetKB=-5`);

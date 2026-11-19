@@ -8,7 +8,9 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const MB = 1024 * 1024;
+  // Sizes: 1 KB is 1,000 bytes and 1 MB is 1,000,000 bytes everywhere on this site, so the same file
+  // shows the same size in every tool (see formatBytes, maxBytes and minBytes below).
+  const MB = 1000 * 1000;
   // Per-file limits. They protect the browser tab, not a business rule: a phone can run out
   // of memory decoding a 200 MB photo. Every tool states the limit next to its file picker.
   const LIMITS = { image: 50 * MB, pdf: 100 * MB, text: 5 * MB, json: 5 * MB, docx: 25 * MB };
@@ -174,26 +176,58 @@
     return safeFileName(`${stem(safeFileName(name, 'file'))}.${ext}`);
   }
 
+  /** A whole number with thousands separators (51,200), the same in every browser and locale. */
+  function grouped(n) {
+    const [int, frac] = String(Math.round(Number(n) * 1000) / 1000).split('.');
+    return int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (frac ? '.' + frac : '');
+  }
+
+  const trimZeros = s => s.replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+
+  /**
+   * A file size as people read it next to an upload limit. One rule for the whole site:
+   * 1 KB = 1,000 bytes and 1 MB = 1,000,000 bytes, and sizes are rounded up (to 0.1 KB or 0.01 MB),
+   * so a size never reads as under a limit it is over, whichever way a portal counts a KB. 505,000 bytes is "505 KB"; 505,001 bytes is "505.1 KB".
+   */
   function formatBytes(n) {
     if (!Number.isFinite(n) || n < 0) return '–';
-    if (n < 1024) return `${n} B`;
-    if (n < MB) return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)} KB`;
-    if (n < 1024 * MB) return `${(n / MB).toFixed(n < 10 * MB ? 1 : 0)} MB`;
-    return `${(n / (1024 * MB)).toFixed(1)} GB`;
+    if (n < 1000) return `${n} B`;
+    const kb = Math.ceil(n / 100) / 10;
+    if (kb < 1000) return `${trimZeros(kb.toFixed(1))} KB`;
+    const mb = Math.ceil(n / 10000) / 100;
+    if (mb < 1000) return `${trimZeros(mb.toFixed(2))} MB`;
+    return `${trimZeros((Math.ceil(n / 1e7) / 100).toFixed(2))} GB`;
+  }
+
+  /** A size with its exact byte count: "49.9 KB (49,873 bytes)". */
+  function formatExact(n) {
+    return n < 1000 ? `${grouped(n)} bytes` : `${formatBytes(n)} (${grouped(n)} bytes)`;
   }
 
   /**
-   * A size that is over `limit`, written so that it reads as more than the limit: formatBytes rounds
-   * 50.4 MB to "50 MB", which beside a 50 MB limit makes no sense. More decimals are shown when
-   * needed, and "just over" the limit when even three decimals would round down to it.
+   * A size limit typed in KB, in bytes. A maximum is met at kb x 1,000 bytes, which is under the
+   * limit however a portal counts a KB (1,000 or 1,024 bytes). A minimum is met at kb x 1,024 bytes,
+   * which reaches it either way; when that would leave no room under the maximum (a 49 to 50 KB
+   * range), the minimum is counted as kb x 1,000 bytes instead.
+   */
+  function maxBytes(kb) { return Math.floor(Number(kb) * 1000); }
+  function minBytes(kb, maxKB) {
+    const strict = Math.ceil(Number(kb) * 1024);
+    return maxKB && strict > maxBytes(maxKB) ? Math.ceil(Number(kb) * 1000) : strict;
+  }
+
+  /**
+   * A size that is over `limit`, written so that it reads as more than the limit. formatBytes
+   * already rounds up; when two sizes still share a label, more decimals are shown, and "just over"
+   * the limit when even three decimals would not tell them apart.
    */
   function formatOver(n, limit) {
     const shown = formatBytes(n);
     if (shown !== formatBytes(limit)) return shown;
-    const [unit, word] = n >= 1024 * MB ? [1024 * MB, 'GB'] : n >= MB ? [MB, 'MB'] : [1024, 'KB'];
-    for (let d = 1; d <= 3; d++) {
-      const v = (n / unit).toFixed(d);
-      if (Number(v) > limit / unit) return `${v} ${word}`;
+    const [unit, word] = n >= 1000 * MB ? [1000 * MB, 'GB'] : n >= MB ? [MB, 'MB'] : [1000, 'KB'];
+    for (let d = 1; d <= 4; d++) {
+      const v = (Math.ceil(n / unit * 10 ** d) / 10 ** d).toFixed(d);
+      if (Number(v) > limit / unit && v !== (Math.ceil(limit / unit * 10 ** d) / 10 ** d).toFixed(d)) return `${v} ${word}`;
     }
     return `just over ${formatBytes(limit)}`;
   }
@@ -235,5 +269,5 @@
     return { ok: true, info };
   }
 
-  return { sniff, sniffFile, hiddenParts, plainStill, safeFileName, withoutHiddenDirection, withExtension, stem, formatBytes, formatOver, download, validate, LIMITS };
+  return { sniff, sniffFile, hiddenParts, plainStill, safeFileName, withoutHiddenDirection, withExtension, stem, grouped, formatBytes, formatExact, formatOver, maxBytes, minBytes, download, validate, LIMITS, MB };
 });

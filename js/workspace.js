@@ -56,8 +56,12 @@
   }
 
   const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + 's')}`;
-  // Exact KB under 1 MB, where sizes are compared with a form's limit; MB above, like the file list.
-  const size = bytes => (bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : Files.formatBytes(bytes));
+  // A result's size with its exact byte count, in the site's one size format (1 KB = 1,000 bytes,
+  // rounded up), so it reads the same as in every other tool and never as under a limit it is over.
+  const size = bytes => Files.formatExact(bytes);
+  // Every KB limit here is met the way every tool meets it (Files.maxBytes): at most kb x 1,000 bytes,
+  // which is under the limit whether a portal counts 1 KB as 1,000 or 1,024 bytes.
+  const limitBytes = kb => Files.maxBytes(kb);
   const FORMAT = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
   const STATUS = { new: 'No files yet', added: 'Not started', working: 'In progress', ready: 'Ready', downloaded: 'Downloaded' };
   const stemOf = name => Files.stem(Files.safeFileName(name || 'file', 'file')) || 'file';
@@ -517,8 +521,8 @@
   /* ------------------------------------------------------------------ result rows */
   function resultFacts(r) {
     const f = r.facts;
-    if (r.kind === 'pdf') return [plural(f.pages || 0, 'page'), size(f.bytes), f.limit ? (f.bytes <= f.limit ? `under ${f.limit / 1024} KB` : `over ${f.limit / 1024} KB`) : ''].filter(Boolean).join(' · ');
-    return [`${f.width} × ${f.height} px`, size(f.bytes), FORMAT[f.mime] || f.mime, f.limit ? `under ${f.limit / 1024} KB` : ''].filter(Boolean).join(' · ');
+    if (r.kind === 'pdf') return [plural(f.pages || 0, 'page'), size(f.bytes), f.limit ? (f.bytes <= f.limit ? `under ${f.limit / 1000} KB` : `over ${f.limit / 1000} KB`) : ''].filter(Boolean).join(' · ');
+    return [`${f.width} × ${f.height} px`, size(f.bytes), FORMAT[f.mime] || f.mime, f.limit ? `under ${f.limit / 1000} KB` : ''].filter(Boolean).join(' · ');
   }
 
   /**
@@ -560,7 +564,7 @@
     dl.append(icon('fa-download'), ' Download');
     nameLink(dl, a, r);
     const compressing = a.jobs.some(j => j.resultId === r.id);
-    if (r.kind === 'pdf' && r.facts.limit && r.facts.bytes > s.pdfKB * 1024 && r.action === 'merge') {
+    if (r.kind === 'pdf' && r.facts.limit && r.facts.bytes > limitBytes(s.pdfKB) && r.action === 'merge') {
       tools.appendChild(button(`Compress to ${s.pdfKB} KB`, { act: 'compress-result', key: `cr:${r.id}`, icon: 'fa-file-zipper', disabled: compressing }));
     }
     tools.append(dl, button(`Remove ${r.name}`, { cls: 'btn btn-danger-ghost btn-icon btn-sm', act: 'remove-result', key: `rr:${r.id}`, icon: 'fa-trash-can', iconOnly: true, disabled: compressing }));
@@ -679,16 +683,16 @@
     if (e && e.code === 'nofit' && e.detail && (action === 'photo' || action === 'signature')) {
       const d = e.detail;
       const what = action === 'photo' ? 'photo' : 'signature';
-      return `This image does not fit under ${Math.round(d.limit / 1024)} KB at ${d.width} × ${d.height} px${d.lossy ? ' even at the lowest quality' : ''}. In Session settings, raise the ${what} size limit or lower its width and height${d.lossy ? '' : ', or save it as JPEG'}.`;
+      return `This image does not fit under ${Files.formatBytes(d.limit)} at ${d.width} × ${d.height} px${d.lossy ? ' even at the lowest quality' : ''}. In Session settings, raise the ${what} size limit or lower its width and height${d.lossy ? '' : ', or save it as JPEG'}.`;
     }
     return e && e.message ? String(e.message) : 'Something went wrong.';
   }
 
   function imageOptions(kind, s, f) {
     const base = { inputMime: f.info && f.info.mime, background: '#ffffff' };
-    if (kind === 'photo') return Object.assign(base, { resize: 'fill', width: s.photo.width, height: s.photo.height, format: s.photo.format, quality: 0.92, maxBytes: Math.floor(s.photo.kb * 1024), allowShrink: false });
-    if (kind === 'signature') return Object.assign(base, { resize: 'pad', width: s.signature.width, height: s.signature.height, format: s.signature.format, quality: 0.92, maxBytes: Math.floor(s.signature.kb * 1024), allowShrink: false });
-    if (kind === 'compress') return Object.assign(base, { resize: 'none', format: 'keep', quality: 0.9, maxBytes: Math.floor(s.imgKB * 1024), allowShrink: true });
+    if (kind === 'photo') return Object.assign(base, { resize: 'fill', width: s.photo.width, height: s.photo.height, format: s.photo.format, quality: 0.92, maxBytes: limitBytes(s.photo.kb), allowShrink: false });
+    if (kind === 'signature') return Object.assign(base, { resize: 'pad', width: s.signature.width, height: s.signature.height, format: s.signature.format, quality: 0.92, maxBytes: limitBytes(s.signature.kb), allowShrink: false });
+    if (kind === 'compress') return Object.assign(base, { resize: 'none', format: 'keep', quality: 0.9, maxBytes: limitBytes(s.imgKB), allowShrink: true });
     return Object.assign(base, { resize: 'none', format: 'image/jpeg', quality: 0.92 });
   }
 
@@ -755,7 +759,7 @@
     const s = needSettings('pdf');
     if (!s || !alive(a, f) || a.busyFile(f.id)) return;
     const label = ACTION_LABEL.pdf(s);
-    const limit = Math.floor(s.pdfKB * 1024);
+    const limit = limitBytes(s.pdfKB);
     f.actionError = '';
     const job = a.startJob({ label: `${label}: ${f.name}`, fileIds: [f.id], action: 'pdf', text: `Reading ${f.name}…` });
     let jsDoc = null;
@@ -815,7 +819,7 @@
     if (!images && files.length < 2) return;
     const s = needSettings('pdf');
     if (!s) return;
-    const limit = Math.floor(s.pdfKB * 1024);
+    const limit = limitBytes(s.pdfKB);
     const label = images ? (files.length === 1 ? 'Make a PDF' : 'Combine into one PDF') : 'Merge PDFs';
     if (files.some(f => a.busyFile(f.id))) return;
     if (!(await askPasswords(a, files, label))) return;
@@ -867,7 +871,7 @@
   async function runResultCompress(a, r) {
     const s = needSettings('pdf');
     if (!s || a.finished || !a.results.includes(r) || a.jobs.some(j => j.resultId === r.id)) return;
-    const limit = Math.floor(s.pdfKB * 1024);
+    const limit = limitBytes(s.pdfKB);
     const label = `Compress to ${s.pdfKB} KB`;
     const job = a.startJob({ label: `${label}: ${r.name}`, action: 'pdf', text: `Compressing ${r.name}…` });
     job.resultId = r.id;

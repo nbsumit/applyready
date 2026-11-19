@@ -137,7 +137,7 @@
     const token = ++loadToken;
     // Identify the file by its content, not its name or the type the browser reports.
     if (window.ApplyReadyFiles) {
-      const check = await window.ApplyReadyFiles.validate(file, ['image'], 50 * 1024 * 1024);
+      const check = await window.ApplyReadyFiles.validate(file, ['image'], window.ApplyReadyFiles.LIMITS.image);
       if (token !== loadToken) return;
       if (!check.ok) { notifyError(check.error); return; }
     } else if (!file.type.startsWith('image/')) {
