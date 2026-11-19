@@ -281,10 +281,12 @@
   };
   const readHeaderOf = readHeaderFrom;
 
-  /** Megapixels for a message, rounded up to 0.1, so 50.1 MP never reads as 50 next to a 50 MP limit. */
+  /** Megapixels for a message, to 0.1, and never rounded down to the 50 MP limit it is over (50.1, not 50). */
   function megapixels(width, height) {
-    const mp = Math.ceil(width * height / 1e5) / 10;
-    return mp >= 100 ? String(Math.ceil(mp)) : String(mp);
+    const exact = width * height / 1e6;
+    let mp = Math.round(exact * 10) / 10;
+    if (exact > MAX_PIXELS / 1e6 && mp <= MAX_PIXELS / 1e6) mp = Math.ceil(exact * 10) / 10;
+    return mp >= 100 ? String(Math.round(mp)) : String(mp);
   }
 
   /* ------------------------------------------------------------ drawing */

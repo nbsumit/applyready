@@ -222,18 +222,26 @@
   }
 
   const keptCount = done => done.filter(i => i.result && i.result.kept).length;
+  // In the compressor, new copies larger than the file they came from (an AVIF or GIF must change
+  // format, so its original cannot be kept as it is) are counted apart, never as "compressed". The
+  // processor and converter change files on purpose, so a larger result is no surprise there.
+  const largerCount = done => (MODE === 'compress' ? done.filter(i => i.result && !i.result.kept && i.result.bytes > i.size).length : 0);
 
   /**
    * "6 images compressed": an original kept as it was is not compressed or converted, so those are
    * counted on their own ("4 compressed, 2 kept as they were"). "Ready" is true of both, so the batch
    * tool keeps one count. With `of`, the count is out of that many ("4 of 7 images compressed, …").
    */
-  function doneTitle(count, kept, of) {
+  function doneTitle(count, kept, of, larger) {
     const asWas = n => `kept as ${n === 1 ? 'it was' : 'they were'}`;
     const head = n => (of ? `${n} of ${of} images` : plural(n, 'image'));
-    if (!kept || DONE_WORD === 'ready') return `${head(count)} ${DONE_WORD}`;
-    if (kept === count) return `${head(kept)} ${asWas(kept)}`;
-    return `${head(count - kept)} ${DONE_WORD}, ${kept} ${asWas(kept)}`;
+    const big = DONE_WORD === 'compressed' ? (larger || 0) : 0;
+    if ((!kept && !big) || DONE_WORD === 'ready') return `${head(count)} ${DONE_WORD}`;
+    const parts = [];
+    if (count - kept - big > 0) parts.push(`${head(count - kept - big)} ${DONE_WORD}`);
+    if (kept) parts.push(parts.length ? `${kept} ${asWas(kept)}` : `${head(kept)} ${asWas(kept)}`);
+    if (big) parts.push(parts.length ? `${big} larger than ${big === 1 ? 'the original' : 'their originals'}` : `${head(big)} larger than ${big === 1 ? 'the original' : 'their originals'}`);
+    return parts.join(', ');
   }
 
   function settingsChanged() {
@@ -607,8 +615,9 @@
     refresh();
     if (!finishedRun || finishedRun.cancelled) return;
     const done = summary.done, failed = summary.error + summary.cancelled;
-    const kept = keptCount(queue.items.filter(i => i.status === 'done'));
-    Kit.announce(failed ? `Finished. ${doneTitle(done, kept, summary.total)}; ${plural(failed, 'image')} failed or cancelled.` : `Finished. ${doneTitle(done, kept)}.`);
+    const finished = queue.items.filter(i => i.status === 'done');
+    const kept = keptCount(finished), larger = largerCount(finished);
+    Kit.announce(failed ? `Finished. ${doneTitle(done, kept, summary.total, larger)}; ${plural(failed, 'image')} failed or cancelled.` : `Finished. ${doneTitle(done, kept, 0, larger)}.`);
   }
 
   function cancel() {
@@ -825,25 +834,28 @@
       const outBytes = done.reduce((sum, i) => sum + (i.result ? i.result.bytes : 0), 0);
       const inBytes = done.reduce((sum, i) => sum + i.size, 0);
       const kept = keptCount(done);
+      const larger = largerCount(done);
       if (!failed) {
         el.verdictIcon.className = 'fa-solid fa-check';
         el.verdict.classList.remove('is-warning');
-        el.verdictTitle.textContent = doneTitle(done.length, kept);
+        el.verdictTitle.textContent = doneTitle(done.length, kept, 0, larger);
       } else {
         el.verdictIcon.className = 'fa-solid fa-triangle-exclamation';
         el.verdict.classList.add('is-warning');
-        el.verdictTitle.textContent = done.length ? doneTitle(done.length, kept, summary.done + failed) : 'No images could be processed';
+        el.verdictTitle.textContent = done.length ? doneTitle(done.length, kept, summary.done + failed, larger) : 'No images could be processed';
       }
       const facts = [];
       if (done.length) facts.push(`${fmt(outBytes)} in total, from ${fmt(inBytes)}.`);
       if (kept) facts.push(`${kept === done.length && kept > 1 ? `All ${kept}` : plural(kept, 'image')} already met the settings and ${kept === 1 ? 'is' : 'are'} kept as ${kept === 1 ? 'it was' : 'they were'}, because a new copy would have been larger.`);
+      if (larger) facts.push(`${larger === 1 ? '1 new copy is' : `${larger} new copies are`} larger than the file ${larger === 1 ? 'it' : 'they'} came from (often because the format had to change, as for GIF and AVIF); ${larger === 1 ? 'its row says' : 'their rows say'} why, and ${larger === 1 ? 'the original' : 'the originals'} can be uploaded instead.`);
       if (summary.error) facts.push(`${plural(summary.error, 'image')} failed; each row says why.`);
       if (summary.cancelled) facts.push(`${plural(summary.cancelled, 'image')} cancelled.`);
       el.verdictText.textContent = facts.join(' ');
       show(el.zip, done.length > 0);
       if (!el.zip.getAttribute('aria-busy')) el.zip.disabled = !done.length;
       const old = stale.length ? (stale.length === done.length ? ' (old settings)' : ` (${stale.length} with old settings)`) : '';
-      if (!el.zip.getAttribute('aria-busy')) el.zip.innerHTML = done.length === 1 ? `<i class="fa-solid fa-download" aria-hidden="true"></i> Download the image${old}` : `<i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download all ${done.length} as ZIP${old}`;
+      const bigger = larger && done.length > 1 ? ` (${larger} larger than ${larger === 1 ? 'its original' : 'their originals'})` : '';
+      if (!el.zip.getAttribute('aria-busy')) el.zip.innerHTML = done.length === 1 ? `<i class="fa-solid fa-download" aria-hidden="true"></i> Download the image${old}` : `<i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download all ${done.length} as ZIP${old || bigger}`;
       show(el.retry, failed > 0);
       // Says which kinds there are: "failed" only when something failed, "cancelled" only when something was cancelled.
       const what = summary.error && summary.cancelled ? ['failed or cancelled image', 'failed and cancelled images']

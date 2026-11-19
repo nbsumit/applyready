@@ -39,7 +39,11 @@
     if (startsWith(b, [0x49, 0x49, 0x2A, 0x00]) || startsWith(b, [0x4D, 0x4D, 0x00, 0x2A])) return { kind: 'tiff', ext: 'tif', mime: 'image/tiff', label: 'TIFF image' };
     // UTF-16 text (Windows Notepad's "Unicode") starts with a byte-order mark and is full of zero bytes.
     if (b.length >= 2 && ((b[0] === 0xFF && b[1] === 0xFE) || (b[0] === 0xFE && b[1] === 0xFF))) return { kind: 'text', ext: 'txt', mime: 'text/plain', label: 'Plain text (UTF-16)', encoding: b[0] === 0xFF ? 'utf-16le' : 'utf-16be' };
-    if (b.length && looksLikeText(b)) return { kind: 'text', ext: 'txt', mime: 'text/plain', label: 'Plain text' };
+    if (b.length && looksLikeText(b)) {
+      // An SVG drawing is text too, but nobody calls it "a plain text file".
+      if (/^(\uFEFF|\xEF\xBB\xBF)?\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE svg[^>]*>\s*)?<svg[\s>]/i.test(ascii(b, 0, Math.min(b.length, 1024)))) return { kind: 'text', ext: 'svg', mime: 'image/svg+xml', label: 'SVG drawing', svg: true };
+      return { kind: 'text', ext: 'txt', mime: 'text/plain', label: 'Plain text' };
+    }
     return { kind: 'unknown', ext: '', mime: 'application/octet-stream', label: 'Unknown file type' };
   }
 
@@ -260,6 +264,7 @@
       if (info.kind === 'heic') return { ok: false, info, error: `${file.name} is an HEIC photo. Most browsers cannot open HEIC; on an iPhone choose "Most Compatible" in Settings → Camera → Formats, or share the photo as JPEG.` };
       const wanted = kinds.map(k => ({ image: `an image (${IMAGE_TYPES})`, pdf: 'a PDF', text: 'a text file', zip: 'a ZIP or DOCX file', json: 'a JSON backup' }[k] || k)).join(' or ');
       const what = info.kind === 'unknown' ? 'not a recognised file type'
+        : info.svg ? 'an SVG drawing, which is not a photo or scan'
         : info.kind === 'text' ? 'a plain text file'
         : `${/^[AEIOU]/i.test(info.label) ? 'an' : 'a'} ${info.label}`;
       return { ok: false, info, error: `${file.name} is ${what}. This tool needs ${wanted}; choose a file of that type instead.` };

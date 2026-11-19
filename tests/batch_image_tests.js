@@ -163,7 +163,10 @@ ex[0x8825] = gps
 stored.save(f'{d}/exif_gps.jpg', quality=92, exif=ex.tobytes())
 photo(1600, 1200, 201).save(f'{d}/dupe_a.jpg', quality=90)
 photo(1400, 1400, 202).save(f'{d}/dupe_b.jpg', quality=90)
-open(f'{d}/broken.jpg', 'wb').write(b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF\\x00' + bytes(random.getrandbits(8) for _ in range(5000)))
+# A JPEG cut short: its header (and so its pixel size) reads fine, so it is listed, but it cannot be
+# decoded. (A JPEG whose header cannot be read at all is refused when it is added: SECU-1.)
+photo(800, 600, 203).save(f'{d}/whole.jpg', quality=90)
+whole = open(f'{d}/whole.jpg', 'rb').read(); open(f'{d}/broken.jpg', 'wb').write(whole[:len(whole) * 2 // 5])
 open(f'{d}/iphone.heic', 'wb').write(struct.pack('>I', 24) + b'ftypheic' + b'\\x00' * 4 + b'mif1heic' + b'\\x00' * 200)
 open(f'{d}/notes.txt', 'w').write('Not an image, just some notes.\\n' * 10)
 Image.new('L', (10000, 6000), 200).save(f'{d}/huge_60mp.png')
@@ -422,7 +425,7 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     await page.setInputFiles('#batchDropInput', [fix('huge.jpg'), fix('empty.jpg')]);
     await page.waitForSelector('#batchError:not([hidden])');
     const t = (await page.locator('#batchError').textContent()).replace(/\s+/g, ' ');
-    ok(/huge\.jpg is 51 MB\. The limit for this tool is 50 MB/.test(t) && /empty\.jpg is empty/.test(t), `oversized and empty files refused: ${t}`);
+    ok(/huge\.jpg is 53\.48 MB\. The limit for this tool is 50 MB/.test(t) && /empty\.jpg is empty/.test(t), `oversized and empty files refused: ${t}`);
     ok(await page.locator('#batchList .file-row').count() === 0 && !(await page.locator('#btnBatchStart').isVisible()), 'nothing added, nothing to start');
     await page.setInputFiles('#batchDropInput', [fix('photo_04.jpg'), fix('photo_00.jpg'), fix('photo_as_png.png')]);
     await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 3);
@@ -651,12 +654,12 @@ im = Image.open(sys.argv[1]); print(json.dumps({'fmt': im.format, 'size': im.siz
     const rowName = i => page.locator('#batchList .file-row').nth(i).locator('.file-row__result').textContent().then(t => (t.match(/^Result: (.+?) · /) || [])[1]);
 
     // A file just over 50 MB is not described as "50 MB" beside a 50 MB limit.
-    const over = Buffer.alloc(52920054); over.set([0xFF, 0xD8, 0xFF, 0xE0]);
+    const over = Buffer.alloc(50000001); over.set([0xFF, 0xD8, 0xFF, 0xE0]); // 1 MB = 1,000,000 bytes: the limit is 50,000,000
     fs.writeFileSync(path.join(FIX, 'big51mb.jpg'), over);
     await page.setInputFiles('#batchDropInput', [fix('big51mb.jpg')]);
     await page.waitForSelector('#batchError:not([hidden])');
     const overText = (await page.locator('#batchError').textContent()).replace(/\s+/g, ' ');
-    ok(/big51mb\.jpg is 50\.5 MB\. The limit for this tool is 50 MB/.test(overText), `a size just over the limit reads as over it: ${overText}`);
+    ok(/big51mb\.jpg is 50\.01 MB\. The limit for this tool is 50 MB/.test(overText), `a size just over the limit reads as over it: ${overText}`);
     fs.rmSync(path.join(FIX, 'big51mb.jpg'));
 
     // Three photos called photo.jpg, plus Windows device names with more than one dot.
@@ -736,8 +739,34 @@ print(json.dumps(len(Image.open(sys.argv[1]).getexif())))
     ok(/already met the settings and (is|are) kept as/.test(await page.locator('#batchVerdictText').textContent()), 'the verdict says how many originals were kept');
     // The title does not call a kept original "compressed".
     const keptN = Object.values(res).filter(r => r.kept).length;
+    // TOOL-2: a new copy larger than its original is counted apart too, never as "compressed".
+    const largerN = Object.entries(res).filter(([n, r]) => !r.kept && r.bytes > fs.statSync(fix(n)).size).length;
     const title = (await page.locator('#batchVerdictTitle').textContent()).trim();
-    ok(keptN >= 1 && title === `${5 - keptN} images compressed, ${keptN} kept as ${keptN === 1 ? 'it was' : 'they were'}`, `the verdict title counts kept originals on their own (${title})`);
+    const compressedN = 5 - keptN - largerN;
+    const keptPart = `${keptN}${compressedN > 0 ? '' : ` ${keptN === 1 ? 'image' : 'images'}`} kept as ${keptN === 1 ? 'it was' : 'they were'}`;
+    const expected = [compressedN > 0 ? `${compressedN} images compressed` : '', keptPart, largerN ? `${largerN} larger than ${largerN === 1 ? 'the original' : 'their originals'}` : ''].filter(Boolean).join(', ');
+    ok(keptN >= 1 && title === expected, `the verdict title counts kept originals and larger copies on their own (${title}; expected ${expected})`);
+    if (largerN) {
+      ok(/larger than the file (it|they) came from/.test(await page.locator('#batchVerdictText').textContent()) && new RegExp(`\\(${largerN} larger than (its|their) originals?\\)`).test(await page.locator('#btnBatchZip').textContent()), `the verdict and the ZIP button say how many copies are larger (${await page.locator('#btnBatchZip').textContent()})`);
+    }
+    await context.close();
+  }
+  {
+    // TOOL-3: the batch engine does not make a passport photo from a 1 × 1 px picture without a word.
+    const { context, page } = await open('batch-image.html');
+    const one = path.join(tmp, 'one-pixel.png');
+    py(`
+import sys
+from PIL import Image
+Image.new('RGB', (1, 1), (200, 150, 120)).save(sys.argv[1])
+`, one);
+    await page.setInputFiles('#batchDropInput', [one]);
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 1);
+    await setValue(page, 'bPreset', 'passport');
+    await page.click('#btnBatchStart');
+    await waitIdle(page);
+    const row = (await page.locator('#batchList .file-row').first().innerText()).replace(/\s+/g, ' ');
+    ok(/is only 1 × 1 px, too small to make a usable picture from/.test(row), `a 1 × 1 px picture is refused for a passport photo (${row})`);
     await context.close();
   }
   {

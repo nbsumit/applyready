@@ -281,7 +281,7 @@ const EXPECTED = {
  },
  "format:png:5kb": {
   "resultShown": false,
-  "error": "PNG needs 322.9 KB at this size. Increase the file limit, reduce dimensions, or choose WebP or JPEG.",
+  "error": "PNG needs 330.6 KB at this size. Increase the file limit, reduce dimensions, or choose WebP or JPEG.",
   "bytesOk": true
  },
  "format:png:big": {
@@ -365,7 +365,7 @@ const EXPECTED = {
   "bytesOk": true
  },
  "drop:loaded": {
-  "name": "dropped.png (900 × 1100 px, 2165.3 KB) Replace Remove"
+  "name": "dropped.png (900 × 1100 px, 2.22 MB) Replace Remove"
  },
  "remove:processDisabled": true,
  "invalidType": {
@@ -563,7 +563,7 @@ const EXPECTED = {
     truncated: [{ name: 'cut.jpg', mimeType: 'image/jpeg', buffer: buf(made.truncated) }, /cut\.jpg could not be opened\. It may be damaged or only partly downloaded/],
     bomb: [{ name: 'huge.png', mimeType: 'image/png', buffer: bomb }, /huge\.png is 400 megapixels \(20000 × 20000 px\), more than the 50 MP/],
     tiny: [{ name: 'dot.png', mimeType: 'image/png', buffer: buf(made.tiny) }, /dot\.png is only 1 × 1 px, too small/],
-    svg: [{ name: 'logo.svg', mimeType: 'image/svg+xml', buffer: svg }, /logo\.svg is a plain text file/]
+    svg: [{ name: 'logo.svg', mimeType: 'image/svg+xml', buffer: svg }, /logo\.svg is an SVG drawing, which is not a photo or scan/]
   };
   const procError = () => page.evaluate(() => { const b = document.getElementById('processErrorBox'); return b.classList.contains('hidden') ? '' : b.textContent.trim().replace(/\s+/g, ' '); });
   for (const [kind, [file, want]] of Object.entries(refusedBy)) {
@@ -696,7 +696,7 @@ const EXPECTED = {
   await again();
   await page.evaluate(() => { window.__padPngTo = 2000 * 1000 - 10; });
   await runProc('png:dpiOver');
-  yes(!rec['png:dpiOver'].resultShown && /PNG needs 2000\.1 KB at this size\. Increase the file limit/.test(rec['png:dpiOver'].error) && !/exceeds limit/.test(rec['png:dpiOver'].error), `a PNG that would go over the limit with its DPI chunk is explained, not failed on the final check (${rec['png:dpiOver'].error})`);
+  yes(!rec['png:dpiOver'].resultShown && /PNG needs 2\.01 MB at this size\. Increase the file limit/.test(rec['png:dpiOver'].error) && !/exceeds limit/.test(rec['png:dpiOver'].error), `a PNG that would go over the limit with its DPI chunk is explained, not failed on the final check (${rec['png:dpiOver'].error})`);
   await page.evaluate(() => { window.__padPngTo = 0; });
 
   // 15. Size and limit from the address: shared and bookmarked links open with their numbers.
@@ -792,9 +792,12 @@ const EXPECTED = {
   await page.waitForFunction(() => document.querySelectorAll('.page-row').length === 2 && document.getElementById('imgPdfSkipped'), null, { timeout: 15000 });
   const i2p = await page.evaluate(() => ({ names: [...document.querySelectorAll('.page-row__name')].map(n => n.textContent), notice: document.getElementById('imgPdfSkipped').textContent.replace(/\s+/g, ' '), thumbs: [...document.querySelectorAll('.page-row__thumb')].map(i => i.getAttribute('src').slice(0, 5)), attrs: [...document.querySelectorAll('.page-row__thumb')].map(i => i.getAttributeNames().join(' ') + ' alt=' + JSON.stringify(i.getAttribute('alt'))) }));
   yes(i2p.names.join() === 'page.jpg,page2.png', `only the real, complete images become pages, in order (${i2p.names})`);
-  yes(/3 files were not added/.test(i2p.notice) && /logo\.svg is a plain text file/.test(i2p.notice) && /cut\.jpg could not be opened/.test(i2p.notice) && /huge\.png is 400 megapixels/.test(i2p.notice), `the notice gives each file's reason (${i2p.notice})`);
+  yes(/3 files were not added/.test(i2p.notice) && /logo\.svg is an SVG drawing, which is not a photo or scan/.test(i2p.notice) && /cut\.jpg could not be opened/.test(i2p.notice) && /huge\.png is 400 megapixels/.test(i2p.notice), `the notice gives each file's reason (${i2p.notice})`);
   // Each reason says what to choose; no second, narrower list of types is added after them.
   yes(!/Choose JPG, PNG or WebP/.test(i2p.notice) && (i2p.notice.match(/choose a file of that type instead/g) || []).length === 1, `the notice does not contradict the reasons with another list of types (${i2p.notice})`);
+  // TOOL-6: every refused file is named, each on its own line.
+  const i2pItems = await page.evaluate(() => [...document.querySelectorAll('#imgPdfSkipped .notice__list li')].map(li => li.textContent));
+  yes(i2pItems.length === 3 && /^logo\.svg /.test(i2pItems[0]) && /^cut\.jpg /.test(i2pItems[1]) && /^huge\.png /.test(i2pItems[2]), `the notice lists each refused file with its reason (${JSON.stringify(i2pItems)})`);
   yes(i2p.thumbs.every(s => s === 'blob:'), 'page thumbnails use object URLs, not copies of the file in the page');
   yes(i2p.attrs.every(a => a === 'class src alt style alt=""'), `page thumbnails have well-formed markup with an empty alt (${i2p.attrs.join('; ')})`);
   await page.locator('#btnConvertToPdf').click();
@@ -805,7 +808,7 @@ const EXPECTED = {
   await page.locator('#imgPdfFileInput').setInputFiles(refusedBy.svg[0]);
   await page.waitForSelector('#imgPdfSkipped', { timeout: 10000 });
   const onlySvg = (await page.locator('#imgPdfSkipped').textContent()).replace(/\s+/g, ' ').trim();
-  yes(/^logo\.svg is a plain text file\. This tool needs an image \(JPEG, PNG, WebP, GIF, BMP or AVIF\); choose a file of that type instead\.$/.test(onlySvg), `a single refused file is explained once (${onlySvg})`);
+  yes(/^logo\.svg is an SVG drawing, which is not a photo or scan\. This tool needs an image \(JPEG, PNG, WebP, GIF, BMP or AVIF\); choose a file of that type instead\.$/.test(onlySvg), `a single refused file is explained once (${onlySvg})`);
 
   // 20. Compress PDF refuses an oversized or damaged photo when it is chosen, not after Start.
   for (const kind of ['truncated', 'bomb']) {
