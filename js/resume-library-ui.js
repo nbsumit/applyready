@@ -554,7 +554,7 @@
     try { raw = await STORE.get('resumes', cur.id); } catch (e) { raw = null; }
     if (!raw) { notify('The original could not be read from this browser.', true); return; }
     downloadRaw(cur.name, 'original_resume_raw.json', `Over the limits: a box can hold ${limitText()} and a list ${SCHEMA.MAX_ENTRIES} entries.`, raw);
-    notify('The original was downloaded exactly as it is saved. Its full text can be copied from the file; it cannot be imported as it is.');
+    notify('The original was downloaded exactly as it is saved. Its full text can be copied from the file. Importing the file opens the resume shortened to fit again.');
   }
   async function exportCurrent() {
     if (!state.current) return;

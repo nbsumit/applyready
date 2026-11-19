@@ -369,8 +369,9 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await page.locator('.dialog [data-act="ok"]').click();
     await page.waitForFunction(() => /Caf\u00E9 letter/.test(document.getElementById('ttpText').value));
     ok(true, 'UTF-16 text file (Notepad "Unicode") opens');
-    await page.setInputFiles('#ttpDropInput', { name: 'big.txt', mimeType: 'text/plain', buffer: Buffer.alloc(6 * 1024 * 1024, 97) });
-    ok(/up to 5 MB/.test(await page.locator('#ttpError').innerText()), 'text file over 5 MB refused');
+    // 5.2 MB as the site counts sizes (1 MB = 1,000,000 bytes), though under 5 x 1,024 x 1,024 bytes (PF-8).
+    await page.setInputFiles('#ttpDropInput', { name: 'big.txt', mimeType: 'text/plain', buffer: Buffer.alloc(5200000, 97) });
+    ok(/big\.txt is 5\.2 MB\. Text files up to 5 MB/.test(await page.locator('#ttpError').innerText()), `text file of 5.2 MB refused as over 5 MB (${await page.locator('#ttpError').innerText()})`);
     await page.setInputFiles('#ttpDropInput', { name: 'photo.txt', mimeType: 'text/plain', buffer: fs.readFileSync(path.join(tmp, 'gps.jpg')) });
     await page.waitForFunction(() => /not plain text/.test(document.getElementById('ttpError').textContent));
     ok(/JPEG image, not plain text/.test(await page.locator('#ttpError').innerText()), 'a JPEG named .txt is refused');
@@ -490,8 +491,9 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
       await page.waitForFunction(() => !document.getElementById('ydResumeError').hidden);
       ok(re.test(await page.locator('#ydResumeError').innerText()), `import refused: ${name}`);
     }
-    await page.setInputFiles('#ydImportInput', { name: 'huge.json', mimeType: 'application/json', buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 32) });
-    ok(/up to 5 MB/.test(await page.locator('#ydResumeError').innerText()), 'import refused: over 5 MB');
+    // 5.2 MB as the site counts sizes (1 MB = 1,000,000 bytes), though under 5 x 1,024 x 1,024 bytes.
+    await page.setInputFiles('#ydImportInput', { name: 'huge.json', mimeType: 'application/json', buffer: Buffer.alloc(5200000, 32) });
+    ok(/huge\.json is 5\.2 MB\. Backups up to 5 MB/.test(await page.locator('#ydResumeError').innerText()), 'import refused: 5.2 MB is over 5 MB');
     await page.setInputFiles('#ydImportInput', { name: 'single.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(single)) });
     await page.waitForFunction(() => /Added 1 resume /.test(document.getElementById('ydImportResult').textContent));
     ok(await page.locator('#ydResumeCount').innerText() === '6 resumes, 1 damaged, 1 earlier draft', 'single-resume backup (version 2) imports');

@@ -12,7 +12,7 @@
   const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const group = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   const MAX_CHARS = 5000000;
-  const MAX_FILE = 5 * 1024 * 1024;
+  const MAX_FILE = Files.LIMITS.text; // 5 MB, counted as the site counts sizes
   const els = {};
   ['ttpBar', 'ttpBarText', 'ttpClear', 'ttpError', 'ttpChars', 'ttpCharsTitle', 'ttpCharsList', 'ttpCharsHelp', 'ttpReplace', 'ttpPrint', 'ttpRemove',
     'ttpUndoBox', 'ttpUndoText', 'ttpUndo', 'ttpResult', 'ttpResultTitle', 'ttpResultOk', 'ttpDownload', 'ttpEdit', 'ttpResPages', 'ttpResSize', 'ttpResPaper', 'ttpResFont',

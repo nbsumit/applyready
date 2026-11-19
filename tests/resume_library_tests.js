@@ -286,7 +286,8 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     ['other.json', JSON.stringify({ app: 'SomeOtherApp', version: 2, data: { personal: {}, experience: [], education: [], projects: [] } }), /different app/],
     ['newer.json', JSON.stringify({ app: 'ApplyReady', version: 7, data: { personal: {}, experience: [], education: [], projects: [] } }), /newer version/],
     ['damaged.json', JSON.stringify({ app: 'ApplyReady', version: 2, data: { personal: { fullName: ['x'] }, experience: [], education: [], projects: [] } }), /not an ApplyReady resume backup/],
-    ['empty.json', '', /empty/]
+    ['empty.json', '', /empty/],
+    ['raw-damaged.json', JSON.stringify({ app: 'ApplyReady', kind: 'damaged-resume-record', reason: 'x', record: { id: 'r_x', data: { personal: 'not an object' } } }), /raw copy of a saved resume that could not be read/]
   ];
   await openLibrary(page);
   for (const [name, body, pattern] of badFiles) {
@@ -294,7 +295,8 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     await page.locator('#libError [role="alert"]').waitFor();
     ok(pattern.test(await page.locator('#libError [role="alert"]').textContent()), `${name} is refused with a plain message`);
   }
-  await page.locator('#libImportInput').setInputFiles({ name: 'huge.json', mimeType: 'application/json', buffer: Buffer.alloc(5 * 1024 * 1024 + 10, 32) });
+  // 5.2 MB as the site counts sizes, though under 5 x 1,024 x 1,024 bytes.
+  await page.locator('#libImportInput').setInputFiles({ name: 'huge.json', mimeType: 'application/json', buffer: Buffer.alloc(5200000, 32) });
   await page.waitForFunction(() => /larger than 5 MB/.test(document.getElementById('libError').textContent));
   ok(true, 'A file over 5 MB is refused before it is read');
   ok((await records(page)).length === libCount, 'Refused files leave the saved resumes unchanged');
@@ -620,6 +622,12 @@ const out = fs.mkdtempSync(path.join(os.tmpdir(), 'resume-library-'));
     ok(await p.locator('#saveNotice').filter({ hasText: 'too long to open in full' }).count() === 0, 'The notice goes once the shortened resume is saved');
     const stored = (await records(p)).find(r => r.id === 'r_over_limits');
     ok(schema.validate({ data: stored.data }), 'What is saved after editing passes the strict check, so it always reopens');
+    // The downloaded original imports again, shortened to fit, rather than being refused as damaged.
+    await openLibrary(p);
+    await p.locator('#libImportInput').setInputFiles(original);
+    await p.locator('#libraryDialog').waitFor({ state: 'hidden' });
+    await p.waitForFunction(() => /so it was shortened to fit/.test(document.body.textContent));
+    ok((await p.locator('#summaryText').inputValue()).length === schema.MAX_TEXT && await expCount() === schema.MAX_ENTRIES, 'The downloaded original imports shortened to the limits');
     await audit(p, 'builder at the limits');
     await ctx.close();
   }
