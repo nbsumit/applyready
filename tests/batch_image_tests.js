@@ -188,7 +188,12 @@ const server = http.createServer((req, res) => {
     return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   }, [id, value]);
   const summary = page => page.evaluate(() => window.ApplyReadyBatchImage.summary());
-  const waitIdle = (page, timeout = 180000) => page.waitForFunction(() => { const s = window.ApplyReadyBatchImage.summary(); return !s.running && s.queued === 0 && s.processing === 0; }, null, { timeout, polling: 100 });
+  // Idle, then two animation frames: the page repaints on the next frame (refresh() uses
+  // requestAnimationFrame), so labels read straight after the state turns idle could still be the old ones.
+  const waitIdle = async (page, timeout = 180000) => {
+    await page.waitForFunction(() => { const s = window.ApplyReadyBatchImage.summary(); return !s.running && s.queued === 0 && s.processing === 0; }, null, { timeout, polling: 100 });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  };
   const saveDownload = async (page, click, name) => {
     const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), click()]);
     const file = path.join(tmp, name || dl.suggestedFilename());
@@ -272,7 +277,8 @@ const server = http.createServer((req, res) => {
     ok(s.done >= keptBefore, 'finished results were kept through cancel and retry');
     const broken = page.locator('.file-row', { hasText: 'broken.jpg' });
     ok(await broken.getAttribute('data-status') === 'error' && /could not be opened/.test(await broken.textContent()), 'corrupt file fails with a plain reason');
-    ok((await page.locator('#btnBatchRetry').textContent()).trim() === 'Retry 1 failed image', 'one failure, nothing cancelled: "Retry 1 failed image"');
+    const retryAfter = (await page.locator('#btnBatchRetry').textContent()).trim();
+    ok(retryAfter === 'Retry 1 failed image', `one failure, nothing cancelled: "Retry 1 failed image" (got "${retryAfter}")`);
     const gap = await page.evaluate(() => window.__maxGap);
     ok(gap < 500, `the page stayed responsive while processing (longest main-thread gap ${Math.round(gap)} ms)`);
     ok(await page.evaluate(() => window.ApplyReadyBatchImage.usesWorkers()), 'processing ran in Web Workers');
