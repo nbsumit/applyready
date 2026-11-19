@@ -57,9 +57,13 @@
 
   /* Check a stored record before it reaches the interface. A usable record comes back migrated;
      anything else comes back as damaged, with a safe label, so the list can offer Export raw and
-     Delete instead of failing. */
+     Delete instead of failing. Earlier releases could save a box with more than 50,000 characters
+     or a list with more than 150 entries. Such a record still opens, shortened to the limits, and
+     is marked `trimmed` so the interface can say so and offer the stored original. */
   function inspect(raw) {
-    const ok = record(raw) && typeof raw.id === 'string' && ID_PATTERN.test(raw.id) && record(raw.data) && SCHEMA.validate({ data: raw.data });
+    const shaped = record(raw) && typeof raw.id === 'string' && ID_PATTERN.test(raw.id) && record(raw.data);
+    const strict = shaped && SCHEMA.validate({ data: raw.data });
+    const ok = strict || (shaped && SCHEMA.validate({ data: raw.data }, { lenient: true }));
     const name = record(raw) ? cleanName(raw.name) : '';
     if (!ok) {
       let reason = 'The saved data is not a resume this version can read.';
@@ -69,10 +73,9 @@
       return { ok: false, name: name || 'Unnamed resume', reason, updatedAt: record(raw) ? time(raw.updatedAt) : 0, raw };
     }
     const data = SCHEMA.migrate(raw.data);
-    return {
-      ok: true,
-      record: { id: raw.id, name: name || suggestName(data), createdAt: time(raw.createdAt) || time(raw.updatedAt), updatedAt: time(raw.updatedAt) || time(raw.createdAt), schemaVersion: SCHEMA.CURRENT_VERSION, data }
-    };
+    const rec = { id: raw.id, name: name || suggestName(data), createdAt: time(raw.createdAt) || time(raw.updatedAt), updatedAt: time(raw.updatedAt) || time(raw.createdAt), schemaVersion: SCHEMA.CURRENT_VERSION, data };
+    if (!strict) rec.trimmed = true;
+    return { ok: true, record: rec };
   }
 
   const byRecent = (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0);

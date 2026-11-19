@@ -1,5 +1,5 @@
 /**
- * ApplyReady.in - Shared Presets Database
+ * ApplyReady - Shared Presets Database
  * 100% Client-Side In-Browser Configuration
  * Common photo, signature and document sizes used by job and application portals.
  */

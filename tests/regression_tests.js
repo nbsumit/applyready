@@ -257,6 +257,25 @@ check('Links written as host:port keep their link; unsafe schemes are still refu
   const rels = new TextDecoder().decode(docx.generateResumeDOCX(d).files.find(f => f.name === 'word/_rels/document.xml.rels').data);
   assert(rels.includes('Target="https://www.example.com:8080/work"'), 'Word file links the host:port website');
 });
+check('A phone number without + is linked as tel: in the PDF and preview, never as a host (SEC-05)', () => {
+  const { sanitizeHref } = require('../js/resume-render');
+  for (const sanitize of [pdf.sanitizeUrl, sanitizeHref]) {
+    assert.equal(sanitize('tel:9876543210'), 'tel:9876543210');
+    assert.equal(sanitize('tel:33331'), 'tel:33331');
+    assert.equal(sanitize('tel:+919876543210'), 'tel:+919876543210');
+    assert.equal(sanitize('mailto:12345'), 'mailto:12345');
+  }
+  for (const phone of ['98765 43210', '33331', '+91 98765 43210']) {
+    const d = resumeFixture();
+    d.personal.phone = phone;
+    const digits = phone.replace(/[^\d+]/g, '');
+    const uris = [...pdf.generateResumePDF(d).build().matchAll(/\/URI \(([^)]*)\)/g)].map(m => m[1]);
+    assert(uris.includes('tel:' + digits), `the PDF links ${phone} as tel:${digits} (links: ${uris.join(', ')})`);
+    assert(!uris.some(u => /^https?:\/\/tel/i.test(u)), 'no https://tel: link');
+    const rels = new TextDecoder().decode(docx.generateResumeDOCX(d).files.find(f => f.name === 'word/_rels/document.xml.rels').data);
+    assert(!/https?:\/\/tel/i.test(rels), `the Word file never links ${phone} as a host`);
+  }
+});
 check('Icon classes in scripts are written whole, so the icon subset includes every icon a page can show', () => {
   // scripts/build-icons.py finds icons by their "fa-name" class in the source. A class built from a
   // fragment ("fa-" + name) is invisible to it, which once left the Organise PDF Restore button blank.
@@ -314,6 +333,77 @@ check('Page breaks never split a bullet or leave a last bullet alone at the top 
         assert(bulletYs.length > 1 && after && after.text === '•', `${template} page ${i + 2} starts with a lone last bullet`);
       }
     });
+  }
+});
+// Moves every later page break by a few points at a time: `shift` short education entries come first.
+// `lines` lines of summary move them by a different step, so together they reach every position.
+function shiftedResume(template, density, shift, extra, lines) {
+  const d = schema.migrate(Object.assign({ template, design: { templateId: template, density }, personal: { fullName: 'Break Case' },
+    summary: Array.from({ length: lines || 0 }, () => 'Summary line').join('\n'),
+    sectionVisibility: { summary: true, education: true, experience: true },
+    education: Array.from({ length: shift }, (_, i) => ({ degree: `Course ${i + 1}`, institution: 'Institute' })),
+    experience: Array.from({ length: 6 }, (_, r) => ({ role: `Role ${r + 1}`, company: 'Company', duration: '2019 - 2020', bulletsText: [1, 2, 3, 4].map(n =>
+      `Result ${n}: coordinated a cross-team reporting change that cut turnaround and kept the work on schedule across several quarters for the regional team`).join('\n') })) }, extra || {}));
+  d.design.sectionOrder = schema.normalizeSectionOrder(['summary', 'education', 'experience', 'references'], d);
+  d.sectionVisibility.references = true;
+  return d;
+}
+check('A bullet is never split across pages, in either density (RES-03)', () => {
+  for (const template of ['compact-professional', 'classic-professional', 'software-engineer']) {
+    for (const density of ['compact', 'standard']) {
+      for (let shift = 0; shift <= 24; shift++) for (let lines = 0; lines <= 12; lines++) {
+        const doc = pdf.generateResumePDF(shiftedResume(template, density, shift, null, lines));
+        doc.pages.forEach((page, p) => {
+          const texts = page.elements.filter(e => e.type === 'text');
+          const bulletYs = texts.filter(e => e.text === '•').map(e => e.y);
+          const bulletX = texts.filter(e => e.text.startsWith('Result ')).map(e => e.x)[0];
+          // Every line drawn at the bullet text position is either a bullet's first line (a • on the
+          // same line) or follows a line of the same bullet on the same page.
+          const top = texts.filter(e => Math.abs(e.x - bulletX) < 0.5 && !e.text.startsWith('Result ')).sort((a, b) => a.y - b.y)[0];
+          if (!top) return;
+          const above = texts.some(e => e.y < top.y - 0.5 && Math.abs(e.x - bulletX) < 0.5);
+          assert(above || bulletYs.some(y => Math.abs(y - top.y) < 0.5), `${template} ${density} shift ${shift}+${lines}: page ${p + 1} starts with the rest of a bullet ("${top.text.slice(0, 30)}")`);
+        });
+      }
+    }
+  }
+});
+check('A referee\'s name, details and contact stay on one page (RES-02)', () => {
+  const references = Array.from({ length: 5 }, (_, i) => ({ name: `Referee ${i + 1}`, title: 'Head of Operations, my manager 2019 - 2024', organization: 'Northwind Traders', contact: `referee${i + 1}@example.com · +91 98765 4321${i}` }));
+  for (const template of ['compact-professional', 'classic-professional', 'executive-impact']) {
+    for (const density of ['compact', 'standard']) {
+      for (let shift = 0; shift <= 30; shift++) {
+        const doc = pdf.generateResumePDF(shiftedResume(template, density, shift, { references }));
+        const pageOf = text => doc.pages.findIndex(page => page.elements.some(e => e.type === 'text' && e.text.includes(text)));
+        references.forEach((ref, i) => {
+          const name = pageOf(ref.name);
+          assert(name >= 0, `${template}: ${ref.name} is printed`);
+          assert(pageOf('Northwind') >= 0 && pageOf(`referee${i + 1}@`) === name, `${template} ${density} shift ${shift}: the contact of ${ref.name} is on another page than the name`);
+        });
+        const heading = doc.pages.findIndex(page => page.elements.some(e => e.type === 'text' && /^references$/i.test(e.text.trim())));
+        assert.equal(heading, pageOf('Referee 1'), `${template} ${density} shift ${shift}: the References heading stays with the first referee`);
+      }
+    }
+  }
+});
+check('Word export puts a link or dates on their own line when they do not fit beside the title (RES-04)', () => {
+  const paragraphs = d => new TextDecoder().decode(docx.generateResumeDOCX(d).files.find(f => f.name === 'word/document.xml').data).split('</w:p>');
+  const withText = (ps, text) => ps.find(p => p.includes(text));
+  for (const template of ['executive-impact', 'classic-professional', 'compact-professional']) {
+    const longLink = 'github.com/example-user/warehouse-capacity-planner-with-a-very-long-repository-name-for-testing';
+    const d = schema.migrate({ template, design: { templateId: template }, personal: { fullName: 'Tab Case' },
+      projects: [{ name: 'Warehouse capacity planner', tech: 'Python, Pandas, Power BI', link: longLink, bulletsText: 'Built it' }, { name: 'Short one', link: 'example.org/a' }],
+      education: [{ degree: 'MBA, Operations Management', institution: 'Indian Institute of Management (a long campus name for testing)', duration: '2014 - 2016', location: 'Ahmedabad', score: 'CGPA 3.6 / 4' }],
+      experience: [{ role: 'Analyst', company: 'Northwind', duration: '2020 - 2021', location: 'Pune' }] });
+    const ps = paragraphs(d);
+    const head = withText(ps, 'Warehouse capacity planner');
+    assert(!head.includes('<w:tab/>') && !head.includes(longLink), `${template}: a long link is not glued to the title with an overflowing tab`);
+    assert(withText(ps, longLink) !== head, `${template}: the long link has its own line`);
+    const edu = withText(ps, 'MBA, Operations Management');
+    assert(!edu.includes('<w:tab/>') && !edu.includes('Ahmedabad'), `${template}: education details that do not fit go below the title`);
+    const exp = withText(ps, 'Analyst');
+    const inline = !/below/.test(require('../js/templates').getTemplateStyle(template).datePlacement || '');
+    if (inline) assert(exp.includes('<w:tab/>') && exp.includes('2020 - 2021'), `${template}: details that fit stay on the right of the title`);
   }
 });
 check('Project tools start without a separator when they sit on their own line', () => {
@@ -379,6 +469,33 @@ check('Job keywords split a title line, skip degree words and match British and 
   assert(!result.keywords.some(term => /graduate programme/i.test(term) && /analyst/i.test(term)), 'the title line is not one long term');
   for (const filler of ['degree', 'field', 'senior', 'gather']) assert(!result.keywords.includes(filler), filler);
   for (const term of ['visualization', 'organise']) assert(result.found.some(found => found.toLowerCase() === term), `${term} matches the other spelling`);
+});
+check('Job keywords leave out advert verbs and keep two-word skills together (RES-05)', () => {
+  const keywords = require('../js/keywords');
+  const job = 'Software Engineer (Backend). Must know C++, C#, Node.js, React, AWS, Kubernetes, Docker, CI/CD, REST APIs and PostgreSQL. Experience with .NET and Go is a plus. You will design microservices, write unit tests and mentor juniors.';
+  const terms = keywords.extractKeywords(job).map(t => t.toLowerCase());
+  for (const filler of ['know', 'juniors', 'unit', 'tests']) assert(!terms.includes(filler), `"${filler}" is not a key term`);
+  assert(terms.includes('unit tests'), '"unit tests" is one term');
+  assert(keywords.matchKeywords(job, 'Wrote unit testing suites for the billing service.').found.includes('unit tests'), '"unit testing" in the resume covers "unit tests"');
+  const other = keywords.extractKeywords('You should know SQL. Experience running A/B tests is a bonus. Duties include reporting.').map(t => t.toLowerCase());
+  for (const filler of ['know', 'bonus', 'include', 'running']) assert(!other.includes(filler), `"${filler}" is not a key term`);
+});
+check('Job keywords keep .NET, Go, R and two-letter acronyms, and match them only as written (RES-09)', () => {
+  const keywords = require('../js/keywords');
+  const r = keywords.matchKeywords('Backend developer. Must have .NET, Go and R experience. AI and ML a plus.', 'Grew net revenue by 12% in Excel; helped the team go live.');
+  for (const term of ['.NET', 'Go', 'R', 'AI', 'ML']) assert(r.keywords.includes(term), `${term} is a key term`);
+  for (const term of ['.NET', 'Go', 'R']) assert(r.missing.includes(term) && !r.found.includes(term), `${term} is not covered by an ordinary word`);
+  const yes = keywords.matchKeywords('Must have .NET, Go, R and C.', 'Built APIs in ASP.NET Core and Go; analysis in R; firmware in C/C++.');
+  for (const term of ['.NET', 'Go', 'R', 'C']) assert(yes.found.includes(term), `${term} is found when the resume has it`);
+  assert(!keywords.extractKeywords('Go to client sites twice a month and report on sales.').includes('Go'), '"Go" starting a sentence is a verb');
+  assert(!keywords.extractKeywords('Report to the PM by 5 PM. UK based, OK with travel.').some(t => ['PM', 'UK', 'OK'].includes(t)), 'common capitals are not skills');
+  const ad = 'Accounts Executive. Send your CV to HR. Valid ID required. Two-wheeler with DL needed. BA or MA in commerce. Tally and GST filing.';
+  const adTerms = keywords.extractKeywords(ad);
+  for (const term of ['CV', 'HR', 'ID', 'DL', 'BA', 'MA']) assert(!adTerms.includes(term), `${term} is not a key term`);
+  const adMatch = keywords.matchKeywords(ad, 'Accounts executive. Tally, GST filing and MS Office.');
+  for (const term of ['CV', 'HR', 'DL']) assert(!adMatch.missing.includes(term), `${term} is not listed as missing`);
+  const acronyms = keywords.extractKeywords('Designer for UI and UX work, with QA, BI dashboards and CI pipelines.');
+  for (const term of ['UI', 'UX', 'QA', 'BI', 'CI']) assert(acronyms.includes(term), `${term} is a key term`);
 });
 (async () => {
   const { ensureMinKB } = require('../js/resizer');

@@ -1,5 +1,5 @@
 /**
- * ApplyReady.in - Passport Photo Print Sheet Maker
+ * ApplyReady - Passport Photo Print Sheet Maker
  * 100% Client-Side In-Browser Tool
  * Tiles passport photos on standard 4x6" photo card or A4 paper
  * with exact millimeter dimensions, scissor cutting guidelines,
