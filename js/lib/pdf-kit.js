@@ -282,8 +282,8 @@
    * unreadable: pages none of whose content can be read (the /Contents names an object that is
    * missing or not a stream, or Flate data that gives nothing at all), which come out blank.
    * incomplete: pages with some content broken, for example a stream with its end cut off, where
-   * readers still show the part before the damage. A page with no /Contents is blank by design and is
-   * not reported. Flate streams are checked up to a total of 16 MB.
+   * readers still show the part before the damage. A page with no /Contents, an empty /Contents array
+   * or an empty content stream is blank by design and is not reported. Flate streams are checked up to a total of 16 MB.
    */
   async function damagedPages(P, doc, partly) {
     const ctx = doc.context;
@@ -298,7 +298,8 @@
       if (obj instanceof P.PDFRawStream && budget > 0 && typeof P.decodePDFRawStream === 'function') {
         const f = obj.dict.lookup(FILTER);
         const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
-        if (flate) {
+        // An empty stream (0 bytes) is a blank page by design, like a page with no /Contents.
+        if (flate && obj.contents.length) {
           budget -= obj.contents.length;
           try { P.decodePDFRawStream(obj).decode(); }
           catch (e) { result = (await partly(obj.contents)) === false ? 'bad' : 'partial'; }
@@ -316,7 +317,8 @@
       const parts = c instanceof P.PDFArray ? c.asArray().map(x => ctx.lookup(x)) : [c];
       const states = [];
       for (const part of parts) states.push(await state(part));
-      if (!states.length || states.every(x => x === 'bad')) unreadable.push(i);
+      if (!states.length) continue; // /Contents [] is a blank page by design too
+      if (states.every(x => x === 'bad')) unreadable.push(i);
       else if (states.some(x => x !== 'ok')) incomplete.push(i);
     }
     return { unreadable, incomplete };

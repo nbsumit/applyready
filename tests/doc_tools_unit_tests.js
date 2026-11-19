@@ -304,6 +304,19 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     const raw = await Kit.pageDamage(await Kit.openLib(await onePage(zlib.deflateRawSync(Buffer.from(ops)))));
     const headerOnly = await Kit.pageDamage(await Kit.openLib(await onePage(full.subarray(0, 2))));
     ok(raw.unreadable.join() === '0' && headerOnly.unreadable.join() === '0', 'PDF tools: Flate data that gives nothing at all (no zlib header, or only a header) is still unreadable');
+    // TOOL-2 (PDF): an empty Flate stream (0 bytes) or an empty /Contents array is a blank page by
+    // design, like a page with no /Contents; poppler and pdf.js read both without an error.
+    const emptyFlate = await onePage(new Uint8Array(0));
+    const emptyArray = await (async () => {
+      const doc = await PDFLib.PDFDocument.create();
+      doc.addPage([300, 400]).node.set(contents, doc.context.obj([]));
+      return doc.save();
+    })();
+    for (const [label, bytes] of [['empty Flate stream', emptyFlate], ['empty /Contents array', emptyArray]]) {
+      const tools = await Kit.pageDamage(await Kit.openLib(bytes));
+      const report = await Inspect.inspect(bytes, { name: 'blank.pdf', PDFLib });
+      ok(!tools.unreadable.length && !tools.incomplete.length && !report.damaged && !report.pdf.unreadablePages && !report.pdf.incompletePages, `${label}: a blank page, not damaged (${JSON.stringify(tools)})`);
+    }
   }
 
   // ------------------------------------------------------------------ names that hide what a file is

@@ -505,7 +505,8 @@
    * page's content can be read (its /Contents names a missing object or a non-stream, or Flate data
    * that gives nothing at all), so it shows blank. incomplete: some of it is broken, for example a
    * stream whose end is cut off; readers still show the part before the damage. A page with no
-   * /Contents is blank by design and is not reported. Flate streams are checked up to 16 MB in all.
+   * /Contents, an empty /Contents array or an empty content stream is blank by design and is not
+   * reported. Flate streams are checked up to 16 MB in all.
    * Same rules as ApplyReadyPdf.pageDamage (js/lib/pdf-kit.js), which the PDF tools use.
    */
   async function damagedPdfPages(PDFLib, doc) {
@@ -520,7 +521,8 @@
       if (obj instanceof P.PDFRawStream && budget > 0 && typeof P.decodePDFRawStream === 'function') {
         const f = obj.dict.lookup(FILTER);
         const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
-        if (flate) {
+        // An empty stream (0 bytes) is a blank page by design, like a page with no /Contents.
+        if (flate && obj.contents.length) {
           budget -= obj.contents.length;
           try { P.decodePDFRawStream(obj).decode(); }
           catch (e) { result = (await inflatesPartly(obj.contents)) === false ? 'bad' : 'partial'; }
@@ -538,7 +540,8 @@
       const parts = c instanceof P.PDFArray ? c.asArray().map(x => ctx.lookup(x)) : [c];
       const states = [];
       for (const part of parts) states.push(await state(part));
-      if (!states.length || states.every(x => x === 'bad')) unreadable.push(i);
+      if (!states.length) continue; // /Contents [] is a blank page by design too
+      if (states.every(x => x === 'bad')) unreadable.push(i);
       else if (states.some(x => x !== 'ok')) incomplete.push(i);
     }
     return { unreadable, incomplete };
