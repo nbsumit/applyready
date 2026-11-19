@@ -57,7 +57,10 @@
     return sniff(new Uint8Array(head));
   }
 
-  const RESERVED = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])$/i;
+  // Windows device names. They are reserved whatever follows the first dot: "CON.jpg" and "con.backup.jpg"
+  // both name the device, so such a file cannot be created or extracted from a ZIP there.
+  const RESERVED = /^(con|prn|aux|nul|com[0-9\u00b9\u00b2\u00b3]|lpt[0-9\u00b9\u00b2\u00b3])$/i;
+  const reservedName = s => RESERVED.test(String(s).split('.')[0].trim());
   // Invisible characters that change the direction of text. In a name they can disguise the real
   // extension: "invoice\u202Efdp.exe" is displayed as "invoiceexe.pdf".
   const HIDDEN_DIRECTION = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
@@ -78,9 +81,87 @@
     const dot = s.lastIndexOf('.');
     let stem = dot > 0 ? s.slice(0, dot) : s;
     let ext = dot > 0 ? s.slice(dot + 1).replace(/[^A-Za-z0-9]/g, '').slice(0, 10) : '';
-    if (!stem || RESERVED.test(stem)) stem = (fallback || 'file') + (stem ? '_' + stem : '');
+    if (!stem || reservedName(s)) stem = (fallback || 'file') + (stem ? '_' + stem : '');
     if (stem.length > 120) stem = stem.slice(0, 120).trim();
     return ext ? `${stem}.${ext.toLowerCase()}` : stem;
+  }
+
+  /**
+   * What an image file holds besides one still picture, as a sorted list of kinds:
+   *   'animation'   more than one frame (animated PNG or WebP)
+   *   'camera'      EXIF, which can include the camera, date, location and orientation
+   *   'description' XMP or IPTC description and editing data
+   *   'text'        text notes or comments (PNG text chunks, JPEG comments)
+   *   'date'        a PNG "last changed" time
+   *   'other'       other embedded data (unknown JPEG application segments, extra pictures)
+   * An empty list means a plain still picture: it can be handed back as it is instead of a re-encoded
+   * copy without losing anything a new copy would remove. null means the file is not a JPEG, PNG or
+   * WebP, or could not be read to the end, so nothing can be said about it.
+   */
+  function hiddenParts(bytes) {
+    const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || []);
+    const n = b.length;
+    const found = new Set();
+    const done = () => Array.from(found).sort();
+    const u32 = i => ((b[i] << 24) >>> 0) + (b[i + 1] << 16) + (b[i + 2] << 8) + b[i + 3];
+    const le32 = i => b[i] + (b[i + 1] << 8) + (b[i + 2] << 16) + ((b[i + 3] << 24) >>> 0);
+    if (startsWith(b, [0xFF, 0xD8, 0xFF])) {
+      // Segments up to the image data. Plain: APP0 (JFIF), APP2 colour profile, APP14 (Adobe colour).
+      for (let i = 2; i + 4 <= n;) {
+        if (b[i] !== 0xFF) return null;
+        const m = b[i + 1];
+        if (m === 0xFF) { i++; continue; }
+        if (m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { i += 2; continue; }
+        if (m === 0xDA) return done();
+        if (m === 0xD9) return null;
+        const len = (b[i + 2] << 8) | b[i + 3];
+        const sig = ascii(b, i + 4, Math.min(n, i + 4 + Math.min(len - 2, 32)));
+        if (m === 0xFE) found.add('text');
+        else if (m === 0xE1) found.add(sig.startsWith('Exif') ? 'camera' : /^http:\/\/ns\.adobe\.com\/(xap|xmp)/.test(sig) ? 'description' : 'other');
+        else if (m === 0xED) found.add('description');
+        else if (m === 0xE2) { if (!sig.startsWith('ICC_PROFILE')) found.add('other'); }  // MPF: more pictures after this one
+        else if (m >= 0xE3 && m <= 0xEF && m !== 0xEE) found.add('other');
+        i += 2 + len;
+      }
+      return null;
+    }
+    if (startsWith(b, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])) {
+      for (let i = 8; i + 8 <= n;) {
+        const len = u32(i), type = ascii(b, i + 4, i + 8);
+        if (type === 'IEND') return done();
+        if (type === 'acTL') found.add('animation');
+        else if (type === 'eXIf') found.add('camera');
+        else if (type === 'tIME') found.add('date');
+        else if (/^(tEXt|zTXt|iTXt)$/.test(type)) {
+          const key = ascii(b, i + 8, Math.min(n, i + 8 + Math.min(len, 80))).split('\0')[0];
+          found.add(key === 'XML:com.adobe.xmp' ? 'description' : 'text');
+        }
+        i += 12 + len;
+      }
+      return null;
+    }
+    if (ascii(b, 0, 4) === 'RIFF' && ascii(b, 8, 12) === 'WEBP') {
+      for (let i = 12; i + 8 <= n;) {
+        const type = ascii(b, i, i + 4), len = le32(i + 4);
+        if (type === 'VP8X') {
+          if (b[i + 8] & 0x02) found.add('animation');
+          if (b[i + 8] & 0x04) found.add('description');
+          if (b[i + 8] & 0x08) found.add('camera');
+        }
+        if (type === 'ANIM' || type === 'ANMF') found.add('animation');
+        else if (type === 'EXIF') found.add('camera');
+        else if (type === 'XMP ') found.add('description');
+        i += 8 + len + (len & 1);
+      }
+      return done();
+    }
+    return null;
+  }
+
+  /** True when an image file is a single still picture with no hidden details (see hiddenParts). */
+  function plainStill(bytes) {
+    const parts = hiddenParts(bytes);
+    return !!parts && parts.length === 0;
   }
 
   function stem(name) {
@@ -99,6 +180,22 @@
     if (n < MB) return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)} KB`;
     if (n < 1024 * MB) return `${(n / MB).toFixed(n < 10 * MB ? 1 : 0)} MB`;
     return `${(n / (1024 * MB)).toFixed(1)} GB`;
+  }
+
+  /**
+   * A size that is over `limit`, written so that it reads as more than the limit: formatBytes rounds
+   * 50.4 MB to "50 MB", which beside a 50 MB limit makes no sense. More decimals are shown when
+   * needed, and "just over" the limit when even three decimals would round down to it.
+   */
+  function formatOver(n, limit) {
+    const shown = formatBytes(n);
+    if (shown !== formatBytes(limit)) return shown;
+    const [unit, word] = n >= 1024 * MB ? [1024 * MB, 'GB'] : n >= MB ? [MB, 'MB'] : [1024, 'KB'];
+    for (let d = 1; d <= 3; d++) {
+      const v = (n / unit).toFixed(d);
+      if (Number(v) > limit / unit) return `${v} ${word}`;
+    }
+    return `just over ${formatBytes(limit)}`;
   }
 
   /** Save a Blob under a safe name. The object URL is released after the download starts. */
@@ -134,9 +231,9 @@
       return { ok: false, info, error: `${file.name} is ${what}. This tool needs ${wanted}; choose a file of that type instead.` };
     }
     const limit = limitBytes || LIMITS[info.kind] || 50 * MB;
-    if (file.size > limit) return { ok: false, info, error: `${file.name} is ${formatBytes(file.size)}. The limit for this tool is ${formatBytes(limit)}, to keep your browser responsive.` };
+    if (file.size > limit) return { ok: false, info, error: `${file.name} is ${formatOver(file.size, limit)}. The limit for this tool is ${formatBytes(limit)}, to keep your browser responsive.` };
     return { ok: true, info };
   }
 
-  return { sniff, sniffFile, safeFileName, withoutHiddenDirection, withExtension, stem, formatBytes, download, validate, LIMITS };
+  return { sniff, sniffFile, hiddenParts, plainStill, safeFileName, withoutHiddenDirection, withExtension, stem, formatBytes, formatOver, download, validate, LIMITS };
 });

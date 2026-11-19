@@ -1,5 +1,6 @@
-/* Unit tests for js/lib/applicants.js, the memory-only model behind applicant workspaces.
-   Object URLs are faked, so the tests can check that every URL an applicant owned is revoked. */
+/* Unit tests for js/lib/applicants.js, the memory-only model behind applicant workspaces, and the
+   file-name helpers in js/lib/files.js they share with the batch tools. Object URLs are faked, so the
+   tests can check that every URL an applicant owned is revoked. */
 'use strict';
 const assert = require('node:assert/strict');
 const Model = require('../js/lib/applicants.js');
@@ -189,6 +190,52 @@ const blob = (type) => ({ type: type || 'image/jpeg', size: 10 });
     a.progress(j, 0.5, 'Half');
     ok(j.progress === 0.5 && j.text === 'Half', 'progress is recorded');
     ok(seen.includes('list') && seen.includes('change') && seen.includes('progress'), 'the model reports list, change and progress events');
+  }
+
+
+  // File names and sizes shared by the batch tools and applicant workspaces (js/lib/files.js)
+  {
+    const Files = require('../js/lib/files.js');
+    const MB = 1024 * 1024;
+    // A Windows device name is reserved whatever follows the first dot (CON.jpg, con.backup.jpg, NUL.tar.gz).
+    const named = n => Files.safeFileName(n, 'image');
+    ok(named('CON.jpg') === 'image_CON.jpg' && named('con.backup.jpg') === 'image_con.backup.jpg' && named('NUL.tar.gz') === 'image_NUL.tar.gz', 'device names are prefixed with or without more dots');
+    ok(named('COM1.a.b.png') === 'image_COM1.a.b.png' && named('Lpt9.x.jpg') === 'image_Lpt9.x.jpg' && named('aux .final.jpeg') === 'image_aux .final.jpeg' && named('COM¹.png') === 'image_COM¹.png', 'COM and LPT with any digit, superscripts and a space before the dot');
+    ok(named('console.jpg') === 'console.jpg' && named('photo.con.jpg') === 'photo.con.jpg' && named('com10.jpg') === 'com10.jpg', 'names that only contain a device name are left alone');
+    // A size over a limit never reads as the limit itself.
+    ok(Files.formatOver(52920054, 50 * MB) === '50.5 MB', `50.47 MB reads as 50.5 MB beside a 50 MB limit (${Files.formatOver(52920054, 50 * MB)})`);
+    ok(Files.formatOver(50 * MB + 5000, 50 * MB) === '50.005 MB' && Files.formatOver(50 * MB + 1, 50 * MB) === 'just over 50 MB', 'more decimals when needed, "just over" when even three round down');
+    ok(Files.formatOver(51 * MB, 50 * MB) === '51 MB' && Files.formatOver(5.04 * MB, 5 * MB) === '5.04 MB', 'clear sizes are written as usual');
+    // Plain still images: no hidden details and no animation.
+    const be32 = n => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255];
+    const le32 = n => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+    const bytes = s => Array.from(s, c => c.charCodeAt(0));
+    const seg = (m, data) => [0xFF, m, ((data.length + 2) >> 8) & 255, (data.length + 2) & 255, ...data];
+    const jpeg = (...segs) => new Uint8Array([0xFF, 0xD8, ...segs.flat(), ...seg(0xDA, [1, 2, 3]), 0x11, 0x22, 0xFF, 0xD9]);
+    const jfif = seg(0xE0, bytes('JFIF\0\x01\x01\0\0\x01\0\x01\0\0'));
+    ok(Files.plainStill(jpeg(jfif, seg(0xE2, bytes('ICC_PROFILE\0'))) ), 'a JPEG with only JFIF and a colour profile is plain');
+    ok(!Files.plainStill(jpeg(jfif, seg(0xE1, bytes('Exif\0\0MM')))) && !Files.plainStill(jpeg(jfif, seg(0xE1, bytes('http://ns.adobe.com/xap/1.0/\0')))), 'EXIF or XMP is a hidden detail');
+    ok(!Files.plainStill(jpeg(jfif, seg(0xFE, bytes('a comment')))) && !Files.plainStill(jpeg(jfif, seg(0xED, bytes('Photoshop 3.0\0')))), 'a comment or IPTC block is a hidden detail');
+    ok(!Files.plainStill(new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0, 0, 16, 1, 2])), 'a JPEG cut off before its image data is not plain');
+    const chunk = (type, data) => [...be32(data.length), ...bytes(type), ...data, 0, 0, 0, 0];
+    const png = (...chunks) => new Uint8Array([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, ...chunk('IHDR', new Array(13).fill(0)), ...chunks.flat(), ...chunk('IDAT', [1, 2, 3]), ...chunk('IEND', [])]);
+    ok(Files.plainStill(png()) && Files.plainStill(png(chunk('iCCP', [1, 2]))), 'a PNG with image data only (and a colour profile) is plain');
+    ok(!Files.plainStill(png(chunk('tEXt', bytes('Author\0x')))) && !Files.plainStill(png(chunk('eXIf', [1]))) && !Files.plainStill(png(chunk('acTL', [0, 0, 0, 2, 0, 0, 0, 0]))), 'PNG text, EXIF and animation are not plain');
+    const riff = (...chunks) => { const body = [...bytes('WEBP'), ...chunks.flat()]; return new Uint8Array([...bytes('RIFF'), ...le32(body.length), ...body]); };
+    const wchunk = (type, data) => [...bytes(type), ...le32(data.length), ...data, ...(data.length & 1 ? [0] : [])];
+    ok(Files.plainStill(riff(wchunk('VP8 ', [1, 2, 3, 4]))), 'a simple WebP is plain');
+    ok(!Files.plainStill(riff(wchunk('VP8X', [0x08, 0, 0, 0, 0, 0, 0, 0, 0, 0]), wchunk('VP8 ', [1, 2]), wchunk('EXIF', [1, 2, 3]))) && !Files.plainStill(riff(wchunk('VP8X', [0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0]))), 'WebP with EXIF or animation is not plain');
+    ok(!Files.plainStill(bytes('GIF89a')) && !Files.plainStill(new Uint8Array(0)), 'other types and nothing at all are not plain');
+    // What is hidden, so a note can name the real reason (animation is not "camera or location data").
+    const parts = b => JSON.stringify(Files.hiddenParts(b));
+    ok(parts(jpeg(jfif, seg(0xE1, bytes('Exif\0\0MM')))) === '["camera"]' && parts(jpeg(jfif, seg(0xE1, bytes('http://ns.adobe.com/xap/1.0/\0')))) === '["description"]', 'JPEG: EXIF is camera data, XMP is description data');
+    ok(parts(jpeg(jfif, seg(0xFE, bytes('hi')), seg(0xED, bytes('Photoshop 3.0\0')))) === '["description","text"]', 'JPEG: a comment is text, IPTC is description; every kind is listed');
+    ok(parts(jpeg(jfif, seg(0xE2, bytes('MPF\0II*\0')))) === '["other"]' && parts(jpeg(jfif, seg(0xE2, bytes('ICC_PROFILE\0')))) === '[]', 'JPEG: extra pictures (MPF) are hidden data, a colour profile is not');
+    ok(parts(png(chunk('tEXt', bytes('Software\0Shot 1.0')))) === '["text"]' && parts(png(chunk('iTXt', bytes('XML:com.adobe.xmp\0\0\0\0\0<x/>')))) === '["description"]', 'PNG: a text note is text, XMP in iTXt is description');
+    ok(parts(png(chunk('acTL', [0, 0, 0, 3, 0, 0, 0, 0]))) === '["animation"]' && parts(png(chunk('tIME', [7, 234, 1, 1, 0, 0, 0]), chunk('eXIf', [1]))) === '["camera","date"]', 'PNG: animation, a saved time and EXIF');
+    ok(parts(riff(wchunk('VP8X', [0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0]), wchunk('ANIM', [0, 0, 0, 0, 0, 0]), wchunk('ANMF', [1, 2]))) === '["animation"]', 'WebP: an animation is only animation');
+    ok(parts(riff(wchunk('VP8X', [0x0C, 0, 0, 0, 0, 0, 0, 0, 0, 0]), wchunk('VP8 ', [1, 2]))) === '["camera","description"]', 'WebP: the EXIF and XMP flags');
+    ok(Files.hiddenParts(bytes('GIF89a')) === null && Files.hiddenParts(new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0, 0, 16, 1, 2])) === null, 'unknown types and cut-off files say nothing (null)');
   }
 
   console.log(`✓ applicant workspace model: ${checks} checks passed`);

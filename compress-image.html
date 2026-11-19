@@ -288,7 +288,6 @@
           <p class="batch-result__note">Every file was read back and checked against your settings before it was listed as done. Saving a new copy removes location (GPS), camera and other hidden details from photos.</p>
         </div>
         <div class="notice notice--warning hidden" id="batchStale"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"><p id="batchStaleText">You changed the settings after processing. The finished files still use the old settings.</p><button type="button" class="btn btn-sm" id="btnBatchRerun"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Process again</button></div></div>
-        <ul class="file-list hidden" id="batchList" aria-label="Images in this batch"></ul>
       </div>
       <div class="ws-rail">
       <div class="ws-side">
@@ -391,6 +390,9 @@
         <p class="process-summary" id="batchSettingsSummary"></p>
       </div>
       </div>
+      <div class="batch-files">
+        <ul class="file-list hidden" id="batchList" aria-label="Images in this batch"></ul>
+      </div>
     </section>
     </section>
     <!-- tool:end -->
@@ -402,7 +404,7 @@
       <p>PNG is lossless: it has no quality setting, so the only ways to make a PNG much smaller are fewer pixels or a different format. A photo saved as PNG usually shrinks to a fraction of its size as JPEG. Choose JPEG under <em>Format</em> for photos; keep PNG for screenshots and graphics with sharp edges or transparency. Converting is covered in more detail on the <a href="convert-image.html">image converter</a> page.</p>
       <h3>Good to know</h3>
       <ul>
-        <li>A photo that is already well compressed can come out larger. The row tells you when the result is bigger than the original, so you can keep the original instead.</li>
+        <li>A photo that is already well compressed can come out larger. When the original already meets your settings and holds no hidden details, it is kept as it is and the row says so. When it holds hidden details, such as camera or location data, or is animated, you get the clean copy (for an animation, a still picture of its first frame), and the row says the original is smaller and why, so you can choose.</li>
         <li>Each round of JPEG compression loses a little detail. Compress from the original photo, not from a file that was already shrunk.</li>
         <li>The compressor writes new files, so location (GPS), camera and other hidden details in your photos are removed.</li>
         <li>For a form that also fixes the pixel size, such as 350 × 450 px under 50 KB, use the <a href="passport-photo-resizer.html">passport photo resizer</a> for one photo, or the <a href="batch-image.html">batch image processor</a> with the passport preset for many.</li>

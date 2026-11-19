@@ -185,14 +185,14 @@
   "file": "img/guides/tut-batch-cancelled.webp",
   "width": 857,
   "height": 711,
-  "alt": "The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the failed and cancelled images.",
-  "bytes": 43406,
+  "alt": "The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the cancelled images.",
+  "bytes": 42858,
   "phone": {
    "file": "img/guides/phone/tut-batch-cancelled.webp",
    "width": 682,
-   "height": 2702,
+   "height": 2000,
    "scale": 2,
-   "bytes": 90562
+   "bytes": 68412
   }
  },
  "tut-batch-names": {
@@ -204,9 +204,9 @@
   "phone": {
    "file": "img/guides/phone/tut-batch-names.webp",
    "width": 682,
-   "height": 1964,
+   "height": 1226,
    "scale": 2,
-   "bytes": 67338
+   "bytes": 38686
   }
  },
  "tut-batch-preset": {
@@ -246,9 +246,9 @@
   "phone": {
    "file": "img/guides/phone/tut-compress-results.webp",
    "width": 652,
-   "height": 2272,
+   "height": 2304,
    "scale": 2,
-   "bytes": 75540
+   "bytes": 76026
   }
  },
  "tut-compress-settings": {

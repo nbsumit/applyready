@@ -2,6 +2,9 @@
    different defaults and copy (batch processor, image compressor, image converter).
    scripts/build-image-pages.js writes it between <!-- tool:start --> and <!-- tool:end -->.
    Element ids and data-* attributes are read by js/batch-image.js, so they are a contract.
+   The file list sits in its own area after the settings (.batch-files): beside the settings under the
+   stage on desktops, and below the settings on narrower screens, so a long list never pushes the
+   settings hundreds of rows down a phone screen.
    Styles: css/app.css sections 12 (workspace), 17 (file lists) and 18 (batch images). */
 'use strict';
 
@@ -210,7 +213,6 @@ function renderBatchWorkspace(mode) {
           <p class="batch-result__note">Every file was read back and checked against your settings before it was listed as done. Saving a new copy removes location (GPS), camera and other hidden details from photos.</p>
         </div>
         <div class="notice notice--warning hidden" id="batchStale"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"><p id="batchStaleText">You changed the settings after processing. The finished files still use the old settings.</p><button type="button" class="btn btn-sm" id="btnBatchRerun"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Process again</button></div></div>
-        <ul class="file-list hidden" id="batchList" aria-label="Images in this batch"></ul>
       </div>
       <div class="ws-rail">
       <div class="ws-side">
@@ -227,6 +229,9 @@ ${m.more.map(id => sectionMarkup(id, dz, I + '    ')).join('\n')}
         <button type="button" id="btnBatchStart" class="btn btn-primary btn-lg btn-block" disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> <span id="btnBatchStartLabel">Process images</span></button>
         <p class="process-summary" id="batchSettingsSummary"></p>
       </div>
+      </div>
+      <div class="batch-files">
+        <ul class="file-list hidden" id="batchList" aria-label="Images in this batch"></ul>
       </div>
     </section>`;
 }

@@ -521,8 +521,17 @@
     return [`${f.width} × ${f.height} px`, size(f.bytes), FORMAT[f.mime] || f.mime, f.limit ? `under ${f.limit / 1024} KB` : ''].filter(Boolean).join(' · ');
   }
 
+  /**
+   * The name a result is saved under on its own: the applicant's name (or "Applicant-3") first, the
+   * same label as in their ZIP name, so files of different people never share a name in the
+   * Downloads folder (customers often bring files all called photo.jpg).
+   */
+  function downloadName(a, r) {
+    return Files.safeFileName(`${Model.zipName('{applicant}', a).replace(/\.zip$/i, '')}_${r.name}`, 'result');
+  }
+
   function resultSig(a, r, s) {
-    return JSON.stringify([r.name, r.url, r.downloaded, r.warning, a.jobs.some(j => j.resultId === r.id), s.pdfKB]);
+    return JSON.stringify([r.name, downloadName(a, r), r.url, r.downloaded, r.warning, a.jobs.some(j => j.resultId === r.id), s.pdfKB]);
   }
 
   function resultRow(a, r, s) {
@@ -546,11 +555,10 @@
     const dl = doc.createElement('a');
     dl.className = 'btn btn-sm';
     dl.href = r.url;
-    dl.download = Files.safeFileName(r.name, 'result');
     dl.dataset.act = 'download';
     dl.dataset.key = `dl:${r.id}`;
     dl.append(icon('fa-download'), ' Download');
-    dl.setAttribute('aria-label', `Download ${r.name}`);
+    nameLink(dl, a, r);
     const compressing = a.jobs.some(j => j.resultId === r.id);
     if (r.kind === 'pdf' && r.facts.limit && r.facts.bytes > s.pdfKB * 1024 && r.action === 'merge') {
       tools.appendChild(button(`Compress to ${s.pdfKB} KB`, { act: 'compress-result', key: `cr:${r.id}`, icon: 'fa-file-zipper', disabled: compressing }));
@@ -560,15 +568,23 @@
     return li;
   }
 
+  function nameLink(link, a, r) {
+    const name = downloadName(a, r);
+    link.download = name;
+    link.title = `Saved as ${name}`;
+    link.setAttribute('aria-label', `Download ${r.name}, saved as ${name}`);
+  }
+
   /* ------------------------------------------------------------------ adding files */
+  const roomFor = a => (a && !a.finished ? Math.max(0, Model.MAX_FILES - a.files.length) : 0);
+  const tooMany = (room, offered) => (room > 0
+    ? `Only ${plural(room, 'more file')} could be added: an applicant can have up to ${Model.MAX_FILES} files. The other ${offered - room} ${offered - room === 1 ? 'was' : 'were'} left out.`
+    : `This applicant already has ${Model.MAX_FILES} files, the most one applicant can have. Remove some first.`);
+
   function addFiles(a, files, infos) {
     if (!a || a.finished) return;
-    const room = Model.MAX_FILES - a.files.length;
-    if (files.length > room) {
-      a.addError(room > 0
-        ? `Only ${plural(room, 'more file')} could be added: an applicant can have up to ${Model.MAX_FILES} files. The rest were left out.`
-        : `This applicant already has ${Model.MAX_FILES} files, the most one applicant can have. Remove some first.`);
-    }
+    const room = roomFor(a);
+    if (files.length > room) a.addError(tooMany(room, files.length));
     const added = [];
     files.slice(0, Math.max(0, room)).forEach((file, i) => {
       const entry = a.addFile(file, infos[i]);
@@ -613,7 +629,9 @@
   const dz = Kit.dropzone(el.drop, {
     accept: ['image', 'pdf'],
     multiple: true,
-    maxFiles: Model.MAX_FILES,
+    // The room left for the applicant the files are for, so one message gives the real count.
+    maxFiles: a => { const target = a || session.active; return target ? roomFor(target) : Model.MAX_FILES; },
+    tooMany,
     context: () => session.active,
     onFiles: (files, infos, a) => addFiles(a || session.active, files, infos),
     onReject: (messages, a) => { const target = a || session.active; if (target) messages.forEach(m => target.addError(m)); }
@@ -640,9 +658,19 @@
     const text = `${label} did not work: ${failReason(e, job.action)}`;
     if (file && alive(a, file)) file.actionError = text;
     else a.addError(text);
-    if (a === session.active) announce(text);
+    // The visible message keeps the file name; the announcement leaves names out (engine messages
+    // often start with the file name), so the hidden live region never holds an applicant's file names.
+    if (a === session.active) announce(withoutNames(text, a));
     if (e && e.name !== 'PdfError' && window.console) console.warn(e);
     schedule();
+  }
+
+  /** `text` with every file and result name of applicant `a` replaced by "the file". */
+  function withoutNames(text, a) {
+    const names = a.files.map(f => f.name).concat(a.results.map(r => r.name)).filter(Boolean).sort((x, y) => y.length - x.length);
+    let out = String(text);
+    names.forEach(n => { out = out.split(n).join('the file'); });
+    return out.replace(/(^|[.!?]\s+)the file/g, (m, lead) => `${lead}The file`);
   }
 
   /* Engine messages are written for the batch tools; some point to settings that live elsewhere
@@ -895,7 +923,8 @@
       // and at once if the applicant is finished first.
       setTimeout(() => a.releaseURL(url), 60000);
       a.markDownloaded(included.map(r => r.id));
-      if (a === session.active) notify(`ZIP file with ${plural(entries.length, 'file')} downloaded.`);
+      // The page cannot see whether the browser saved it (a browser can block or ask about a download).
+      if (a === session.active) notify(`ZIP file with ${plural(entries.length, 'file')} ready. If no download starts, allow downloads for this site in your browser and try again.`);
     } catch (e) {
       a.zipping = false;
       if (!a.endJob(job)) return;
@@ -984,6 +1013,12 @@
     a.name = el.name.value.slice(0, 60);
     renderNav();
     renderNameHint(a);
+    // Single downloads carry the name: keep the links in step while it is typed.
+    el.results.querySelectorAll('.wk-result').forEach(row => {
+      const r = a.result(row.dataset.id);
+      const link = row.querySelector('[data-act="download"]');
+      if (r && link) nameLink(link, a, r);
+    });
     el.zipLabel.textContent = a.zipping ? 'Preparing ZIP…' : `Download all for ${a.label} (ZIP)`;
   });
 
@@ -1036,6 +1071,11 @@
       ask = { title: `Finish ${who}?`, message: `${plural(c.running, 'task')} for ${who} ${c.running === 1 ? 'is' : 'are'} still running and will be stopped. Finishing removes all of this applicant’s files from this tab.`, confirmLabel: 'Finish and remove', danger: true };
     } else if (c.files && !c.results) {
       ask = { title: `Finish ${who}?`, message: `${who} has ${plural(c.files, 'file')} and no results yet. Finishing removes the files from this tab.`, confirmLabel: 'Finish and remove', danger: true };
+    } else if (c.results) {
+      // "Downloaded" means the download was started: the page cannot see whether the browser saved
+      // the file (a save dialog can be cancelled, a download blocked). One light check before the
+      // results are gone; Finish is focused, so Enter confirms.
+      ask = { title: `Finish ${who}?`, message: `${c.results === 1 ? 'The result was' : `All ${c.results} results were`} downloaded. Check that ${c.results === 1 ? 'it is' : 'they are'} in the Downloads folder or already uploaded: finishing removes ${who}’s files and results from this tab.`, confirmLabel: 'Finish applicant' };
     }
     if (ask && !(await UI().confirm(ask))) return;
     if (a.finished) return;
@@ -1045,6 +1085,7 @@
     if (pool && !session.applicants.some(x => x.jobs.length)) { pool.destroy(); pool = null; }
     render();
     const next = session.active;
+    announce('');   // nothing said about the finished applicant stays in the hidden live region
     notify('Applicant finished. Their files and results were removed from this tab.');
     if (next) { const t = $(`wkTab-${next.id}`); if (t && t.offsetParent) t.focus(); else el.name.focus(); }
     else el.noneNew.focus();
@@ -1067,6 +1108,7 @@
 
   function endSession() {
     session.end();
+    announce('');
     if (pool) { pool.destroy(); pool = null; }
     inSession = false;
     resetSettings();

@@ -218,6 +218,21 @@
     return { s, errors };
   }
 
+  const keptCount = done => done.filter(i => i.result && i.result.kept).length;
+
+  /**
+   * "6 images compressed": an original kept as it was is not compressed or converted, so those are
+   * counted on their own ("4 compressed, 2 kept as they were"). "Ready" is true of both, so the batch
+   * tool keeps one count. With `of`, the count is out of that many ("4 of 7 images compressed, …").
+   */
+  function doneTitle(count, kept, of) {
+    const asWas = n => `kept as ${n === 1 ? 'it was' : 'they were'}`;
+    const head = n => (of ? `${n} of ${of} images` : plural(n, 'image'));
+    if (!kept || DONE_WORD === 'ready') return `${head(count)} ${DONE_WORD}`;
+    if (kept === count) return `${head(kept)} ${asWas(kept)}`;
+    return `${head(count - kept)} ${DONE_WORD}, ${kept} ${asWas(kept)}`;
+  }
+
   function settingsChanged() {
     renderSettings();
     rowsDirty = true;
@@ -267,12 +282,68 @@
     if (result.mime === 'image/png' && result.reduced) {
       notes.push('PNG cannot lower its quality, only its pixel size. If transparency is not needed, saving as JPEG keeps many more pixels under the same limit.');
     }
-    if (result.bytes >= item.size && settings.resize === 'none' && settings.format === 'keep') {
-      notes.push(opts.maxBytes && item.size <= opts.maxBytes
-        ? `The original (${fmt(item.size)}) was already under the limit and is smaller than this copy. You can upload the original instead.`
-        : `The result is not smaller than the original (${fmt(item.size)}): the original was already well compressed. Keep the original, or set a lower quality.`);
+    if (result.bytes >= item.size) {
+      const kept = await keepOriginal(item, settings, opts, result);
+      if (kept && kept.kept) return Object.assign(kept, { key });
+      if (kept) {
+        notes.push(hiddenNote(item.size, kept.hidden));
+      } else if (settings.resize === 'none' && settings.format === 'keep') {
+        notes.push(opts.maxBytes && item.size <= opts.maxBytes
+          ? `The original (${fmt(item.size)}) was already under the limit and is smaller than this copy. You can upload the original instead.`
+          : `The result is not smaller than the original (${fmt(item.size)}): the original was already well compressed. Keep the original, or set a lower quality.`);
+      }
     }
     return { blob: result.blob, mime: result.mime, width: result.width, height: result.height, bytes: result.bytes, notes, key };
+  }
+
+  // What each kind of hidden content (Files.hiddenParts) is, in a row note.
+  const HIDDEN_WORDS = {
+    camera: 'photo data (EXIF), which can include the camera, date and location',
+    description: 'description or editing data (XMP or IPTC)',
+    text: 'text notes or comments, such as the program that made it',
+    date: 'the date it was last changed',
+    other: 'other embedded data'
+  };
+
+  /**
+   * Why a smaller original was not kept, by cause: an animation becomes a still copy of its first
+   * frame, which is not the same as leaving out hidden details. `hidden` is a hiddenParts list, or
+   * null when the original could not be read to the end.
+   */
+  function hiddenNote(size, hidden) {
+    const was = `The original (${fmt(size)}) is smaller`;
+    if (!hidden) return `${was}, but parts of it could not be read, so it may hold hidden details that this copy leaves out. Upload the original instead only if that does not matter.`;
+    const details = hidden.filter(k => k !== 'animation').map(k => HIDDEN_WORDS[k] || HIDDEN_WORDS.other);
+    const list = details.join('; ');
+    if (hidden.includes('animation')) {
+      return `${was}, but it is animated, and this copy is a still picture of its first frame.`
+        + (details.length ? ` The original also holds hidden details that this copy leaves out: ${list}.` : '')
+        + ` Upload the original instead only if the place you are sending it to accepts animated pictures${details.length ? ' and those details do not matter' : ''}.`;
+    }
+    return `${was}, but it holds hidden details that this copy leaves out: ${list}. Upload the original instead only if those details do not matter.`;
+  }
+
+  /**
+   * A new copy came out no smaller than the original. When the original already meets every setting
+   * (same format, same pixel size, within the KB limits) and holds nothing a new copy would remove
+   * (EXIF, location, comments, animation), the original is the better file: it is kept as the result.
+   * Returns that result (with kept: true), { hidden } when only what the original holds stands in the
+   * way (a hiddenParts list, or null when it could not be read), or null when it does not apply.
+   */
+  async function keepOriginal(item, settings, opts, result) {
+    const mime = item.meta.mime || item.file.type;
+    if (settings.resize !== 'none' || result.mime !== mime || !Ops.EXT[mime]) return null;
+    if ((opts.maxBytes && item.size > opts.maxBytes) || (opts.minBytes && item.size < opts.minBytes)) return null;
+    let bytes;
+    try { bytes = new Uint8Array(await item.file.arrayBuffer()); } catch (e) { return null; }
+    const head = Ops.readHeader(bytes);
+    if (!head || head.width !== result.width || head.height !== result.height) return null;
+    const hidden = Files.hiddenParts(bytes);
+    if (!hidden || hidden.length) return { hidden };
+    return {
+      blob: item.file, mime, width: head.width, height: head.height, bytes: item.size, kept: true,
+      notes: [`A new copy would have been larger (${fmt(result.bytes)}), so the original (${fmt(item.size)}) is kept as it is. It already meets these settings and holds no hidden photo details.`]
+    };
   }
 
   /* ------------------------------------------------------------------ rows */
@@ -398,8 +469,13 @@
     item.meta.thumbUrl = null;
   }
 
-  /* Output names: keep, add a word, or number in list order; duplicates get (2), (3)... */
-  function outputNames() {
+  /* Output names: keep, add a word, or number in list order; duplicates get (2), (3)...
+     A name settles once it has been shown with the run finished, or downloaded (settle). A settled
+     name stays with its row while the naming settings and the result's format stay the same:
+     removing a row, retrying or processing again does not renumber the others, so a file saved on
+     its own has the same name in a later ZIP. Rows without a settled name are named in list order
+     around the settled ones. */
+  function outputNames(settle) {
     const s = readSettings();
     const used = new Set();
     const names = new Map();
@@ -407,18 +483,36 @@
     const digits = Math.max(3, String(all.length).length);
     const word = String(s.suffix || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '').slice(0, 40);
     const prefix = String(s.prefix || '').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '').trim().slice(0, 40) || 'image';
+    const naming = JSON.stringify([s.naming, s.naming === 'suffix' ? word : '', s.naming === 'sequence' ? prefix : '']);
+    const isDone = item => item.status === 'done' && item.result;
+    const extOf = item => Ops.EXT[item.result.mime] || 'jpg';
+    const pinOf = item => { const p = item.meta.pinned; return p && p.naming === naming && (!isDone(item) || p.ext === extOf(item)) ? p : null; };
+    // Settled names first. A row being processed again keeps its name reserved for when it is done.
+    all.forEach(item => {
+      const p = pinOf(item);
+      if (!p || used.has(p.name.toLowerCase())) return;
+      used.add(p.name.toLowerCase());
+      if (isDone(item)) names.set(item.id, p.name);
+    });
     all.forEach((item, index) => {
-      if (item.status !== 'done' || !item.result) return;
-      const ext = Ops.EXT[item.result.mime] || 'jpg';
-      let stem;
-      if (s.naming === 'sequence') stem = `${prefix}-${String(index + 1).padStart(digits, '0')}`;
-      else stem = Files.stem(Files.safeFileName(item.name, 'image')) + (s.naming === 'suffix' ? word : '');
-      let name = Files.safeFileName(`${stem}.${ext}`, 'image');
-      const base = Files.stem(name);
-      for (let n = 2; used.has(name.toLowerCase()); n++) name = `${base} (${n}).${ext}`;
+      if (!isDone(item) || names.has(item.id)) return;
+      const ext = extOf(item);
+      let name = '';
+      if (s.naming === 'sequence') {
+        for (let n = index + 1; !name || used.has(name.toLowerCase()); n++) name = Files.safeFileName(`${prefix}-${String(n).padStart(digits, '0')}.${ext}`, 'image');
+      } else {
+        name = Files.safeFileName(`${Files.stem(Files.safeFileName(item.name, 'image')) + (s.naming === 'suffix' ? word : '')}.${ext}`, 'image');
+        const base = Files.stem(name);
+        for (let n = 2; used.has(name.toLowerCase()); n++) name = `${base} (${n}).${ext}`;
+      }
       used.add(name.toLowerCase());
       names.set(item.id, name);
     });
+    if (settle) {
+      all.forEach(item => {
+        if (names.has(item.id) && (settle === true || settle === item)) item.meta.pinned = { name: names.get(item.id), naming, ext: extOf(item) };
+      });
+    }
     return names;
   }
 
@@ -431,10 +525,17 @@
     el.error.hidden = false;
   }
 
+  const roomLeft = () => Math.max(0, MAX_ITEMS - queue.items.length);
+  const fullMessages = new Set();   // "only N more fit" messages, which stand for many files at once
+  const tooMany = (room, offered) => remember(room > 0
+    ? `Only ${plural(room, 'more image')} fit in this batch, which holds ${MAX_ITEMS}, so the other ${offered - room} ${offered - room === 1 ? 'was' : 'were'} not added. Process these and download them, then clear the list for the rest.`
+    : `This batch is full (${MAX_ITEMS} images). Process and download these, then clear the list to add more.`);
+  function remember(message) { fullMessages.add(message); return message; }
+
   function addFiles(files, infos) {
-    const room = MAX_ITEMS - queue.items.length;
+    const room = roomLeft();
     const extra = [];
-    if (files.length > room) extra.push(room > 0 ? `Only ${plural(room, 'more image')} fit in this batch, which holds ${MAX_ITEMS}. Process these and download them, then clear the list for the rest.` : `This batch is full (${MAX_ITEMS} images). Process and download these, then clear the list to add more.`);
+    if (files.length > room) extra.push(tooMany(room, files.length));
     const { added } = queue.add(files.slice(0, Math.max(0, room)));
     added.forEach((item, i) => {
       const info = infos[i] || {};
@@ -453,12 +554,12 @@
 
   // The kit reports rejected files first, then (in the same tick) the accepted ones, if any.
   let pendingRejects = [];
-  const notAdded = n => (n === 1 ? 'One file was not added:' : `${n} files were not added:`);
+  const notAdded = (n, messages) => (messages && messages.some(m => fullMessages.has(m)) ? 'Not every file was added:' : n === 1 ? 'One file was not added:' : `${n} files were not added:`);
   const dz = Kit.dropzone(app, {
-    accept: ['image'], multiple: true, limitBytes: LIMIT_BYTES, maxFiles: MAX_ITEMS, checkPixels: true,
+    accept: ['image'], multiple: true, limitBytes: LIMIT_BYTES, maxFiles: roomLeft, tooMany, checkPixels: true,
     onReject: messages => {
       pendingRejects = messages;
-      showErrors(notAdded(messages.length), messages);
+      showErrors(notAdded(messages.length, messages), messages);
       Kit.announce(`${plural(messages.length, 'file')} not added. ${messages[0]}`);
       Promise.resolve().then(() => { pendingRejects = []; });
     },
@@ -466,7 +567,7 @@
       const extra = addFiles(files, infos);
       const all = pendingRejects.concat(extra);
       pendingRejects = [];
-      showErrors(notAdded(all.length), all);
+      showErrors(notAdded(all.length, all), all);
       refresh();
     }
   });
@@ -500,10 +601,12 @@
     const finishedRun = run;
     run = null;
     revealResult = true;
+    rowsDirty = true;           // repaint every row once, which also settles the names shown
     refresh();
     if (!finishedRun || finishedRun.cancelled) return;
     const done = summary.done, failed = summary.error + summary.cancelled;
-    Kit.announce(failed ? `Finished. ${done} of ${summary.total} images ${DONE_WORD}; ${plural(failed, 'image')} failed or cancelled.` : `Finished. ${plural(done, 'image')} ${DONE_WORD}.`);
+    const kept = keptCount(queue.items.filter(i => i.status === 'done'));
+    Kit.announce(failed ? `Finished. ${doneTitle(done, kept, summary.total)}; ${plural(failed, 'image')} failed or cancelled.` : `Finished. ${doneTitle(done, kept)}.`);
   }
 
   function cancel() {
@@ -530,7 +633,7 @@
   /* ------------------------------------------------------------------ downloads */
   function downloadOne(item) {
     if (!item || item.status !== 'done' || !item.result) return;
-    const name = outputNames().get(item.id);
+    const name = outputNames(item).get(item.id);
     Files.download(item.result.blob, name);
     item.meta.downloaded = true;
     Kit.announce(`Downloaded ${name}.`);
@@ -545,14 +648,28 @@
     return typed ? Files.safeFileName(`${typed}.zip`, 'images') : fallback;
   }
 
+  // Finished results made before the settings last changed ("Done, old settings").
+  function staleItems() { return currentKey ? queue.items.filter(i => i.status === 'done' && i.result && i.result.key !== currentKey) : []; }
+
   // One result is downloaded as it is: a ZIP around a single photo is only an extra step.
   let zipping = false;
   async function downloadAll() {
     if (zipping) return;
-    const names = outputNames();
     const done = queue.items.filter(i => i.status === 'done' && i.result);
     if (!done.length) return;
+    // Results made with the old settings are not mixed in without saying so.
+    const stale = staleItems().length;
+    if (stale && UI().confirm) {
+      const all = stale === done.length;
+      const yes = await UI().confirm({
+        title: all ? 'Download with the old settings?' : 'Some images use the old settings',
+        message: `${all ? (done.length === 1 ? 'This image was' : `All ${done.length} images were`) : `${stale} of the ${done.length} images ${stale === 1 ? 'was' : 'were'}`} made before you changed the settings, so ${stale === 1 ? 'it does' : 'they do'} not match them. To make every file match, choose Go back, then Process again.`,
+        confirmLabel: 'Download anyway', cancelLabel: 'Go back'
+      });
+      if (!yes) return;
+    }
     if (done.length === 1) { downloadOne(done[0]); refresh(); return; }
+    const names = outputNames(true);
     const entries = done.map(i => ({ name: names.get(i.id), data: i.result.blob }));
     zipping = true;
     refresh();
@@ -649,7 +766,7 @@
     const items = queue.items;
     const summary = queue.summary();
     if (rowsDirty || currentKey !== renderedKey) {
-      const names = outputNames();
+      const names = outputNames(!queue.running);
       items.forEach(item => updateRow(item, names));
       shownNames = names;
       rowsDirty = false;
@@ -705,25 +822,31 @@
     if (showResult) {
       const outBytes = done.reduce((sum, i) => sum + (i.result ? i.result.bytes : 0), 0);
       const inBytes = done.reduce((sum, i) => sum + i.size, 0);
+      const kept = keptCount(done);
       if (!failed) {
         el.verdictIcon.className = 'fa-solid fa-check';
         el.verdict.classList.remove('is-warning');
-        el.verdictTitle.textContent = `${plural(done.length, 'image')} ${DONE_WORD}`;
+        el.verdictTitle.textContent = doneTitle(done.length, kept);
       } else {
         el.verdictIcon.className = 'fa-solid fa-triangle-exclamation';
         el.verdict.classList.add('is-warning');
-        el.verdictTitle.textContent = done.length ? `${done.length} of ${summary.done + failed} images ${DONE_WORD}` : 'No images could be processed';
+        el.verdictTitle.textContent = done.length ? doneTitle(done.length, kept, summary.done + failed) : 'No images could be processed';
       }
       const facts = [];
       if (done.length) facts.push(`${fmt(outBytes)} in total, from ${fmt(inBytes)}.`);
+      if (kept) facts.push(`${kept === done.length && kept > 1 ? `All ${kept}` : plural(kept, 'image')} already met the settings and ${kept === 1 ? 'is' : 'are'} kept as ${kept === 1 ? 'it was' : 'they were'}, because a new copy would have been larger.`);
       if (summary.error) facts.push(`${plural(summary.error, 'image')} failed; each row says why.`);
       if (summary.cancelled) facts.push(`${plural(summary.cancelled, 'image')} cancelled.`);
       el.verdictText.textContent = facts.join(' ');
       show(el.zip, done.length > 0);
       if (!el.zip.getAttribute('aria-busy')) el.zip.disabled = !done.length;
-      if (!el.zip.getAttribute('aria-busy')) el.zip.innerHTML = done.length === 1 ? '<i class="fa-solid fa-download" aria-hidden="true"></i> Download the image' : `<i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download all ${done.length} as ZIP`;
+      const old = stale.length ? (stale.length === done.length ? ' (old settings)' : ` (${stale.length} with old settings)`) : '';
+      if (!el.zip.getAttribute('aria-busy')) el.zip.innerHTML = done.length === 1 ? `<i class="fa-solid fa-download" aria-hidden="true"></i> Download the image${old}` : `<i class="fa-solid fa-file-zipper" aria-hidden="true"></i> Download all ${done.length} as ZIP${old}`;
       show(el.retry, failed > 0);
-      el.retry.innerHTML = `<i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Retry ${plural(failed, 'failed image', 'failed and cancelled images')}`;
+      // Says which kinds there are: "failed" only when something failed, "cancelled" only when something was cancelled.
+      const what = summary.error && summary.cancelled ? ['failed or cancelled image', 'failed and cancelled images']
+        : summary.error ? ['failed image', 'failed images'] : ['cancelled image', 'cancelled images'];
+      el.retry.innerHTML = `<i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Retry ${plural(failed, what[0], what[1])}`;
     }
     let revealed = false;
     if (revealResult && !running) {
@@ -747,7 +870,7 @@
       // The download is the result's own button; the bar does not repeat it, it only says where things stand.
       label = 'All images processed';
       note = toDownload && done.length
-        ? `${describe(s)}. ${plural(done.length, 'image')} ${DONE_WORD}; download ${done.length === 1 ? 'it' : 'them'} from the result.`
+        ? `${describe(s)}. ${doneTitle(done.length, keptCount(done))}; download ${done.length === 1 ? 'it' : 'them'} from the result.`
         : `${describe(s)}. Change a setting or add images to process more.`;
     }
     else label = `${VERB} images`;
