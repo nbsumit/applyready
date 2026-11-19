@@ -185,6 +185,10 @@ ${options}
               <button type="button" id="btnCropAgain" class="btn btn-lg">${esc(t.again)}</button>
             </div>
           </div>
+          <div id="resultWarning" class="notice notice--warning hidden">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            <span class="notice__body" id="resultWarningText"></span>
+          </div>
           <div class="ws-result__body">
             <div class="ws-result__view">
               <div class="segmented" role="group" aria-label="${esc(t.compare)}">

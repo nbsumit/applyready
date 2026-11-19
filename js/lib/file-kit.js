@@ -9,6 +9,7 @@
      options    { accept: ['image'] | ['pdf'] | ..., multiple, limitBytes, maxFiles,
                   onFiles(files, infos, context), onReject(messages, context), paste: true,
                   validate: false to accept any file unchecked (infos are then null),
+                  checkPixels: true to also refuse images over 50 MP, from their header (tooManyPixels),
                   context: () => value, read when files arrive and passed back after checking,
                   so a tool can deliver them where they were dropped (applicant workspaces) }
    ApplyReadyFileKit.thumbnail(file, size) -> Promise<objectURL|null>   small JPEG preview; null when
@@ -70,8 +71,15 @@
         return;
       }
       const results = await Promise.all(files.map(f => Files().validate(f, opts.accept, opts.limitBytes).then(r => ({ file: f, r }))));
-      const good = results.filter(x => x.r.ok);
+      let good = results.filter(x => x.r.ok);
       results.filter(x => !x.r.ok).forEach(x => messages.push(x.r.error));
+      // A picture over the pixel limit is refused now, with the other files that cannot be used,
+      // rather than waiting in a list only to fail once the work starts.
+      if (opts.checkPixels) {
+        const big = await Promise.all(good.map(x => (x.r.info && x.r.info.kind === 'image' ? tooManyPixels(x.file) : '')));
+        big.forEach(m => { if (m) messages.push(m); });
+        good = good.filter((x, i) => !big[i]);
+      }
       if (messages.length && opts.onReject) opts.onReject(messages, context);
       if (good.length && opts.onFiles) opts.onFiles(good.map(x => x.file), good.map(x => x.r.info), context);
     }

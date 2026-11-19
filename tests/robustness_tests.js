@@ -212,8 +212,10 @@ function mixedPdf(jpeg) {
   ok(!(await page.$('#imgPdfSkipped')), 'the notice goes away when only images are added');
   await page.goto(origin + '/image-to-pdf.html');
   await page.setInputFiles('#imgPdfFileInput', [{ name: 'only.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF\n') }, { name: 'notes.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: Buffer.from('PK') }]);
+  // Files are identified by their content first, which takes a moment.
+  await page.waitForSelector('#imgPdfSkipped', { timeout: 10000 });
   const onlyPdf = await page.evaluate(() => { const n = document.getElementById('imgPdfSkipped'); return n && { text: n.textContent, visible: !!n.offsetParent }; });
-  ok(onlyPdf && onlyPdf.visible && /only\.pdf/.test(onlyPdf.text) && /notes\.docx/.test(onlyPdf.text) && /JPG, PNG or WebP/.test(onlyPdf.text), `with no image chosen, the notice still explains every file (${JSON.stringify(onlyPdf)})`);
+  ok(onlyPdf && onlyPdf.visible && /only\.pdf/.test(onlyPdf.text) && /notes\.docx/.test(onlyPdf.text) && /needs an image \(JPEG, PNG, WebP[^)]*\); choose a file of that type instead/.test(onlyPdf.text), `with no image chosen, the notice still explains every file (${JSON.stringify(onlyPdf)})`);
   await page.locator('#taskNotification.is-visible').waitFor({ state: 'visible', timeout: 6000 });
   ok(/Merge PDF/.test(await page.locator('#taskNotification').innerText()), 'with no image chosen, the notification says so and names Merge PDF');
   console.log('✓ Image to PDF names skipped PDFs and points to Merge PDF');

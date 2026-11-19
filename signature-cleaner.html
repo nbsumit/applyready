@@ -124,7 +124,7 @@
             "name": "Why is the cleaned file still too large for the form?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 46.7 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for."
+              "text": "The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 44.1 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for."
             }
           },
           {
@@ -367,7 +367,7 @@
         </figure>
 
         <h3>A real before and after</h3>
-        <p>We ran the cleaner on the test signature in our <a href="img/samples/test-signature.jpg">sample images</a>: a 1600 × 900 px phone-style photo of blue ink on paper with a darker corner, 251.5 KB as a JPEG. With the default settings (paper whiteness 70, ink darkness 80, specks removed, original ink colour) the cleaned JPEG was still 1600 × 900 px and 46.7 KB. The same result saved as PNG was 112.7 KB, and as a transparent PNG 114.8 KB. None of these fits a 10 to 20 KB signature slot yet. Resized to 300 × 100 px in the resizer, the uncleaned photo came to 8.0 KB and the <a href="img/samples/test-signature-cleaned.jpg">cleaned version</a> to 6.3 KB, both at the resizer's top quality setting: plain white paper takes fewer bytes than grey, textured paper.</p>
+        <p>We ran the cleaner on the test signature in our <a href="img/samples/test-signature.jpg">sample images</a>: a 1600 × 900 px phone-style photo of blue ink on paper with a darker corner, 251.5 KB as a JPEG. With the default settings (paper whiteness 70, ink darkness 80, specks removed, original ink colour) the cleaned JPEG was still 1600 × 900 px and 44.1 KB. The same result saved as PNG was 151.7 KB, and as a transparent PNG 161.2 KB. None of these fits a 10 to 20 KB signature slot yet. Resized to 300 × 100 px in the resizer, the uncleaned photo came to 8.0 KB and the <a href="img/samples/test-signature-cleaned.jpg">cleaned version</a> to 6.4 KB, both at the resizer's top quality setting: plain white paper takes fewer bytes than grey, textured paper.</p>
 
         <h3>Common mistakes</h3>
         <ul>
@@ -420,7 +420,7 @@
         <details class="faq-item">
           <summary class="faq-question">Why is the cleaned file still too large for the form?</summary>
           <div class="faq-answer">
-            <p>The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 46.7 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for.</p>
+            <p>The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 44.1 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for.</p>
           </div>
         </details>
 
@@ -540,6 +540,7 @@
   <script src="js/components.js?v=20261118" defer></script>
   <script src="js/site.js?v=20261118"></script>
   <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/signature-cleaner.js?v=20261118"></script>
 </body>
 </html>

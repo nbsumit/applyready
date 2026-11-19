@@ -373,6 +373,7 @@ body.resume-page .site-footer__base { max-width: var(--w-wide); }
 .field-label { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--c-text); line-height: 1.35; }
 .optional { font-weight: var(--fw-regular); color: var(--c-text-3); }
 .field-hint, .form-hint { font-size: var(--fs-sm); line-height: 1.5; color: var(--c-text-3); }
+.field-hint.is-warning { color: var(--c-warning); font-weight: var(--fw-medium); }
 .field-error { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-sm); font-weight: var(--fw-medium); line-height: 1.4; color: var(--c-danger); }
 .field-error::before { content: '!'; flex: none; display: grid; place-items: center; width: 16px; height: 16px; margin-top: 1px; border-radius: 50%; background: var(--c-danger); color: var(--c-surface); font-size: 11px; font-weight: 700; line-height: 1; }
 .field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }

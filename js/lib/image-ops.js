@@ -26,6 +26,9 @@
    onProgress(fraction) is called with 0..1 as the work advances (decode, encode, size search).
    readHeader(bytes) reads pixel size and EXIF orientation from the first bytes of a file without
    decoding it, so oversized images are refused before they take memory.
+   openImage(blob, { name, minSide }) opens a picked image for the single-image tools with the same
+   checks (pixel limit from the header, a complete decode, a minimum size); see the function.
+   setDensity(blob, dpi) records a print resolution in a finished JPEG or PNG.
 */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -174,11 +177,13 @@
 
   const DECODE_ERROR = 'This image could not be opened. It may be damaged, or in a format this browser cannot read.';
 
+  // Where createImageBitmap exists, a file it cannot decode is refused: an <img> would still accept
+  // a truncated JPEG and show the missing part blank. The <img> route is only for browsers without it.
   async function decode(blob) {
     if (typeof createImageBitmap === 'function') {
       try { return await createImageBitmap(blob, { imageOrientation: 'from-image' }); }
       catch (e) {
-        try { return await createImageBitmap(blob); } catch (e2) { /* fall through */ }
+        try { return await createImageBitmap(blob); } catch (e2) { throw new Error(DECODE_ERROR); }
       }
     }
     if (typeof Image !== 'undefined' && typeof URL !== 'undefined' && typeof document !== 'undefined') {
@@ -192,6 +197,102 @@
       } catch (e) { /* fall through */ } finally { URL.revokeObjectURL(url); }
     }
     throw new Error(DECODE_ERROR);
+  }
+
+  /** The message for a picture over MAX_PIXELS, worded as in every other tool that refuses one. */
+  function tooManyPixelsMessage(width, height, name) {
+    return `${name || 'This image'} is ${Math.round(width * height / 1e6)} megapixels (${width} × ${height} px), more than the ${MAX_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`;
+  }
+
+  /**
+   * Open a picked image for a tool that shows it on the page (the resizer, signature cleaner, print
+   * sheet, image to PDF), with the same checks the batch tools make before they use a file:
+   *  - the pixel size is read from the header first, so a picture over MAX_PIXELS is refused before
+   *    it takes any memory (a 400 KB PNG can declare 400 megapixels, 1.6 GB once decoded);
+   *  - the whole file is decoded. A truncated or damaged JPEG fails here, where an <img> element
+   *    would show it with the missing part blank and the tool would offer a partly blank result;
+   *  - options.minSide: a picture smaller than this on either side is refused.
+   * Returns { source, width, height, close() }. source can be passed to drawImage (an ImageBitmap,
+   * or an <img> in a browser without createImageBitmap); close() frees its memory. Throws an Error
+   * whose message can be shown to the person, with code 'toolarge', 'damaged' or 'toosmall'.
+   * options.name: the file name used in messages (default: the blob's name).
+   */
+  async function openImage(blob, options) {
+    const o = options || {};
+    const name = o.name || (blob && blob.name) || 'This image';
+    const fail = (code, message) => { const e = new Error(message); e.code = code; return e; };
+    const damaged = () => fail('damaged', `${name} could not be opened. It may be damaged or only partly downloaded, or in a format this browser cannot read. Open it on your device to check it, or choose another file.`);
+    const header = await readHeaderOf(blob);
+    if (header && header.width * header.height > MAX_PIXELS) throw fail('toolarge', tooManyPixelsMessage(header.width, header.height, name));
+    let source = null;
+    try { source = await decode(blob); } catch (e) { throw damaged(); }
+    const width = source.width || source.naturalWidth, height = source.height || source.naturalHeight;
+    const close = () => { if (source && typeof source.close === 'function') source.close(); source = null; };
+    if (!width || !height) { close(); throw damaged(); }
+    if (width * height > MAX_PIXELS) { close(); throw fail('toolarge', tooManyPixelsMessage(width, height, name)); }
+    if (o.minSide && Math.min(width, height) < o.minSide) {
+      close();
+      throw fail('toosmall', `${name} is only ${width} × ${height} px, too small to make a usable picture from. Choose the original photo or a larger scan, at least ${o.minSide} px on each side.`);
+    }
+    return { source, width, height, close };
+  }
+
+  /* ------------------------------------------------------------ print resolution */
+  let crcTable = null;
+  function crc32(bytes) {
+    if (!crcTable) {
+      crcTable = new Uint32Array(256);
+      for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; crcTable[n] = c >>> 0; }
+    }
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  /**
+   * Record a print resolution in a finished JPEG or PNG, so a print shop, Word or a photo viewer
+   * shows it at its real size (3.5 × 4.5 cm at 300 DPI) instead of assuming 72 or 96 DPI. The
+   * pixels are not touched. JPEG: the density fields of the JFIF APP0 header that canvas encoders
+   * write. PNG: a pHYs chunk after IHDR (an existing one is replaced). Other types, or a file whose
+   * header is not as expected, come back unchanged.
+   */
+  async function setDensity(blob, dpi) {
+    const d = Math.round(Number(dpi));
+    if (!blob || !(d > 0 && d < 65536)) return blob;
+    try {
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      // SOI, then APP0 "JFIF\0": density unit at offset 13, X and Y density at 14-17.
+      if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF && bytes[3] === 0xE0 && tag(bytes, 6, 'JFIF') && bytes[10] === 0) {
+        bytes[13] = 1;                                  // dots per inch
+        bytes[14] = (d >> 8) & 0xFF; bytes[15] = d & 0xFF;
+        bytes[16] = (d >> 8) & 0xFF; bytes[17] = d & 0xFF;
+        return new Blob([bytes], { type: 'image/jpeg' });
+      }
+      if (bytes.length > 33 && bytes[0] === 0x89 && tag(bytes, 1, 'PNG') && tag(bytes, 12, 'IHDR')) {
+        const ppm = Math.round(d / 0.0254);             // pixels per metre, the only unit PNG has
+        const chunk = new Uint8Array(21);
+        chunk[3] = 9;
+        chunk.set([0x70, 0x48, 0x59, 0x73], 4);         // "pHYs"
+        for (const at of [8, 12]) { chunk[at] = (ppm >>> 24) & 0xFF; chunk[at + 1] = (ppm >>> 16) & 0xFF; chunk[at + 2] = (ppm >>> 8) & 0xFF; chunk[at + 3] = ppm & 0xFF; }
+        chunk[16] = 1;                                  // unit: metre
+        const crc = crc32(chunk.subarray(4, 17));
+        chunk[17] = (crc >>> 24) & 0xFF; chunk[18] = (crc >>> 16) & 0xFF; chunk[19] = (crc >>> 8) & 0xFF; chunk[20] = crc & 0xFF;
+        // Leave out any pHYs already there; the new one goes straight after IHDR, before IDAT.
+        const parts = [bytes.subarray(0, 33), chunk];
+        let i = 33, from = 33;
+        while (i + 8 <= bytes.length) {
+          const len = u32be(bytes, i);
+          const end = i + 12 + len;
+          if (end > bytes.length) break;
+          if (tag(bytes, i + 4, 'pHYs')) { parts.push(bytes.subarray(from, i)); from = end; }
+          if (tag(bytes, i + 4, 'IDAT') || tag(bytes, i + 4, 'IEND')) break;
+          i = end;
+        }
+        parts.push(bytes.subarray(from));
+        return new Blob(parts, { type: 'image/png' });
+      }
+    } catch (e) { /* keep the file as it was */ }
+    return blob;
   }
 
   /**
@@ -412,5 +513,5 @@
 
   const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
 
-  return { process, plan, padJpeg, decode, verify, readHeader, outputMime, EXT, MAX_PIXELS, MAX_SIDE };
+  return { process, plan, padJpeg, decode, verify, readHeader, outputMime, openImage, tooManyPixelsMessage, setDensity, EXT, MAX_PIXELS, MAX_SIDE };
 });

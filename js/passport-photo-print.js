@@ -26,6 +26,7 @@
   const photoSizeSelect = doc.getElementById('photoSizeSelect');
   const paperSizeSelect = doc.getElementById('paperSizeSelect');
   const photoCountSelect = doc.getElementById('photoCountSelect');
+  const photoCountHint = doc.getElementById('photoCountSelectHint');
   const guideLinesCheckbox = doc.getElementById('guideLinesCheckbox');
   const photoBorderCheckbox = doc.getElementById('photoBorderCheckbox');
   const gapSelect = doc.getElementById('gapSelect');
@@ -58,9 +59,9 @@
 
   // Paper sizes in mm: { w, h, name }
   const PAPER_SIZES = {
-    '4x6': { name: '4 × 6 inch Photo Paper (102 × 152 mm)', w: 101.6, h: 152.4 },
-    'a4': { name: 'A4 Sheet (210 × 297 mm)', w: 210, h: 297 },
-    '5x7': { name: '5 × 7 inch Photo Paper (127 × 178 mm)', w: 127, h: 177.8 }
+    '4x6': { name: '4 × 6 inch Photo Paper (102 × 152 mm)', label: '4 × 6 inch paper', w: 101.6, h: 152.4 },
+    'a4': { name: 'A4 Sheet (210 × 297 mm)', label: 'an A4 sheet', w: 210, h: 297 },
+    '5x7': { name: '5 × 7 inch Photo Paper (127 × 178 mm)', label: '5 × 7 inch paper', w: 127, h: 177.8 }
   };
 
   const DPI = 300; // 300 dots per inch (standard professional print resolution)
@@ -144,25 +145,55 @@
       return;
     }
 
+    // The same checks as the batch tools: a picture over 50 megapixels is refused before it is
+    // decoded (the sheet keeps it in memory), and a truncated or damaged file is refused instead of
+    // being printed six times with a blank part.
+    const Ops = window.ApplyReadyImageOps;
+    let opened;
+    try {
+      opened = Ops ? await Ops.openImage(file, { name: file.name }) : await openWithImg(file);
+    } catch (e) {
+      if (token === loadToken) notifyError((e && e.message) || 'That photo could not be read. Choose a JPG or PNG that opens on your device, then try again.');
+      return;
+    }
+    if (token !== loadToken) { opened.close(); return; }   // removed or replaced while it was loading
+    releaseImage();
     loadedFile = file;
-    const reader = new FileReader();
-    reader.onerror = () => { loadedFile = null; notifyError('That file could not be read. Choose it again, or save a copy to your device first.'); };
-    reader.onload = (e) => {
+    loadedImage = opened;
+    if (fileInfoBox) fileInfoBox.classList.remove('hidden');
+    if (fileInfoText) fileInfoText.textContent = `${file.name} (${opened.width} × ${opened.height} px)`;
+    // The drop zone, with the button that opened the picker, is about to be hidden: keep keyboard
+    // focus on the page, on the file bar's Replace button.
+    const a = doc.activeElement;
+    const focusLost = !a || a === doc.body || (dropzone && dropzone.contains(a));
+    if (dropzone) dropzone.classList.add('hidden');
+    if (previewArea) previewArea.classList.remove('hidden');
+    // The workspace shows its file bar from a MutationObserver (js/components.js), so wait for it.
+    if (focusLost && btnReplaceFile) {
+      setTimeout(() => {
+        const now = doc.activeElement;
+        if (!now || now === doc.body || (dropzone && dropzone.contains(now))) btnReplaceFile.focus({ preventScroll: true });
+      }, 0);
+    }
+    renderSheet();
+    if (window.ApplyReadyUI && window.ApplyReadyUI.reveal && previewArea) window.ApplyReadyUI.reveal(previewArea.closest('section') || previewArea);
+  }
+
+  // Only for a browser without js/lib/image-ops.js loaded.
+  function openWithImg(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
       const img = new Image();
-      img.onload = () => {
-        if (token !== loadToken) return;   // removed or replaced while it was loading
-        loadedImage = img;
-        if (fileInfoBox) fileInfoBox.classList.remove('hidden');
-        if (fileInfoText) fileInfoText.textContent = `${file.name} (${img.naturalWidth} × ${img.naturalHeight} px)`;
-        if (dropzone) dropzone.classList.add('hidden');
-        if (previewArea) previewArea.classList.remove('hidden');
-        renderSheet();
-        if (window.ApplyReadyUI && window.ApplyReadyUI.reveal && previewArea) window.ApplyReadyUI.reveal(previewArea.closest('section') || previewArea);
-      };
-      img.onerror = () => { loadedFile = null; notifyError('That photo could not be read. Choose a JPG or PNG that opens on your device, then try again.'); };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+      img.onload = () => { URL.revokeObjectURL(url); resolve({ source: img, width: img.naturalWidth, height: img.naturalHeight, close() {} }); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('That photo could not be read. Choose a JPG or PNG that opens on your device, then try again.')); };
+      img.src = url;
+    });
+  }
+
+  // The photo is kept decoded while the sheet is shown (every setting redraws it); this frees it.
+  function releaseImage() {
+    if (loadedImage) loadedImage.close();
+    loadedImage = null;
   }
 
   function renderSheet() {
@@ -207,10 +238,12 @@
     const maxCapacity = maxCols * maxRows;
 
     let targetCount = maxCapacity;
+    let requested = 0;
     if (photoCountSelect && photoCountSelect.value !== 'auto') {
-      const requested = parseInt(photoCountSelect.value, 10);
+      requested = parseInt(photoCountSelect.value, 10);
       if (requested > 0) targetCount = Math.min(requested, maxCapacity);
     }
+    describeCapacity(requested, maxCapacity, paperKey, paperSpec);
 
     // Determine actual cols and rows needed for targetCount
     let cols = Math.min(maxCols, targetCount);
@@ -274,9 +307,23 @@
     updateDownloadLinks(drawn, paperSpec, canvasW, canvasH);
   }
 
+  // Under Copies: how many photos of this size fit on this paper, and, when more were asked for than
+  // fit, that the sheet has fewer and what to change.
+  function describeCapacity(requested, capacity, paperKey, paperSpec) {
+    if (!photoCountHint) return;
+    const over = requested > capacity;
+    let text = `${capacity} ${capacity === 1 ? 'photo' : 'photos'} of this size fit on ${paperSpec.label}.`;
+    if (over) {
+      text = `Only ${capacity} ${capacity === 1 ? 'photo' : 'photos'} of this size fit on ${paperSpec.label}, so the sheet has ${capacity}, not ${requested}. ` +
+        (paperKey === 'a4' ? 'Print the sheet twice for more.' : 'Choose an A4 sheet for more, or print the sheet twice.');
+    }
+    if (photoCountHint.textContent !== text) photoCountHint.textContent = text;
+    photoCountHint.classList.toggle('is-warning', over);
+  }
+
   function drawCoverPhoto(ctx, img, dx, dy, dw, dh) {
-    const srcW = img.naturalWidth;
-    const srcH = img.naturalHeight;
+    const srcW = img.width;
+    const srcH = img.height;
     const srcAspect = srcW / srcH;
     const targetAspect = dw / dh;
 
@@ -291,30 +338,17 @@
       sy = Math.round((srcH - sh) / 2);
     }
 
-    ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+    ctx.drawImage(img.source, sx, sy, sw, sh, dx, dy, dw, dh);
   }
 
 
   /**
-   * Write the print resolution into the JPEG's JFIF header, so photo labs and
-   * image viewers read the sheet as 300 DPI (4 x 6 in) instead of the 96 DPI
-   * default. Canvas encoders write a JFIF APP0 segment with no density; the
-   * pixels are untouched. Returns the original blob if the header is not JFIF.
+   * Record 300 DPI in the JPEG, so photo labs and image viewers read the sheet at its real size
+   * (4 × 6 in) instead of the 96 DPI default. The pixels are untouched (js/lib/image-ops.js).
    */
-  async function withJfifDensity(blob, dpi) {
-    try {
-      const bytes = new Uint8Array(await blob.arrayBuffer());
-      // SOI, then APP0 with the "JFIF\0" identifier: density unit at offset 13, X and Y density at 14-17.
-      const isJfif = bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF && bytes[3] === 0xE0 &&
-        bytes[6] === 0x4A && bytes[7] === 0x46 && bytes[8] === 0x49 && bytes[9] === 0x46 && bytes[10] === 0x00;
-      if (!isJfif) return blob;
-      bytes[13] = 1;                       // units: dots per inch
-      bytes[14] = (dpi >> 8) & 0xFF; bytes[15] = dpi & 0xFF;
-      bytes[16] = (dpi >> 8) & 0xFF; bytes[17] = dpi & 0xFF;
-      return new Blob([bytes], { type: 'image/jpeg' });
-    } catch (e) {
-      return blob;
-    }
+  function withDensity(blob, dpi) {
+    const Ops = window.ApplyReadyImageOps;
+    return Ops && Ops.setDensity ? Ops.setDensity(blob, dpi) : Promise.resolve(blob);
   }
 
   function updateDownloadLinks(count, paperSpec, canvasW, canvasH) {
@@ -332,7 +366,7 @@
         notifyError('The sheet could not be saved as JPEG. The device may be low on memory; choose fewer copies or a smaller paper size.');
         return;
       }
-      const blob = await withJfifDensity(rawBlob, DPI);
+      const blob = await withDensity(rawBlob, DPI);
       if (gen !== renderGen || !loadedImage) return;
       if (jpgBlobUrl) URL.revokeObjectURL(jpgBlobUrl);
       jpgBlobUrl = URL.createObjectURL(blob);
@@ -439,7 +473,7 @@
   // Remove leaves nothing of the photo behind: on a shared computer the next person must not be
   // able to see, download or print it.
   function resetAll() {
-    loadedImage = null;
+    releaseImage();
     loadedFile = null;
     currentPaper = null;
     renderGen++;

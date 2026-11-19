@@ -279,8 +279,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     ok(squash(await page.textContent('#resultStatus')) === 'Under the 50 KB limit, at the exact size requested.', 'result sentence as quoted');
     says(T, 'Under the 50 KB limit, at the exact size requested.');
     const size = squash(await page.textContent('#resultFileSize'));
-    ok(size === '26.47 KB (27,109 bytes)', `measured size (${size})`);
-    says(T, '26.47 KB (27,109 bytes)');
+    ok(size === '26.48 KB (27,120 bytes)', `measured size (${size})`);
+    says(T, '26.48 KB (27,120 bytes)');
     const [img] = await Promise.all([page.waitForEvent('download'), page.click('#btnDownload')]);
     ok(img.suggestedFilename() === 'test-portrait_Passport_Photo_350x450.jpg', `file name (${img.suggestedFilename()})`);
     says(T, 'test-portrait_Passport_Photo_350x450.jpg');
@@ -294,8 +294,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await page.fill('#customMaxKB', '10');
     await page.click('#btnProcess');
     await page.waitForSelector('#processErrorBox:not(.hidden)');
-    ok(/^PNG needs 196\.0 KB at this size\./.test(squash(await page.textContent('#processErrorMessage'))), 'PNG message as quoted');
-    says(T, '"PNG needs 196.0 KB at this size."');
+    ok(/^PNG needs 196\.5 KB at this size\./.test(squash(await page.textContent('#processErrorMessage'))), 'PNG message as quoted');
+    says(T, '"PNG needs 196.5 KB at this size."');
     await context.close();
   }
 
@@ -352,9 +352,9 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     says(T, '1036 × 1465 px');
     ok(rows[2].includes('Quality was lowered to 52% to fit under 50 KB.'), `the scanned page also has the quality note (${rows[2]})`);
     says(T, 'quality was lowered to 52%');
-    ok(!/Quality was lowered|pixel size was reduced/.test(rows[3]) && rows[3].includes('38 KB'), 'the small signature has no note');
-    ok(squash(await page.textContent('#batchVerdictTitle')) === '4 images compressed' && squash(await page.textContent('#batchVerdictText')) === '184 KB in total, from 1.2 MB.', 'totals as quoted');
-    says(T, '184 KB in total, from 1.2 MB.');
+    ok(!/Quality was lowered|pixel size was reduced/.test(rows[3]) && rows[3].includes('37 KB'), 'the small signature has no note');
+    ok(squash(await page.textContent('#batchVerdictTitle')) === '4 images compressed' && squash(await page.textContent('#batchVerdictText')) === '183 KB in total, from 1.2 MB.', 'totals as quoted');
+    says(T, '183 KB in total, from 1.2 MB.');
     const [zip] = await Promise.all([page.waitForEvent('download'), page.click('#btnBatchZip')]);
     ok(zip.suggestedFilename() === 'compressed-images.zip', 'ZIP name as quoted');
     says(T, 'compressed-images.zip');

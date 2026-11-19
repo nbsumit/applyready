@@ -78,6 +78,13 @@
     try {
       let next;
       if (info.kind === 'image') {
+        // The same checks as the image tools: a picture over 50 megapixels is refused before it is
+        // decoded, and a truncated or damaged photo now rather than after Start (js/lib/image-ops.js).
+        const Ops = window.ApplyReadyImageOps;
+        if (Ops) {
+          try { (await Ops.openImage(file, { name: file.name })).close(); }
+          catch (e) { throw new K.PdfError(e && e.code === 'toolarge' ? 'toolarge' : 'damaged', e && e.message ? e.message : `${file.name} could not be read as an image.`); }
+        }
         next = { file, kind: 'image', info, pageCount: 1 };
       } else {
         if (!sup.render) throw new K.PdfError('unsupported', 'This browser cannot draw PDF pages, which the compressor needs. Update it, or use a recent Chrome, Edge, Firefox or Safari.');

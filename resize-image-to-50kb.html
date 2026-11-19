@@ -352,6 +352,10 @@
               <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust again</button>
             </div>
           </div>
+          <div id="resultWarning" class="notice notice--warning hidden">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            <span class="notice__body" id="resultWarningText"></span>
+          </div>
           <div class="ws-result__body">
             <div class="ws-result__view">
               <div class="segmented" role="group" aria-label="Compare with the original">
@@ -699,6 +703,7 @@
   <script src="js/vendor/cropper.min.js"></script>
   <script src="js/presets.js?v=20261118"></script>
   <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/resizer.js?v=20261118"></script>
 </body>
 </html>

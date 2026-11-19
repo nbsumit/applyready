@@ -238,7 +238,7 @@ ${stat('Resolution', 'statPrintDpi', '300 DPI')}
       <div class="ws-side">
 ${section('Photo', select('photoSizeSelect', 'Photo size', [['in-passport', 'Indian passport size (3.5 × 4.5 cm)'], ['us-visa', 'US, OCI or international visa (2 × 2 in)'], ['stamp', 'Stamp size (2.5 × 3.5 cm)'], ['schengen', 'Schengen visa (3.5 × 4.5 cm)']]))}
 ${section('Sheet', `${select('paperSizeSelect', 'Paper', [['4x6', '4 × 6 inch photo paper, lab standard'], ['a4', 'A4 sheet, home or office printer'], ['5x7', '5 × 7 inch photo paper']])}
-${select('photoCountSelect', 'Copies', [['auto', 'As many as fit'], ['4', '4 photos'], ['6', '6 photos'], ['8', '8 photos'], ['12', '12 photos'], ['16', '16 photos']])}
+${select('photoCountSelect', 'Copies', [['auto', 'As many as fit'], ['4', '4 photos'], ['6', '6 photos'], ['8', '8 photos'], ['12', '12 photos'], ['16', '16 photos']], 0, 'How many fit depends on the paper and photo size.').replace('<p class="field-hint" id="photoCountSelectHint">', '<p class="field-hint" id="photoCountSelectHint" aria-live="polite">')}
 ${select('gapSelect', 'Space between photos', [['1.5', 'Compact (1.5 mm)'], ['2.5', 'Standard (2.5 mm), easy to cut'], ['4', 'Wide (4 mm)']], 1)}`)}
 ${section('Cutting aids', `          <div class="check-group">
             <label class="switch" for="guideLinesCheckbox"><span>Dashed cutting guides</span><input type="checkbox" id="guideLinesCheckbox" role="switch" checked></label>
