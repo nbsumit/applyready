@@ -167,6 +167,8 @@ for (const m of read('css/vendor/icons.min.css').matchAll(/url\("\.\.\/webfonts\
   for (const f of pages) {
     const text = read(f).replace(/<[^>]+>/g, ' ');
     ok(!/after (your|a) first visit,? offline|offline after a first visit|keeps every tool and guide on this device/i.test(text), `${f}: does not promise offline use after a first visit`);
+    // A PDF tool opened but never used online does not work offline: its PDF library is kept on first use.
+    for (const m of text.matchAll(/[^.]*\btools? (?:that )?you (?:have )?(?:opened|visited)[^.]*\b(?:work|works|working|available) offline[^.]*\./gi)) ok(/PDF/.test(m[0]), `${f}: an offline promise about opened tools mentions the PDF library (${m[0].trim()})`);
   }
   ok(!/Two links lead elsewhere/.test(read('privacy.html')), 'privacy.html: does not count the outbound links (guides cite many official pages)');
 }
