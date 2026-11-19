@@ -171,6 +171,10 @@ for (const m of read('css/vendor/icons.min.css').matchAll(/url\("\.\.\/webfonts\
     for (const m of text.matchAll(/[^.]*\btools? (?:that )?you (?:have )?(?:opened|visited)[^.]*\b(?:work|works|working|available) offline[^.]*\./gi)) ok(/PDF/.test(m[0]), `${f}: an offline promise about opened tools mentions the PDF library (${m[0].trim()})`);
   }
   ok(!/Two links lead elsewhere/.test(read('privacy.html')), 'privacy.html: does not count the outbound links (guides cite many official pages)');
+  // Using a PDF tool online keeps only the parts of the library that tool used; the character maps for
+  // Chinese, Japanese and Korean text are not kept even by Save every tool (PF-6).
+  const privacy = read('privacy.html').replace(/<[^>]+>/g, ' ');
+  ok(!/library, which is kept on this device once you have used a PDF tool online/.test(privacy) && /character maps for Chinese, Japanese and Korean text/.test(privacy), 'privacy.html: does not claim the whole PDF library is kept after one use, and names what Save every tool leaves out');
 }
 // A page that shows image previews loads the pixel-size check (js/lib/image-ops.js) used by Kit.thumbnail.
 {

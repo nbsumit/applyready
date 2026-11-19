@@ -124,8 +124,10 @@ visit, the service worker serves every file it has seen from this device.
 - **Blocked downloads (BAT-09):** a page cannot detect a download the browser blocked; the ZIP message
   says what to do if nothing arrives.
 - **Chinese, Japanese and Korean PDFs offline:** the pdf.js character maps (1.7 MB) are not part of
-  "Save every tool", so such text needs a connection the first time it is read or drawn; Your data says
-  so. Without them the text is silently left out (no detection yet).
+  "Save every tool", so such text needs a connection the first time it is read or drawn; Your data and
+  Privacy say so. Without them the text is left out with no word in the tool or its result: pdf.js
+  reports the missing character map only inside its worker, so detecting it would mean replacing its
+  file loader (INTE-5, kept as a known limitation).
 - **Search (NAV-05, partly done):** everyday words and common misspellings are covered by a synonym list
   and one-letter typo correction; words outside it can still give a weak match.
 - **Donation link (LIVE-03, declined):** the one Razorpay link appears in the footer and on About,
