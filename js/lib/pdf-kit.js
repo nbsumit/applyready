@@ -145,8 +145,7 @@
      that page: a worker started from its file's URL takes its policy from that file's response
      headers, so it would run with none and could send data to any website. A worker started from a
      blob: URL takes the policy of the page that starts it instead (worker-src allows blob:), so pdf.js
-     is given a one-line blob: module that imports the real worker file from this site. pdf.js still
-     starts one worker per open document and stops it when the document is closed (closeJs). */
+     is given a one-line blob: module that imports the real worker file from this site. */
   let workerUrl = null;
   function workerSource() {
     if (!workerUrl) {
@@ -154,6 +153,23 @@
       workerUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
     }
     return workerUrl;
+  }
+
+  /* One pdf.js worker for the whole page, shared by every open document. Left to itself, pdf.js
+     starts a new worker for each document; the browser does not give back all of a stopped worker's
+     memory, so a tab that opened dozens of PDFs kept growing by several MB per file even after every
+     worker was stopped. Each document is still freed on its own: closeJs destroys its loading task,
+     which leaves a worker it did not start running. A worker that failed or was stopped is replaced
+     on the next open. */
+  let sharedWorker = null;
+  function pdfWorker(lib) {
+    if (!sharedWorker || sharedWorker.destroyed) sharedWorker = new lib.PDFWorker({ name: 'applyready-pdf' });
+    return sharedWorker;
+  }
+  function dropWorker() {
+    if (!sharedWorker) return;
+    try { sharedWorker.destroy(); } catch (e) { /* already stopped */ }
+    sharedWorker = null;
   }
 
   /* ------------------------------------------------------------------ Reading */
@@ -232,37 +248,87 @@
   }
 
   /**
-   * Pages whose own content is missing or broken, as 0-based indexes. A damaged file can keep a
-   * readable page list while the pages' content streams are gone or garbled: pdf-lib then opens it,
-   * pdf.js cannot, and anything made from it has blank pages. A page with no /Contents at all is a
-   * blank page by design and is not reported; a /Contents that names an object that is missing, is
-   * not a stream, or (for Flate streams, up to a total of 16 MB) does not decompress, is reported.
-   * The same check as ApplyReadyInspect (js/lib/inspect.js), which the File checker uses.
+   * Whether a Flate stream that pdf-lib could not decode completely still gives some content.
+   * pdf-lib's decoder throws on any error and keeps nothing; pdf.js, like other readers, keeps what
+   * came before the error, so a stream with only its last bytes cut off still shows most of the page.
+   * The browser's own decompressor hands over what it decoded before it fails. Resolves true (some
+   * content), false (none at all), or null when this browser cannot tell.
    */
-  function unreadablePages(doc) {
-    const P = isNode ? require('../vendor/pdf-lib.min.js') : root.PDFLib; // loaded: `doc` came from it
+  async function inflatesPartly(bytes) {
+    const DS = (root && root.DecompressionStream) || (typeof globalThis !== 'undefined' ? globalThis.DecompressionStream : undefined);
+    if (typeof DS !== 'function') return null;
+    let reader = null;
+    try {
+      const ds = new DS('deflate');
+      const writer = ds.writable.getWriter();
+      reader = ds.readable.getReader();
+      writer.write(bytes).catch(() => { /* reported by the reader */ });
+      writer.close().catch(() => { /* reported by the reader */ });
+      for (;;) {
+        const step = await reader.read();
+        if (step.done) return false;
+        if (step.value && step.value.length) return true;
+      }
+    } catch (e) {
+      return false;
+    } finally {
+      if (reader) reader.cancel().catch(() => { /* already finished */ });
+    }
+  }
+
+  /**
+   * Shared by the PDF tools and the File checker (ApplyReadyInspect.unreadablePdfPages in
+   * js/lib/inspect.js holds the same rules). Returns { unreadable, incomplete }, 0-based indexes.
+   * unreadable: pages none of whose content can be read (the /Contents names an object that is
+   * missing or not a stream, or Flate data that gives nothing at all), which come out blank.
+   * incomplete: pages with some content broken, for example a stream with its end cut off, where
+   * readers still show the part before the damage. A page with no /Contents is blank by design and is
+   * not reported. Flate streams are checked up to a total of 16 MB.
+   */
+  async function damagedPages(P, doc, partly) {
     const ctx = doc.context;
     const CONTENTS = P.PDFName.of('Contents'), FILTER = P.PDFName.of('Filter'), FLATE = P.PDFName.of('FlateDecode');
     let budget = 16 * MB;
-    const readable = obj => {
-      if (!(obj instanceof P.PDFStream)) return false;
-      if (!(obj instanceof P.PDFRawStream) || budget <= 0) return true;
-      const f = obj.dict.lookup(FILTER);
-      const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
-      if (!flate) return true;
-      budget -= obj.contents.length;
-      try { P.decodePDFRawStream(obj).decode(); return true; } catch (e) { return false; }
+    const known = new Map();
+    // 'ok', 'partial' (broken, but some content comes out) or 'bad' (nothing comes out).
+    const state = async obj => {
+      if (!(obj instanceof P.PDFStream)) return 'bad';
+      if (known.has(obj)) return known.get(obj);
+      let result = 'ok';
+      if (obj instanceof P.PDFRawStream && budget > 0 && typeof P.decodePDFRawStream === 'function') {
+        const f = obj.dict.lookup(FILTER);
+        const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
+        if (flate) {
+          budget -= obj.contents.length;
+          try { P.decodePDFRawStream(obj).decode(); }
+          catch (e) { result = (await partly(obj.contents)) === false ? 'bad' : 'partial'; }
+        }
+      }
+      known.set(obj, result);
+      return result;
     };
-    const bad = [];
-    doc.getPages().forEach((page, i) => {
-      const ref = page.node.get(CONTENTS);
-      if (ref === undefined) return;
+    const unreadable = [], incomplete = [];
+    const pages = doc.getPages();
+    for (let i = 0; i < pages.length; i++) {
+      const ref = pages[i].node.get(CONTENTS);
+      if (ref === undefined) continue;
       const c = ctx.lookup(ref);
-      const ok = c instanceof P.PDFArray ? c.size() > 0 && c.asArray().every(x => readable(ctx.lookup(x))) : readable(c);
-      if (!ok) bad.push(i);
-    });
-    return bad;
+      const parts = c instanceof P.PDFArray ? c.asArray().map(x => ctx.lookup(x)) : [c];
+      const states = [];
+      for (const part of parts) states.push(await state(part));
+      if (!states.length || states.every(x => x === 'bad')) unreadable.push(i);
+      else if (states.some(x => x !== 'ok')) incomplete.push(i);
+    }
+    return { unreadable, incomplete };
   }
+
+  /** Damaged pages of a document opened with openLib: { unreadable, incomplete } (see damagedPages). */
+  function pageDamage(doc) {
+    const P = isNode ? require('../vendor/pdf-lib.min.js') : root.PDFLib; // loaded: `doc` came from it
+    return damagedPages(P, doc, inflatesPartly);
+  }
+  /** Pages (0-based) none of whose content can be read, so they come out blank. */
+  async function unreadablePages(doc) { return (await pageDamage(doc)).unreadable; }
 
   function dropEncryption(P, doc) {
     const ctx = doc.context;
@@ -297,6 +363,7 @@
     const label = o.name || 'This PDF';
     const task = lib.getDocument({
       data: bytes.slice(),
+      worker: pdfWorker(lib),
       password: o.password || undefined,
       wasmUrl: asset('js/vendor/pdfjs/wasm/'),
       iccUrl: asset('js/vendor/pdfjs/iccs/'),
@@ -304,27 +371,38 @@
       cMapUrl: asset('js/vendor/pdfjs/cmaps/'),
       cMapPacked: true,
       enableXfa: false,
-      stopAtErrors: false
+      stopAtErrors: false,
+      // pdf.js can hand JPEG pictures to the browser's ImageDecoder (WebCodecs). In Chrome the memory
+      // that path takes is not given back when the document is closed: every drawn page with a photo
+      // or scan kept about 2 MB until the tab closed. pdf.js's own JPEG decoder frees it.
+      isImageDecoderSupported: false
     });
     try {
       return await task.promise;
     } catch (e) {
-      // A document that did not open still has its own worker: stop it.
+      // A document that did not open is still held by the worker: free it (the shared worker keeps running).
       task.destroy().catch(() => { /* already stopped */ });
       if (e && e.name === 'PasswordException') {
         if (e.code === 2) throw new PdfError('password', 'That password is not right. Check it and try again; passwords are case sensitive.');
         throw new PdfError('encrypted', `${label} is protected with a password.`);
       }
       // The worker itself could not start (offline before it was saved, or blocked): not the file's fault.
-      if (/fake worker|worker was destroyed|worker failed/i.test(String(e && e.message))) throw new PdfError('unsupported', 'A part of the PDF tool could not load. Check your connection and reload the page.', e && e.message);
+      const msg = String(e && e.message);
+      if (/fake worker|worker was destroyed|worker failed/i.test(msg)) {
+        // A worker that never started is replaced on the next open, once the connection is back.
+        // (Not one that was only told to drop this document: other open files still use it.)
+        if (/fake worker|worker failed/i.test(msg)) dropWorker();
+        throw new PdfError('unsupported', 'A part of the PDF tool could not load. Check your connection and reload the page.', e && e.message);
+      }
       throw new PdfError('damaged', `${label} ${DAMAGED}`, e && e.message);
     }
   }
 
   /**
-   * Close a pdf.js document: its parsed pages are freed and its worker is stopped. pdf.js closes a
-   * document through the loading task that opened it (PDFDocumentProxy has no destroy() of its own),
-   * so without this every opened PDF would leave a worker holding the whole file until the tab closes.
+   * Close a pdf.js document: its copy of the file and its parsed pages are freed in the shared
+   * worker, which keeps running for the next file. pdf.js closes a document through the loading task
+   * that opened it (PDFDocumentProxy has no destroy() of its own), so without this every opened PDF
+   * would stay in the worker's memory until the tab closes.
    */
   async function closeJs(doc) {
     if (!doc) return;
@@ -1162,13 +1240,39 @@
     return { bytes, pageCount: 1, fits: bytes.length <= o.targetBytes, allPagesFit: enc.fits, minDpi: Math.round(enc.dpi) };
   }
 
+  /* A size limit typed in KB is met when the file is at most kb x 1,000 bytes, the smaller of the
+     two ways portals count a KB, so it is accepted either way. Sizes shown next to that limit use the
+     same 1,000-byte KB and are rounded up, so a size can never read as under a limit it is over. */
+  const limitKB = bytes => (Math.ceil(bytes / 100) / 10).toFixed(1);
+  const limitSize = bytes => (bytes < 1000 * 1000 ? `${limitKB(bytes)} KB` : `${(Math.ceil(bytes / 100000) / 10).toFixed(1)} MB`);
+
+  /**
+   * The result line of Compress PDF. bytes: the size offered; kb: the limit; kept: '' (compressed),
+   * 'fits' (already under the limit) or 'larger' (compressing would not make it smaller).
+   * Returns { met, text }.
+   */
+  function compressResult(bytes, kb, kept) {
+    const met = bytes <= kb * 1000;
+    const exact = `${grouped(bytes)} bytes, under ${kb} KB however the portal counts a KB`;
+    const size = `${grouped(bytes)} bytes, ${limitKB(bytes)} KB`;
+    // Over kb x 1,000 bytes but not over kb x 1,024: some portals take it, some do not.
+    const either = !met && bytes <= kb * 1024 ? ` A portal that counts 1 KB as 1,024 bytes would accept it (up to ${grouped(kb * 1024)} bytes); one that counts 1,000 bytes would not.` : '';
+    let text;
+    if (kept === 'fits') text = `Already under ${kb} KB (${exact}), so your original file is kept unchanged. Upload it as it is.`;
+    else if (kept === 'larger') text = met
+      ? `Already as small as it gets: compressing would not make this file smaller, so your original (${exact}) is kept.`
+      : `This file could not get under ${kb} KB, and compressing would not make it smaller, so your original (${size}) is kept.${either} Try a higher limit, or upload fewer pages.`;
+    else text = met ? `Under ${kb} KB (${exact}). Ready to upload.` : `This file could not get under ${kb} KB. The smallest readable version is ${size}.${either} Try a higher limit, or upload fewer pages.`;
+    return { met, text };
+  }
+
   /* ------------------------------------------------------------------ Names */
   const pad = (n, total) => String(n).padStart(Math.max(2, String(total).length), '0');
 
   return {
-    LIMITS, PdfError, MB, grouped, splitFirst, compressAdvice,
+    LIMITS, PdfError, MB, grouped, splitFirst, compressAdvice, limitKB, limitSize, compressResult,
     support, lib, pdfjs, asset,
-    readBytes, hasHeader, precheck, inspect, openLib, openJs, closeJs, save, verify, unreadablePages,
+    readBytes, hasHeader, precheck, inspect, openLib, openJs, closeJs, save, verify, unreadablePages, pageDamage, inflatesPartly,
     pageFacts, paperName, parseRanges, formatRanges, winAnsiProblems, pageNumberLabel,
     merge, extract, assemble, addPageNumbers, addWatermark, addImagePage, prepareImage, jpegOrientation, jpegWithoutMetadata,
     renderPage, thumbnail, jsPageSize, releaseCanvas, canvasBlob, joinTextItems, pageText,

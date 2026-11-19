@@ -131,14 +131,17 @@
       pageCount = info.pageCount;
       encrypted = info.encrypted;
     }
-    const out = { bytes, name, size: bytes.length, pageCount, encrypted, password: '', libDoc: null, jsDoc: null, unreadable: [], previewError: null };
+    const out = { bytes, name, size: bytes.length, pageCount, encrypted, password: '', libDoc: null, jsDoc: null, unreadable: [], incomplete: [], previewError: null };
     // Opening with the password proves it; pdf-lib checks when the tool changes the structure,
     // pdf.js when the tool only draws or reads.
     async function tryOpen(password) {
       if (n.lib) {
         out.libDoc = await K.openLib(bytes, { password, name });
-        // Pages whose content is missing or broken come out blank in anything made from them.
-        out.unreadable = K.unreadablePages(out.libDoc);
+        // Pages none of whose content can be read come out blank in anything made from them; pages
+        // with only part of it broken keep the rest (damageNotice says which is which).
+        const damage = await K.pageDamage(out.libDoc);
+        out.unreadable = damage.unreadable;
+        out.incomplete = damage.incomplete;
       }
       if (n.js) {
         try { out.jsDoc = await K.openJs(bytes, { password, name }); }
@@ -153,7 +156,8 @@
       out.password = password || '';
       return out;
     }
-    // A file none of whose pages can be read would only give blank pages: refuse it plainly.
+    // A file none of whose pages gives any content would only give blank pages: refuse it plainly.
+    // A page with part of its content broken is not counted here (readers still show the rest).
     function usable(r) {
       if (r.libDoc && r.pageCount && r.unreadable.length === r.pageCount) {
         if (r.jsDoc) K.closeJs(r.jsDoc);
@@ -183,11 +187,18 @@
   function damageNotice(state) {
     if (!state) return '';
     const bad = state.unreadable || [];
+    const part = (state.incomplete || []).filter(i => bad.indexOf(i) < 0);
     const previews = state.previewError ? ' Previews cannot be shown.' : '';
+    const out = [];
     if (bad.length) {
       const which = bad.length === state.pageCount ? (state.pageCount === 1 ? 'its page' : `all ${state.pageCount} pages`) : pagesText(bad);
-      return `${state.name} is damaged: the content of ${which} is missing or broken, so ${bad.length === 1 ? 'that page' : 'those pages'} will come out blank.${previews} To keep ${bad.length === 1 ? 'it' : 'them'}, get a fresh copy of the file from where it came from.`;
+      out.push(`${state.name} is damaged: the content of ${which} is missing or broken, so ${bad.length === 1 ? 'that page' : 'those pages'} will come out blank.${previews} To keep ${bad.length === 1 ? 'it' : 'them'}, get a fresh copy of the file from where it came from.`);
     }
+    if (part.length) {
+      const which = part.length === state.pageCount ? (state.pageCount === 1 ? 'its page' : `all ${state.pageCount} pages`) : pagesText(part);
+      out.push(`${bad.length ? 'Also, some' : `${state.name} is partly damaged: some`} of the content of ${which} is cut off or broken, so part of ${part.length === 1 ? 'that page' : 'those pages'} may be missing.${bad.length ? '' : previews} Check the result before you use it.`);
+    }
+    if (out.length) return out.join(' ');
     if (state.previewError) return `${state.name} may be damaged: its pages could not be read, so previews are not shown. The tool can still try, but pages may come out blank or incomplete; check the result before you use it.`;
     return '';
   }
@@ -200,7 +211,11 @@
     const keep = used ? new Set(used) : null;
     if (keep && !keep.size) return '';
     const bad = (state.unreadable || []).filter(i => !keep || keep.has(i));
-    if (bad.length) return `${bad.length === state.pageCount ? 'Every page' : pagesText(bad).replace(/^p/, 'P')} of ${state.name} could not be read, so ${bad.length === 1 ? 'it is' : 'they are'} blank here too.`;
+    const part = (state.incomplete || []).filter(i => (!keep || keep.has(i)) && bad.indexOf(i) < 0);
+    const out = [];
+    if (bad.length) out.push(`${bad.length === state.pageCount ? 'Every page' : pagesText(bad).replace(/^p/, 'P')} of ${state.name} could not be read, so ${bad.length === 1 ? 'it is' : 'they are'} blank here too.`);
+    if (part.length) out.push(`${part.length === state.pageCount ? (state.pageCount === 1 ? 'The page' : 'Every page') : pagesText(part).replace(/^p/, 'P')} of ${state.name} ${part.length === 1 ? 'is' : 'are'} partly damaged, so check ${part.length === 1 ? 'it' : 'them'} here.`);
+    if (out.length) return out.join(' ');
     if (state.previewError && !(state.unreadable || []).length) return `${state.name} could not be read for previews, so open the result and check its pages before you use it.`;
     return '';
   }

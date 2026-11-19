@@ -183,7 +183,7 @@
     const thumb = await firstPageThumb(opened.bytes, opened.password);
     it.thumb = thumb.url || null;
     // A damaged file is still added (the other pages may be fine), and the person is told.
-    it.damage = { name: file.name, pageCount: opened.pageCount, unreadable: opened.unreadable || [], previewError: thumb.damaged ? true : null };
+    it.damage = { name: file.name, pageCount: opened.pageCount, unreadable: opened.unreadable || [], incomplete: opened.incomplete || [], previewError: thumb.damaged ? true : null };
     items.push(it);
     return it;
   }

@@ -237,6 +237,13 @@ async function auditUnits() {
   const info = {};
   const hindi = Kit.joinTextItems([{ str: 'वेतन: प्र', transform: [1, 0, 0, 12, 10, 700], width: 60, height: 12 }, { str: '\u0000त माह', transform: [1, 0, 0, 12, 70, 700], width: 40, height: 12 }], info);
   ok(!/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(hindi) && hindi === 'वेतन: प्रत माह' && info.dropped === 1, `text: control characters are left out and counted (${JSON.stringify(hindi)}, ${info.dropped})`);
+  // The page does not claim more than the tool does: whole joined letters and nasal marks can be lost
+  // too, not only vowel signs (हिंदी किताब शिक्षा came out as हदी कताब शा).
+  {
+    const html = fs.readFileSync(path.join(root, 'pdf-to-text.html'), 'utf8');
+    const script = fs.readFileSync(path.join(root, 'js/pdf-to-text.js'), 'utf8');
+    ok(!/reads the letters/.test(html) && (html.match(/nasal marks[^<]{0,40}joined letters/g) || []).length >= 3 && /vowel signs, nasal marks and joined letters often come out missing/.test(script), 'text: the Indian-script limits name vowel signs, nasal marks and joined letters, in the FAQ, its structured data and the Limits');
+  }
 
   // PDF-03: pages whose content is missing are found, by the PDF tools and by the File checker.
   const broken = new Uint8Array(rawPdf([
@@ -248,7 +255,7 @@ async function auditUnits() {
     content('BT /F1 20 Tf 40 500 Td (FINE) Tj ET'),
     ['<< /Length 12 /Filter /FlateDecode >>', Buffer.from('not deflated')]
   ]));
-  ok(Kit.unreadablePages(await Kit.openLib(broken)).join() === '1,2' && Kit.unreadablePages(linkedDoc).length === 0, 'damaged PDF: pages with missing or broken content are found; sound pages are not');
+  ok((await Kit.unreadablePages(await Kit.openLib(broken))).join() === '1,2' && (await Kit.unreadablePages(linkedDoc)).length === 0, 'damaged PDF: pages with missing or broken content are found; sound pages are not');
   const Inspect = require('../js/lib/inspect.js');
   const report = await Inspect.inspect(broken, { name: 'broken.pdf', PDFLib: P });
   ok(report.damaged && report.pdf.unreadablePages.join() === '2,3' && report.warnings.some(w => w.level === 'error' && /content of pages 2-3 is missing or broken/.test(w.text)), `file checker: a PDF with broken pages is reported as damaged (${report.warnings.map(w => w.text).join(' | ')})`);
@@ -259,6 +266,36 @@ async function auditUnits() {
     '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 600] /Contents 8 0 R >>',
     '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 600] /Contents 9 0 R >>'
   ]));
+  // PDF-07: the limit is met at kb x 1,000 bytes, and every size shown next to it uses the same KB,
+  // rounded up, so a result over the limit never reads as under it.
+  {
+    const over = Kit.compressResult(505000, 500, '');
+    ok(!over.met && /could not get under 500 KB\. The smallest readable version is 5,05,000 bytes, 505\.0 KB\. A portal that counts 1 KB as 1,024 bytes would accept it/.test(over.text), `compress: a result between 500,000 and 512,000 bytes is not called smaller than 500 KB (${over.text})`);
+    const kept = Kit.compressResult(505000, 500, 'larger');
+    ok(!kept.met && /your original \(5,05,000 bytes, 505\.0 KB\) is kept/.test(kept.text), `compress: the kept original gives the same size (${kept.text})`);
+    ok(!/1,024 bytes would accept/.test(Kit.compressResult(600000, 500, '').text), 'compress: no 1,024-byte note when no portal would accept it');
+    ok(Kit.compressResult(500000, 500, '').met && !Kit.compressResult(500001, 500, '').met, 'compress: 500 KB means at most 500,000 bytes');
+    ok(Kit.limitKB(500001) === '500.1' && Kit.limitKB(505000) === '505.0' && Kit.limitKB(499000) === '499.0' && Kit.limitSize(2000000) === '2.0 MB', `compress: sizes next to the limit are 1,000-byte KB rounded up (${Kit.limitKB(500001)}, ${Kit.limitSize(2000000)})`);
+  }
+
+  // A one-page PDF whose Flate content stream lost its last 10 bytes: readers still show 59 of its
+  // 60 lines, so it is partly damaged, not blank (NEW after PDF-03).
+  {
+    const zlib = require('zlib');
+    let ops = '';
+    for (let i = 0; i < 60; i++) ops += `BT /F1 12 Tf 50 ${800 - i * 12} Td (Line ${i} of the page) Tj ET\n`;
+    const full = zlib.deflateSync(Buffer.from(ops));
+    const cut = full.subarray(0, full.length - 10);
+    const doc = await P.PDFDocument.create();
+    const font = await doc.embedFont(P.StandardFonts.Helvetica);
+    const pg = doc.addPage([595, 842]);
+    pg.node.set(P.PDFName.of('Contents'), doc.context.register(P.PDFRawStream.of(doc.context.obj({ Filter: 'FlateDecode', Length: cut.length }), new Uint8Array(cut))));
+    pg.node.set(P.PDFName.of('Resources'), doc.context.obj({ Font: { F1: font.ref } }));
+    const bytes = await doc.save();
+    fs.writeFileSync(path.join(tmp, 'cut-stream.pdf'), bytes);
+    const damage = await Kit.pageDamage(await Kit.openLib(bytes));
+    ok(!damage.unreadable.length && damage.incomplete.join() === '0', `damaged PDF: a content stream cut short is partly damaged, not unreadable (${JSON.stringify(damage)})`);
+  }
   console.log('✓ Audit unit checks: left-out pages not copied, links remapped, no square growth, long watermarks fit, no control characters, damaged pages found');
 }
 
@@ -277,7 +314,7 @@ const server = http.createServer((req, res) => {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const origin = `http://127.0.0.1:${server.address().port}`;
   const exe = process.env.BROWSER_EXECUTABLE_PATH;
-  const browser = await chromium.launch({ headless: true, ...(exe ? { executablePath: exe } : {}), args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  const browser = await chromium.launch({ headless: true, ...(exe ? { executablePath: exe } : {}), args: ['--no-sandbox', '--disable-dev-shm-usage', `--ar-pdf-tests=${process.pid}`] });
   const errors = [];
   async function open(file, opts = {}) {
     const context = await browser.newContext({ viewport: opts.viewport || { width: 1280, height: 900 }, acceptDownloads: true, colorScheme: opts.scheme || 'light' });
@@ -756,6 +793,8 @@ const server = http.createServer((req, res) => {
     const size = fs.statSync(out.file).size;
     ok(info.pages === 3 && info.sizes.every(s => near(s[0], 595.28) && near(s[1], 841.89)), `compress: 3 A4 pages kept (${info.pages})`);
     ok(size <= 120 * 1000 && /Under 120 KB \([\d,]+ bytes, under 120 KB however the portal counts a KB\)/.test(await page.locator('#compressStatus').innerText()), `compress: under 120 KB counted either way (1 KB = 1,000 or 1,024 bytes), with the exact size given (${size} bytes: ${await page.locator('#compressStatus').innerText()})`);
+    const after = Number((await page.locator('#statCompSize').innerText()).replace(/ KB$/, ''));
+    ok(after <= 120 && after >= size / 1000, `compress: the After size uses the limit's KB (${await page.locator('#statCompSize').innerText()} for ${size} bytes)`);
     const mergeLink = page.locator('#compressResultArea a[href="merge-pdf.html"]');
     ok(/Open Merge PDF/.test(await mergeLink.innerText()) && /download it first/.test(await page.locator('#' + await mergeLink.getAttribute('aria-describedby')).innerText()), 'compress: the Merge PDF link says it opens the tool and that the file must be downloaded first');
     // A scan followed by text pages, some turned: every page is kept with its size and rotation
@@ -943,9 +982,12 @@ const server = http.createServer((req, res) => {
 
   /* ---------------------------------------------------------------- 11. Audit: workers, damaged files, repeats, load failures */
   {
-    // PA-01: every pdf.js document has its own worker, and closing the document stops it. Before the
-    // fix, each PDF added to Merge left a worker holding the whole file until the tab closed.
+    // PA-01: every pdf.js document is opened in one shared worker, and closing a document frees it
+    // there. Before the fix each PDF added to Merge left a worker holding the whole file; with one
+    // worker per document that was then stopped, the tab still grew by several MB per file, because
+    // the browser does not give back all of a stopped worker's memory.
     const pdfWorkers = page => page.workers().filter(w => !/sw\.js/.test(w.url())).length;
+    const startedWorkers = page => { const list = []; page.on('worker', w => { if (!/sw\.js/.test(w.url())) list.push(w.url()); }); return list; };
     const settle = async (page, want, label) => {
       const end = Date.now() + 10000;
       while (Date.now() < end && pdfWorkers(page) > want) await page.waitForTimeout(100);
@@ -953,20 +995,57 @@ const server = http.createServer((req, res) => {
     };
     {
       const { context, page } = await open('merge-pdf.html');
+      const started = startedWorkers(page);
       const copies = [];
       for (let i = 0; i < 8; i++) { const f = path.join(tmp, `copy-${i}.pdf`); fs.copyFileSync(F['text.pdf'], f); copies.push(f); }
-      await page.setInputFiles('#mergeDropInput', copies);
-      await page.waitForFunction(() => document.querySelectorAll('.merge-row img').length === 8, null, { timeout: 60000 });
-      await settle(page, 0, 'merge: the worker that drew each thumbnail is stopped once it is drawn');
-      await page.click('#mergeRun');
-      await waitShown(page, '#mergeResult');
-      await page.click('#mergeClear');
-      await page.click('.dialog [data-act="ok"]');
-      await settle(page, 0, 'merge: no worker is left after merging and Remove all');
+      for (let round = 0; round < 3; round++) {
+        await page.setInputFiles('#mergeDropInput', copies);
+        await page.waitForFunction(() => document.querySelectorAll('.merge-row img').length === 8, null, { timeout: 60000 });
+        if (round === 0) {
+          await page.click('#mergeRun');
+          await waitShown(page, '#mergeResult');
+        }
+        await page.click('#mergeClear');
+        await page.click('.dialog [data-act="ok"]');
+        await page.waitForFunction(() => !document.querySelector('.merge-row'), null, { timeout: 15000 });
+      }
+      await settle(page, 1, 'merge: after three rounds of adding 8 PDFs and Remove all, at most the one shared worker runs');
+      ok(started.length === 1, `merge: 24 thumbnails and a merge used one pdf.js worker, not one per file (${started.length} started)`);
+      await context.close();
+    }
+    // PA-01: the tab's memory comes back to the same level after each round of adding scanned PDFs
+    // and Remove all. Before the fix it grew by tens of MB per round (a new worker per file, and the
+    // browser's ImageDecoder keeping each decoded JPEG), and never came down.
+    // This browser's own processes, found by the marker it was started with (other browsers may run).
+    const psRows = () => process.platform === 'linux' ? sh('ps', ['-eo', 'pid,ppid,rss,args']).trim().split('\n').slice(1).map(l => l.trim().match(/^(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/)).filter(Boolean)
+      .map(m => ({ pid: +m[1], ppid: +m[2], rss: +m[3], args: m[4] })) : [];
+    const mainPid = (psRows().find(r => r.args.includes(`--ar-pdf-tests=${process.pid}`) && !/--type=/.test(r.args)) || {}).pid;
+    if (mainPid) {
+      const rendererMB = () => {
+        const rows = psRows();
+        const tree = new Set([mainPid]);
+        for (let grew = true; grew;) { grew = false; for (const r of rows) if (!tree.has(r.pid) && tree.has(r.ppid)) { tree.add(r.pid); grew = true; } }
+        return Math.round(rows.filter(r => tree.has(r.pid) && /--type=renderer/.test(r.args)).reduce((a, r) => a + r.rss, 0) / 1024);
+      };
+      const { context, page } = await open('merge-pdf.html');
+      const scans = [];
+      for (let i = 0; i < 10; i++) { const f = path.join(tmp, `scan-copy-${i}.pdf`); fs.copyFileSync(F['scan.pdf'], f); scans.push(f); }
+      const after = [];
+      for (let round = 0; round < 6; round++) {
+        await page.setInputFiles('#mergeDropInput', scans);
+        await page.waitForFunction(() => document.querySelectorAll('.merge-row img').length === 10, null, { timeout: 60000 });
+        await page.click('#mergeClear');
+        await page.click('.dialog [data-act="ok"]');
+        await page.waitForFunction(() => !document.querySelector('.merge-row'), null, { timeout: 15000 });
+        await page.waitForTimeout(1500);
+        after.push(rendererMB());
+      }
+      ok(after[5] - after[1] < 40, `merge: memory after Remove all stays level over rounds of 10 scanned PDFs (${after.join(', ')} MB)`);
       await context.close();
     }
     {
       const { context, page } = await open('pdf-to-text.html');
+      const started = startedWorkers(page);
       await page.setInputFiles('#textDropInput', F['enc.pdf']);
       await waitShown(page, '.pdf-password');
       await page.fill('.pdf-password input[type=password]', 'nope');
@@ -975,14 +1054,13 @@ const server = http.createServer((req, res) => {
       await page.fill('.pdf-password input[type=password]', 'open sesame');
       await page.click('.pdf-password [data-act=ok]');
       await page.waitForFunction(() => /SECRET-3/.test(document.getElementById('textOut').value), null, { timeout: 20000 });
-      await settle(page, 1, 'text: a wrong password leaves no worker behind; only the open file has one');
       await page.click('#textRemove');
-      await settle(page, 0, 'text: Remove stops the open file\'s worker');
       for (const f of [F['text.pdf'], F['second.pdf'], F['text.pdf']]) {
         await page.setInputFiles('#textDropInput', f);
         await page.waitForFunction(name => document.getElementById('textFileName') && document.getElementById('textFileName').textContent.includes(name) && !document.getElementById('textResult').classList.contains('hidden'), path.basename(f), { timeout: 20000 });
       }
-      await settle(page, 1, 'text: replacing the file three times keeps one worker');
+      await settle(page, 1, 'text: a wrong password, Remove and three replaced files leave only the shared worker');
+      ok(started.length === 1, `text: a wrong password and five opened files used one pdf.js worker (${started.length} started)`);
       await context.close();
     }
 
@@ -1067,6 +1145,38 @@ const server = http.createServer((req, res) => {
       ok(true, 'file checker: a PDF with broken pages is flagged');
       await context.close();
     }
+    // NEW: a page whose content stream is only cut short still shows most of its content, so it is
+    // not refused or called blank: the tools take it with a partly-damaged notice.
+    {
+      const { context, page } = await open('split-pdf.html');
+      const lines = await page.evaluate(async b64 => {
+        const K = window.ApplyReadyPdf;
+        const d = await K.openJs(Uint8Array.from(atob(b64), c => c.charCodeAt(0)), {});
+        const t = await K.pageText(d, 0);
+        await K.closeJs(d);
+        return (t.match(/Line \d+ of the page/g) || []).length;
+      }, fs.readFileSync(path.join(tmp, 'cut-stream.pdf')).toString('base64'));
+      ok(lines >= 55, `cut stream: pdf.js still reads ${lines} of its 60 lines`);
+      await page.setInputFiles('#splitDropInput', path.join(tmp, 'cut-stream.pdf'));
+      await page.waitForFunction(() => /cut-stream/.test(document.getElementById('splitFileName') ? document.getElementById('splitFileName').textContent : '') && !document.getElementById('splitError').hidden, null, { timeout: 20000 });
+      const msg = await errorText(page, '#splitError');
+      ok(/cut-stream\.pdf is partly damaged: some of the content of its page is cut off or broken, so part of that page may be missing\. Check the result before you use it\./.test(msg) && !/blank/.test(msg), `split: a page cut short is opened with a partly-damaged notice, not refused (${msg})`);
+      await waitShown(page, '#splitGrid .page-tile img');
+      await page.fill('#splitRanges', 'all');
+      await page.click('#splitRun');
+      await waitShown(page, '#splitResult');
+      const res = await page.locator('#splitResultText').innerText();
+      ok(/The page of cut-stream\.pdf is partly damaged, so check it here\./.test(res) && !/blank/.test(res), `split: the result says the page is partly damaged (${res})`);
+      await context.close();
+    }
+    {
+      const { context, page } = await open('file-checker.html');
+      await page.locator('input[type=file]').first().setInputFiles(path.join(tmp, 'cut-stream.pdf'));
+      await page.waitForFunction(() => /partly damaged/.test(document.querySelector('main').innerText), null, { timeout: 20000 });
+      const text = await page.locator('main').innerText();
+      ok(!/shows blank|missing or broken/.test(text), 'file checker: a page cut short is reported as partly damaged, not as blank');
+      await context.close();
+    }
 
     // PA-04: when the PDF library cannot load, Merge says so once, not once per file.
     {
@@ -1092,7 +1202,7 @@ const server = http.createServer((req, res) => {
       ok(/made smaller on 6 pages \(down to \d+ pt instead of 96 pt\) to fit on the page/.test(await page.locator('#wmResultText').innerText()), `watermark: the result says the text was made smaller (${await page.locator('#wmResultText').innerText()})`);
       await context.close();
     }
-    console.log('✓ Audit: one worker per open PDF, stopped on close; workers under the CSP; damaged pages reported; repeats noted; load failure once; long watermarks fit');
+    console.log('✓ Audit: one shared pdf.js worker reused across files; workers under the CSP; pages cut short not called blank; damaged pages reported; repeats noted; load failure once; long watermarks fit');
   }
 
   ok(errors.length === 0, `page errors or CSP violations: ${errors.join(' | ')}`);

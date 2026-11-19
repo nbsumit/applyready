@@ -276,7 +276,34 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     const bad = await Inspect.inspect(await d.save({ useObjectStreams: false }), { name: 'bad.pdf', PDFLib });
     ok(bad.damaged && bad.pdf.unreadablePages.join() === '2,3' && bad.warnings.some(w => w.level === 'error' && /pages 2-3 is missing or broken/.test(w.text)), `damaged page content: pages named, reported as an error (${bad.pdf.unreadablePages}; ${bad.warnings.map(w => w.text).join(' | ')})`);
     const Kit = require('../js/lib/pdf-kit.js');
-    ok(Kit.unreadablePages(await Kit.openLib(await d.save())).join() === '1,2', 'the PDF tools find the same damaged pages (0-based)');
+    ok((await Kit.unreadablePages(await Kit.openLib(await d.save()))).join() === '1,2', 'the PDF tools find the same damaged pages (0-based)');
+
+    // A Flate stream with only its end cut off still shows most of the page in PDF readers (pdf.js,
+    // poppler), so the page is partly damaged, not unreadable: a warning, not "shows blank".
+    const zlib = require('zlib');
+    let ops = '';
+    for (let i = 0; i < 60; i++) ops += `BT /F1 12 Tf 50 ${800 - i * 12} Td (Line ${i} of the page) Tj ET\n`;
+    const full = zlib.deflateSync(Buffer.from(ops));
+    const onePage = async data => {
+      const doc = await PDFLib.PDFDocument.create();
+      const f = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const pg = doc.addPage([595, 842]);
+      pg.node.set(contents, doc.context.register(PDFLib.PDFRawStream.of(doc.context.obj({ Filter: 'FlateDecode', Length: data.length }), new Uint8Array(data))));
+      pg.node.set(PDFLib.PDFName.of('Resources'), doc.context.obj({ Font: { F1: f.ref } }));
+      return doc.save();
+    };
+    const cutBytes = await onePage(full.subarray(0, full.length - 10));
+    const cutReport = await Inspect.inspect(cutBytes, { name: 'cut-stream.pdf', PDFLib });
+    ok(!cutReport.damaged && !cutReport.pdf.unreadablePages && cutReport.pdf.incompletePages.join() === '1'
+      && cutReport.warnings.some(w => w.level === 'warning' && /partly damaged: some of the content of its page is cut off or broken\. PDF readers still show the rest/.test(w.text))
+      && !cutReport.warnings.some(w => w.level === 'error' || /blank/.test(w.text)), `file checker: a page whose content stream lost its last bytes is partly damaged, not blank (${cutReport.warnings.map(w => `${w.level}: ${w.text}`).join(' | ')})`);
+    const cutDamage = await Kit.pageDamage(await Kit.openLib(cutBytes));
+    ok(cutDamage.unreadable.length === 0 && cutDamage.incomplete.join() === '0', `PDF tools: the same page is partly damaged, not unreadable (${JSON.stringify(cutDamage)})`);
+    const noChecksum = await Kit.pageDamage(await Kit.openLib(await onePage(full.subarray(0, full.length - 4))));
+    ok(!noChecksum.unreadable.length && !noChecksum.incomplete.length, 'PDF tools: a stream missing only its checksum is sound');
+    const raw = await Kit.pageDamage(await Kit.openLib(await onePage(zlib.deflateRawSync(Buffer.from(ops)))));
+    const headerOnly = await Kit.pageDamage(await Kit.openLib(await onePage(full.subarray(0, 2))));
+    ok(raw.unreadable.join() === '0' && headerOnly.unreadable.join() === '0', 'PDF tools: Flate data that gives nothing at all (no zlib header, or only a header) is still unreadable');
   }
 
   // ------------------------------------------------------------------ names that hide what a file is

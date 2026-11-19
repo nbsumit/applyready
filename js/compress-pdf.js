@@ -12,7 +12,7 @@
   const doc = document;
   const app = doc.getElementById('compressApp');
   if (!app) return;
-  const K = window.ApplyReadyPdf, UI = window.ApplyReadyPdfUI, Files = window.ApplyReadyFiles, Kit = window.ApplyReadyFileKit;
+  const K = window.ApplyReadyPdf, UI = window.ApplyReadyPdfUI, Kit = window.ApplyReadyFileKit;
   const notify = (m, e) => { if (window.ApplyReadyUI && window.ApplyReadyUI.notify) window.ApplyReadyUI.notify(m, e); };
   const $ = id => doc.getElementById(id);
   const els = {
@@ -42,9 +42,9 @@
   $('compressCancel').setAttribute('data-cancel', '');
   const runner = UI.runner(box, { error, button: els.start, busyLabel: 'Compressing…', onState: busy => { els.replace.disabled = busy; els.remove.disabled = busy; } });
 
-  // Sizes compared with the limit stay in exact KB; the file's own size reads like the file list (KB or MB).
-  const fmtKB = bytes => (bytes / 1024).toFixed(1);
-  const sized = bytes => (bytes < 1024 * 1024 ? `${fmtKB(bytes)} KB` : Files.formatBytes(bytes));
+  // Every size here uses the limit's unit: 1 KB = 1,000 bytes, rounded up (ApplyReadyPdf.limitSize),
+  // so a size never reads as under a limit it is over.
+  const sized = bytes => K.limitSize(bytes);
 
   function dropResult() {
     if (output) { urls.revoke(output); output = null; }
@@ -145,24 +145,18 @@
     dropResult();
     output = urls.make(UI.pdfBlob(bytes));
     UI.setDownload(els.download, output, kept ? current.file.name : `${UI.stem(current.file.name)}-compressed.pdf`);
-    const met = bytes.length <= target;
+    const outcome = K.compressResult(bytes.length, res.kb, kept);
+    const met = outcome.met && bytes.length <= target;
     els.status.className = 'result-status' + (met ? '' : ' is-warning');
     els.status.textContent = '';
     const icon = doc.createElement('i');
     icon.className = met ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
     icon.setAttribute('aria-hidden', 'true');
     const text = doc.createElement('span');
-    const kb = res.kb;
-    // Portals count a KB as 1,000 or as 1,024 bytes; the target is the smaller of the two, so give the exact size.
-    const exact = `${K.grouped(bytes.length)} bytes, under ${kb} KB however the portal counts a KB`;
-    if (kept === 'fits') text.textContent = `Already under ${kb} KB (${exact}), so your original file is kept unchanged. Upload it as it is.`;
-    else if (kept === 'larger') text.textContent = met
-      ? `Already as small as it gets: compressing would not make this file smaller, so your original (${fmtKB(bytes.length)} KB) is kept. It is under ${kb} KB.`
-      : `This file could not get under ${kb} KB, and compressing would not make it smaller, so your original (${fmtKB(bytes.length)} KB) is kept. Try a higher limit, or upload fewer pages.`;
-    else text.textContent = met ? `Under ${kb} KB (${exact}). Ready to upload.` : `This file could not get under ${kb} KB. The smallest readable version is ${fmtKB(bytes.length)} KB. Try a higher limit, or upload fewer pages.`;
+    text.textContent = outcome.text;
     els.status.append(icon, text);
     els.orig.textContent = sized(original);
-    els.comp.textContent = `${fmtKB(bytes.length)} KB`;
+    els.comp.textContent = `${K.limitKB(bytes.length)} KB`;
     els.reduction.textContent = kept ? 'None' : original > bytes.length ? `${Math.round((1 - bytes.length / original) * 100)}%` : 'None';
     els.pages.textContent = String(pageCount);
     els.dpiStat.textContent = kept ? 'Unchanged' : `${minDpi} DPI${minDpi < Number(els.dpi.value) ? ' (lowered to fit)' : ''}`;

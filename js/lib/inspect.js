@@ -477,35 +477,71 @@
    * Encrypted files are opened without a password when they allow it (restrictions only); otherwise
    * only the page structure is read.
    */
+  /** Whether Flate data gives any output before it fails: true, false, or null when this browser cannot tell. */
+  async function inflatesPartly(bytes) {
+    if (typeof DecompressionStream !== 'function') return null;
+    let reader = null;
+    try {
+      const ds = new DecompressionStream('deflate');
+      const writer = ds.writable.getWriter();
+      reader = ds.readable.getReader();
+      writer.write(bytes).catch(() => { /* reported by the reader */ });
+      writer.close().catch(() => { /* reported by the reader */ });
+      for (;;) {
+        const step = await reader.read();
+        if (step.done) return false;
+        if (step.value && step.value.length) return true;
+      }
+    } catch (e) {
+      return false;
+    } finally {
+      if (reader) reader.cancel().catch(() => { /* already finished */ });
+    }
+  }
+
   /**
-   * Pages (0-based) whose own content is missing or broken. A damaged file can keep a readable page
-   * list while its pages' content streams are gone or garbled: the page count looks right but the
-   * pages are blank, and PDF viewers report an error. A page with no /Contents is blank by design and
-   * is not reported; a /Contents that names a missing object or a non-stream, or a Flate stream that
-   * does not decompress (checked up to 16 MB in all), is. Same rules as ApplyReadyPdf.unreadablePages.
+   * Pages (0-based) whose own content is damaged: { unreadable, incomplete }. A damaged file can keep
+   * a readable page list while its pages' content streams are gone or garbled. unreadable: none of a
+   * page's content can be read (its /Contents names a missing object or a non-stream, or Flate data
+   * that gives nothing at all), so it shows blank. incomplete: some of it is broken, for example a
+   * stream whose end is cut off; readers still show the part before the damage. A page with no
+   * /Contents is blank by design and is not reported. Flate streams are checked up to 16 MB in all.
+   * Same rules as ApplyReadyPdf.pageDamage (js/lib/pdf-kit.js), which the PDF tools use.
    */
-  function unreadablePdfPages(PDFLib, doc) {
+  async function damagedPdfPages(PDFLib, doc) {
     const P = PDFLib, ctx = doc.context;
     const CONTENTS = P.PDFName.of('Contents'), FILTER = P.PDFName.of('Filter'), FLATE = P.PDFName.of('FlateDecode');
     let budget = 16 * MB;
-    const readable = obj => {
-      if (!(obj instanceof P.PDFStream)) return false;
-      if (!(obj instanceof P.PDFRawStream) || budget <= 0 || typeof P.decodePDFRawStream !== 'function') return true;
-      const f = obj.dict.lookup(FILTER);
-      const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
-      if (!flate) return true;
-      budget -= obj.contents.length;
-      try { P.decodePDFRawStream(obj).decode(); return true; } catch (e) { return false; }
+    const known = new Map();
+    const state = async obj => {
+      if (!(obj instanceof P.PDFStream)) return 'bad';
+      if (known.has(obj)) return known.get(obj);
+      let result = 'ok';
+      if (obj instanceof P.PDFRawStream && budget > 0 && typeof P.decodePDFRawStream === 'function') {
+        const f = obj.dict.lookup(FILTER);
+        const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
+        if (flate) {
+          budget -= obj.contents.length;
+          try { P.decodePDFRawStream(obj).decode(); }
+          catch (e) { result = (await inflatesPartly(obj.contents)) === false ? 'bad' : 'partial'; }
+        }
+      }
+      known.set(obj, result);
+      return result;
     };
-    const bad = [];
-    doc.getPages().forEach((page, i) => {
-      const ref = page.node.get(CONTENTS);
-      if (ref === undefined) return;
+    const unreadable = [], incomplete = [];
+    const pages = doc.getPages();
+    for (let i = 0; i < pages.length; i++) {
+      const ref = pages[i].node.get(CONTENTS);
+      if (ref === undefined) continue;
       const c = ctx.lookup(ref);
-      const ok = c instanceof P.PDFArray ? c.size() > 0 && c.asArray().every(x => readable(ctx.lookup(x))) : readable(c);
-      if (!ok) bad.push(i);
-    });
-    return bad;
+      const parts = c instanceof P.PDFArray ? c.asArray().map(x => ctx.lookup(x)) : [c];
+      const states = [];
+      for (const part of parts) states.push(await state(part));
+      if (!states.length || states.every(x => x === 'bad')) unreadable.push(i);
+      else if (states.some(x => x !== 'ok')) incomplete.push(i);
+    }
+    return { unreadable, incomplete };
   }
 
   /** "page 3", "pages 1-5", "pages 1-2, 7" from 0-based indexes in order. */
@@ -572,11 +608,16 @@
       // Content streams are encrypted until the file is opened with its password, so they are only
       // checked when the file opened (no password, or an owner-only password).
       if (!out.needsPassword) {
-        const bad = unreadablePdfPages(PDFLib, doc);
+        const damage = await damagedPdfPages(PDFLib, doc);
+        const bad = damage.unreadable, part = damage.incomplete;
         if (bad.length) {
           out.unreadablePages = bad.map(i => i + 1);
           out.damaged = true;
           out.reason = `This PDF is damaged: the content of ${bad.length === pages.length ? (pages.length === 1 ? 'its page' : `all ${pages.length} pages`) : pageList(bad)} is missing or broken, so ${bad.length === 1 ? 'that page shows' : 'those pages show'} blank or cannot be opened. Most portals will reject it; get a fresh copy from where it came from.`;
+        }
+        if (part.length) {
+          out.incompletePages = part.map(i => i + 1);
+          out.incompleteReason = `This PDF is partly damaged: some of the content of ${part.length === pages.length ? (pages.length === 1 ? 'its page' : `all ${pages.length} pages`) : pageList(part)} is cut off or broken. PDF readers still show the rest, but part of ${part.length === 1 ? 'that page' : 'those pages'} may be missing. Open it and check every page; if anything is missing, get a fresh copy from where it came from.`;
         }
       }
     } catch (e) { out.damaged = true; out.reason = out.truncated ? 'This PDF is incomplete: its end is missing, so its pages could not be read. Download or export it again.' : 'The pages of this PDF could not be read. It may be damaged; most portals will reject it.'; }
@@ -903,6 +944,7 @@
         else if (p.encrypted) warn('warning', 'This PDF is encrypted with permissions (it opens without a password, but printing or copying may be restricted). Some portals reject encrypted PDFs.');
         if (p.mixedSizes) warn('warning', `Pages have different sizes (${p.sizeGroups.length} sizes). Some portals and printers expect every page to be the same size.`);
         else if (p.mixedOrientation) warn('info', 'Some pages are portrait and some are landscape.');
+        if (p.incompleteReason) warn('warning', p.incompleteReason);
         if (p.truncated && !p.damaged) warn('warning', 'The PDF end marker is missing near the end of the file. It may be incomplete; open it to check every page is there.');
         if (p.javascript) warn('warning', 'This PDF contains JavaScript. Some portals reject PDFs with scripts.');
         if (p.attachments) warn('info', 'This PDF has files attached inside it.');

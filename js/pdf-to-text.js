@@ -86,11 +86,12 @@
         : 'These pages could not be read. The PDF may be damaged; open it on your device to check it.';
     } else {
       els.resultTitle.textContent = 'Text extracted';
-      // pdf.js reads Indian scripts glyph by glyph, in the order they are drawn: a vowel sign drawn
-      // before its letter (such as ि) can come out missing or in the wrong place.
+      // pdf.js reads Indian scripts glyph by glyph, in the order they are drawn: vowel signs (such as
+      // ि), nasal marks (ं) and joined letters (क्ष), which fonts draw as shapes of their own, can come
+      // out missing or in the wrong place.
       const indic = /[\u0900-\u0DFF]/.test(text);
       const dropped = res.dropped ? ` ${res.dropped === 1 ? 'One character' : `${res.dropped.toLocaleString('en-IN')} characters`} could not be read and ${res.dropped === 1 ? 'was' : 'were'} left out.` : '';
-      const check = indic ? ' The text includes Hindi or another Indian script, whose vowel signs often come out missing or out of place when text is read from a PDF: check those words before you use them.' : '';
+      const check = indic ? ' The text includes Hindi or another Indian script: vowel signs, nasal marks and joined letters often come out missing or out of place when text is read from a PDF, so check those words before you use them.' : '';
       els.resultText.textContent = `Text from ${UI.plural(withText, 'page')} is below. Check columns and tables before you paste.${dropped}${check}`;
     }
     els.result.querySelector('.verdict > .fa-solid').className = withText ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
