@@ -316,8 +316,8 @@ const SHOTS = {
       await page.click('#btnStartCompress');
       await page.waitForSelector('#compressResultArea:not(.hidden)', { timeout: 60000 });
       await settle(page);
-      await annotate(page, [['.size-compare', 'Before and after, in KB', 'above'], ['.target-grid', 'The portal limit you chose', 'above']]);
-      return regionOf(page, ['.size-compare', '.target-grid']);
+      await annotate(page, [['.size-compare', 'Before and after, in KB', 'corner'], ['.target-grid', 'The portal limit you chose', 'above']]);
+      return regionOf(page, ['#compressStatus', '.size-compare', '.target-grid']);
     }
   },
   'resume-review': {

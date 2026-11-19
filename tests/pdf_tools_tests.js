@@ -792,7 +792,7 @@ const server = http.createServer((req, res) => {
     let info = pdfInfo(out.file);
     const size = fs.statSync(out.file).size;
     ok(info.pages === 3 && info.sizes.every(s => near(s[0], 595.28) && near(s[1], 841.89)), `compress: 3 A4 pages kept (${info.pages})`);
-    ok(size <= 120 * 1000 && /Under 120 KB \([\d,]+ bytes, under 120 KB however the portal counts a KB\)/.test(await page.locator('#compressStatus').innerText()), `compress: under 120 KB counted either way (1 KB = 1,000 or 1,024 bytes), with the exact size given (${size} bytes: ${await page.locator('#compressStatus').innerText()})`);
+    ok(size <= 120 * 1000 && /Under 120 KB \([\d,]+ bytes, under 120 KB whether a KB is counted as 1,000 or 1,024 bytes\)/.test(await page.locator('#compressStatus').innerText()), `compress: under 120 KB counted either way (1 KB = 1,000 or 1,024 bytes), with the exact size given (${size} bytes: ${await page.locator('#compressStatus').innerText()})`);
     const after = Number((await page.locator('#statCompSize').innerText()).replace(/ KB$/, ''));
     ok(after <= 120 && after >= size / 1000, `compress: the After size uses the limit's KB (${await page.locator('#statCompSize').innerText()} for ${size} bytes)`);
     const mergeLink = page.locator('#compressResultArea a[href="merge-pdf.html"]');

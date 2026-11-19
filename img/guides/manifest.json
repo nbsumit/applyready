@@ -1,16 +1,16 @@
 {
  "compress-pdf": {
   "file": "img/guides/compress-pdf.webp",
-  "width": 694,
-  "height": 608,
+  "width": 700,
+  "height": 647,
   "alt": "The ApplyReady PDF compressor showing the file size before and after compression and the maximum file size choices.",
-  "bytes": 27332,
+  "bytes": 30972,
   "phone": {
    "file": "img/guides/phone/compress-pdf.webp",
-   "width": 700,
-   "height": 1572,
+   "width": 710,
+   "height": 1792,
    "scale": 2,
-   "bytes": 58106
+   "bytes": 65684
   }
  },
  "image-to-pdf": {
@@ -32,13 +32,13 @@
   "width": 550,
   "height": 900,
   "alt": "The ApplyReady passport photo print preview: copies of one photo laid out on a 4 by 6 inch sheet with thin cutting lines.",
-  "bytes": 19442,
+  "bytes": 19824,
   "phone": {
    "file": "img/guides/phone/passport-sheet.webp",
    "width": 700,
    "height": 1508,
    "scale": 2,
-   "bytes": 38904
+   "bytes": 39534
   }
  },
  "resizer-crop": {
@@ -46,13 +46,13 @@
   "width": 690,
   "height": 558,
   "alt": "The ApplyReady crop frame over a test portrait, with the frame locked to the passport photo shape and the rotate and zoom buttons below it.",
-  "bytes": 13666,
+  "bytes": 14130,
   "phone": {
    "file": "img/guides/phone/resizer-crop.webp",
    "width": 698,
    "height": 1312,
    "scale": 2,
-   "bytes": 25112
+   "bytes": 25476
   }
  },
  "resizer-result-table": {
@@ -116,13 +116,13 @@
   "width": 575,
   "height": 535,
   "alt": "The job description comparison in the ApplyReady resume builder, showing key terms from a pasted advert that the sample resume already uses and terms it does not.",
-  "bytes": 35620,
+  "bytes": 35552,
   "phone": {
    "file": "img/guides/phone/resume-job-match.webp",
    "width": 720,
    "height": 1292,
    "scale": 2,
-   "bytes": 76686
+   "bytes": 76230
   }
  },
  "resume-review": {
@@ -172,13 +172,13 @@
   "width": 832,
   "height": 292,
   "alt": "The ApplyReady signature cleaner with a phone photo of a signature on the left and the cleaned version, white paper and dark ink, on the right.",
-  "bytes": 14698,
+  "bytes": 14736,
   "phone": {
    "file": "img/guides/phone/signature-cleaner.webp",
    "width": 632,
    "height": 918,
    "scale": 2,
-   "bytes": 27914
+   "bytes": 27842
   }
  },
  "tut-batch-cancelled": {
@@ -218,9 +218,9 @@
   "phone": {
    "file": "img/guides/phone/tut-batch-preset.webp",
    "width": 710,
-   "height": 2794,
+   "height": 1424,
    "scale": 2,
-   "bytes": 77276
+   "bytes": 39950
   }
  },
  "tut-batch-progress": {
@@ -228,13 +228,13 @@
   "width": 842,
   "height": 155,
   "alt": "The batch image processor while it works: a progress bar with how many images are finished, an estimate of the time left and a Cancel button.",
-  "bytes": 9194,
+  "bytes": 9180,
   "phone": {
    "file": "img/guides/phone/tut-batch-progress.webp",
    "width": 652,
    "height": 388,
    "scale": 2,
-   "bytes": 13580
+   "bytes": 12492
   }
  },
  "tut-compress-results": {
@@ -242,13 +242,13 @@
   "width": 842,
   "height": 662,
   "alt": "Image compressor results for four files under a 50 KB limit: each row shows the original size, the result size in KB and exact bytes, and a note when quality was lowered or the photo was made smaller to fit.",
-  "bytes": 44342,
+  "bytes": 44362,
   "phone": {
    "file": "img/guides/phone/tut-compress-results.webp",
    "width": 652,
    "height": 2304,
    "scale": 2,
-   "bytes": 76026
+   "bytes": 75994
   }
  },
  "tut-compress-settings": {
@@ -262,7 +262,7 @@
    "width": 710,
    "height": 1438,
    "scale": 2,
-   "bytes": 51376
+   "bytes": 52384
   }
  },
  "tut-keep-work": {
@@ -284,13 +284,13 @@
   "width": 986,
   "height": 649,
   "alt": "The My resumes window of the ApplyReady resume builder listing three resumes saved in this browser, each with when it was edited, its template, and Open, Rename, Duplicate, Export and Delete buttons.",
-  "bytes": 37992,
+  "bytes": 38048,
   "phone": {
    "file": "img/guides/phone/tut-library.webp",
    "width": 720,
    "height": 2000,
    "scale": 2,
-   "bytes": 60122
+   "bytes": 60344
   }
  },
  "tut-library-backup": {
@@ -298,13 +298,13 @@
   "width": 901,
   "height": 649,
   "alt": "The top of My resumes with the Import backup and Export all buttons, the list of saved resumes, the switch for saving on this device and the Delete all saved resumes button.",
-  "bytes": 38620,
+  "bytes": 38596,
   "phone": {
    "file": "img/guides/phone/tut-library-backup.webp",
    "width": 720,
    "height": 2000,
    "scale": 2,
-   "bytes": 63840
+   "bytes": 63980
   }
  },
  "tut-library-rename": {
@@ -318,7 +318,7 @@
    "width": 620,
    "height": 1380,
    "scale": 2,
-   "bytes": 40648
+   "bytes": 40624
   }
  },
  "tut-merge-order": {
@@ -438,13 +438,13 @@
   "width": 772,
   "height": 681,
   "alt": "The ApplyReady signature cleaner after a phone photo was added: the cleaned preview, the Paper whiteness and Ink darkness sliders, the file type menu and the Download signature button.",
-  "bytes": 30232,
+  "bytes": 30246,
   "phone": {
    "file": "img/guides/phone/tut-signature-controls.webp",
    "width": 710,
    "height": 2200,
    "scale": 2,
-   "bytes": 60452
+   "bytes": 60446
   }
  },
  "tut-signature-result": {
@@ -452,13 +452,13 @@
   "width": 699,
   "height": 668,
   "alt": "The ApplyReady signature resizer result for a 300 by 100 pixel signature with a 10 to 20 KB range: the file was padded to 10.00 KB without changing the picture, and every row of the check table is met.",
-  "bytes": 30642,
+  "bytes": 30628,
   "phone": {
    "file": "img/guides/phone/tut-signature-result.webp",
    "width": 710,
    "height": 1780,
    "scale": 2,
-   "bytes": 45558
+   "bytes": 45400
   }
  },
  "tut-yourdata-delete": {
@@ -480,13 +480,13 @@
   "width": 704,
   "height": 408,
   "alt": "The Saved resumes section of the ApplyReady Your data page listing two resumes kept in this browser, with buttons to export them all, import a backup and delete them.",
-  "bytes": 20114,
+  "bytes": 20138,
   "phone": {
    "file": "img/guides/phone/tut-yourdata-resumes.webp",
    "width": 720,
    "height": 1212,
    "scale": 2,
-   "bytes": 42700
+   "bytes": 42816
   }
  }
 }

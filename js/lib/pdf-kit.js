@@ -1253,7 +1253,7 @@
    */
   function compressResult(bytes, kb, kept) {
     const met = bytes <= kb * 1000;
-    const exact = `${grouped(bytes)} bytes, under ${kb} KB however the portal counts a KB`;
+    const exact = `${grouped(bytes)} bytes, under ${kb} KB whether a KB is counted as 1,000 or 1,024 bytes`;
     const size = `${grouped(bytes)} bytes, ${limitKB(bytes)} KB`;
     // Over kb x 1,000 bytes but not over kb x 1,024: some portals take it, some do not.
     const either = !met && bytes <= kb * 1024 ? ` A portal that counts 1 KB as 1,024 bytes would accept it (up to ${grouped(kb * 1024)} bytes); one that counts 1,000 bytes would not.` : '';
