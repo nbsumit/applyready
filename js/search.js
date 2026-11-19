@@ -61,12 +61,19 @@
       let i = 0;
       while (i < la && a[i] === b[i]) i++;
       if (a.slice(i + 1) === b.slice(i + 1)) return true; // one letter changed
-      return i + 1 < la && a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2); // swapped
+      return swapped(a, b);
     }
     const [s, l] = la < lb ? [a, b] : [b, a];
     let i = 0;
     while (i < s.length && s[i] === l[i]) i++;
     return s.slice(i) === l.slice(i + 1); // one letter added or missing
+  }
+  // Two neighbouring letters swapped ("sgin" for "sign").
+  function swapped(a, b) {
+    if (a.length !== b.length) return false;
+    let i = 0;
+    while (i < a.length && a[i] === b[i]) i++;
+    return i + 1 < a.length && a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2);
   }
 
   // Prepared search fields per item, weighted: name > keywords > category > summary.
@@ -94,12 +101,15 @@
   }
   // A word nobody uses ("mrege", "resise") is read as the known words one typing mistake away.
   // Words still being typed ("merg") are left alone: they match as prefixes.
-  // Four-letter words are left alone: one letter off is too often another real word ("mode", "move").
+  // A four-letter word is read only as a word with a letter missing ("mrge", "splt") or two letters
+  // swapped ("sgin"), never as one with a letter changed: that is too often another real word
+  // ("mode" is not "move", "dark" is not "mark").
   function correct(token, known) {
     if (sizeUnit(token)) return [token, sizeUnit(token)];
-    if (token.length < 5 || known.has(token) || /\d/.test(token)) return [token];
+    if (token.length < 4 || known.has(token) || /\d/.test(token)) return [token];
     for (const w of known) if (w.length > token.length && w.startsWith(token)) return [token];
-    const near = [...known].filter(w => w.length >= 4 && editDistanceAtMost1(w, token));
+    const short = token.length === 4;
+    const near = [...known].filter(w => w.length >= 4 && editDistanceAtMost1(w, token) && (!short || w.length === 5 || swapped(w, token)));
     return near.length ? near : [token];
   }
 
@@ -156,7 +166,9 @@
     } else if (f.keys.some(k => k === query)) total += 10; // a single word that is a keyword, such as "cv"
     // A page made for exactly the size typed ("photo under 50 kb": Resize image to 50 KB) beats the
     // tools that only make files smaller.
-    if (tokenSets.length > 1 && tokenSets.some(set => sizeUnit(set[0]) && (f.name.includes(set[0]) || f.keyWords.includes(set[0])))) total += 10;
+    // Only a page made for that size counts (a preset page, or one whose name carries it): a tool
+    // that merely mentions the size in a keyword ("signature 20kb") is not that page.
+    if (tokenSets.length > 1 && tokenSets.some(set => sizeUnit(set[0]) && (f.name.includes(set[0]) || (item.presetOf && f.keyWords.includes(set[0]))))) total += 10;
     if (matched < tokenSets.length) total *= matched / tokenSets.length * 0.6; // not every word matched
     // The closer the name is to what was typed, the better: "photo" fits "Passport photo resizer"
     // (one of three words) better than "Passport photo print sheet" (one of four).

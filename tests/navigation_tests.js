@@ -60,6 +60,9 @@ for (const [q, id] of [['mrege pdf', 'merge-pdf'], ['resise image', 'image-resiz
   ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
 }
 ok(search('merg')[0] === 'merge-pdf', 'search: a word still being typed matches as a prefix');
+// Four-letter typos with a letter missing or two letters swapped are still read as the tool's word
+// (skipping all four-letter corrections once made "mrge" and "splt" find nothing).
+for (const [q, id] of [['mrge', 'merge-pdf'], ['splt', 'split-pdf'], ['mrge pdf', 'merge-pdf'], ['splt pdf', 'split-pdf'], ['sgin', 'signature-resizer']]) ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
 
 // Broad words put the everyday tool near the top, and closer names first.
 ok(search('photo')[0] === 'image-resizer' && search('image')[0] === 'image-resizer', `search: "photo" and "image" list the image resizer first (${search('photo')})`);
@@ -76,6 +79,10 @@ for (const [q, id] of [['pdf 300kb', 'compress-pdf'], ['pdf 2 mb', 'compress-pdf
   ['signature 10kb', 'signature-resizer'], ['signature 15 kb', 'signature-resizer']]) ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
 for (const q of ['photo 30kb', 'photo 40 kb', 'image 75kb']) ok(['image-resizer', 'compress-image', 'resize-kb'].includes(search(q)[0]), `search: "${q}" offers a tool that reaches a KB limit first (got ${search(q)})`);
 ok(search('photo under 50 kb')[0] === 'resize-50kb', 'search: a size that has its own page still finds that page first');
+// The size's own page wins over a tool that only mentions the size in a keyword (Signature resizer has
+// "signature 20kb", and once came first for "image 20kb", so Enter opened the signature tool).
+for (const q of ['image 20kb', 'photo 20kb', 'resize photo 20kb', 'image 20 kb', 'photo under 20kb']) ok(search(q)[0] === 'resize-20kb', `search: "${q}" finds Resize image to 20 KB first (got ${search(q)})`);
+ok(search('signature 20kb')[0] === 'signature-resizer', `search: "signature 20kb" still finds the signature tool first (got ${search('signature 20kb')})`);
 // Common Hinglish words, and a few words typed in Devanagari.
 for (const [q, id] of [['pdf chota karna', 'compress-pdf'], ['pdf ko chota', 'compress-pdf'], ['pdf size kam karna', 'compress-pdf'], ['pdf jodna', 'merge-pdf'], ['pdf milana', 'merge-pdf'],
   ['photo chhota karna', 'compress-image'], ['पीडीएफ छोटा', 'compress-pdf'], ['फोटो', 'image-resizer']]) ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
