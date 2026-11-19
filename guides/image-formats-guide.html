@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>JPEG, PNG or WebP: Which Image Format to Upload | ApplyReady</title>
@@ -120,9 +120,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="../resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -179,9 +178,8 @@
                     <li><a class="menu__item" href="../convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="../workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -237,21 +235,21 @@
 <h2>What the difference looks like in kilobytes</h2>
 <figure class="shot">
 <svg viewBox="0 0 600 166" role="img" aria-labelledby="fmtChartTitle" xmlns="http://www.w3.org/2000/svg">
-<title id="fmtChartTitle">File size of the same 350 by 450 pixel test portrait: 26.5 KB as JPEG, 18.5 KB as WebP and 196 KB as PNG.</title>
+<title id="fmtChartTitle">File size of the same 350 by 450 pixel test portrait: 27.2 KB as JPEG, 19.0 KB as WebP and 201.3 KB as PNG.</title>
 <text x="0" y="16" class="dg-fill-text-3 dg-fs-13">Same 350 × 450 px photo, three formats</text>
 <text x="0" y="49" class="dg-fill-text-2 dg-fs-14">JPEG</text>
 <rect x="70" y="30" width="57" height="28" rx="4" class="dg-fill-accent"/>
-<text x="135" y="49" class="dg-fill-text dg-fs-14">26.5 KB</text>
+<text x="135" y="49" class="dg-fill-text dg-fs-14">27.2 KB</text>
 <text x="0" y="93" class="dg-fill-text-2 dg-fs-14">WebP</text>
 <rect x="70" y="74" width="40" height="28" rx="4" class="dg-fill-accent"/>
-<text x="118" y="93" class="dg-fill-text dg-fs-14">18.5 KB</text>
+<text x="118" y="93" class="dg-fill-text dg-fs-14">19.0 KB</text>
 <text x="0" y="137" class="dg-fill-text-2 dg-fs-14">PNG</text>
 <rect x="70" y="118" width="420" height="28" rx="4" class="dg-fill-accent"/>
-<text x="498" y="137" class="dg-fill-text dg-fs-14">196.0 KB</text>
+<text x="498" y="137" class="dg-fill-text dg-fs-14">201.3 KB</text>
 </svg>
-<figcaption>Measured with ApplyReady's resizer on our synthetic test portrait (JPEG and WebP at quality 0.95; PNG has no quality setting). Chromium, 24 October 2026.</figcaption>
+<figcaption>Measured with ApplyReady's resizer on our synthetic test portrait (JPEG and WebP at quality 0.95; PNG has no quality setting). Chromium, 18 November 2026.</figcaption>
 </figure>
-<p>The PNG is more than seven times the JPEG because it keeps every variation in skin and hair exactly. The resizer reports this instead of producing an oversized file: asked for a PNG under 20 KB at 350 × 450 px, it says the PNG needs 196 KB. Signatures show the same pattern on a smaller scale: our 300 × 100 px test signature was 8.0 KB as JPEG and 37.8 KB as PNG.</p>
+<p>The PNG is more than seven times the JPEG because it keeps every variation in skin and hair exactly. The resizer reports this instead of producing an oversized file: asked for a PNG under 20 KB at 350 × 450 px, it says the PNG needs 201.3 KB. Signatures show the same pattern on a smaller scale: our 300 × 100 px test signature was 8.2 KB as JPEG and 38.8 KB as PNG.</p>
 <p>WebP was the smallest, but many application forms do not accept it for photos, so the saving rarely helps on an application form. Where a limit is tight and only JPEG is allowed, reduce the pixel size instead; see <a href="how-to-reduce-photo-to-50kb-without-blur.html">getting a photo under a KB limit without blur</a>.</p>
 </section>
 

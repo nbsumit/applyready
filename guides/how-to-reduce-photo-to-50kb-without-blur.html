@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Get a Photo Under a KB Limit Without Blur | ApplyReady</title>
@@ -120,9 +120,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="../resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -179,9 +178,8 @@
                     <li><a class="menu__item" href="../convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="../workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -231,25 +229,25 @@
 <p>A JPEG's size depends on how many pixels it has and how much detail each one keeps. A limit in KB is a budget shared by all the pixels, so the more pixels you keep, the less detail each one gets. We ran the same test portrait through the resizer with a 50 KB limit at four sizes. The tool always tries quality 0.95 first and lowers it only as far as the limit requires, so the quality it settles on shows how much each size had to give up:</p>
 <figure class="shot">
 <svg viewBox="0 0 700 210" role="img" aria-labelledby="kbChartTitle" xmlns="http://www.w3.org/2000/svg">
-<title id="kbChartTitle">JPEG quality needed to fit one test portrait under 50 KB at four pixel sizes: 0.95 at 350 by 450, 0.89 at 600 by 800, 0.73 at 900 by 1200 and 0.55 at 1200 by 1600.</title>
+<title id="kbChartTitle">JPEG quality needed to fit one test portrait under 50 KB at four pixel sizes: 0.95 at 350 by 450, 0.89 at 600 by 800, 0.73 at 900 by 1200 and 0.54 at 1200 by 1600.</title>
 <text x="0" y="16" class="dg-fill-text-3 dg-fs-13">Highest JPEG quality that fits under 50 KB (longer bar = sharper)</text>
 <text x="0" y="49" class="dg-fill-text-2 dg-fs-14">350 × 450 px</text>
 <rect x="120" y="30" width="380" height="28" rx="4" class="dg-fill-accent"/>
-<text x="508" y="49" class="dg-fill-text dg-fs-14">quality 0.95 · 26.5 KB</text>
+<text x="508" y="49" class="dg-fill-text dg-fs-14">quality 0.95 · 27.2 KB</text>
 <text x="0" y="93" class="dg-fill-text-2 dg-fs-14">600 × 800 px</text>
 <rect x="120" y="74" width="358" height="28" rx="4" class="dg-fill-accent"/>
-<text x="486" y="93" class="dg-fill-text dg-fs-14">quality 0.89 · 46.1 KB</text>
+<text x="486" y="93" class="dg-fill-text dg-fs-14">quality 0.89 · 47.3 KB</text>
 <text x="0" y="137" class="dg-fill-text-2 dg-fs-14">900 × 1200 px</text>
 <rect x="120" y="118" width="293" height="28" rx="4" class="dg-fill-accent"/>
-<text x="421" y="137" class="dg-fill-text dg-fs-14">quality 0.73 · 48.7 KB</text>
+<text x="421" y="137" class="dg-fill-text dg-fs-14">quality 0.73 · 49.9 KB</text>
 <text x="0" y="181" class="dg-fill-text-2 dg-fs-14">1200 × 1600 px</text>
-<rect x="120" y="162" width="220" height="28" rx="4" class="dg-fill-accent"/>
-<text x="348" y="181" class="dg-fill-text dg-fs-14">quality 0.55 · 48.1 KB</text>
+<rect x="120" y="162" width="216" height="28" rx="4" class="dg-fill-accent"/>
+<text x="344" y="181" class="dg-fill-text dg-fs-14">quality 0.54 · 49.5 KB</text>
 </svg>
-<figcaption>Measured with ApplyReady's resizer on our synthetic 1200 × 1600 px test portrait, Chromium, 24 October 2026. Same photo, same limit: only the pixel size changes.</figcaption>
+<figcaption>Measured with ApplyReady's resizer on our synthetic 1200 × 1600 px test portrait, Chromium, 19 November 2026 (1 KB = 1,000 bytes). Same photo, same limit: only the pixel size changes.</figcaption>
 </figure>
-<p>At 350 × 450 px the photo fitted at 0.95 with half the budget unused. At 1200 × 1600 px the same limit forced the quality down to 0.55, where skin turns blotchy and edges show 8 × 8 blocks. Nothing about the photo changed, only the number of pixels sharing the 50 KB.</p>
-<p>The same pattern holds at other limits. Under 20 KB, the portrait needed quality 0.92 at 350 × 450 px and 0.40 at 1000 × 1333 px. Under 100 KB, 0.89 at 800 × 1000 px and 0.73 at 1200 × 1600 px. The full tables are on the <a href="../resize-image-to-20kb.html">20 KB</a>, <a href="../resize-image-to-50kb.html">50 KB</a> and <a href="../resize-image-to-kb-limit.html">10, 100 and 200 KB</a> pages.</p>
+<p>At 350 × 450 px the photo fitted at 0.95 with half the budget unused. At 1200 × 1600 px the same limit forced the quality down to 0.54, where skin turns blotchy and edges show 8 × 8 blocks. Nothing about the photo changed, only the number of pixels sharing the 50 KB.</p>
+<p>The same pattern holds at other limits. Under 20 KB, the portrait needed quality 0.92 at 350 × 450 px and 0.40 at 1000 × 1333 px. Under 100 KB, 0.89 at 800 × 1000 px and 0.72 at 1200 × 1600 px. The full tables are on the <a href="../resize-image-to-20kb.html">20 KB</a>, <a href="../resize-image-to-50kb.html">50 KB</a> and <a href="../resize-image-to-kb-limit.html">10, 100 and 200 KB</a> pages.</p>
 </section>
 
 <section class="section prose">
@@ -269,8 +267,8 @@
 
 <section class="section prose">
 <h2>How the resizer finds the highest quality that fits</h2>
-<p>After cropping and resizing to the exact pixel size, the tool encodes the image at quality 0.95. If that is within the limit, it stops. If not, it checks that quality 0.05 fits at all (if even that is too large, it says so and suggests fewer pixels), then runs a binary search between the two: seven more encodings, each time keeping the best result that is at or under the limit. The limit is counted in bytes, with 1 KB = 1,024 bytes, so a 50 KB limit means at most 51,200 bytes, and the result panel shows the exact byte count.</p>
-<p>When a range has a minimum and the image comes out smaller, the tool adds JPEG comment data to reach it. Comment data is ignored by image viewers, so the picture is unchanged. This matters for narrow ranges such as 20 to 50 KB: our 200 × 230 px portrait was 9.1 KB at quality 0.95, well under a 20 KB minimum, and was padded to 20.0 KB.</p>
+<p>After cropping and resizing to the exact pixel size, the tool encodes the image at quality 0.95. If that is within the limit, it stops. If not, it checks that quality 0.05 fits at all (if even that is too large, it says so and suggests fewer pixels), then runs a binary search between the two: seven more encodings, each time keeping the best result that is at or under the limit. The limit is counted in bytes: a 50 KB maximum means at most 50,000 bytes, which is under 50 KB whether a portal counts 1 KB as 1,000 or 1,024 bytes, and the result panel shows the exact byte count.</p>
+<p>When a range has a minimum and the image comes out smaller, the tool adds JPEG comment data to reach it. Comment data is ignored by image viewers, so the picture is unchanged. This matters for narrow ranges such as 20 to 50 KB: our 200 × 230 px portrait was 9.4 KB at quality 0.95, well under a 20 KB minimum, and was padded to 20.5 KB (20,484 bytes, at least 20 KB however the portal counts).</p>
 </section>
 
 <section class="section prose">
@@ -278,9 +276,9 @@
 <h3>The file must be PNG</h3>
 <p>PNG is lossless, so there is no quality setting to lower (<a href="https://developer.mozilla.org/en-US/docs/Web/Media/Guides/Formats/Image_types">MDN image format guide</a>). Our 350 × 450 px test portrait needed 196 KB as PNG, and the resizer reports that instead of producing a file that breaks the limit. If the form accepts JPEG, use it. If it requires PNG, the only lever is fewer pixels. To shrink several photos to one limit at once, the <a href="../compress-image.html">image compressor</a> applies the same quality search to each file.</p>
 <h3>The form allows WebP</h3>
-<p>WebP usually stores a photo in fewer bytes than JPEG at a similar look: our portrait was 18.5 KB as WebP at 350 × 450 px against 26.5 KB as JPEG. Many application forms list only JPEG for photos, so check the form first; see <a href="image-formats-guide.html">JPEG, PNG or WebP</a>.</p>
+<p>WebP usually stores a photo in fewer bytes than JPEG at a similar look: our portrait was 19.0 KB as WebP at 350 × 450 px against 27.2 KB as JPEG. Many application forms list only JPEG for photos, so check the form first; see <a href="image-formats-guide.html">JPEG, PNG or WebP</a>.</p>
 <h3>Signatures</h3>
-<p>A signature is mostly flat white, which JPEG stores cheaply. Our 300 × 100 px test signature was 8.0 KB at quality 0.95; cleaned with the <a href="../signature-cleaner.html">signature cleaner</a> first, 6.3 KB. With signatures the usual problem is falling under a minimum, not exceeding a maximum.</p>
+<p>A signature is mostly flat white, which JPEG stores cheaply. Our 300 × 100 px test signature was 8.2 KB at quality 0.95; cleaned with the <a href="../signature-cleaner.html">signature cleaner</a> first, 6.6 KB. With signatures the usual problem is falling under a minimum, not exceeding a maximum.</p>
 <h3>The photo is still rejected</h3>
 <p>Size is one check among several. Background, lighting, face coverage and the file name are checked too; see <a href="fix-common-photo-upload-errors.html">photo upload errors and fixes</a>.</p>
 </section>
@@ -290,7 +288,7 @@
 <h3>Why did my photo get bigger after resizing?</h3>
 <p>Usually because the output has more pixels than the input (enlarging adds pixels, not detail), the output is PNG, or it was saved at maximum quality. Keep the pixel size at or below the original and output JPEG.</p>
 <h3>Is 50 KB the same as 50,000 bytes?</h3>
-<p>Not in this tool: 50 KB is 51,200 bytes here. Portals rarely say which they use. If a file just under the limit is refused, lower the maximum by 1 KB.</p>
+<p>On some portals it is, on others 50 KB is 51,200 bytes, and they rarely say which. This tool keeps a 50 KB maximum at 50,000 bytes or less, so the file fits either way.</p>
 <h3>Should I lower quality or pixel size first?</h3>
 <p>Pixel size, down to what the form allows. Then let the tool choose the quality.</p>
 <h3>Does compressing twice hurt?</h3>

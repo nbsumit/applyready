@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="applyready-tool" content="convert-image">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -147,9 +147,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -206,9 +205,8 @@
                     <li><a class="menu__item" href="convert-image.html" aria-current="page"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -288,7 +286,6 @@
           <p class="batch-result__note">Every file was read back and checked against your settings before it was listed as done. Saving a new copy removes location (GPS), camera and other hidden details from photos.</p>
         </div>
         <div class="notice notice--warning hidden" id="batchStale"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><div class="notice__body"><p id="batchStaleText">You changed the settings after processing. The finished files still use the old settings.</p><button type="button" class="btn btn-sm" id="btnBatchRerun"><i class="fa-solid fa-arrows-rotate" aria-hidden="true"></i> Process again</button></div></div>
-        <ul class="file-list hidden" id="batchList" aria-label="Images in this batch"></ul>
       </div>
       <div class="ws-rail">
       <div class="ws-side">
@@ -390,6 +387,9 @@
         <button type="button" id="btnBatchStart" class="btn btn-primary btn-lg btn-block" disabled><i class="fa-solid fa-bolt" aria-hidden="true"></i> <span id="btnBatchStartLabel">Process images</span></button>
         <p class="process-summary" id="batchSettingsSummary"></p>
       </div>
+      </div>
+      <div class="batch-files">
+        <ul class="file-list hidden" id="batchList" aria-label="Images in this batch"></ul>
       </div>
     </section>
     </section>

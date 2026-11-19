@@ -24,6 +24,21 @@
   const BASE = typeof document !== 'undefined' ? scriptBase() : '/js/';
   const cancelled = () => new DOMException('Cancelled', 'AbortError');
 
+  /* Workers must run under the site's Content-Security-Policy. GitHub Pages cannot send a policy
+     header and the <meta> policy covers only the page, so a worker started from its file's URL would
+     run with no policy and could send data to any website. A worker started from a blob: URL takes
+     the policy of the page that starts it (worker-src allows blob:), so the worker is a one-line
+     blob: script that loads the real files from this site. */
+  let workerUrl = null;
+  function workerSource() {
+    if (!workerUrl) {
+      const abs = p => new URL(BASE + p, location.href).href;
+      const src = `importScripts(${JSON.stringify(abs('lib/image-ops.js'))}, ${JSON.stringify(abs('workers/image-worker.js'))});`;
+      workerUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+    }
+    return workerUrl;
+  }
+
   function create(options) {
     const hc = (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 2;
     const size = Math.max(1, Math.min((options && options.size) || Math.min(4, Math.max(1, Math.floor(hc / 2))), 4));
@@ -40,7 +55,7 @@
     }
 
     function spawn() {
-      const w = new Worker(BASE + 'workers/image-worker.js');
+      const w = new Worker(workerSource());
       const slot = { worker: w, busy: false, job: null, alive: false };
       w.onmessage = (e) => {
         const data = e.data || {};

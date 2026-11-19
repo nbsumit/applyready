@@ -89,10 +89,10 @@ async function annotate(page, notes) {
 }
 
 // Region of the page that contains every given element, with padding, in page coordinates.
-// The callout layer is included, so a label drawn outside an element is not cut off.
-async function regionOf(page, selectors, pad = 24) {
-  drawn.set(page, { ...drawn.get(page), region: [selectors, pad] });
-  return page.evaluate(([selectors, pad]) => {
+// The callout layer is included, so a label drawn outside an element is not cut off. With `near`, only
+// the callouts whose box overlaps those elements are (see partsOf).
+function measureRegion(page, selectors, pad, near, padTop = pad, padBottom = pad) {
+  return page.evaluate(([selectors, pad, near, padTop, padBottom]) => {
     let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
     const add = x => { l = Math.min(l, x.left + scrollX); t = Math.min(t, x.top + scrollY); r = Math.max(r, x.right + scrollX); b = Math.max(b, x.bottom + scrollY); };
     for (const s of selectors) {
@@ -101,10 +101,39 @@ async function regionOf(page, selectors, pad = 24) {
       add(el.getBoundingClientRect());
     }
     const layer = document.getElementById('guideNotes');
-    if (layer) for (const tag of layer.children) add(tag.getBoundingClientRect());
-    l = Math.max(0, l - pad); t = Math.max(0, t - pad);
-    return { x: Math.round(l), y: Math.round(t), width: Math.round(Math.min(document.documentElement.scrollWidth, r + pad) - l), height: Math.round(b + pad - t) };
-  }, [selectors, pad]);
+    // The layer holds a highlight box and its number tag for each callout, in that order.
+    const kids = layer ? [...layer.children] : [];
+    const [top, bottom] = [t, b];
+    for (let i = 0; i < kids.length; i += 2) {
+      const box = kids[i].getBoundingClientRect();
+      if (near && (box.bottom + scrollY < top || box.top + scrollY > bottom)) continue;
+      add(box);
+      if (kids[i + 1]) add(kids[i + 1].getBoundingClientRect());
+    }
+    l = Math.max(0, l - pad); t = Math.max(0, t - padTop);
+    return { x: Math.round(l), y: Math.round(t), width: Math.round(Math.min(document.documentElement.scrollWidth, r + pad) - l), height: Math.round(b + padBottom - t) };
+  }, [selectors, pad, !!near, padTop, padBottom]);
+}
+async function regionOf(page, selectors, pad = 24) {
+  drawn.set(page, { ...drawn.get(page), region: [selectors, pad], parts: null });
+  return measureRegion(page, selectors, pad, false);
+}
+// Several regions of one page, shown one below the other with a marked gap between them, for a layout
+// that puts something long between the parts a step is about (on a phone the batch tools put all the
+// settings between the result panel and the file list). Each part holds the callouts that overlap it;
+// capture() checks that every callout is in a part and draws the gap, so the picture never suggests
+// the parts sit next to each other on the page. A group is a list of selectors, or { selectors, top,
+// bottom } to set the space above and below that part (0 starts or ends it exactly at an element, such
+// as a list row, rather than with a sliver of the next row). Returns a list of regions.
+const groupSelectors = g => (Array.isArray(g) ? g : g.selectors);
+async function partsOf(page, groups, pad = 16) {
+  drawn.set(page, { ...drawn.get(page), region: null, parts: [groups, pad] });
+  const clips = [];
+  const space = (g, side) => (Array.isArray(g) || g[side] == null ? pad : g[side]);
+  for (const g of groups) clips.push(await measureRegion(page, groupSelectors(g), pad, true, space(g, 'top'), space(g, 'bottom')));
+  // One width for every part, so they line up one below the other as they do on the page.
+  const left = Math.min(...clips.map(c => c.x)), right = Math.max(...clips.map(c => c.x + c.width));
+  return clips.map(c => ({ ...c, x: left, width: right - left }));
 }
 
 const settle = (page, ms = 400) => page.waitForTimeout(ms);
@@ -287,8 +316,8 @@ const SHOTS = {
       await page.click('#btnStartCompress');
       await page.waitForSelector('#compressResultArea:not(.hidden)', { timeout: 60000 });
       await settle(page);
-      await annotate(page, [['.size-compare', 'Before and after, in KB', 'above'], ['.target-grid', 'The portal limit you chose', 'above']]);
-      return regionOf(page, ['.size-compare', '.target-grid']);
+      await annotate(page, [['.size-compare', 'Before and after, in KB', 'corner'], ['.target-grid', 'The portal limit you chose', 'above']]);
+      return regionOf(page, ['#compressStatus', '.size-compare', '.target-grid']);
     }
   },
   'resume-review': {
@@ -512,8 +541,9 @@ const SHOTS = {
       await settle(page, 600);
       await top(page);
       await annotate(page, [['#batchVerdictTitle', 'Every file checked', 'right'], ['#batchList li:nth-child(3) .file-row__notes', 'What changed, and why', 'corner'], ['#btnBatchZip', 'One ZIP for all', 'right']]);
-      // On a phone the rows are tall: end the picture at the row the second callout is on.
-      return regionOf(page, phone ? ['#batchResult', '#batchList li:nth-child(3)'] : ['#batchResult', '#batchList'], 16);
+      // On a phone all the settings come between the result and the list, and the rows are tall: show the
+      // result, then the list down to the row the second callout is on.
+      return phone ? partsOf(page, [['#batchResult'], { selectors: ['#batchList li:nth-child(1)', '#batchList li:nth-child(3)'], top: 0, bottom: 0 }]) : regionOf(page, ['#batchResult', '#batchList'], 16);
     }
   },
 
@@ -641,9 +671,9 @@ const SHOTS = {
     }
   },
   'tut-batch-cancelled': {
-    alt: 'The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the failed and cancelled images.',
+    alt: 'The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the cancelled images.',
     phone: { maxHeight: 1400 },
-    async run(page, origin) {
+    async run(page, origin, { phone } = {}) {
       // The tutorial's caption describes four finished and two cancelled. Photos are processed in
       // parallel, so the last two can finish in the same instant as the fourth, leaving nothing to cancel;
       // the run is repeated until the picture matches the caption (never the other way round).
@@ -671,12 +701,14 @@ const SHOTS = {
       await settle(page, 600);
       await top(page);
       await annotate(page, [['#btnBatchZip', 'Finished ones are kept', 'corner'], ['#btnBatchRetry', 'Run the rest again', 'corner'], ['#batchList [data-status="cancelled"]', 'Not processed', 'corner']]);
-      return regionOf(page, ['#batchResult', '#batchList'], 16);
+      // On a phone all the settings come between the result and the list: show the result, then the end
+      // of the list, with finished rows above the cancelled ones.
+      return phone ? partsOf(page, [['#batchResult'], { selectors: ['#batchList li:nth-child(3)', '#batchList li:nth-child(6)'], top: 0 }]) : regionOf(page, ['#batchResult', '#batchList'], 16);
     }
   },
   'tut-batch-names': {
     alt: 'Batch results where two photos had the same file name: the second result is named photo (2).jpg, and a damaged file is marked Failed with the reason in its row.',
-    async run(page, origin) {
+    async run(page, origin, { phone } = {}) {
       const a = fs.mkdtempSync(path.join(tmp, 'a-')), b = fs.mkdtempSync(path.join(tmp, 'b-'));
       fs.copyFileSync(guideSample('photo-applicant-1.jpg'), path.join(a, 'photo.jpg'));
       fs.copyFileSync(guideSample('photo-applicant-2.jpg'), path.join(b, 'photo.jpg'));
@@ -694,7 +726,8 @@ const SHOTS = {
       const notes = [['#batchList li:nth-child(2)', 'Same name: (2) is added', 'corner']];
       if (await page.locator('#batchList [data-status="error"]').count()) notes.push(['#batchList [data-status="error"]', 'Failed, with the reason', 'corner']);
       await annotate(page, notes);
-      return regionOf(page, ['#batchResult', '#batchList'], 16);
+      // On a phone all the settings come between the result and the list; the names are in the list.
+      return regionOf(page, phone ? ['#batchList'] : ['#batchResult', '#batchList'], 16);
     }
   },
 
@@ -749,8 +782,8 @@ async function capture(browser, origin, contextOptions, steps, maxHeight, file, 
   // is below it, so the callouts would no longer sit on their elements. Give the window the page's
   // height first, wait until the marked elements stop moving, then draw the callouts and measure the
   // region again.
-  const { notes, region } = drawn.get(page) || {};
-  const selectors = [...(notes || []).map(n => n[0]), ...(region ? region[0] : [])];
+  const { notes, region, parts } = drawn.get(page) || {};
+  const selectors = [...(notes || []).map(n => n[0]), ...(region ? region[0] : []), ...(parts ? parts[0].flatMap(groupSelectors) : [])];
   const layout = () => page.evaluate(selectors => selectors.map(sel => {
     const el = document.querySelector(sel), r = el && el.getBoundingClientRect();
     return r ? [r.left + scrollX, r.top + scrollY, r.height].map(Math.round).join(',') : '-';
@@ -770,6 +803,8 @@ async function capture(browser, origin, contextOptions, steps, maxHeight, file, 
   }
   if (notes) await annotate(page, notes);
   if (region) clip = await regionOf(page, ...region);
+  if (parts) clip = await partsOf(page, ...parts);
+  if (Array.isArray(clip)) return await captureParts(page, clip, maxHeight, file);
   const fullHeight = clip.height;
   clip.height = Math.min(clip.height, maxHeight);
   // Every numbered callout must be in the picture, or the caption points at something the reader cannot see.
@@ -793,6 +828,58 @@ async function capture(browser, origin, contextOptions, steps, maxHeight, file, 
   fs.writeFileSync(file, webp);
   return { width, height, bytes: webp.length };
   } finally { await context.close(); }
+}
+
+// The pixel height of the marked gap between the parts of a picture made by partsOf, in CSS pixels.
+const GAP = 28;
+
+// Capture several regions (from partsOf) as one picture: each part as it is on the page, one below the
+// other, with a band between them that shows content was left out (a dashed line and three dots).
+async function captureParts(page, clips, maxHeight, file) {
+  const total = clips.reduce((sum, c) => sum + c.height, 0) + GAP * (clips.length - 1);
+  // Every numbered callout must be whole inside one part, or the caption points at something the reader cannot see.
+  const cut = await page.evaluate(clips => {
+    const layer = document.getElementById('guideNotes');
+    return layer ? [...layer.children].filter(el => {
+      const r = el.getBoundingClientRect(), top = r.top + scrollY, left = r.left + scrollX;
+      return !clips.some(c => top >= c.y - 1 && left >= c.x - 1 && top + r.height <= c.y + c.height + 1 && left + r.width <= c.x + c.width + 1);
+    }).map(el => el.textContent || 'a highlight box') : [];
+  }, clips);
+  if (cut.length) throw new Error(`callout outside every part of the picture (${cut.join('; ')})`);
+  if (total > maxHeight) throw new Error(`the parts add up to ${total} px and the limit is ${maxHeight} px: allow a taller picture (maxHeight) or choose smaller parts`);
+  const shots = [];
+  for (const clip of clips) shots.push((await page.screenshot({ clip, fullPage: true, animations: 'disabled' })).toString('base64'));
+  const [b64, width, height] = await page.evaluate(async ([shots, gap]) => {
+    const imgs = await Promise.all(shots.map(async b64 => { const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode(); return img; }));
+    const scale = devicePixelRatio || 1, g = Math.round(gap * scale);
+    const c = document.createElement('canvas');
+    c.width = Math.max(...imgs.map(i => i.naturalWidth));
+    c.height = imgs.reduce((sum, i) => sum + i.naturalHeight, 0) + g * (imgs.length - 1);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#e9ecef';
+    ctx.fillRect(0, 0, c.width, c.height);
+    let y = 0;
+    imgs.forEach((img, i) => {
+      ctx.drawImage(img, 0, y);
+      y += img.naturalHeight;
+      if (i === imgs.length - 1) return;
+      const mid = y + g / 2;
+      ctx.strokeStyle = '#868e96';
+      ctx.lineWidth = Math.max(1, scale);
+      ctx.setLineDash([6 * scale, 5 * scale]);
+      for (const [a, b] of [[8 * scale, c.width / 2 - 24 * scale], [c.width / 2 + 24 * scale, c.width - 8 * scale]]) {
+        ctx.beginPath(); ctx.moveTo(a, mid); ctx.lineTo(b, mid); ctx.stroke();
+      }
+      ctx.fillStyle = '#868e96';
+      for (const dx of [-12, 0, 12]) { ctx.beginPath(); ctx.arc(c.width / 2 + dx * scale, mid, 2.5 * scale, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = '#e9ecef';
+      y += g;
+    });
+    return [c.toDataURL('image/webp', 0.8).split(',')[1], c.width, c.height];
+  }, [shots, GAP]);
+  const webp = Buffer.from(b64, 'base64');
+  fs.writeFileSync(file, webp);
+  return { width, height, bytes: webp.length };
 }
 
 // Write the markup that shows each screenshot, wherever a page shows one:

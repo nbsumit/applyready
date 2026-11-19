@@ -272,21 +272,21 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await page.goto(origin + '/passport-photo-resizer.html');
     await page.setInputFiles('#fileInput', sample('test-portrait.jpg'));
     await page.waitForFunction(() => document.getElementById('imageToCrop').cropper && !document.getElementById('btnProcess').disabled);
-    ok(squash(await page.textContent('#fileInfoText')) === 'test-portrait.jpg (1200 × 1600 px, 428.9 KB)', 'file bar as quoted');
-    says(T, 'test-portrait.jpg (1200 × 1600 px, 428.9 KB)');
+    ok(squash(await page.textContent('#fileInfoText')) === 'test-portrait.jpg (1200 × 1600 px, 439.2 KB)', 'file bar as quoted');
+    says(T, 'test-portrait.jpg (1200 × 1600 px, 439.2 KB)');
     await page.click('#btnProcess');
     await page.waitForSelector('#resultArea:not(.hidden)');
     ok(squash(await page.textContent('#resultStatus')) === 'Under the 50 KB limit, at the exact size requested.', 'result sentence as quoted');
     says(T, 'Under the 50 KB limit, at the exact size requested.');
     const size = squash(await page.textContent('#resultFileSize'));
-    ok(size === '26.47 KB (27,109 bytes)', `measured size (${size})`);
-    says(T, '26.47 KB (27,109 bytes)');
+    ok(size === '27.2 KB (27,120 bytes)', `measured size (${size})`);
+    says(T, '27.2 KB (27,120 bytes)');
     const [img] = await Promise.all([page.waitForEvent('download'), page.click('#btnDownload')]);
     ok(img.suggestedFilename() === 'test-portrait_Passport_Photo_350x450.jpg', `file name (${img.suggestedFilename()})`);
     says(T, 'test-portrait_Passport_Photo_350x450.jpg');
     const imgFile = await save(img);
     const dims = jpegSize(imgFile);
-    ok(dims && dims.width === 350 && dims.height === 450 && fs.statSync(imgFile).size <= 51200, `the file is 350 × 450 px and at most 51,200 bytes (${JSON.stringify(dims)}, ${fs.statSync(imgFile).size})`);
+    ok(dims && dims.width === 350 && dims.height === 450 && fs.statSync(imgFile).size <= 50000, `the file is 350 × 450 px and at most 50,000 bytes (${JSON.stringify(dims)}, ${fs.statSync(imgFile).size})`);
     // PNG at a tight limit gives the message the tutorial quotes.
     await page.click('#btnCropAgain');
     await page.evaluate(() => { const b = document.querySelector('.ws-customize'); if (b.getAttribute('aria-expanded') !== 'true') b.click(); });
@@ -294,8 +294,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await page.fill('#customMaxKB', '10');
     await page.click('#btnProcess');
     await page.waitForSelector('#processErrorBox:not(.hidden)');
-    ok(/^PNG needs 196\.0 KB at this size\./.test(squash(await page.textContent('#processErrorMessage'))), 'PNG message as quoted');
-    says(T, '"PNG needs 196.0 KB at this size."');
+    ok(/^PNG needs 201\.3 KB at this size\./.test(squash(await page.textContent('#processErrorMessage'))), 'PNG message as quoted');
+    says(T, '"PNG needs 201.3 KB at this size."');
     await context.close();
   }
 
@@ -320,12 +320,12 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await page.waitForSelector('#resultArea:not(.hidden)');
     ok(squash(await page.textContent('#resultStatus')) === 'Within the 10–20 KB range, at the exact size requested.', 'range sentence as quoted');
     says(T, 'Within the 10–20 KB range, at the exact size requested.');
-    ok(squash(await page.textContent('#resultFileSize')) === '10.00 KB (10,244 bytes)', 'padded size as quoted');
-    says(T, '10.00 KB (10,244 bytes)');
+    ok(squash(await page.textContent('#resultFileSize')) === '10.3 KB (10,244 bytes)', 'padded size as quoted');
+    says(T, '10.3 KB (10,244 bytes)');
     const [sig] = await Promise.all([page.waitForEvent('download'), page.click('#btnDownload')]);
     const sigFile = await save(sig);
     const d = jpegSize(sigFile);
-    ok(d && d.width === 300 && d.height === 100 && fs.statSync(sigFile).size >= 10240 && fs.statSync(sigFile).size <= 20480, 'the signature file is 300 × 100 px and inside 10 to 20 KB');
+    ok(d && d.width === 300 && d.height === 100 && fs.statSync(sigFile).size >= 10240 && fs.statSync(sigFile).size <= 20000, 'the signature file is 300 × 100 px and inside 10 to 20 KB');
     await context.close();
   }
 
@@ -338,8 +338,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     ok(await page.inputValue('#bMaxKB') === '100' && await page.isChecked('#bAllowShrink'), 'the compressor starts at 100 KB with smaller dimensions allowed');
     await page.setInputFiles('#batchApp input[type=file]', [guideSample('photo-applicant-1.jpg'), guideSample('photo-applicant-2.jpg'), guideSample('document-page-1.jpg'), sample('test-signature-cleaned.jpg')]);
     await page.waitForFunction(() => document.querySelectorAll('#batchList li').length === 4);
-    ok(squash(await page.textContent('#batchCounts')) === '4 images · 1.2 MB', `the bar counts the images as quoted (${squash(await page.textContent('#batchCounts'))})`);
-    says(T, '4 images · 1.2 MB');
+    ok(squash(await page.textContent('#batchCounts')) === '4 images · 1.31 MB', `the bar counts the images as quoted (${squash(await page.textContent('#batchCounts'))})`);
+    says(T, '4 images · 1.31 MB');
     await setValue(page, 'bMaxKB', '50');
     ok(/Compress 4 images/.test(await page.textContent('#btnBatchStart')), 'the start button names the job');
     await page.click('#btnBatchStart');
@@ -347,14 +347,14 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     const rows = await page.locator('#batchList li').allInnerTexts();
     ok(rows[0].includes('Quality was lowered to 51% to fit under 50 KB.'), `quality note as quoted (${rows[0]})`);
     says(T, 'Quality was lowered to 51% to fit under 50 KB.');
-    ok(rows[2].includes('The pixel size was reduced to meet the 50 KB limit.') && rows[2].includes('1036 × 1465 px'), 'pixel size note and size as quoted');
+    ok(rows[2].includes('The pixel size was reduced to meet the 50 KB limit.') && rows[2].includes('1025 × 1450 px'), 'pixel size note and size as quoted');
     says(T, 'The pixel size was reduced to meet the 50 KB limit.');
-    says(T, '1036 × 1465 px');
-    ok(rows[2].includes('Quality was lowered to 52% to fit under 50 KB.'), `the scanned page also has the quality note (${rows[2]})`);
-    says(T, 'quality was lowered to 52%');
-    ok(!/Quality was lowered|pixel size was reduced/.test(rows[3]) && rows[3].includes('38 KB'), 'the small signature has no note');
-    ok(squash(await page.textContent('#batchVerdictTitle')) === '4 images compressed' && squash(await page.textContent('#batchVerdictText')) === '184 KB in total, from 1.2 MB.', 'totals as quoted');
-    says(T, '184 KB in total, from 1.2 MB.');
+    says(T, '1025 × 1450 px');
+    ok(rows[2].includes('Quality was lowered to 51% to fit under 50 KB.'), `the scanned page also has the quality note (${rows[2]})`);
+    says(T, 'quality was lowered to 51%');
+    ok(!/Quality was lowered|pixel size was reduced/.test(rows[3]) && rows[3].includes('38.1 KB'), 'the small signature has no note');
+    ok(squash(await page.textContent('#batchVerdictTitle')) === '4 images compressed' && squash(await page.textContent('#batchVerdictText')) === '186.2 KB in total, from 1.31 MB.', 'totals as quoted');
+    says(T, '186.2 KB in total, from 1.31 MB.');
     const [zip] = await Promise.all([page.waitForEvent('download'), page.click('#btnBatchZip')]);
     ok(zip.suggestedFilename() === 'compressed-images.zip', 'ZIP name as quoted');
     says(T, 'compressed-images.zip');
@@ -372,8 +372,8 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await page.goto(origin + '/merge-pdf.html');
     await page.setInputFiles('#mergeDropInput', [guideSample('sample-cover-letter.pdf'), guideSample('sample-marksheet.pdf'), guideSample('document-page-2.jpg')]);
     await page.waitForFunction(() => /3 files/.test(document.getElementById('mergeCounts').textContent));
-    ok(squash(await page.textContent('#mergeCounts')) === '3 files · 4 pages · 383 KB', `the bar counts files, pages and size as quoted (${squash(await page.textContent('#mergeCounts'))})`);
-    says(T, '3 files · 4 pages · 383 KB');
+    ok(squash(await page.textContent('#mergeCounts')) === '3 files · 4 pages · 392.4 KB', `the bar counts files, pages and size as quoted (${squash(await page.textContent('#mergeCounts'))})`);
+    says(T, '3 files · 4 pages · 392.4 KB');
     ok(squash(await page.textContent('main')).includes('4 pages from 3 files will be joined in the order shown.'), 'the line above the button as quoted');
     says(T, '4 pages from 3 files will be joined in the order shown.');
     const listText = squash(await page.getByRole('list', { name: 'Files to merge, in order' }).innerText());
@@ -450,7 +450,7 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     execFileSync('unzip', ['-q', zipFile, '-d', outDir]);
     for (const n of names) {
       const dd = jpegSize(path.join(outDir, n));
-      ok(dd && dd.width === 350 && dd.height === 450 && fs.statSync(path.join(outDir, n)).size <= 51200, `${n} is 350 × 450 px under 50 KB`);
+      ok(dd && dd.width === 350 && dd.height === 450 && fs.statSync(path.join(outDir, n)).size <= 50000, `${n} is 350 × 450 px under 50 KB`);
     }
     // Cancel keeps finished images and offers to retry the rest.
     await page.goto(origin + '/batch-image.html');
@@ -466,8 +466,10 @@ const batchIdle = page => page.waitForFunction(() => { const s = window.ApplyRea
     await batchIdle(page);
     const s = await page.evaluate(() => window.ApplyReadyBatchImage.summary());
     ok(s.done >= 2 && s.cancelled > 0, `cancel keeps finished images (${JSON.stringify(s)})`);
-    ok(/Retry \d+ failed and cancelled images?/.test(await page.textContent('#btnBatchRetry')), 'retry offers the failed and cancelled images');
-    says(T, 'Retry 2 failed and cancelled images');
+    // Only cancelled here, nothing failed: the button says so (it said "failed and cancelled" before).
+    ok(new RegExp(`Retry ${s.cancelled} cancelled images?$`).test((await page.textContent('#btnBatchRetry')).trim()), `retry offers the cancelled images (${await page.textContent('#btnBatchRetry')})`);
+    says(T, 'Retry 2 cancelled images');
+    says(T, 'Retry 3 failed and cancelled images');
     await page.click('#btnBatchRetry');
     await batchIdle(page);
     ok((await page.evaluate(() => window.ApplyReadyBatchImage.summary())).done === 12, 'retry finishes the rest');

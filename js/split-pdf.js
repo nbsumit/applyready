@@ -100,9 +100,19 @@
     }
     if (mode === 'extract') {
       const label = parsed.ranges.map(([a, b]) => (a === b ? `${a}` : `${a}-${b}`)).join('_');
-      return { files: [{ name: `${base}-pages-${label.length > 40 ? 'selected' : label}.pdf`, indexes: parsed.pages }] };
+      // Pages typed more than once (for example 1-3, 2-4) are included each time, in the order typed;
+      // say so, since the thumbnails can only show a page as selected once.
+      const seen = new Set(), repeated = new Set();
+      parsed.pages.forEach(i => { if (seen.has(i)) repeated.add(i); seen.add(i); });
+      return { files: [{ name: `${base}-pages-${label.length > 40 ? 'selected' : label}.pdf`, indexes: parsed.pages }], repeated: Array.from(repeated) };
     }
     return { files: parsed.ranges.map(([a, b]) => ({ name: a === b ? `${base}-page-${pad(a)}.pdf` : `${base}-pages-${a}-${b}.pdf`, indexes: Array.from({ length: b - a + 1 }, (_, i) => a - 1 + i) })) };
+  }
+
+  function repeatNote(repeated) {
+    if (!repeated || !repeated.length) return '';
+    const one = repeated.length === 1;
+    return ` ${one ? 'Page' : 'Pages'} ${K.formatRanges(repeated)} ${one ? 'is' : 'are'} in the list more than once, so ${one ? 'it appears' : 'they appear'} more than once in the file.`;
   }
 
   function validate(showErrors) {
@@ -116,7 +126,7 @@
     els.summary.classList.toggle('is-invalid', tooMany);
     els.summary.textContent = tooMany
       ? `That would make ${K.grouped(p.files.length)} files; the limit is ${K.grouped(K.LIMITS.outputs)}. Choose larger parts.`
-      : p.files.length === 1 ? `Creates 1 PDF with ${UI.plural(pages, 'page')}.` : `Creates ${p.files.length} PDFs, ${UI.plural(pages, 'page')} in all.`;
+      : p.files.length === 1 ? `Creates 1 PDF with ${UI.plural(pages, 'page')}.${repeatNote(p.repeated)}` : `Creates ${p.files.length} PDFs, ${UI.plural(pages, 'page')} in all.`;
     // Selected thumbnails follow the typed list.
     if (grid && (mode === 'extract' || mode === 'ranges')) { selected = new Set(p.files.flatMap(f => f.indexes)); grid.setSelected(selected); }
     else if (grid) grid.setSelected(new Set());
@@ -170,7 +180,8 @@
       els.statPages.textContent = String(outputs.reduce((s, o) => s + o.pages, 0));
       els.statSize.textContent = Files.formatBytes(total);
       els.resultTitle.textContent = outputs.length === 1 ? 'Your PDF is ready' : `${outputs.length} PDFs are ready`;
-      els.resultText.textContent = 'Each file was opened again and its pages counted after saving.';
+      const damage = UI.damageNote(state, p.files.flatMap(f => f.indexes));
+      els.resultText.textContent = `Each file was opened again and its pages counted after saving.${damage ? ` ${damage}` : ''}`;
       els.zip.classList.toggle('hidden', outputs.length < 2);
       const first = outputs.length > 1 ? els.zip : els.outputs.querySelector('a');
       tool.showResult(first);

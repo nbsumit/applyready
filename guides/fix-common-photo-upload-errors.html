@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Photo Upload Errors and How to Fix Them | ApplyReady</title>
@@ -120,9 +120,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="../resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -179,9 +178,8 @@
                     <li><a class="menu__item" href="../convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="../workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -234,9 +232,9 @@
 <section class="section prose">
 <h2>Size errors</h2>
 <h3>"File size exceeds the maximum limit"</h3>
-<p><strong>Cause:</strong> the file has more bytes than the field allows. <strong>Fix:</strong> resize to the pixel size the form asks for first, then compress. Shrinking the pixels costs far less quality than squeezing a large image: in our measurements a 350 × 450 px test portrait fitted under 20 KB at quality 0.92, while the same photo at 1000 × 1333 px needed quality 0.40 (<a href="../resize-image-to-20kb.html">20 KB page</a>). If the tool shows a size just under the limit and the portal still refuses it, set the maximum 1 KB lower; portals rarely say whether they count a kilobyte as 1,000 or 1,024 bytes.</p>
+<p><strong>Cause:</strong> the file has more bytes than the field allows. <strong>Fix:</strong> resize to the pixel size the form asks for first, then compress. Shrinking the pixels costs far less quality than squeezing a large image: in our measurements a 350 × 450 px test portrait fitted under 20 KB at quality 0.92, while the same photo at 1000 × 1333 px needed quality 0.40 (<a href="../resize-image-to-20kb.html">20 KB page</a>). Portals rarely say whether they count a kilobyte as 1,000 or 1,024 bytes, so ApplyReady keeps a maximum at 1,000 bytes per KB or less (50 KB is at most 50,000 bytes), which fits either way.</p>
 <h3>"File size is below the minimum"</h3>
-<p><strong>Cause:</strong> many limits are ranges, for example a photo field that accepts 20 to 50 KB, or a signature field that accepts 10 to 20 KB. A small, clean image can come out under the minimum: our 140 × 60 px test signature was 3.1 KB. <strong>Fix:</strong> keep the stated pixel size and enter the minimum in the resizer's <em>Minimum (KB)</em> field. The tool pads the JPEG with comment data until it reaches the minimum, without changing the picture. Do not enlarge the image to gain bytes when the form fixes its pixel size.</p>
+<p><strong>Cause:</strong> many limits are ranges, for example a photo field that accepts 20 to 50 KB, or a signature field that accepts 10 to 20 KB. A small, clean image can come out under the minimum: our 140 × 60 px test signature was 3.2 KB. <strong>Fix:</strong> keep the stated pixel size and enter the minimum in the resizer's <em>Minimum (KB)</em> field. The tool pads the JPEG with comment data until it reaches the minimum, without changing the picture. Do not enlarge the image to gain bytes when the form fixes its pixel size.</p>
 </section>
 
 <section class="section prose">

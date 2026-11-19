@@ -8,14 +8,20 @@ const path = require('node:path');
 const http = require('node:http');
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
+const { resumeFixture } = require('./fixtures.js');
 const root = path.resolve(__dirname, '..');
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.wasm': 'application/wasm', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
 // Served like GitHub Pages (cacheable for 10 minutes), counting what is sent so the tests can check
 // how much the offline service downloads. swOverride replaces sw.js to simulate a new release.
 const served = { bytes: 0, paths: [] };
 let swOverride = null;
+// Paths the server refuses (the connection is dropped, as with no network). Playwright's offline mode
+// does not stop requests a service worker makes in every Chromium build, so a step that needs a file to
+// be unreachable while offline also refuses it here.
+const unreachable = new Set();
 const server = http.createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+  if (unreachable.has(pathname)) { req.socket.destroy(); return; }
   const file = path.resolve(root, '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname));
   if (!file.startsWith(root + path.sep)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (e, d) => {
@@ -89,17 +95,39 @@ function mixedPdf(jpeg) {
     throw new Error(`timed out: ${label}`);
   };
   const cachedPaths = () => page.evaluate(async () => (await (await caches.open('applyready-files')).keys()).map(r => r.url));
+  const swSource = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
+  const offlineShell = swSource.match(/OFFLINE_SHELL = \[([^\]]*)\]/)[1].match(/'[^']+'/g).map(x => x.slice(1, -1));
+  // The offline page, shown for a page that was never kept: which buttons and kept pages it offers,
+  // and whether its icons drew (the regular-weight icon font once failed offline).
+  const offlinePage = async p => {
+    await page.goto(origin + p);
+    await page.waitForFunction(() => !document.getElementById('offlineStatus').hidden, null, { timeout: 10000 });
+    await page.evaluate(() => document.fonts.ready);
+    return page.evaluate(async () => ({
+      // Both icon weights, drawn or not: loading one that is not kept fails offline.
+      fontsLoaded: await Promise.all(['400', '900'].map(w => document.fonts.load(`${w} 16px "Font Awesome 6 Free"`, '\uf15c').then(f => f.length, () => 0))),
+      title: document.title,
+      lede: document.querySelector('.page-lede').textContent,
+      buttons: [...document.querySelectorAll('#offlineActions a')].filter(a => !a.hidden && a.offsetParent).map(a => a.getAttribute('href')),
+      primary: [...document.querySelectorAll('#offlineActions a.btn-primary')].filter(a => !a.hidden).map(a => a.getAttribute('href')),
+      saved: document.getElementById('offlineSavedBox').hidden ? [] : [...document.querySelectorAll('#offlineSaved a')].map(a => a.getAttribute('href')),
+      status: document.getElementById('offlineStatus').textContent,
+      fontErrors: [...document.fonts].filter(f => /Font Awesome/.test(f.family) && f.status === 'error').map(f => f.weight)
+    }));
+  };
   served.bytes = 0; served.paths = [];
   await page.goto(origin + '/');
-  const pageBytes = served.bytes, pagePaths = served.paths.length;
+  const pagePaths = served.paths.length;
   await page.evaluate(() => navigator.serviceWorker.ready);
   await until(async () => {
     const keys = (await (await caches.open('applyready-files')).keys()).map(r => new URL(r.url).pathname);
-    return ['/', '/css/app.css', '/css/vendor/icons.min.css', '/js/site.js', '/js/home.js', '/offline.html', '/assets/fonts/inter-latin.woff2'].every(p => keys.includes(p));
+    return ['/', '/css/app.css', '/css/vendor/icons.min.css', '/js/site.js', '/js/home.js', '/offline.html', '/assets/fonts/inter-latin.woff2', '/js/offline.js', '/css/webfonts/fa-regular-400.woff2'].every(p => keys.includes(p));
   }, 'the first page and its files are kept');
   await page.waitForTimeout(500);
   const extraPaths = served.paths.slice(pagePaths).filter(p => p !== '/sw.js' && !p.startsWith('/favicon/')); // the browser asks for the icon itself
-  ok(served.bytes - pageBytes < 60 * 1024 && extraPaths.every(p => p === '/offline.html'), `first visit: the offline service downloaded only the offline page (${Math.round((served.bytes - pageBytes) / 1024)} KB: ${extraPaths.join(', ')})`);
+  // Counted without sw.js and the favicon, which the browser fetches for itself.
+  const extraBytes = extraPaths.reduce((n, p) => n + fs.statSync(path.join(root, p)).size, 0);
+  ok(extraBytes < 60 * 1024 && extraPaths.every(p => p === '/offline.html' || offlineShell.includes(p)), `first visit: the offline service downloaded only the offline page, its script and icon fonts (${Math.round(extraBytes / 1024)} KB: ${extraPaths.join(', ')})`);
   let keys = await cachedPaths();
   ok(keys.length < 40, `first visit: only the page's own files are kept (${keys.length})`);
   ok(keys.every(u => !/[?&]v=/.test(u)) && new Set(keys.map(u => new URL(u).pathname)).size === keys.length, 'each file is cached once, under its path and content hash, not once per ?v= query');
@@ -107,6 +135,12 @@ function mixedPdf(jpeg) {
   await offlineCheck('/', true);
   await offlineCheck('/compress-pdf.html', false);
   await offlineCheck('/a-page-that-was-never-cached.html', false);
+  // The offline page offers only what is kept (here the home page), never a page that would show it
+  // again, and does not promise that every tool is kept; its icons draw from the cache.
+  let off = await offlinePage('/compress-pdf.html');
+  ok(off.buttons.join() === '/' && off.primary.join() === '/' && !off.saved.length, `offline page after one visit: only the home page is offered (${JSON.stringify(off)})`);
+  ok(!/first visit|every tool/i.test(off.lede) && /opened before/.test(off.lede), `offline page: the text describes what is kept (${off.lede})`);
+  ok(!off.fontErrors.length && off.fontsLoaded.every(n => n > 0), `offline page: both icon fonts load offline (loaded ${off.fontsLoaded}, errors ${JSON.stringify(off.fontErrors)})`);
   await context.setOffline(false);
 
   // A page opened online (the service worker now in control) is kept as it loads.
@@ -116,6 +150,70 @@ function mixedPdf(jpeg) {
   await context.setOffline(true);
   await offlineCheck('/resume.html', true);
   await offlineCheck('/guides/ats-friendly-resume-guide.html', false);
+  off = await offlinePage('/guides/ats-friendly-resume-guide.html');
+  ok(off.buttons.join() === '/,/resume.html' && !off.saved.length, `offline page: the resume builder, opened before, is offered too (${JSON.stringify(off)})`);
+  await page.click('#offlineActions a[href="/resume.html"]');
+  await page.waitForURL(/\/resume\.html$/);
+  ok(!/Offline/.test(await page.title()), 'offline page: its resume builder button opens the resume builder');
+  await context.setOffline(false);
+  // A tool opened online appears in the list of other kept pages.
+  await page.goto(origin + '/merge-pdf.html');
+  await page.waitForFunction(() => window.ApplyReadyUI);
+  await page.waitForTimeout(1500);
+  await context.setOffline(true);
+  off = await offlinePage('/split-pdf.html');
+  ok(off.saved.includes('/merge-pdf.html') && !off.saved.includes('/split-pdf.html') && !off.saved.includes('/tools.html'), `offline page: other kept tools are listed (${JSON.stringify(off.saved)})`);
+  await context.setOffline(false);
+  // Pages outside the footer (a KB preset page, a guide: common landing pages from a search) are
+  // listed too, named by their heading. The list once came from the footer alone, so a visitor who
+  // had opened only those pages was told that nothing was kept.
+  for (const p of ['/resize-image-to-50kb.html', '/guides/how-to-merge-pdf-files.html']) {
+    await page.goto(origin + p);
+    await page.waitForFunction(() => window.ApplyReadyUI);
+    await page.waitForTimeout(1500);
+  }
+  await context.setOffline(true);
+  off = await offlinePage('/compress-image.html');
+  const names = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#offlineSaved a')].map(a => [a.getAttribute('href'), a.textContent])));
+  ok(names['/resize-image-to-50kb.html'] === 'Resize image to 50 KB' && /^How to Merge PDF Files/.test(names['/guides/how-to-merge-pdf-files.html'] || '') && names['/merge-pdf.html'] === 'Merge PDF',
+    `offline page: kept preset pages and guides are listed by their heading (${JSON.stringify(names)})`);
+  ok(!off.saved.includes('/compress-image.html') && !off.saved.includes('/offline.html') && !off.saved.some(h => /\.(js|css|woff2|png)$/.test(h)), `offline page: lists pages only, never the page asked for (${JSON.stringify(off.saved)})`);
+  ok(/kept on this device and open without a connection/.test(off.status), `offline page: the status line says what is kept (${off.status})`);
+  await page.click('#offlineSaved a[href="/resize-image-to-50kb.html"]');
+  await page.waitForURL(/resize-image-to-50kb\.html$/);
+  ok(!/Offline/.test(await page.title()), 'offline page: a listed preset page opens from the cache');
+  // With the buttons hidden, the status line, the list and the note keep their spacing.
+  await offlinePage('/compress-image.html');
+  const gaps = await page.evaluate(() => {
+    document.getElementById('offlineActions').hidden = true;
+    const box = id => document.getElementById(id).getBoundingClientRect();
+    const note = document.querySelector('.status-page > p.muted').getBoundingClientRect();
+    const withList = [box('offlineSavedBox').top - box('offlineStatus').bottom, note.top - box('offlineSavedBox').bottom];
+    document.getElementById('offlineSavedBox').hidden = true;
+    return withList.concat(document.querySelector('.status-page > p.muted').getBoundingClientRect().top - box('offlineStatus').bottom);
+  });
+  ok(gaps.every(g => g >= 16), `offline page: with the buttons hidden, the status line stands apart from the list and the note (${gaps})`);
+  // RESU-7: Merge PDF was opened but never used, so its PDF library is not kept: the offline page says
+  // it needs a connection the first time, and the tool itself says why it cannot work offline.
+  off = await offlinePage('/compress-image.html');
+  const mergeItem = await page.evaluate(() => { const a = document.querySelector('#offlineSaved a[href="/merge-pdf.html"]'); return a ? a.parentElement.textContent : ''; });
+  ok(/opens, but needs a connection the first time it works on a file/.test(mergeItem) && /PDF tool marked below opens, but cannot work on files until the PDF library is kept/.test(off.status), `offline page: a PDF tool without its library is marked (${mergeItem} | ${off.status})`);
+  ok(!/needs a connection/.test(await page.evaluate(() => { const a = document.querySelector('#offlineSaved a[href="/resize-image-to-50kb.html"]'); return a ? a.parentElement.textContent : ''; })), 'offline page: an image tool is not marked');
+  await page.goto(origin + '/merge-pdf.html');
+  for (const f of fs.readdirSync(path.join(root, 'js/vendor'), { recursive: true })) if (/^pdf/.test(f)) unreachable.add('/js/vendor/' + f.split(path.sep).join('/'));
+  await page.setInputFiles('#mergeDropInput', { name: 'mixed.pdf', mimeType: 'application/pdf', buffer: mixedPdf(sample('test-portrait.jpg')) });
+  // The message follows what the browser reports: navigator.onLine false gives the offline message;
+  // a browser that still reports a connection (Wi-Fi with no internet, or some Chromium builds under
+  // Playwright's offline mode) gets the plain "could not load, check your connection" message.
+  await page.waitForFunction(() => document.getElementById('mergeError').textContent.trim().length > 0, null, { timeout: 20000 })
+    .catch(async e => { throw new Error(`merge offline: no error message (${e.message})`); });
+  unreachable.clear();
+  const mergeMsg = await page.locator('#mergeError').innerText();
+  const reportsOnline = await page.evaluate(() => navigator.onLine);
+  ok(reportsOnline
+    ? /A part of the PDF tool could not load\. Check your connection and reload the page\./.test(mergeMsg)
+    : /This device is offline, and the PDF library this tool needs is not kept on it yet/.test(mergeMsg),
+  `merge offline: the message matches what the browser reports (navigator.onLine ${reportsOnline}): ${mergeMsg}`);
   await context.setOffline(false);
   keys = await cachedPaths();
   ok(keys.every(u => !/[?&]v=/.test(u)) && new Set(keys.map(u => new URL(u).pathname)).size === keys.length, 'still one entry per file after browsing');
@@ -128,9 +226,24 @@ function mixedPdf(jpeg) {
   await page.click('#ydOfflineAll');
   await page.waitForFunction(() => !document.getElementById('ydDone').hidden && /saved for offline use/.test(document.getElementById('ydDoneText').textContent), null, { timeout: 60000 });
   ok(/Every tool and guide is saved for offline use/.test(await page.locator('#ydDoneText').innerText()) && await page.locator('#ydOfflineAll').isHidden(), `your data: every tool saved (${await page.locator('#ydDoneText').innerText()})`);
+  const vendorKept = await page.evaluate(async () => {
+    const name = (await caches.keys()).find(k => k.startsWith('applyready-vendor-'));
+    return name ? (await (await caches.open(name)).keys()).map(r => new URL(r.url).pathname) : [];
+  });
+  ok(['/js/vendor/pdf-lib.min.js', '/js/vendor/pdfjs/pdf.min.mjs', '/js/vendor/pdfjs/pdf.worker.min.mjs'].every(p => vendorKept.includes(p)), `your data: saving every tool keeps the PDF libraries (${vendorKept.length} files)`);
   await context.setOffline(true);
   for (const p of ['/compress-pdf.html', '/guides/ats-friendly-resume-guide.html', '/merge-pdf.html']) await offlineCheck(p, true);
   await offlineCheck('/a-page-that-was-never-cached.html', false);
+  off = await offlinePage('/a-page-that-was-never-cached.html');
+  ok(off.buttons.length === 5 && off.saved.length > 10, `offline page after saving every tool: every button and the kept tools are offered (${off.buttons.length} buttons, ${off.saved.length} pages)`);
+  // A PDF tool that was never used online works offline after "Save every tool".
+  await page.goto(origin + '/compress-pdf.html');
+  await page.setInputFiles('#compressFileInput', { name: 'mixed.pdf', mimeType: 'application/pdf', buffer: mixedPdf(sample('test-portrait.jpg')) });
+  await page.waitForSelector('#compressFileInfoBox:not(.hidden)', { timeout: 15000 });
+  await page.fill('#targetKbInput', '100');
+  await page.click('#btnStartCompress');
+  await page.waitForSelector('#compressResultArea:not(.hidden)', { timeout: 60000 });
+  ok(true, 'offline after saving every tool: Compress PDF compresses a PDF');
   await context.setOffline(false);
 
   // A new release: only the files that changed are downloaded again, and the old copies go.
@@ -212,8 +325,10 @@ function mixedPdf(jpeg) {
   ok(!(await page.$('#imgPdfSkipped')), 'the notice goes away when only images are added');
   await page.goto(origin + '/image-to-pdf.html');
   await page.setInputFiles('#imgPdfFileInput', [{ name: 'only.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4\n%%EOF\n') }, { name: 'notes.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: Buffer.from('PK') }]);
+  // Files are identified by their content first, which takes a moment.
+  await page.waitForSelector('#imgPdfSkipped', { timeout: 10000 });
   const onlyPdf = await page.evaluate(() => { const n = document.getElementById('imgPdfSkipped'); return n && { text: n.textContent, visible: !!n.offsetParent }; });
-  ok(onlyPdf && onlyPdf.visible && /only\.pdf/.test(onlyPdf.text) && /notes\.docx/.test(onlyPdf.text) && /JPG, PNG or WebP/.test(onlyPdf.text), `with no image chosen, the notice still explains every file (${JSON.stringify(onlyPdf)})`);
+  ok(onlyPdf && onlyPdf.visible && /only\.pdf/.test(onlyPdf.text) && /notes\.docx/.test(onlyPdf.text) && /needs an image \(JPEG, PNG, WebP[^)]*\); choose a file of that type instead/.test(onlyPdf.text), `with no image chosen, the notice still explains every file (${JSON.stringify(onlyPdf)})`);
   await page.locator('#taskNotification.is-visible').waitFor({ state: 'visible', timeout: 6000 });
   ok(/Merge PDF/.test(await page.locator('#taskNotification').innerText()), 'with no image chosen, the notification says so and names Merge PDF');
   console.log('✓ Image to PDF names skipped PDFs and points to Merge PDF');
@@ -251,9 +366,25 @@ function mixedPdf(jpeg) {
   ok(merge.h1 === 'Page not found' && merge.links[0] === '/merge-pdf.html' && !merge.q && !merge.dropdown, `a mistyped address links the page it names, with no dropdown open (${JSON.stringify(merge)})`);
   const contactUs = await offered('/contact-us.html');
   ok(contactUs.links.length === 1 && contactUs.links[0] === '/contact.html' && !contactUs.dropdown, `/contact-us.html links the contact page (${JSON.stringify(contactUs)})`);
-  for (const p of ['/guides/nope/deep.html', '/resize-image-to-30kb.html', '/no/such/page.html']) {
+  for (const p of ['/guides/nope/deep.html', '/no/such/page.html', '/resize-photo-for-ssc.html']) {
     const r = await offered(p);
     ok(r.h1 === 'Page not found' && !r.links.length && !r.dropdown, `${p}: a loose match is not offered as a guess (${JSON.stringify(r)})`);
+  }
+  // Old addresses without .html (GitHub Pages serves /foo for foo.html, so such links are shared) and
+  // with a slash at the end are read as the page they name.
+  for (const [p, to] of [['/guides/image-dimensions-vs-file-size', /pixels-cm-inches-dpi-explained\.html$/], ['/guides/compression-targets-guide/', /how-to-reduce-photo-to-50kb-without-blur\.html$/], ['/merge-pdf/', /\/merge-pdf\.html$/], ['/guides/how-to-merge-pdf-files/', /\/guides\/how-to-merge-pdf-files\.html$/]]) {
+    await page.goto(origin + p);
+    await page.waitForURL(to, { timeout: 10000 });
+    ok(true, `${p} opens the page it names`);
+  }
+  for (const p of ['/editorial-policy', '/guides/aadhaar-pan-passport-photo-specifications']) {
+    const r = await offered(p);
+    ok(/was removed/.test(r.h1) && r.links.length, `${p}: the removed page explains itself without .html too (${JSON.stringify(r)})`);
+  }
+  // A size in the address does not stop the page it names from being offered.
+  for (const [p, href] of [['/compress-pdf-100kb.html', '/compress-pdf.html'], ['/resize-image-to-30kb.html', '/image-resizer.html']]) {
+    const r = await offered(p);
+    ok(r.links.includes(href) && !r.dropdown, `${p}: offers ${href} (${JSON.stringify(r)})`);
   }
   // Every button, clicked with the mouse where a person would click it, opens its own page.
   for (const width of [1280, 360]) {
@@ -287,6 +418,45 @@ function mixedPdf(jpeg) {
   await page.waitForURL(/\/image-resizer\.html$/);
   ok((await page.locator('h1').textContent()).trim() === 'Image resizer', 'following the 404 button lands on the resizer');
   console.log('✓ Missing pages redirect, explain or search, and their buttons open the real tools');
+
+  // 7. An open home page tab forgets a resume deleted in another tab (Your data, Delete everything):
+  //    it once kept showing "Continue editing <name>" until reloaded, on a shared computer too.
+  {
+    const yd = await context.newPage();
+    yd.on('pageerror', e => errors.push(e.message));
+    await yd.goto(origin + '/your-data.html');
+    await yd.waitForFunction(() => window.ApplyReadyStore);
+    await yd.evaluate(async data => {
+      const now = Date.now();
+      await window.ApplyReadyStore.put('resumes', { id: 'r_tabtest', name: 'Tab Test Person', createdAt: now, updatedAt: now, schemaVersion: 3, data });
+      localStorage.setItem('applyready_recent_tools', '["merge-pdf"]');
+    }, resumeFixture());
+    const home = await context.newPage();
+    home.on('pageerror', e => errors.push(e.message));
+    await home.goto(origin + '/');
+    await home.locator('#homeResumes').waitFor({ state: 'visible', timeout: 10000 });
+    ok(/Tab Test Person/.test(await home.locator('#homeResumes').innerText()) && await home.locator('#homeRecent [data-tool="merge-pdf"]').isVisible(), 'home tab: lists the saved resume and the recently used tool');
+    // A resume renamed in another tab is shown under its new name.
+    await yd.evaluate(async () => {
+      const rec = await window.ApplyReadyStore.get('resumes', 'r_tabtest');
+      rec.name = 'Renamed Person'; rec.updatedAt = Date.now();
+      await window.ApplyReadyStore.put('resumes', rec);
+      const ch = new BroadcastChannel('applyready-resumes'); ch.postMessage({ from: 'test', type: 'renamed', id: rec.id, name: rec.name }); ch.close();
+    });
+    await home.waitForFunction(() => /Renamed Person/.test(document.getElementById('homeResumes').textContent), null, { timeout: 5000 });
+    ok(true, 'home tab: a resume renamed in another tab shows its new name');
+    await yd.reload();
+    await yd.waitForFunction(() => /resume/.test(document.getElementById('ydResumeCount').textContent));
+    await yd.click('#ydDeleteAll');
+    await yd.click('.dialog [data-act="ok"]');
+    await yd.locator('#ydDone').waitFor({ state: 'visible' });
+    await home.waitForFunction(() => document.getElementById('homeContinue').hidden, null, { timeout: 5000 }).catch(() => {});
+    const after = await home.evaluate(() => ({ text: document.body.innerText.includes('Renamed Person'), hidden: document.getElementById('homeContinue').hidden, recent: document.querySelectorAll('#homeRecent li').length }));
+    ok(!after.text && after.hidden && after.recent === 0, `home tab: after Delete everything in another tab, no resume name or recent tool is left on screen (${JSON.stringify(after)})`);
+    await yd.close();
+    await home.close();
+  }
+  console.log('✓ An open home page follows resumes deleted or renamed in another tab');
 
   ok(errors.length === 0, `page errors: ${errors.join('; ')}`);
   await browser.close();

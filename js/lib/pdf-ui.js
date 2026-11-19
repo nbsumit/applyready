@@ -131,26 +131,64 @@
       pageCount = info.pageCount;
       encrypted = info.encrypted;
     }
-    const out = { bytes, name, size: bytes.length, pageCount, encrypted, password: '', libDoc: null, jsDoc: null };
+    const out = { bytes, name, size: bytes.length, pageCount, encrypted, password: '', libDoc: null, jsDoc: null, unreadable: [], incomplete: [], previewError: null };
     // Opening with the password proves it; pdf-lib checks when the tool changes the structure,
     // pdf.js when the tool only draws or reads.
     async function tryOpen(password) {
-      if (n.lib) out.libDoc = await K.openLib(bytes, { password, name });
+      if (n.lib) {
+        out.libDoc = await K.openLib(bytes, { password, name });
+        // Pages none of whose content can be read come out blank in anything made from them; pages
+        // with only part of it broken keep the rest (damageNotice says which is which).
+        const damage = await K.pageDamage(out.libDoc);
+        out.unreadable = damage.unreadable;
+        out.incomplete = damage.incomplete;
+      }
       if (n.js) {
         try { out.jsDoc = await K.openJs(bytes, { password, name }); }
         catch (e) {
+          if (!n.lib && e.code === 'damaged') {
+            // A tool that only draws or reads cannot go on without pdf.js. When pdf-lib can read the
+            // file and finds no page content at all, say so as every other tool does (usable).
+            try {
+              const libDoc = await K.openLib(bytes, { password, name });
+              const damage = await K.pageDamage(libDoc);
+              const count = libDoc.getPageCount();
+              if (count && damage.unreadable.length === count) { out.pageCount = count; out.unreadable = damage.unreadable; out.libDoc = libDoc; return out; }
+            } catch (e2) { /* pdf-lib cannot read it either: pdf.js's message stands */ }
+            throw e;
+          }
           if (!n.lib || e.code === 'unsupported') throw e;
-          // pdf-lib opened it but pdf.js could not draw it: work without previews.
+          // pdf-lib opened it but pdf.js could not read it: the file is damaged. The tool can still
+          // try, without previews, and says what that means (damageNotice, damageNote).
           out.jsDoc = null; out.previewError = e;
         }
         if (!out.pageCount && out.jsDoc) out.pageCount = out.jsDoc.numPages;
       }
+      if (!n.lib && out.jsDoc) {
+        // Tools that only draw or read (PDF to text, PDF to image) make the same damage check as the
+        // others, so every tool says the same about the same file. pdf-lib is loaded only for it; a
+        // file it cannot open is left to pdf.js, which already opened it.
+        try {
+          const damage = await K.pageDamage(await K.openLib(bytes, { password, name }));
+          out.unreadable = damage.unreadable;
+          out.incomplete = damage.incomplete;
+        } catch (e) { /* no check possible: pdf.js reads it, so the tool goes ahead */ }
+      }
       out.password = password || '';
       return out;
     }
+    // A file none of whose pages gives any content would only give blank pages: refuse it plainly.
+    // A page with part of its content broken is not counted here (readers still show the rest).
+    function usable(r) {
+      if ((r.libDoc || r.jsDoc) && r.pageCount && r.unreadable.length === r.pageCount) {
+        if (r.jsDoc) K.closeJs(r.jsDoc);
+        throw new K.PdfError('damaged', `${name} is damaged: the content of ${r.pageCount === 1 ? 'its page' : `all ${K.grouped(r.pageCount)} pages`} is missing or broken, so anything made from it would be blank. Open it on your device to check it, or get a fresh copy from where it came from.`);
+      }
+      return r;
+    }
     try {
       // Many protected PDFs only restrict printing or copying and open without a password.
-      return await tryOpen(encrypted ? '' : undefined);
+      return usable(await tryOpen(encrypted ? '' : undefined));
     } catch (e) {
       if (!e || (e.code !== 'encrypted' && e.code !== 'password')) throw e;
       out.encrypted = true;
@@ -158,7 +196,49 @@
     const result = await askPassword({ name, check: tryOpen });
     if (!result) throw new K.PdfError('cancelled', `${name} was not opened because no password was given.`);
     if (result.error) throw result.error;
-    return result;
+    return usable(result);
+  }
+
+  /* ------------------------------------------------------------ Damaged files */
+  const pagesText = indexes => `${indexes.length === 1 ? 'page' : 'pages'} ${Pdf().formatRanges(indexes)}`;
+  /**
+   * What to say when a PDF opened but is damaged (state from openPdf), or '' when it is not: pages
+   * whose content is missing, or a file pdf.js could not read at all. Not the browser's fault.
+   */
+  function damageNotice(state) {
+    if (!state) return '';
+    const bad = state.unreadable || [];
+    const part = (state.incomplete || []).filter(i => bad.indexOf(i) < 0);
+    const previews = state.previewError ? ' Previews cannot be shown.' : '';
+    const out = [];
+    if (bad.length) {
+      const which = bad.length === state.pageCount ? (state.pageCount === 1 ? 'its page' : `all ${state.pageCount} pages`) : pagesText(bad);
+      out.push(`${state.name} is damaged: the content of ${which} is missing or broken, so ${bad.length === 1 ? 'that page' : 'those pages'} will come out blank.${previews} To keep ${bad.length === 1 ? 'it' : 'them'}, get a fresh copy of the file from where it came from.`);
+    }
+    if (part.length) {
+      const which = part.length === state.pageCount ? (state.pageCount === 1 ? 'its page' : `all ${state.pageCount} pages`) : pagesText(part);
+      out.push(`${bad.length ? 'Also, some' : `${state.name} is partly damaged: some`} of the content of ${which} is cut off or broken, so part of ${part.length === 1 ? 'that page' : 'those pages'} may be missing.${bad.length ? '' : previews} Check the result before you use it.`);
+    }
+    if (out.length) return out.join(' ');
+    if (state.previewError) return `${state.name} may be damaged: its pages could not be read, so previews are not shown. The tool can still try, but pages may come out blank or incomplete; check the result before you use it.`;
+    return '';
+  }
+  /**
+   * A sentence for a result made from a damaged PDF, or ''. used: the 0-based pages of the original
+   * that are in the result (all of them when left out).
+   */
+  function damageNote(state, used) {
+    if (!state) return '';
+    const keep = used ? new Set(used) : null;
+    if (keep && !keep.size) return '';
+    const bad = (state.unreadable || []).filter(i => !keep || keep.has(i));
+    const part = (state.incomplete || []).filter(i => (!keep || keep.has(i)) && bad.indexOf(i) < 0);
+    const out = [];
+    if (bad.length) out.push(`${bad.length === state.pageCount ? 'Every page' : pagesText(bad).replace(/^p/, 'P')} of ${state.name} could not be read, so ${bad.length === 1 ? 'it is' : 'they are'} blank here too.`);
+    if (part.length) out.push(`${part.length === state.pageCount ? (state.pageCount === 1 ? 'The page' : 'Every page') : pagesText(part).replace(/^p/, 'P')} of ${state.name} ${part.length === 1 ? 'is' : 'are'} partly damaged, so check ${part.length === 1 ? 'it' : 'them'} here.`);
+    if (out.length) return out.join(' ');
+    if (state.previewError && !(state.unreadable || []).length) return `${state.name} could not be read for previews, so open the result and check its pages before you use it.`;
+    return '';
   }
 
   /* ------------------------------------------------------------ Notices */
@@ -495,7 +575,7 @@
       try {
         const next = await openPdf(file, o.needs);
         if (ticket !== opening) { if (next.jsDoc) K.closeJs(next.jsDoc); return; }
-        if (o.maxPages && next.pageCount > o.maxPages) throw new K.PdfError('toolarge', o.tooManyPages ? o.tooManyPages(next.pageCount) : `${file.name} has ${K.grouped(next.pageCount)} pages. This tool works on up to ${K.grouped(o.maxPages)} pages at a time. ${K.splitFirst(next.pageCount, 'use this tool on each part')}`);
+        if (o.maxPages && next.pageCount > o.maxPages) { if (next.jsDoc) K.closeJs(next.jsDoc); throw new K.PdfError('toolarge', o.tooManyPages ? o.tooManyPages(next.pageCount) : `${file.name} has ${K.grouped(next.pageCount)} pages. This tool works on up to ${K.grouped(o.maxPages)} pages at a time. ${K.splitFirst(next.pageCount, 'use this tool on each part')}`); }
         await release();
         state = Object.assign(next, { file });
         if (nameEl) nameEl.textContent = `${file.name} (${state.pageCount} page${state.pageCount === 1 ? '' : 's'}, ${Files().formatBytes(file.size)}${state.encrypted ? ', password protected' : ''})`;
@@ -503,7 +583,8 @@
         if (fileBar) fileBar.classList.remove('hidden');
         keepFocus(zone, nameEl);
         announce(`${file.name} is open: ${state.pageCount} page${state.pageCount === 1 ? '' : 's'}.`);
-        if (state.previewError) error.show('This PDF opened, but this browser could not draw its pages, so previews are not shown. The tool still works.');
+        const damage = damageNotice(state);
+        if (damage) error.show(damage);
       } catch (e) {
         if (ticket !== opening) return;
         if (e && e.code === 'cancelled') { error.show(e.message + ' Choose the file again when you have the password.'); }
@@ -549,5 +630,5 @@
   function setDownload(a, url, name) { a.href = url; a.setAttribute('download', Files().safeFileName(name, 'document')); }
   function plural(n, word, many) { return `${n} ${n === 1 ? word : (many || word + 's')}`; }
 
-  root.ApplyReadyPdfUI = { askPassword, openPdf, errorBox, urls, runner, sortable, lazy, pageGrid, singleTool, keepFocus, stem, pdfBlob, setDownload, plural };
+  root.ApplyReadyPdfUI = { askPassword, openPdf, damageNotice, damageNote, errorBox, urls, runner, sortable, lazy, pageGrid, singleTool, keepFocus, stem, pdfBlob, setDownload, plural };
 })(typeof window !== 'undefined' ? window : this);

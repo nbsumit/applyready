@@ -1,5 +1,5 @@
 /**
- * ApplyReady.in - Pure Client-Side OOXML DOCX Generator
+ * ApplyReady - Pure Client-Side OOXML DOCX Generator
  * Generates true, editable Microsoft Word (.docx) files client-side
  * with zero external dependencies. Compatible with browsers and Node.js.
  */
@@ -256,7 +256,8 @@
       if (!targetUrl) return null;
       let safeUrl = targetUrl.trim();
       // host:port (example.com:8080/x) is not a scheme, so it is given https:// like any bare host.
-      const hasScheme = /^[a-z][a-z0-9+.-]*:/i.test(safeUrl) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(safeUrl);
+      // mailto: and tel: are always schemes, even before digits only (tel:9876543210).
+      const hasScheme = /^(mailto|tel):/i.test(safeUrl) || (/^[a-z][a-z0-9+.-]*:/i.test(safeUrl) && !/^[a-z][a-z0-9+.-]*:\d+(?:[/?#]|$)/i.test(safeUrl));
       if (/[\u0000-\u001f\s]/.test(safeUrl) || (hasScheme && !/^(https?:|mailto:|tel:)/i.test(safeUrl))) return null;
       if (!/^https?:\/\//i.test(safeUrl) && !/^(mailto:|tel:)/i.test(safeUrl)) {
         safeUrl = 'https://' + safeUrl;
@@ -308,7 +309,7 @@
 </cp:coreProperties>`);
     zip.addFile('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-  <Application>ApplyReady.in Resume Builder</Application>
+  <Application>ApplyReady Resume Builder</Application>
 </Properties>`);
 
     // 4. word/styles.xml
@@ -450,10 +451,21 @@
     function addBullet(text, props = bodyProps) {
       bodyXml.push(`<w:p><w:pPr><w:pStyle w:val="ListBullet"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr></w:pPr>${run(text, props)}</w:p>`);
     }
+    /* Whether a title and its details (dates or a link) fit on one line, the details on a right tab
+       stop. A right tab with text that runs past it leaves no gap at all, so the two would read as
+       one word ("Power BIgithub.com/…"); when they do not fit, the details go on their own line.
+       Widths use the PDF engine's metrics (Arial and Times New Roman match Helvetica and Times), in
+       points, with room to spare for differences between word processors. Parts are [text, style, half-points]. */
+    const measureFont = fontFamily === 'serif' ? 'Times' : 'Helvetica';
+    const partsWidth = parts => parts.reduce((sum, [text, fontStyle, sz]) => sum + (text && pdf && pdf.measureTextWidth ? pdf.measureTextWidth(text, sz / 2, measureFont, fontStyle) : 0), 0);
+    const fitsOneLine = (titleParts, detailParts) => !pdf || !pdf.measureTextWidth || partsWidth(titleParts) + partsWidth(detailParts) + 24 <= textWidth / 20;
+    // One placement per section, as in the PDF: when any entry's details must go below, all do.
+    const detailsBelow = items => !datesInline || items.some(item => item.meta && !fitsOneLine(item.titleParts, [[item.meta, 'italic', metaSz]]));
+
     // Entry heading with dates on a right tab stop, or on their own line.
-    function addEntryHeading(titleRuns, meta, before) {
+    function addEntryHeading(titleRuns, meta, before, below) {
       if (!titleRuns && !meta) return;
-      if (datesInline && meta) {
+      if (datesInline && meta && !below) {
         bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:tabs><w:tab w:val="right" w:pos="${textWidth}"/></w:tabs><w:spacing w:before="${before}" w:after="30"/></w:pPr>${titleRuns}<w:r><w:tab/></w:r>${run(meta, metaProps)}</w:p>`);
         return;
       }
@@ -478,11 +490,18 @@
         if (content) {
           addSectionHeader(content.title);
           if (content.mode === 'text') content.paragraphs.forEach(text => paragraph(text, 120));
-          else for (const entry of content.entries) {
-            const parts = entry.heading.split(/\s+\|\s+/);
-            const headingRuns = parts[0] ? run(parts[0], strongProps) + (parts[1] ? run('  |  ' + parts.slice(1).join(' | '), `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : '') : '';
-            if (headingRuns || entry.date) addEntryHeading(headingRuns, entry.date, 120);
-            entry.bullets.forEach(line => addBullet(line));
+          else {
+            const items = content.entries.map(entry => {
+              const parts = entry.heading.split(/\s+\|\s+/);
+              const rest = parts[1] ? '  |  ' + parts.slice(1).join(' | ') : '';
+              return { entry, meta: entry.date, titleParts: [[parts[0], 'bold', baseSzVal], [parts[0] ? rest : '', 'normal', baseSzVal]],
+                headingRuns: parts[0] ? run(parts[0], strongProps) + (rest ? run(rest, `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : '') : '' };
+            });
+            const below = detailsBelow(items);
+            for (const { entry, headingRuns } of items) {
+              if (headingRuns || entry.date) addEntryHeading(headingRuns, entry.date, 120, below);
+              entry.bullets.forEach(line => addBullet(line));
+            }
           }
         }
       }
@@ -519,13 +538,17 @@
         const entries = (resumeData.experience || []).filter(exp => exp && (clean(exp.role) || clean(exp.company) || clean(exp.duration) || clean(exp.location) || bulletLines(exp.bulletsText).length));
         if (entries.length) {
           addSectionHeader(title('experience'));
-          for (const exp of entries) {
+          const items = entries.map(exp => {
             const role = clean(exp.role), comp = clean(exp.company);
-            const meta = [clean(exp.duration), clean(exp.location)].filter(Boolean).join('  •  ');
+            return { exp, role, comp, meta: [clean(exp.duration), clean(exp.location)].filter(Boolean).join('  •  '),
+              titleParts: role ? [[role, 'bold', baseSzVal], [comp ? '  |  ' + comp : '', 'normal', baseSzVal]] : [[comp, 'bold', baseSzVal]] };
+          });
+          const below = detailsBelow(items);
+          for (const { exp, role, comp, meta } of items) {
             const headingRuns = role
               ? run(role, strongProps) + (comp ? run('  |  ' + comp, `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : '')
               : (comp ? run(comp, strongProps) : '');
-            if (role || comp || meta) addEntryHeading(headingRuns, meta, 120);
+            if (role || comp || meta) addEntryHeading(headingRuns, meta, 120, below);
             bulletLines(exp.bulletsText).forEach(line => addBullet(line));
           }
         }
@@ -535,13 +558,17 @@
         const entries = (resumeData.education || []).filter(edu => edu && (clean(edu.degree) || clean(edu.institution) || clean(edu.duration) || clean(edu.location) || clean(edu.score)));
         if (entries.length) {
           addSectionHeader(title('education'));
-          for (const edu of entries) {
+          const items = entries.map(edu => {
             const deg = clean(edu.degree), inst = clean(edu.institution);
-            const meta = [clean(edu.duration), clean(edu.location), clean(edu.score)].filter(Boolean).join('  •  ');
+            return { deg, inst, meta: [clean(edu.duration), clean(edu.location), clean(edu.score)].filter(Boolean).join('  •  '),
+              titleParts: deg ? [[deg, 'bold', baseSzVal], [inst ? '  —  ' + inst : '', 'normal', baseSzVal]] : [[inst, 'bold', baseSzVal]] };
+          });
+          const below = detailsBelow(items);
+          for (const { deg, inst, meta } of items) {
             const headingRuns = deg
               ? run(deg, strongProps) + (inst ? run('  —  ' + inst, `<w:sz w:val="${baseSzVal}"/><w:color w:val="475569"/>`) : '')
               : (inst ? run(inst, strongProps) : '');
-            if (headingRuns || meta) addEntryHeading(headingRuns, meta, 100);
+            if (headingRuns || meta) addEntryHeading(headingRuns, meta, 100, below);
           }
         }
       }
@@ -550,6 +577,9 @@
         const entries = (resumeData.projects || []).filter(proj => proj && (clean(proj.name) || clean(proj.tech) || clean(proj.link) || bulletLines(proj.bulletsText).length));
         if (entries.length) {
           addSectionHeader(title('projects'));
+          const titlePartsOf = proj => (clean(proj.name) ? [[clean(proj.name), 'bold', baseSzVal], [clean(proj.tech) ? '  |  ' + clean(proj.tech) : '', 'italic', metaSz]] : [[clean(proj.tech), 'bold', baseSzVal]]);
+          // A link goes on its own line in every project when one of them does not fit beside its title.
+          const linksBelow = entries.some(proj => clean(proj.link) && !fitsOneLine(titlePartsOf(proj), [[clean(proj.link), 'normal', metaSz]]));
           for (const proj of entries) {
             const name = clean(proj.name);
             const tech = clean(proj.tech);
@@ -558,7 +588,7 @@
             const titleRuns = name
               ? run(name, strongProps) + (tech ? run('  |  ' + tech, metaProps) : '')
               : (tech ? run(tech, strongProps) : '');
-            if (datesInline && link) {
+            if (datesInline && link && !linksBelow) {
               bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:tabs><w:tab w:val="right" w:pos="${textWidth}"/></w:tabs><w:spacing w:before="120" w:after="30"/></w:pPr>${titleRuns}<w:r><w:tab/></w:r>${linkRun(link, linkRId, `<w:sz w:val="${metaSz}"/>`)}</w:p>`);
             } else if (titleRuns || link) {
               if (titleRuns) bodyXml.push(`<w:p><w:pPr><w:keepNext/><w:spacing w:before="120" w:after="${link ? 0 : 30}"/></w:pPr>${titleRuns}</w:p>`);

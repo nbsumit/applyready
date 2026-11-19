@@ -1,7 +1,9 @@
 /* Image to PDF: turns JPG, PNG and WebP images into the pages of one PDF, in the order chosen,
    with page size, orientation, margins and quality. The PDF is written by this file in the browser,
-   with no library and no upload. Files that are not images (a PDF, for example) are listed in a
-   notice instead of being dropped silently. */
+   with no library and no upload. Files are identified by their content (js/lib/files.js), and every
+   image is opened with the checks the other image tools make (js/lib/image-ops.js): no picture over
+   50 megapixels, no truncated or damaged file. Files that cannot be used (a PDF, an SVG, a damaged
+   photo) are listed in a notice with the reason instead of being dropped silently. */
 
 (function () {
   'use strict';
@@ -39,7 +41,7 @@
   const statSize = doc.getElementById('statPdfSize');
   const btnDownload = doc.getElementById('btnDownloadPdf');
 
-  // List of uploaded image items: { id, file, name, dataUrl, width, height, rotation }
+  // List of uploaded image items: { id, file, name, url (object URL for the thumbnail), width, height, rotation }
   let items = [];
   let pdfBlobUrl = null;
   let isConverting = false;
@@ -126,8 +128,8 @@
   // is cleared, so a PDF chosen with the photos is never dropped without a word. A PDF cannot become
   // a page here; Merge PDF combines PDFs and photos.
   let skippedNotice = null;
-  const isPdf = f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
   const nameList = files => files.slice(0, 3).map(f => '"' + f.name + '"').join(', ') + (files.length > 3 ? ' and ' + (files.length - 3) + ' more' : '');
+  // pdfs: files; others: { file, reason } (reason: why it was not added, or '' when not known).
   function showSkipped(pdfs, others, announce) {
     // A new element each time: an alert is announced when it is added, not when it is unhidden.
     hideSkipped();
@@ -150,9 +152,21 @@
       body.append(p);
     }
     if (others.length) {
-      const p = doc.createElement('p');
-      p.textContent = (others.length === 1 ? nameList(others) + ' was not added' : others.length + ' files were not added: ' + nameList(others)) + '. Choose JPG, PNG or WebP images.';
-      body.append(p);
+      // Every refused file is named, each with its own reason on its own line (the reasons already
+      // say what to choose instead), as the batch tools list them.
+      const reasonOf = o => o.reason || `${o.file.name} could not be used. Choose JPG, PNG or WebP images.`;
+      if (others.length === 1) {
+        const p = doc.createElement('p');
+        p.textContent = reasonOf(others[0]);
+        body.append(p);
+      } else {
+        const p = doc.createElement('p');
+        p.textContent = `${others.length} files were not added:`;
+        const ul = doc.createElement('ul');
+        ul.className = 'notice__list';
+        others.forEach(o => { const li = doc.createElement('li'); li.textContent = reasonOf(o); ul.append(li); });
+        body.append(p, ul);
+      }
     }
     skippedNotice.append(icon, body);
     const stage = dropzone.parentElement;
@@ -163,54 +177,73 @@
     skippedNotice = null;
   }
 
+  // Files are checked one after another, and a second choice waits for the first, so pages are
+  // always added in the order they were chosen.
+  let intake = Promise.resolve();
   function handleFiles(fileList) {
     const all = Array.from(fileList);
-    const validFiles = all.filter(f => f.type.startsWith('image/'));
-    const skipped = all.filter(f => !f.type.startsWith('image/'));
+    intake = intake.then(() => addFiles(all), () => addFiles(all));
+    return intake;
+  }
+
+  async function addFiles(all) {
+    const Files = window.ApplyReadyFiles;
+    const Ops = window.ApplyReadyImageOps;
+    const pdfs = [], others = [], added = [];
+    for (const file of all) {
+      // Identify the file by its content, not by its name or the type the browser reports: an SVG
+      // or a renamed text file is not an image this tool can place on a page.
+      if (Files) {
+        const check = await Files.validate(file, ['image']);
+        if (!check.ok) {
+          if (check.info && check.info.kind === 'pdf') pdfs.push(file);
+          else others.push({ file, reason: check.error });
+          continue;
+        }
+      } else if (!file.type.startsWith('image/')) {
+        if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) pdfs.push(file); else others.push({ file, reason: '' });
+        continue;
+      }
+      // Too many pixels or a damaged file is refused here, before it becomes a page.
+      let size;
+      try { size = await measure(file, Ops); }
+      catch (e) { others.push({ file, reason: (e && e.message) || '' }); continue; }
+      added.push({ id: 'img_' + Math.random().toString(36).slice(2, 11), file, name: file.name, url: URL.createObjectURL(file), width: size.width, height: size.height, rotation: 0 });
+    }
     // With nothing usable, the site's notification says so (and is announced); the notice keeps the
     // details on the page. Otherwise the notice itself is the announcement.
-    if (skipped.length) showSkipped(skipped.filter(isPdf), skipped.filter(f => !isPdf(f)), validFiles.length > 0);
+    if (pdfs.length || others.length) showSkipped(pdfs, others, added.length > 0);
     else hideSkipped();
-    if (!validFiles.length) {
-      notifyError(skipped.some(isPdf) ? 'No images were added. This tool takes JPG, PNG or WebP images; choose Merge PDF to combine PDFs.' : 'Those files could not be used. Choose JPG, PNG or WebP images.');
+    if (fileInput) fileInput.value = '';
+    if (addMoreInput) addMoreInput.value = '';
+    if (!added.length) {
+      notifyError(pdfs.length ? 'No images were added. This tool takes JPG, PNG or WebP images; choose Merge PDF to combine PDFs.' : (others.length === 1 && others[0].reason ? others[0].reason : 'Those files could not be used. Choose JPG, PNG or WebP images.'));
       return;
     }
-
-    // Files finish loading in any order; keep the order they were chosen in.
-    const loadedItems = new Array(validFiles.length).fill(null);
-    let settled = 0;
-    const settle = () => {
-      settled++;
-      if (settled === validFiles.length) {
-        loadedItems.forEach(item => { if (item) items.push(item); });
-        renderList();
-      }
-    };
-    const unreadable = file => notifyError('"' + file.name + '" could not be read as an image. Choose JPG, PNG or WebP files that open on your device.');
-    validFiles.forEach((file, index) => {
-      const id = 'img_' + Math.random().toString(36).slice(2, 11);
-      const reader = new FileReader();
-      reader.onerror = () => { unreadable(file); settle(); };
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          loadedItems[index] = {
-            id,
-            file,
-            name: file.name,
-            dataUrl: e.target.result,
-            width: img.naturalWidth,
-            height: img.naturalHeight,
-            rotation: 0
-          };
-          settle();
-        };
-        img.onerror = () => { unreadable(file); settle(); };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
+    added.forEach(item => items.push(item));
+    renderList();
   }
+
+  // The pixel size of an image after a full decode (the decoded copy is freed at once).
+  async function measure(file, Ops) {
+    if (Ops) {
+      const opened = await Ops.openImage(file, { name: file.name, minSide: Ops.MIN_SIDE });
+      const size = { width: opened.width, height: opened.height };
+      opened.close();
+      return size;
+    }
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      return { width: img.naturalWidth, height: img.naturalHeight };
+    } catch (e) {
+      throw new Error('"' + file.name + '" could not be read as an image. Choose JPG, PNG or WebP files that open on your device.');
+    } finally { URL.revokeObjectURL(url); }
+  }
+
+  const release = item => { if (item && item.url) URL.revokeObjectURL(item.url); };
 
   function renderList(focus) {
     if (!imageListContainer) return;
@@ -234,10 +267,10 @@
 
       card.innerHTML = `
         <span class="page-row__num" aria-hidden="true">${index + 1}</span>
-        <img class="page-row__thumb" src="${item.dataUrl}" alt="" style="transform: rotate(${item.rotation}deg)${item.rotation % 180 ? ' scale(.75)' : ''};">
+        <img class="page-row__thumb" src="${item.url}" alt="" style="transform: rotate(${item.rotation}deg)${item.rotation % 180 ? ' scale(.75)' : ''};">
         <div class="page-row__text">
           <strong class="page-row__name">${escapeHTML(item.name)}</strong>
-          <span class="page-row__meta">${dims.w} × ${dims.h} px · ${(item.file.size / 1024).toFixed(1)} KB</span>
+          <span class="page-row__meta">${dims.w} × ${dims.h} px · ${window.ApplyReadyFiles.formatBytes(item.file.size)}</span>
         </div>
         <div class="page-row__actions">
           <button type="button" class="btn btn-sm btn-icon page-row__handle" data-idx="${index}" title="Drag to reorder" aria-label="Reorder page ${index + 1}. Drag it, or use the arrow keys." aria-describedby="pageOrderHint">
@@ -298,7 +331,7 @@
     imageListContainer.querySelectorAll('.btn-del').forEach(btn => {
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.idx, 10);
-        items.splice(idx, 1);
+        items.splice(idx, 1).forEach(release);
         renderList(items.length ? { idx: Math.min(idx, items.length - 1), sel: '.btn-del' } : null);
         if (!items.length && btnBrowse) btnBrowse.focus();
       });
@@ -402,6 +435,7 @@
   }
 
   function clearAll() {
+    items.forEach(release);
     items = [];
     hideSkipped();
     if (fileInput) fileInput.value = '';
@@ -441,16 +475,14 @@
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        const img = new Image();
-        await new Promise((res, rej) => {
-          img.onload = () => res();
-          img.onerror = () => rej(new Error('"' + item.name + '" could not be read'));
-          img.src = item.dataUrl;
-        });
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(item.rotation * Math.PI / 180);
-        ctx.scale(k, k);
-        ctx.drawImage(img, -item.width / 2, -item.height / 2);
+        // Decoded only while its page is drawn, so a long list of phone photos never sits in memory at once.
+        const opened = await openForDrawing(item);
+        try {
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.rotate(item.rotation * Math.PI / 180);
+          ctx.scale(k, k);
+          ctx.drawImage(opened.source, -item.width / 2, -item.height / 2, item.width, item.height);
+        } finally { opened.close(); }
 
         const jpegBlob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
         if (!jpegBlob) throw new Error('"' + item.name + '" is too large for this browser to convert');
@@ -519,7 +551,7 @@
       btnDownload.download = `Document_${items.length}_Pages.pdf`;
 
       if (statPages) statPages.textContent = `${items.length} ${items.length === 1 ? 'Page' : 'Pages'}`;
-      if (statSize) statSize.textContent = `${(blob.size / 1024).toFixed(1)} KB (${blob.size.toLocaleString()} bytes)`;
+      if (statSize) statSize.textContent = window.ApplyReadyFiles.formatExact(blob.size);
 
       if (resultArea) {
         resultArea.classList.remove('hidden');
@@ -533,6 +565,21 @@
       btnConvert.disabled = false;
       btnConvert.innerHTML = '<i class="fa-solid fa-file-pdf" aria-hidden="true"></i> Create PDF';
     }
+  }
+
+  async function openForDrawing(item) {
+    const Ops = window.ApplyReadyImageOps;
+    if (Ops) {
+      try { return await Ops.openImage(item.file, { name: item.name }); }
+      catch (e) { throw new Error((e && e.message ? e.message.replace(/\.$/, '') : '"' + item.name + '" could not be read')); }
+    }
+    const img = new Image();
+    await new Promise((res, rej) => {
+      img.onload = () => res();
+      img.onerror = () => rej(new Error('"' + item.name + '" could not be read'));
+      img.src = item.url;
+    });
+    return { source: img, close() {} };
   }
 
   /**

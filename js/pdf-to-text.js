@@ -76,6 +76,7 @@
     const empty = res.pages.filter(p => !p.text && !p.failed);
     const failed = res.pages.filter(p => p.failed);
     const withText = res.pages.length - empty.length - failed.length;
+    let damage = '';
     els.statPages.textContent = String(res.pages.length);
     els.statWith.textContent = String(withText);
     els.statChars.textContent = res.pages.reduce((s, p) => s + p.text.length, 0).toLocaleString('en-IN');
@@ -86,10 +87,19 @@
         : 'These pages could not be read. The PDF may be damaged; open it on your device to check it.';
     } else {
       els.resultTitle.textContent = 'Text extracted';
-      els.resultText.textContent = `Text from ${UI.plural(withText, 'page')} is below. Check columns and tables before you paste.`;
+      // pdf.js reads Indian scripts glyph by glyph, in the order they are drawn: vowel signs (such as
+      // ि), nasal marks (ं) and joined letters (क्ष), which fonts draw as shapes of their own, can come
+      // out missing or in the wrong place.
+      const indic = /[\u0900-\u0DFF]/.test(text);
+      const dropped = res.dropped ? ` ${res.dropped === 1 ? 'One character' : `${res.dropped.toLocaleString('en-IN')} characters`} could not be read and ${res.dropped === 1 ? 'was' : 'were'} left out.` : '';
+      const check = indic ? ' The text includes Hindi or another Indian script: vowel signs, nasal marks and joined letters often come out missing or out of place when text is read from a PDF, so check those words before you use them.' : '';
+      // Pages read from a damaged file (openPdf's check) may have lost text: say which, as every
+      // other PDF tool does in its result. Pages with no text at all are named below instead.
+      damage = UI.damageNote(tool.state, res.pages.filter(p => p.text).map(p => p.index));
+      els.resultText.textContent = `Text from ${UI.plural(withText, 'page')} is below. Check columns and tables before you paste.${dropped}${check}${damage ? ` ${damage}` : ''}`;
     }
-    els.result.querySelector('.verdict > .fa-solid').className = withText ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
-    els.result.classList.toggle('is-warning', !withText);
+    els.result.querySelector('.verdict > .fa-solid').className = withText && !damage ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
+    els.result.classList.toggle('is-warning', !withText || !!damage);
     els.empty.classList.toggle('hidden', !empty.length && !failed.length);
     const notes = [];
     if (empty.length) notes.push(`${empty.length === 1 ? 'Page' : 'Pages'} ${K.formatRanges(empty.map(p => p.index))} ${empty.length === 1 ? 'has' : 'have'} no text: probably a scanned picture. ApplyReady does not read text from pictures (OCR). Use the original document, or type that text yourself.`);
@@ -106,17 +116,20 @@
     clear();
     const res = await runner.run(async (signal, progress) => {
       const out = [];
+      const info = { dropped: 0 };
       for (let k = 0; k < list.length; k++) {
         K.throwIfAborted(signal);
         if (k % 5 === 0) progress(k / list.length, `Reading page ${list[k] + 1} (${k + 1} of ${list.length})…`);
         // A damaged page should not cost the text of every other page: note it and carry on.
         let text = '', failed = false;
-        try { text = await K.pageText(state.jsDoc, list[k]); }
+        try { text = await K.pageText(state.jsDoc, list[k], info); }
         catch (e) { failed = true; }
+        // A page whose content is damaged (openPdf's check) is not a scan: say it could not be read.
+        if (!text && ((state.unreadable || []).includes(list[k]) || (state.incomplete || []).includes(list[k]))) failed = true;
         out.push({ index: list[k], text, failed });
         if (k % 10 === 9) await K.tick();
       }
-      return { pages: out };
+      return { pages: out, dropped: info.dropped };
     });
     if (!res || tool.state !== state) return;
     current = res;

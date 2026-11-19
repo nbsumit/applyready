@@ -1,16 +1,16 @@
 {
  "compress-pdf": {
   "file": "img/guides/compress-pdf.webp",
-  "width": 694,
-  "height": 608,
+  "width": 700,
+  "height": 647,
   "alt": "The ApplyReady PDF compressor showing the file size before and after compression and the maximum file size choices.",
-  "bytes": 27332,
+  "bytes": 30912,
   "phone": {
    "file": "img/guides/phone/compress-pdf.webp",
-   "width": 700,
-   "height": 1572,
+   "width": 710,
+   "height": 1792,
    "scale": 2,
-   "bytes": 58106
+   "bytes": 65578
   }
  },
  "image-to-pdf": {
@@ -18,13 +18,13 @@
   "width": 858,
   "height": 491,
   "alt": "The ApplyReady image to PDF tool with two pages in order, each with a drag handle, rotate, move and delete buttons.",
-  "bytes": 17212,
+  "bytes": 17210,
   "phone": {
    "file": "img/guides/phone/image-to-pdf.webp",
    "width": 684,
    "height": 922,
    "scale": 2,
-   "bytes": 28304
+   "bytes": 28360
   }
  },
  "passport-sheet": {
@@ -32,13 +32,13 @@
   "width": 550,
   "height": 900,
   "alt": "The ApplyReady passport photo print preview: copies of one photo laid out on a 4 by 6 inch sheet with thin cutting lines.",
-  "bytes": 19442,
+  "bytes": 19824,
   "phone": {
    "file": "img/guides/phone/passport-sheet.webp",
    "width": 700,
    "height": 1508,
    "scale": 2,
-   "bytes": 38904
+   "bytes": 39534
   }
  },
  "resizer-crop": {
@@ -46,13 +46,13 @@
   "width": 690,
   "height": 558,
   "alt": "The ApplyReady crop frame over a test portrait, with the frame locked to the passport photo shape and the rotate and zoom buttons below it.",
-  "bytes": 13666,
+  "bytes": 14130,
   "phone": {
    "file": "img/guides/phone/resizer-crop.webp",
    "width": 698,
    "height": 1312,
    "scale": 2,
-   "bytes": 25112
+   "bytes": 25476
   }
  },
  "resizer-result-table": {
@@ -60,13 +60,13 @@
   "width": 702,
   "height": 858,
   "alt": "An ApplyReady result for a 350 by 450 pixel photo under a 50 KB limit: the Download button, a preview, and a table comparing the required file size, dimensions and format with the produced file.",
-  "bytes": 34006,
+  "bytes": 33618,
   "phone": {
    "file": "img/guides/phone/resizer-result-table.webp",
    "width": 710,
    "height": 2000,
    "scale": 2,
-   "bytes": 45262
+   "bytes": 44482
   }
  },
  "resizer-settings": {
@@ -116,13 +116,13 @@
   "width": 575,
   "height": 535,
   "alt": "The job description comparison in the ApplyReady resume builder, showing key terms from a pasted advert that the sample resume already uses and terms it does not.",
-  "bytes": 35620,
+  "bytes": 35552,
   "phone": {
    "file": "img/guides/phone/resume-job-match.webp",
    "width": 720,
    "height": 1292,
    "scale": 2,
-   "bytes": 76686
+   "bytes": 76230
   }
  },
  "resume-review": {
@@ -172,27 +172,27 @@
   "width": 832,
   "height": 292,
   "alt": "The ApplyReady signature cleaner with a phone photo of a signature on the left and the cleaned version, white paper and dark ink, on the right.",
-  "bytes": 14698,
+  "bytes": 14736,
   "phone": {
    "file": "img/guides/phone/signature-cleaner.webp",
    "width": 632,
    "height": 918,
    "scale": 2,
-   "bytes": 27914
+   "bytes": 27842
   }
  },
  "tut-batch-cancelled": {
   "file": "img/guides/tut-batch-cancelled.webp",
   "width": 857,
   "height": 711,
-  "alt": "The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the failed and cancelled images.",
-  "bytes": 43406,
+  "alt": "The batch image processor after Cancel: finished photos are kept and listed as Done, the rest are marked Cancelled, and a button offers to retry the cancelled images.",
+  "bytes": 43656,
   "phone": {
    "file": "img/guides/phone/tut-batch-cancelled.webp",
    "width": 682,
-   "height": 2702,
+   "height": 2000,
    "scale": 2,
-   "bytes": 90562
+   "bytes": 69502
   }
  },
  "tut-batch-names": {
@@ -200,13 +200,13 @@
   "width": 857,
   "height": 504,
   "alt": "Batch results where two photos had the same file name: the second result is named photo (2).jpg, and a damaged file is marked Failed with the reason in its row.",
-  "bytes": 32056,
+  "bytes": 32684,
   "phone": {
    "file": "img/guides/phone/tut-batch-names.webp",
    "width": 682,
-   "height": 1964,
+   "height": 1264,
    "scale": 2,
-   "bytes": 67338
+   "bytes": 38768
   }
  },
  "tut-batch-preset": {
@@ -214,13 +214,13 @@
   "width": 947,
   "height": 615,
   "alt": "The batch image processor with six photos added and the Passport photo preset chosen, which sets an exact 350 by 450 pixel size, JPEG and a 50 KB maximum for every image.",
-  "bytes": 40202,
+  "bytes": 40938,
   "phone": {
    "file": "img/guides/phone/tut-batch-preset.webp",
    "width": 710,
-   "height": 2794,
+   "height": 1424,
    "scale": 2,
-   "bytes": 77276
+   "bytes": 40360
   }
  },
  "tut-batch-progress": {
@@ -228,13 +228,13 @@
   "width": 842,
   "height": 155,
   "alt": "The batch image processor while it works: a progress bar with how many images are finished, an estimate of the time left and a Cancel button.",
-  "bytes": 9194,
+  "bytes": 7832,
   "phone": {
    "file": "img/guides/phone/tut-batch-progress.webp",
    "width": 652,
    "height": 388,
    "scale": 2,
-   "bytes": 13580
+   "bytes": 12462
   }
  },
  "tut-compress-results": {
@@ -242,13 +242,13 @@
   "width": 842,
   "height": 662,
   "alt": "Image compressor results for four files under a 50 KB limit: each row shows the original size, the result size in KB and exact bytes, and a note when quality was lowered or the photo was made smaller to fit.",
-  "bytes": 44342,
+  "bytes": 45070,
   "phone": {
    "file": "img/guides/phone/tut-compress-results.webp",
    "width": 652,
-   "height": 2272,
+   "height": 2346,
    "scale": 2,
-   "bytes": 75540
+   "bytes": 78236
   }
  },
  "tut-compress-settings": {
@@ -262,7 +262,7 @@
    "width": 710,
    "height": 1438,
    "scale": 2,
-   "bytes": 51376
+   "bytes": 52384
   }
  },
  "tut-keep-work": {
@@ -290,7 +290,7 @@
    "width": 720,
    "height": 2000,
    "scale": 2,
-   "bytes": 60122
+   "bytes": 60344
   }
  },
  "tut-library-backup": {
@@ -304,7 +304,7 @@
    "width": 720,
    "height": 2000,
    "scale": 2,
-   "bytes": 63840
+   "bytes": 63980
   }
  },
  "tut-library-rename": {
@@ -326,13 +326,13 @@
   "width": 848,
   "height": 282,
   "alt": "Merge PDF in ApplyReady with a cover letter, a two-page mark sheet and a photo of a document in order, each with a drag handle, up and down buttons and a remove button.",
-  "bytes": 19018,
+  "bytes": 19108,
   "phone": {
    "file": "img/guides/phone/tut-merge-order.webp",
    "width": 670,
    "height": 928,
    "scale": 2,
-   "bytes": 33558
+   "bytes": 33644
   }
  },
  "tut-merge-password": {
@@ -354,13 +354,13 @@
   "width": 846,
   "height": 249,
   "alt": "The result of Merge PDF in ApplyReady: your merged PDF is ready, with the page count, the number of files joined, the file size and the Download PDF button.",
-  "bytes": 10658,
+  "bytes": 10730,
   "phone": {
    "file": "img/guides/phone/tut-merge-result.webp",
    "width": 686,
    "height": 680,
    "scale": 2,
-   "bytes": 17450
+   "bytes": 17552
   }
  },
  "tut-privacy-saving-off": {
@@ -438,13 +438,13 @@
   "width": 772,
   "height": 681,
   "alt": "The ApplyReady signature cleaner after a phone photo was added: the cleaned preview, the Paper whiteness and Ink darkness sliders, the file type menu and the Download signature button.",
-  "bytes": 30232,
+  "bytes": 30246,
   "phone": {
    "file": "img/guides/phone/tut-signature-controls.webp",
    "width": 710,
    "height": 2200,
    "scale": 2,
-   "bytes": 60452
+   "bytes": 60500
   }
  },
  "tut-signature-result": {
@@ -452,13 +452,13 @@
   "width": 699,
   "height": 668,
   "alt": "The ApplyReady signature resizer result for a 300 by 100 pixel signature with a 10 to 20 KB range: the file was padded to 10.00 KB without changing the picture, and every row of the check table is met.",
-  "bytes": 30642,
+  "bytes": 30536,
   "phone": {
    "file": "img/guides/phone/tut-signature-result.webp",
    "width": 710,
    "height": 1780,
    "scale": 2,
-   "bytes": 45558
+   "bytes": 45088
   }
  },
  "tut-yourdata-delete": {
@@ -480,13 +480,13 @@
   "width": 704,
   "height": 408,
   "alt": "The Saved resumes section of the ApplyReady Your data page listing two resumes kept in this browser, with buttons to export them all, import a backup and delete them.",
-  "bytes": 20114,
+  "bytes": 20142,
   "phone": {
    "file": "img/guides/phone/tut-yourdata-resumes.webp",
    "width": 720,
    "height": 1212,
    "scale": 2,
-   "bytes": 42700
+   "bytes": 42776
   }
  }
 }

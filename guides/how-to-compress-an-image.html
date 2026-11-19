@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>How to Compress an Image to a KB Limit, Step by Step | ApplyReady</title>
@@ -114,9 +114,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="../resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -173,9 +172,8 @@
                     <li><a class="menu__item" href="../convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="../workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -229,7 +227,7 @@
 
 <section class="section prose">
 <h2>Step 1: Add the images</h2>
-<p>Open the <a href="../compress-image.html">image compressor</a>. Select <em>Choose images</em>, drag files onto the box, or paste an image. Each image gets a row with its name, size, pixel size and format, and the status <em>Waiting</em>. The bar above the list counts them, for example <em>4 images · 1.2 MB</em>, with <em>Add images</em> and <em>Clear all</em>.</p>
+<p>Open the <a href="../compress-image.html">image compressor</a>. Select <em>Choose images</em>, drag files onto the box, or paste an image. Each image gets a row with its name, size, pixel size and format, and the status <em>Waiting</em>. The bar above the list counts them, for example <em>4 images · 1.31 MB</em>, with <em>Add images</em> and <em>Clear all</em>.</p>
 </section>
 
 <section class="section prose">
@@ -254,9 +252,9 @@
 
 <section class="section prose">
 <h2>Step 4: Compress</h2>
-<p>Select the button at the bottom of the settings. It names the job, for example <em>Compress 4 images</em>. Each row turns to <em>Processing</em>, then <em>Done</em>. When all are finished, the panel above the list says how many were compressed and the total size before and after, for example <em>4 images compressed</em> and <em>184 KB in total, from 1.2 MB.</em></p>
+<p>Select the button at the bottom of the settings. It names the job, for example <em>Compress 4 images</em>. Each row turns to <em>Processing</em>, then <em>Done</em>. When all are finished, the panel above the list says how many were compressed and the total size before and after, for example <em>4 images compressed</em> and <em>186.2 KB in total, from 1.31 MB.</em> An original kept as it was (see below) is counted on its own, for example <em>3 images compressed, 1 kept as it was</em>.</p>
 <figure class="shot">
-<a class="shot__full" href="../img/guides/tut-compress-results.webp"><picture><source media="(max-width: 640px)" srcset="../img/guides/phone/tut-compress-results.webp" width="326" height="1136"><img src="../img/guides/tut-compress-results.webp" width="842" height="662" alt="Image compressor results for four files under a 50 KB limit: each row shows the original size, the result size in KB and exact bytes, and a note when quality was lowered or the photo was made smaller to fit." loading="lazy" decoding="async"></picture><span class="shot__zoom"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Open full size</span></a>
+<a class="shot__full" href="../img/guides/tut-compress-results.webp"><picture><source media="(max-width: 640px)" srcset="../img/guides/phone/tut-compress-results.webp" width="326" height="1173"><img src="../img/guides/tut-compress-results.webp" width="842" height="662" alt="Image compressor results for four files under a 50 KB limit: each row shows the original size, the result size in KB and exact bytes, and a note when quality was lowered or the photo was made smaller to fit." loading="lazy" decoding="async"></picture><span class="shot__zoom"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Open full size</span></a>
 <figcaption>Four images under a 50 KB limit. Every file was checked (1); the note under a result (2) says what changed and why; one ZIP holds them all (3).</figcaption>
 </figure>
 </section>
@@ -266,10 +264,10 @@
 <p>Each finished row shows <em>Result:</em> with the name, pixel size and size in KB and exact bytes. Below it, a note appears whenever the compressor had to do more than save at your chosen quality. The notes we saw with the four sample files above, and what they mean:</p>
 <ul>
 <li><em>Quality was lowered to 51% to fit under 50 KB.</em> The photo kept its pixel size; quality dropped as far as needed. Below 40%, the note adds <em>check that the picture is still clear</em>.</li>
-<li><em>The pixel size was reduced to meet the 50 KB limit.</em> With the switch on, the scanned page went from 1240 × 1754 to 1036 × 1465 px, and the same row adds that quality was lowered to 52%: the two notes can appear together. Check that small text is still readable.</li>
-<li>No note: the file fitted at the chosen quality, as the small signature image did (38 KB).</li>
+<li><em>The pixel size was reduced to meet the 50 KB limit.</em> With the switch on, the scanned page went from 1240 × 1754 to 1025 × 1450 px, and the same row adds that quality was lowered to 51%: the two notes can appear together. Check that small text is still readable.</li>
+<li>No note: the file fitted at the chosen quality, as the small signature image did (38.1 KB).</li>
 </ul>
-<p>Two more notes can appear. If the original was already under the limit and smaller than the new copy, the row says you can upload the original instead. If compressing did not make the file smaller, it says the original was already well compressed.</p>
+<p>Two more notes can appear. If the original was already under the limit and smaller than a new copy would be, the original is kept as it is and the row says so, as long as it holds no hidden details, such as camera or location data, and is not animated. Otherwise you get the clean copy (for an animation, a still picture of its first frame), and the row says the original is smaller and why. If compressing did not make the file smaller in another case, it says the original was already well compressed.</p>
 </section>
 
 <section class="section prose">

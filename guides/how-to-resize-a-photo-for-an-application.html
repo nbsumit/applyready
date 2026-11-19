@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>How to Resize a Photo for an Application | ApplyReady</title>
@@ -114,9 +114,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="../resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -173,9 +172,8 @@
                     <li><a class="menu__item" href="../convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="../workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -241,7 +239,7 @@
 <section class="section prose">
 <h2>Step 2: Add the photo</h2>
 <p>Select <em>Choose image</em> and pick the photo, or drag it onto the box. On the image resizer, <em>No image handy? Try a sample image</em> loads a made-up image that suits your choice (a portrait for a photo, a scribble for a signature, a page for a document) so you can try the steps first.</p>
-<p><strong>What you see:</strong> a bar with the file name, its pixel size and its size in KB, for example <em>test-portrait.jpg (1200 × 1600 px, 428.9 KB)</em>, with <em>Replace</em> and <em>Remove</em>. The status line reads <em>Ready to edit</em>.</p>
+<p><strong>What you see:</strong> a bar with the file name, its pixel size and its size in KB, for example <em>test-portrait.jpg (1200 × 1600 px, 439.2 KB)</em>, with <em>Replace</em> and <em>Remove</em>. The status line reads <em>Ready to edit</em>.</p>
 </section>
 
 <section class="section prose">
@@ -276,7 +274,7 @@
 <a class="shot__full" href="../img/guides/resizer-result-table.webp"><picture><source media="(max-width: 640px)" srcset="../img/guides/phone/resizer-result-table.webp" width="355" height="1000"><img src="../img/guides/resizer-result-table.webp" width="702" height="858" alt="An ApplyReady result for a 350 by 450 pixel photo under a 50 KB limit: the Download button, a preview, and a table comparing the required file size, dimensions and format with the produced file." loading="lazy" decoding="async"></picture><span class="shot__zoom"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Open full size</span></a>
 <figcaption>The result for a 350 × 450 px photo under 50 KB: the size in KB and exact bytes (1), the pixel size read back from the file (2), and Download image (3).</figcaption>
 </figure>
-<p><strong>What you see:</strong> <em>Ready to upload</em> with a sentence such as <em>Under the 50 KB limit, at the exact size requested.</em>, the <em>Download image</em> and <em>Adjust again</em> buttons, a preview you can switch between <em>Result</em> and <em>Original</em>, and a table that compares <em>Required</em> with <em>Your file</em> for file size, dimensions and format. Each row that is met has a tick. In our test the 1200 × 1600 px sample portrait came out at 26.47 KB (27,109 bytes), 350 × 450 px, JPEG.</p>
+<p><strong>What you see:</strong> <em>Ready to upload</em> with a sentence such as <em>Under the 50 KB limit, at the exact size requested.</em>, the <em>Download image</em> and <em>Adjust again</em> buttons, a preview you can switch between <em>Result</em> and <em>Original</em>, and a table that compares <em>Required</em> with <em>Your file</em> for file size, dimensions and format. Each row that is met has a tick. In our test the 1200 × 1600 px sample portrait came out at 27.2 KB (27,120 bytes), 350 × 450 px, JPEG.</p>
 </section>
 
 <section class="section prose">
@@ -288,19 +286,19 @@
 <h2>What you get</h2>
 <ul>
 <li>One image at exactly the pixel size you chose, under the maximum (and over the minimum, if you set one), in the format you chose.</li>
-<li>A table that shows the exact byte count, because portals count bytes: 1 KB here is 1,024 bytes, so a 50 KB limit means at most 51,200 bytes.</li>
+<li>A table that shows the exact byte count, because portals count bytes: some count 1 KB as 1,000 bytes and others as 1,024. A 50 KB maximum is kept at 50,000 bytes or less, so it fits either way.</li>
 <li>A new file without the original's hidden details such as location and camera data, because the image is saved again from scratch.</li>
 </ul>
 </section>
 
 <section class="section prose">
 <h2>If something goes wrong</h2>
-<h3>"PNG needs 196.0 KB at this size."</h3>
+<h3>"PNG needs 201.3 KB at this size."</h3>
 <p>PNG cannot lower its quality, so a photo saved as PNG is large. The message suggests the fixes: raise the limit, reduce the dimensions, or choose JPEG or WebP under <em>File format</em>. Use JPEG when the form accepts it.</p>
 <h3>"iPhone photos (HEIC) aren't supported."</h3>
 <p>Share the photo as JPG, or change the camera format to Most Compatible, and add it again.</p>
 <h3>The portal still refuses the file</h3>
-<p>Size is only one check. Read the portal's message against <a href="fix-common-photo-upload-errors.html">photo upload errors and fixes</a>. If a file just under the limit is refused, the portal may count 1 KB as 1,000 bytes: lower the maximum by a few KB and resize again.</p>
+<p>Size is only one check. Read the portal's message against <a href="fix-common-photo-upload-errors.html">photo upload errors and fixes</a>. A file the tool made under the limit fits whether the portal counts 1 KB as 1,000 or 1,024 bytes, so if it is still refused, the message usually names another rule.</p>
 <h3>The face looks soft or blocky</h3>
 <p>The limit is tight for that many pixels. Use the smallest pixel size the form allows, and start again from the original photo rather than from a file you already compressed.</p>
 </section>

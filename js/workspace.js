@@ -56,8 +56,12 @@
   }
 
   const plural = (n, one, many) => `${n} ${n === 1 ? one : (many || one + 's')}`;
-  // Exact KB under 1 MB, where sizes are compared with a form's limit; MB above, like the file list.
-  const size = bytes => (bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : Files.formatBytes(bytes));
+  // A result's size with its exact byte count, in the site's one size format (1 KB = 1,000 bytes,
+  // rounded up), so it reads the same as in every other tool and never as under a limit it is over.
+  const size = bytes => Files.formatExact(bytes);
+  // Every KB limit here is met the way every tool meets it (Files.maxBytes): at most kb x 1,000 bytes,
+  // which is under the limit whether a portal counts 1 KB as 1,000 or 1,024 bytes.
+  const limitBytes = kb => Files.maxBytes(kb);
   const FORMAT = { 'image/jpeg': 'JPEG', 'image/png': 'PNG', 'image/webp': 'WebP' };
   const STATUS = { new: 'No files yet', added: 'Not started', working: 'In progress', ready: 'Ready', downloaded: 'Downloaded' };
   const stemOf = name => Files.stem(Files.safeFileName(name || 'file', 'file')) || 'file';
@@ -245,8 +249,8 @@
     const zipKey = x => Model.zipName('{applicant}', x).toLowerCase();
     const same = a.name.trim() && session.applicants.some(x => x !== a && zipKey(x) === zipKey(a));
     el.nameHint.textContent = same
-      ? 'Another applicant in this session has the same name, so their ZIP files would be named alike. Add an initial or a number to tell them apart.'
-      : `Shown in the list and in the ZIP name. Leave it empty to keep “Applicant ${a.number}”.`;
+      ? 'Another applicant in this session has the same name, so their ZIP files and downloads would be named alike. Add an initial or a number to tell them apart.'
+      : `Shown in the list, in the ZIP name and at the start of every file downloaded on its own. Leave it empty to keep “Applicant ${a.number}”.`;
     el.nameHint.classList.toggle('is-warning', !!same);
   }
 
@@ -418,7 +422,7 @@
 
   function fileSig(a, f, s) {
     const i = a.files.indexOf(f);
-    return JSON.stringify([f.name, f.size, f.width, f.height, f.pages, f.encrypted, f.checking, f.thumb, f.selected, f.error, f.actionError || '', a.busyFile(f.id), i === 0, i === a.files.length - 1, s.imgKB, s.pdfKB]);
+    return JSON.stringify([f.name, f.size, f.width, f.height, f.pages, f.encrypted, f.checking, f.thumb, f.selected, f.error, f.actionError || '', f.damage ? f.damage.unreadable.join() + '/' + f.damage.incomplete.join() : '', a.busyFile(f.id), i === 0, i === a.files.length - 1, s.imgKB, s.pdfKB]);
   }
 
   function fileRow(a, f, s) {
@@ -447,6 +451,7 @@
     text.append(name, node('span', 'file-row__meta', fileFacts(f)));
     if (f.error) text.appendChild(node('span', 'file-row__error', f.error));
     else if (f.actionError) text.appendChild(node('span', 'file-row__error', f.actionError));
+    if (!f.error && f.damage && PdfUI.damageNotice(f.damage)) text.appendChild(node('span', 'file-row__error', PdfUI.damageNotice(f.damage)));
     if (busy) { const st = node('span', 'file-status'); st.append(icon('fa-clock'), ' Working…'); text.appendChild(st); }
 
     const tools = node('div', 'file-row__actions');
@@ -517,12 +522,21 @@
   /* ------------------------------------------------------------------ result rows */
   function resultFacts(r) {
     const f = r.facts;
-    if (r.kind === 'pdf') return [plural(f.pages || 0, 'page'), size(f.bytes), f.limit ? (f.bytes <= f.limit ? `under ${f.limit / 1024} KB` : `over ${f.limit / 1024} KB`) : ''].filter(Boolean).join(' · ');
-    return [`${f.width} × ${f.height} px`, size(f.bytes), FORMAT[f.mime] || f.mime, f.limit ? `under ${f.limit / 1024} KB` : ''].filter(Boolean).join(' · ');
+    if (r.kind === 'pdf') return [plural(f.pages || 0, 'page'), size(f.bytes), f.limit ? (f.bytes <= f.limit ? `under ${f.limit / 1000} KB` : `over ${f.limit / 1000} KB`) : ''].filter(Boolean).join(' · ');
+    return [`${f.width} × ${f.height} px`, size(f.bytes), FORMAT[f.mime] || f.mime, f.limit ? `under ${f.limit / 1000} KB` : ''].filter(Boolean).join(' · ');
+  }
+
+  /**
+   * The name a result is saved under on its own: the applicant's name (or "Applicant-3") first, the
+   * same label as in their ZIP name, so it is easy to tell whose a file is in the
+   * Downloads folder (customers often bring files all called photo.jpg).
+   */
+  function downloadName(a, r) {
+    return Files.safeFileName(`${Model.zipName('{applicant}', a).replace(/\.zip$/i, '')}_${r.name}`, 'result');
   }
 
   function resultSig(a, r, s) {
-    return JSON.stringify([r.name, r.url, r.downloaded, r.warning, a.jobs.some(j => j.resultId === r.id), s.pdfKB]);
+    return JSON.stringify([r.name, downloadName(a, r), r.url, r.downloaded, r.warning, a.jobs.some(j => j.resultId === r.id), s.pdfKB]);
   }
 
   function resultRow(a, r, s) {
@@ -546,13 +560,12 @@
     const dl = doc.createElement('a');
     dl.className = 'btn btn-sm';
     dl.href = r.url;
-    dl.download = Files.safeFileName(r.name, 'result');
     dl.dataset.act = 'download';
     dl.dataset.key = `dl:${r.id}`;
     dl.append(icon('fa-download'), ' Download');
-    dl.setAttribute('aria-label', `Download ${r.name}`);
+    nameLink(dl, a, r);
     const compressing = a.jobs.some(j => j.resultId === r.id);
-    if (r.kind === 'pdf' && r.facts.limit && r.facts.bytes > s.pdfKB * 1024 && r.action === 'merge') {
+    if (r.kind === 'pdf' && r.facts.limit && r.facts.bytes > limitBytes(s.pdfKB) && r.action === 'merge') {
       tools.appendChild(button(`Compress to ${s.pdfKB} KB`, { act: 'compress-result', key: `cr:${r.id}`, icon: 'fa-file-zipper', disabled: compressing }));
     }
     tools.append(dl, button(`Remove ${r.name}`, { cls: 'btn btn-danger-ghost btn-icon btn-sm', act: 'remove-result', key: `rr:${r.id}`, icon: 'fa-trash-can', iconOnly: true, disabled: compressing }));
@@ -560,15 +573,23 @@
     return li;
   }
 
+  function nameLink(link, a, r) {
+    const name = downloadName(a, r);
+    link.download = name;
+    link.title = `Saved as ${name}`;
+    link.setAttribute('aria-label', `Download ${r.name}, saved as ${name}`);
+  }
+
   /* ------------------------------------------------------------------ adding files */
+  const roomFor = a => (a && !a.finished ? Math.max(0, Model.MAX_FILES - a.files.length) : 0);
+  const tooMany = (room, offered) => (room > 0
+    ? `Only ${plural(room, 'more file')} could be added: an applicant can have up to ${Model.MAX_FILES} files. The other ${offered - room} ${offered - room === 1 ? 'was' : 'were'} left out.`
+    : `This applicant already has ${Model.MAX_FILES} files, the most one applicant can have. Remove some first.`);
+
   function addFiles(a, files, infos) {
     if (!a || a.finished) return;
-    const room = Model.MAX_FILES - a.files.length;
-    if (files.length > room) {
-      a.addError(room > 0
-        ? `Only ${plural(room, 'more file')} could be added: an applicant can have up to ${Model.MAX_FILES} files. The rest were left out.`
-        : `This applicant already has ${Model.MAX_FILES} files, the most one applicant can have. Remove some first.`);
-    }
+    const room = roomFor(a);
+    if (files.length > room) a.addError(tooMany(room, files.length));
     const added = [];
     files.slice(0, Math.max(0, room)).forEach((file, i) => {
       const entry = a.addFile(file, infos[i]);
@@ -582,8 +603,21 @@
   async function readFile(a, f) {
     if (!alive(a, f)) return;
     if (f.kind === 'image') {
+      // The same intake check as Image to PDF, Compress PDF and Merge PDF (ApplyReadyImageOps.openImage):
+      // a truncated or damaged picture is refused now, with the same words, instead of being offered
+      // every action and failing only once one is pressed. (Pictures over 50 MP, or whose size cannot
+      // be read, never get here: the drop zone refuses them from their header, checkPixels.)
+      try { (await Ops.openImage(f.file, { name: f.name })).close(); }
+      catch (e) {
+        if (!alive(a, f)) return;
+        f.error = (e && e.message) || `${f.name} could not be opened.`;
+        f.selected = false;
+        schedule();
+        return;
+      }
+      if (!alive(a, f)) return;
       try {
-        const head = Ops.readHeader(new Uint8Array(await f.file.slice(0, 512 * 1024).arrayBuffer()));
+        const head = await Ops.readHeaderFrom(f.file);
         if (head && alive(a, f)) { f.width = head.width; f.height = head.height; }
       } catch (e) { /* the size shows once processed */ }
       if (!alive(a, f)) return;
@@ -601,6 +635,8 @@
       if (!alive(a, f)) return;
       f.pages = facts.pageCount;
       f.encrypted = facts.encrypted;
+      await checkDamage(f, bytes);
+      if (!alive(a, f)) return;
     } catch (e) {
       if (!alive(a, f)) return;
       f.error = e && e.name === 'PdfError' ? e.message : `${f.name} could not be read as a PDF. Open it on your device to check it, then add it again.`;
@@ -610,11 +646,44 @@
     schedule();
   }
 
+  /**
+   * The same damage check as every PDF tool (ApplyReadyPdf.pageDamage, as in pdf-ui openPdf): a file
+   * none of whose pages can be read is refused, since anything made from it would be blank; a file
+   * with some pages damaged is kept, and every result made from it says which pages (damageWarning).
+   * A file that needs a password is checked once it is opened with it (rememberDamage).
+   */
+  async function checkDamage(f, bytes) {
+    let doc;
+    try { doc = await Pdf.openLib(bytes, { password: f.encrypted ? '' : undefined, name: f.name }); }
+    catch (e) { if (f.encrypted) return; throw e; }
+    const damage = await Pdf.pageDamage(doc);
+    rememberDamage(f, { pageCount: f.pages || doc.getPageCount(), unreadable: damage.unreadable, incomplete: damage.incomplete });
+  }
+
+  function rememberDamage(f, d) {
+    f.damage = { name: f.name, pageCount: d.pageCount, unreadable: d.unreadable || [], incomplete: d.incomplete || [] };
+    if (f.damage.pageCount && f.damage.unreadable.length === f.damage.pageCount) {
+      const n = f.damage.pageCount;
+      throw new Pdf.PdfError('damaged', `${f.name} is damaged: the content of ${n === 1 ? 'its page' : `all ${Pdf.grouped(n)} pages`} is missing or broken, so anything made from it would be blank. Open it on your device to check it, or get a fresh copy from where it came from.`);
+    }
+  }
+
+  /** What a result made from these files must say about their damaged pages, or ''. */
+  function damageWarning(a, ids) {
+    return a.files.filter(f => ids.includes(f.id) && f.damage).map(f => PdfUI.damageNote(f.damage)).filter(Boolean).join(' ');
+  }
+  const withWarning = (...parts) => parts.filter(Boolean).join(' ');
+
   const dz = Kit.dropzone(el.drop, {
     accept: ['image', 'pdf'],
     multiple: true,
-    maxFiles: Model.MAX_FILES,
+    // The room left for the applicant the files are for, so one message gives the real count.
+    maxFiles: a => { const target = a || session.active; return target ? roomFor(target) : Model.MAX_FILES; },
+    tooMany,
     context: () => session.active,
+    // Pictures over 50 MP, or whose pixel size cannot be read, are refused from their header when they
+    // are added, with the same message as every other image tool (IMG-09).
+    checkPixels: true,
     onFiles: (files, infos, a) => addFiles(a || session.active, files, infos),
     onReject: (messages, a) => { const target = a || session.active; if (target) messages.forEach(m => target.addError(m)); }
   });
@@ -640,9 +709,16 @@
     const text = `${label} did not work: ${failReason(e, job.action)}`;
     if (file && alive(a, file)) file.actionError = text;
     else a.addError(text);
-    if (a === session.active) announce(text);
+    // The visible message keeps the file name; the announcement leaves names out (engine messages
+    // often start with the file name), so the hidden live region never holds an applicant's file names.
+    if (a === session.active) announce(withoutNames(text, a));
     if (e && e.name !== 'PdfError' && window.console) console.warn(e);
     schedule();
+  }
+
+  /** `text` with every file and result name of applicant `a` replaced by "the file". */
+  function withoutNames(text, a) {
+    return Model.withoutNames(text, a.files.map(f => f.name).concat(a.results.map(r => r.name)));
   }
 
   /* Engine messages are written for the batch tools; some point to settings that live elsewhere
@@ -651,16 +727,16 @@
     if (e && e.code === 'nofit' && e.detail && (action === 'photo' || action === 'signature')) {
       const d = e.detail;
       const what = action === 'photo' ? 'photo' : 'signature';
-      return `This image does not fit under ${Math.round(d.limit / 1024)} KB at ${d.width} × ${d.height} px${d.lossy ? ' even at the lowest quality' : ''}. In Session settings, raise the ${what} size limit or lower its width and height${d.lossy ? '' : ', or save it as JPEG'}.`;
+      return `This image does not fit under ${Files.formatBytes(d.limit)} at ${d.width} × ${d.height} px${d.lossy ? ' even at the lowest quality' : ''}. In Session settings, raise the ${what} size limit or lower its width and height${d.lossy ? '' : ', or save it as JPEG'}.`;
     }
     return e && e.message ? String(e.message) : 'Something went wrong.';
   }
 
   function imageOptions(kind, s, f) {
     const base = { inputMime: f.info && f.info.mime, background: '#ffffff' };
-    if (kind === 'photo') return Object.assign(base, { resize: 'fill', width: s.photo.width, height: s.photo.height, format: s.photo.format, quality: 0.92, maxBytes: Math.floor(s.photo.kb * 1024), allowShrink: false });
-    if (kind === 'signature') return Object.assign(base, { resize: 'pad', width: s.signature.width, height: s.signature.height, format: s.signature.format, quality: 0.92, maxBytes: Math.floor(s.signature.kb * 1024), allowShrink: false });
-    if (kind === 'compress') return Object.assign(base, { resize: 'none', format: 'keep', quality: 0.9, maxBytes: Math.floor(s.imgKB * 1024), allowShrink: true });
+    if (kind === 'photo') return Object.assign(base, { resize: 'fill', width: s.photo.width, height: s.photo.height, format: s.photo.format, quality: 0.92, maxBytes: limitBytes(s.photo.kb), allowShrink: false });
+    if (kind === 'signature') return Object.assign(base, { resize: 'pad', width: s.signature.width, height: s.signature.height, format: s.signature.format, quality: 0.92, maxBytes: limitBytes(s.signature.kb), allowShrink: false });
+    if (kind === 'compress') return Object.assign(base, { resize: 'none', format: 'keep', quality: 0.9, maxBytes: limitBytes(s.imgKB), allowShrink: true });
     return Object.assign(base, { resize: 'none', format: 'image/jpeg', quality: 0.92 });
   }
 
@@ -701,6 +777,7 @@
       if (session.active !== a) throw new Pdf.PdfError('password', `${f.name} needs its password. Open this applicant and run the task again.`);
       const opened = await PdfUI.openPdf(f.file, needs);
       f.password = opened.password;
+      if (needs.lib) rememberDamage(f, opened);
       if (needs.js && !opened.jsDoc) throw opened.previewError || new Pdf.PdfError('damaged', `${f.name} could not be drawn. It may be damaged.`);
       return { libDoc: opened.libDoc, jsDoc: opened.jsDoc };
     }
@@ -727,7 +804,7 @@
     const s = needSettings('pdf');
     if (!s || !alive(a, f) || a.busyFile(f.id)) return;
     const label = ACTION_LABEL.pdf(s);
-    const limit = Math.floor(s.pdfKB * 1024);
+    const limit = limitBytes(s.pdfKB);
     f.actionError = '';
     const job = a.startJob({ label: `${label}: ${f.name}`, fileIds: [f.id], action: 'pdf', text: `Reading ${f.name}…` });
     let jsDoc = null;
@@ -737,20 +814,20 @@
       const stem = stemOf(f.name);
       if (!f.encrypted && bytes.length <= limit) {
         const check = await Pdf.verify(bytes, {});
-        finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: check.pageCount, bytes: bytes.length, limit }, notes: [`Already under ${s.pdfKB} KB, so the original is kept unchanged.`] });
+        finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: check.pageCount, bytes: bytes.length, limit }, warning: damageWarning(a, [f.id]), notes: [`Already under ${s.pdfKB} KB, so the original is kept unchanged.`] });
         return;
       }
       jsDoc = (await openDoc(a, f, bytes, { lib: false, js: true })).jsDoc;
       const fitted = await fitPdf(jsDoc, limit, job, a, 0.05, 0.85, f.encrypted ? null : bytes, `${ACTION_VERB.pdf}: ${f.name}`);
       a.progress(job, 0.95, 'Checking the finished file…');
       if (!fitted) {
-        finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: f.pages, bytes: bytes.length, limit }, warning: `Compressing would not make this PDF smaller, so the original is kept. It is over ${s.pdfKB} KB: try a higher limit or fewer pages.` });
+        finishResult(a, job, { blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}.pdf`, sourceIds: [f.id], facts: { pages: f.pages, bytes: bytes.length, limit }, warning: withWarning(`Compressing would not make this PDF smaller, so the original is kept. It is over ${s.pdfKB} KB: try a higher limit or fewer pages.`, damageWarning(a, [f.id])) });
         return;
       }
       finishResult(a, job, {
         blob: new Blob([fitted.bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stem}-${s.pdfKB}kb.pdf`, sourceIds: [f.id],
         facts: { pages: fitted.pages, bytes: fitted.bytes.length, limit },
-        warning: fitted.fits ? '' : `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.`,
+        warning: withWarning(fitted.fits ? '' : `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.`, damageWarning(a, [f.id])),
         notes: ['Pages are now pictures, so the text cannot be selected. Zoom in to check that it is easy to read.']
       });
     } catch (e) { failJob(a, job, e, f, label); }
@@ -770,6 +847,7 @@
         const opened = await PdfUI.openPdf(f.file, { lib: true, js: false });
         if (!alive(a, f)) return false;
         f.password = opened.password;
+        rememberDamage(f, opened);
       } catch (e) {
         if (!alive(a, f)) return false;
         f.actionError = `${label} did not work: ${e && e.message ? e.message : 'the PDF could not be opened.'}`;
@@ -787,7 +865,7 @@
     if (!images && files.length < 2) return;
     const s = needSettings('pdf');
     if (!s) return;
-    const limit = Math.floor(s.pdfKB * 1024);
+    const limit = limitBytes(s.pdfKB);
     const label = images ? (files.length === 1 ? 'Make a PDF' : 'Combine into one PDF') : 'Merge PDFs';
     if (files.some(f => a.busyFile(f.id))) return;
     if (!(await askPasswords(a, files, label))) return;
@@ -829,7 +907,7 @@
         blob: new Blob([bytes], { type: 'application/pdf' }), kind: 'pdf', action: images ? 'combine' : 'merge',
         name: `${stem}-${images ? 'combined' : 'merged'}.pdf`, sourceIds: files.map(f => f.id),
         facts: { pages: check.pageCount, bytes: bytes.length, limit },
-        warning: over ? (images ? `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.` : `Over the ${s.pdfKB} KB limit. Use Compress to ${s.pdfKB} KB on this result if the form needs it.`) : '',
+        warning: withWarning(over ? (images ? `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.` : `Over the ${s.pdfKB} KB limit. Use Compress to ${s.pdfKB} KB on this result if the form needs it.`) : '', damageWarning(a, files.map(f => f.id))),
         notes: notes.concat(images ? [`Pictures are placed on A4 pages in the order of the list.`] : [])
       });
     } catch (e) { failJob(a, job, e, null, label); }
@@ -839,7 +917,7 @@
   async function runResultCompress(a, r) {
     const s = needSettings('pdf');
     if (!s || a.finished || !a.results.includes(r) || a.jobs.some(j => j.resultId === r.id)) return;
-    const limit = Math.floor(s.pdfKB * 1024);
+    const limit = limitBytes(s.pdfKB);
     const label = `Compress to ${s.pdfKB} KB`;
     const job = a.startJob({ label: `${label}: ${r.name}`, action: 'pdf', text: `Compressing ${r.name}…` });
     job.resultId = r.id;
@@ -852,7 +930,7 @@
       finishResult(a, job, {
         blob: new Blob([fitted.bytes], { type: 'application/pdf' }), kind: 'pdf', action: 'pdf', name: `${stemOf(r.name)}-${s.pdfKB}kb.pdf`, sourceIds: r.sourceIds,
         facts: { pages: fitted.pages, bytes: fitted.bytes.length, limit },
-        warning: fitted.fits ? '' : `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.`,
+        warning: withWarning(fitted.fits ? '' : `Could not get under ${s.pdfKB} KB. This is the smallest readable version; try a higher limit or fewer pages.`, damageWarning(a, r.sourceIds || [])),
         notes: ['Pages are now pictures, so the text cannot be selected. Zoom in to check that it is easy to read.']
       });
     } catch (e) { failJob(a, job, e, null, label); }
@@ -895,7 +973,8 @@
       // and at once if the applicant is finished first.
       setTimeout(() => a.releaseURL(url), 60000);
       a.markDownloaded(included.map(r => r.id));
-      if (a === session.active) notify(`ZIP file with ${plural(entries.length, 'file')} downloaded.`);
+      // The page cannot see whether the browser saved it (a browser can block or ask about a download).
+      if (a === session.active) notify(`ZIP file with ${plural(entries.length, 'file')} ready. If no download starts, allow downloads for this site in your browser and try again.`);
     } catch (e) {
       a.zipping = false;
       if (!a.endJob(job)) return;
@@ -984,6 +1063,12 @@
     a.name = el.name.value.slice(0, 60);
     renderNav();
     renderNameHint(a);
+    // Single downloads carry the name: keep the links in step while it is typed.
+    el.results.querySelectorAll('.wk-result').forEach(row => {
+      const r = a.result(row.dataset.id);
+      const link = row.querySelector('[data-act="download"]');
+      if (r && link) nameLink(link, a, r);
+    });
     el.zipLabel.textContent = a.zipping ? 'Preparing ZIP…' : `Download all for ${a.label} (ZIP)`;
   });
 
@@ -1036,6 +1121,11 @@
       ask = { title: `Finish ${who}?`, message: `${plural(c.running, 'task')} for ${who} ${c.running === 1 ? 'is' : 'are'} still running and will be stopped. Finishing removes all of this applicant’s files from this tab.`, confirmLabel: 'Finish and remove', danger: true };
     } else if (c.files && !c.results) {
       ask = { title: `Finish ${who}?`, message: `${who} has ${plural(c.files, 'file')} and no results yet. Finishing removes the files from this tab.`, confirmLabel: 'Finish and remove', danger: true };
+    } else if (c.results) {
+      // "Downloaded" means the download was started: the page cannot see whether the browser saved
+      // the file (a save dialog can be cancelled, a download blocked). One light check before the
+      // results are gone; Finish is focused, so Enter confirms.
+      ask = { title: `Finish ${who}?`, message: `${c.results === 1 ? 'The result was' : `All ${c.results} results were`} downloaded. Check that ${c.results === 1 ? 'it is' : 'they are'} in the Downloads folder or already uploaded: finishing removes ${who}’s files and results from this tab.`, confirmLabel: 'Finish applicant' };
     }
     if (ask && !(await UI().confirm(ask))) return;
     if (a.finished) return;
@@ -1045,6 +1135,7 @@
     if (pool && !session.applicants.some(x => x.jobs.length)) { pool.destroy(); pool = null; }
     render();
     const next = session.active;
+    announce('');   // nothing said about the finished applicant stays in the hidden live region
     notify('Applicant finished. Their files and results were removed from this tab.');
     if (next) { const t = $(`wkTab-${next.id}`); if (t && t.offsetParent) t.focus(); else el.name.focus(); }
     else el.noneNew.focus();
@@ -1067,6 +1158,7 @@
 
   function endSession() {
     session.end();
+    announce('');
     if (pool) { pool.destroy(); pool = null; }
     inSession = false;
     resetSettings();

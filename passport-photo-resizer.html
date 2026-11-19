@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="applyready-tool" content="passport-photo">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -148,9 +148,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -207,9 +206,8 @@
                     <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -329,6 +327,10 @@
               <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download image</a>
               <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust again</button>
             </div>
+          </div>
+          <div id="resultWarning" class="notice notice--warning hidden">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            <span class="notice__body" id="resultWarningText"></span>
           </div>
           <div class="ws-result__body">
             <div class="ws-result__view">
@@ -485,7 +487,7 @@
         <li><strong>Resize and check.</strong> The result lists the requirement beside your file: the size in KB with the exact bytes, and the pixel size read back from the file. Download when every row has a tick.</li>
       </ol>
       <h3>Reading the result</h3>
-      <p>Portals count bytes, and 1 KB is 1,024 bytes, so a file shown as 49.9 KB fits a 50 KB limit. If a form also has a minimum, such as 20 to 50 KB, set it under Size, file limit and format; small JPEG files are padded with empty bytes to reach it without changing the picture. A photo with a lot of fine detail (patterned clothes, a busy background) needs more bytes for the same sharpness, so a plain background helps under a tight limit.</p>
+      <p>Portals count bytes, and some portals count 1 KB as 1,000 bytes and others as 1,024. This tool keeps a 50 KB maximum at 50,000 bytes or less and shows the exact byte count, so the file fits either way. If a form also has a minimum, such as 20 to 50 KB, set it under Size, file limit and format; small JPEG files are padded with empty bytes to reach it without changing the picture. A photo with a lot of fine detail (patterned clothes, a busy background) needs more bytes for the same sharpness, so a plain background helps under a tight limit.</p>
       <p>Taking the photo at home is covered step by step in the <a href="guides/passport-photo-at-home-guide.html">passport photo at home guide</a>, and using this page in the tutorial on <a href="guides/how-to-resize-a-photo-for-an-application.html">resizing a photo for an application</a>. Need printed copies too? The <a href="passport-photo-print.html">passport photo print sheet</a> lays them out on A4 or 4 × 6 inch paper. Preparing photos for a whole group, such as a class or a cyber cafe queue? The <a href="batch-image.html">batch image processor</a> applies the same passport preset to many photos at once, with an automatic centre crop. For the signature that usually goes with the photo, use the <a href="signature-resizer.html">signature resizer</a>, or make any image smaller with the <a href="compress-image.html">image compressor</a>.</p>
       <p>Common upload limits have their own pages, each opening the resizer with the limit already set: <a href="resize-image-to-20kb.html">resize to 20 KB</a>, <a href="resize-image-to-50kb.html">resize to 50 KB</a>, and <a href="resize-image-to-kb-limit.html">10, 100, 200 KB or any other limit</a>.</p>
     </section>
@@ -594,6 +596,7 @@
   <script defer src="js/lib/files.js?v=20261118"></script>
   <script defer src="js/presets.js?v=20261118"></script>
   <script defer src="js/vendor/cropper.min.js"></script>
+  <script defer src="js/lib/image-ops.js?v=20261118"></script>
   <script defer src="js/resizer.js?v=20261118"></script>
 </body>
 </html>

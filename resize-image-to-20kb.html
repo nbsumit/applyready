@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="applyready-tool" content="resize-20kb">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -101,7 +101,7 @@
             "name": "Is 20 KB the same as 20,000 bytes?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Not necessarily. With 1 KB counted as 1,024 bytes, 20 KB is 20,480 bytes. The result table shows the exact byte count; if you are unsure how a portal counts, set a slightly lower maximum such as 19 KB."
+              "text": "Not quite: portals count 1 KB as either 1,000 or 1,024 bytes, so a 20 KB limit is 20,000 or 20,480 bytes. This tool keeps a 20 KB maximum at 20,000 bytes or less, so the file fits either way, and the result table shows the exact byte count."
             }
           },
           {
@@ -109,7 +109,7 @@
             "name": "Can a passport-size photo fit in 20 KB?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes, at small pixel sizes. Our test portrait was 17.5 KB at 350 × 450 px and 9.1 KB at 200 × 230 px. At 1000 × 1333 px it only fitted at a much lower quality, so use the pixel size your form states."
+              "text": "Yes, at small pixel sizes. Our test portrait was 17.9 KB at 350 × 450 px and 9.4 KB at 200 × 230 px. At 1000 × 1333 px it only fitted at a much lower quality, so use the pixel size your form states."
             }
           },
           {
@@ -125,7 +125,7 @@
             "name": "Why can't I get a PNG under 20 KB?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "PNG is lossless, so lowering the quality does not shrink it. Our 300 × 100 px test signature needed 37.8 KB as PNG. Choose JPEG."
+              "text": "PNG is lossless, so lowering the quality does not shrink it. Our 300 × 100 px test signature needed 38.8 KB as PNG. Choose JPEG."
             }
           },
           {
@@ -162,9 +162,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -221,9 +220,8 @@
                     <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -262,7 +260,7 @@
 
       <header class="page-head">
         <h1 class="page-title">Resize image to 20 KB</h1>
-        <p class="page-lede">Twenty kilobytes is a common limit for signatures on online application forms. The limit below is set to 20 KB (20,480 bytes): choose what you are preparing, add the image and download. It all happens in your browser; nothing is uploaded.</p>
+        <p class="page-lede">Twenty kilobytes is a common limit for signatures on online application forms. The limit below is set to 20 KB, kept at 20,000 bytes or less so the file fits however the portal counts a kilobyte: choose what you are preparing, add the image and download. It all happens in your browser; nothing is uploaded.</p>
       </header>
       <!-- tool:start -->
     <section class="tool-section" id="resize-tool" aria-label="Image resizer">
@@ -351,6 +349,10 @@
               <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download image</a>
               <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust again</button>
             </div>
+          </div>
+          <div id="resultWarning" class="notice notice--warning hidden">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            <span class="notice__body" id="resultWarningText"></span>
           </div>
           <div class="ws-result__body">
             <div class="ws-result__view">
@@ -515,31 +517,31 @@
 
       <section class="section prose" aria-labelledby="kb20DataHeading">
         <h2 id="kb20DataHeading">What fits in 20 KB: measured with this tool</h2>
-        <p>20 KB is 20,480 bytes. We ran this page's compressor, with a 20 KB maximum and JPEG output, on the two synthetic test images in our <a href="img/samples/test-portrait.jpg">sample set</a>: a 1200 × 1600 px portrait and a 1600 × 900 px phone photo of a signature. The tool always tries quality 0.95 first and only lowers it when the file is too large. Measured in Chromium 141 on 24 October 2026.</p>
+        <p>A 20 KB maximum here means at most 20,000 bytes, and sizes are in KB of 1,000 bytes. We ran this page's compressor, with a 20 KB maximum and JPEG output, on the two synthetic test images in our <a href="img/samples/test-portrait.jpg">sample set</a>: a 1200 × 1600 px portrait and a 1600 × 900 px phone photo of a signature. The tool always tries quality 0.95 first and only lowers it when the file is too large. Measured in Chromium 153 on 19 November 2026.</p>
         <div class="table-wrap"><table>
           <thead><tr><th>Image</th><th>Output pixels</th><th>Size at quality 0.95</th><th>Final size</th><th>Quality used</th></tr></thead>
           <tbody>
-            <tr><td>Signature</td><td>140 × 60</td><td>3.1 KB</td><td>3.1 KB</td><td>0.95</td></tr>
-            <tr><td>Signature</td><td>300 × 100</td><td>8.0 KB</td><td>8.0 KB</td><td>0.95</td></tr>
-            <tr><td>Signature</td><td>400 × 200</td><td>14.5 KB</td><td>14.5 KB</td><td>0.95</td></tr>
-            <tr><td>Signature</td><td>600 × 200</td><td>23.9 KB</td><td>19.0 KB</td><td>0.93</td></tr>
-            <tr><td>Signature</td><td>800 × 400</td><td>55.6 KB</td><td>18.3 KB</td><td>0.82</td></tr>
-            <tr><td>Signature</td><td>1600 × 800</td><td>243.0 KB</td><td>19.9 KB</td><td>0.35</td></tr>
-            <tr><td>Portrait</td><td>200 × 230</td><td>9.1 KB</td><td>9.1 KB</td><td>0.95</td></tr>
-            <tr><td>Portrait</td><td>350 × 450</td><td>26.5 KB</td><td>17.5 KB</td><td>0.92</td></tr>
-            <tr><td>Portrait</td><td>600 × 800</td><td>94.7 KB</td><td>20.0 KB</td><td>0.76</td></tr>
-            <tr><td>Portrait</td><td>1000 × 1333</td><td>320.9 KB</td><td>19.3 KB</td><td>0.40</td></tr>
+            <tr><td>Signature</td><td>140 × 60</td><td>3.2 KB</td><td>3.2 KB</td><td>0.95</td></tr>
+            <tr><td>Signature</td><td>300 × 100</td><td>8.2 KB</td><td>8.2 KB</td><td>0.95</td></tr>
+            <tr><td>Signature</td><td>400 × 200</td><td>14.8 KB</td><td>14.8 KB</td><td>0.95</td></tr>
+            <tr><td>Signature</td><td>600 × 200</td><td>24.5 KB</td><td>19.5 KB</td><td>0.93</td></tr>
+            <tr><td>Signature</td><td>800 × 400</td><td>57.0 KB</td><td>18.8 KB</td><td>0.82</td></tr>
+            <tr><td>Signature</td><td>1600 × 800</td><td>254.4 KB</td><td>20.0 KB</td><td>0.33</td></tr>
+            <tr><td>Portrait</td><td>200 × 230</td><td>9.4 KB</td><td>9.4 KB</td><td>0.95</td></tr>
+            <tr><td>Portrait</td><td>350 × 450</td><td>27.2 KB</td><td>17.9 KB</td><td>0.92</td></tr>
+            <tr><td>Portrait</td><td>600 × 800</td><td>97.0 KB</td><td>19.6 KB</td><td>0.75</td></tr>
+            <tr><td>Portrait</td><td>1000 × 1333</td><td>328.5 KB</td><td>19.8 KB</td><td>0.40</td></tr>
           </tbody>
         </table></div>
-        <p>Two things stand out. First, at the pixel sizes forms usually ask for (140 × 60, 300 × 100, 400 × 200) a signature fits under 20 KB without any loss of quality at all. Second, the same 20 KB spread over a large image forces the quality down to 0.35–0.40, where edges turn blocky. If a 20 KB file looks poor, the pixel size is almost always the reason, not the limit. Cleaning the signature first helps too: our cleaned test signature was 6.3 KB at 300 × 100 px instead of 8.0 KB, using the <a href="signature-cleaner.html">signature cleaner</a>.</p>
+        <p>Two things stand out. First, at the pixel sizes forms usually ask for (140 × 60, 300 × 100, 400 × 200) a signature fits under 20 KB without any loss of quality at all. Second, the same 20 KB spread over a large image forces the quality down to 0.33–0.40, where edges turn blocky. If a 20 KB file looks poor, the pixel size is almost always the reason, not the limit. Cleaning the signature first helps too: our cleaned test signature was 6.6 KB at 300 × 100 px instead of 8.2 KB, using the <a href="signature-cleaner.html">signature cleaner</a>.</p>
       </section>
 
       <section class="section prose" aria-labelledby="kb20FixHeading">
         <h2 id="kb20FixHeading">Troubleshooting a 20 KB upload</h2>
         <ul>
-          <li><strong>"File size should be at least 10 KB".</strong> Small signatures often fall below a minimum: our 140 × 60 px test signature was only 3.1 KB. Enter the minimum in <em>Minimum (KB)</em>; the tool then pads the JPEG with harmless comment data until it reaches it, without changing the image.</li>
-          <li><strong>The portal rejects a file the tool shows as 20.0 KB.</strong> Compare the exact byte count under the size with the limit. 20 KB is 20,480 bytes when a kilobyte is 1,024 bytes; if you are unsure how a portal counts, set the maximum to 19 KB to leave a margin.</li>
-          <li><strong>You chose PNG.</strong> PNG does not shrink by lowering quality: our 300 × 100 px signature needed 37.8 KB as PNG, and the tool says so instead of producing a file. Use JPEG, which most forms ask for anyway.</li>
+          <li><strong>"File size should be at least 10 KB".</strong> Small signatures often fall below a minimum: our 140 × 60 px test signature was only 3.2 KB. Enter the minimum in <em>Minimum (KB)</em>; the tool then pads the JPEG with harmless comment data until it reaches it, without changing the image.</li>
+          <li><strong>The portal says the file is too large.</strong> Compare the exact byte count under the size with the form's limit. A 20 KB maximum here is kept at 20,000 bytes or less, which fits whether the portal counts 1 KB as 1,000 or 1,024 bytes, so check that the maximum you entered is the one on the form.</li>
+          <li><strong>You chose PNG.</strong> PNG does not shrink by lowering quality: our 300 × 100 px signature needed 38.8 KB as PNG, and the tool says so instead of producing a file. Use JPEG, which most forms ask for anyway.</li>
           <li><strong>The signature looks tiny or blurred after upload.</strong> The crop left too much empty paper. Crop close to the ink so the signature fills most of its frame.</li>
           <li><strong>The photo looks blocky.</strong> A 20 KB photo only works at small pixel sizes. If the form asks for a photo under 20 KB, use the exact pixel size it states, not your camera's.</li>
         </ul>
@@ -561,14 +563,14 @@
         <details class="faq-item">
           <summary class="faq-question">Is 20 KB the same as 20,000 bytes?</summary>
           <div class="faq-answer">
-            <p>Not necessarily. With 1 KB counted as 1,024 bytes, 20 KB is 20,480 bytes. The result table shows the exact byte count; if you are unsure how a portal counts, set a slightly lower maximum such as 19 KB.</p>
+            <p>Not quite: portals count 1 KB as either 1,000 or 1,024 bytes, so a 20 KB limit is 20,000 or 20,480 bytes. This tool keeps a 20 KB maximum at 20,000 bytes or less, so the file fits either way, and the result table shows the exact byte count.</p>
           </div>
         </details>
 
         <details class="faq-item">
           <summary class="faq-question">Can a passport-size photo fit in 20 KB?</summary>
           <div class="faq-answer">
-            <p>Yes, at small pixel sizes. Our test portrait was 17.5 KB at 350 × 450 px and 9.1 KB at 200 × 230 px. At 1000 × 1333 px it only fitted at a much lower quality, so use the pixel size your form states.</p>
+            <p>Yes, at small pixel sizes. Our test portrait was 17.9 KB at 350 × 450 px and 9.4 KB at 200 × 230 px. At 1000 × 1333 px it only fitted at a much lower quality, so use the pixel size your form states.</p>
           </div>
         </details>
 
@@ -582,7 +584,7 @@
         <details class="faq-item">
           <summary class="faq-question">Why can't I get a PNG under 20 KB?</summary>
           <div class="faq-answer">
-            <p>PNG is lossless, so lowering the quality does not shrink it. Our 300 × 100 px test signature needed 37.8 KB as PNG. Choose JPEG.</p>
+            <p>PNG is lossless, so lowering the quality does not shrink it. Our 300 × 100 px test signature needed 38.8 KB as PNG. Choose JPEG.</p>
           </div>
         </details>
 
@@ -700,6 +702,7 @@
   <script src="js/vendor/cropper.min.js"></script>
   <script src="js/presets.js?v=20261118"></script>
   <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/resizer.js?v=20261118"></script>
 </body>
 </html>

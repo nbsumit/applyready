@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>How to Make and Resize a Signature Image | ApplyReady</title>
@@ -114,9 +114,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="../resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -173,9 +172,8 @@
                     <li><a class="menu__item" href="../convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="../workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -269,9 +267,9 @@
 <p>Select <em>Resize and compress</em>. When the file comes out under the minimum, the resizer adds padding: extra bytes inside the JPEG file that image viewers ignore. The picture itself does not change.</p>
 <figure class="shot">
 <a class="shot__full" href="../img/guides/tut-signature-result.webp"><picture><source media="(max-width: 640px)" srcset="../img/guides/phone/tut-signature-result.webp" width="355" height="890"><img src="../img/guides/tut-signature-result.webp" width="699" height="668" alt="The ApplyReady signature resizer result for a 300 by 100 pixel signature with a 10 to 20 KB range: the file was padded to 10.00 KB without changing the picture, and every row of the check table is met." loading="lazy" decoding="async"></picture><span class="shot__zoom"><i class="fa-solid fa-magnifying-glass-plus" aria-hidden="true"></i> Open full size</span></a>
-<figcaption>A 300 × 100 px signature with a 10 to 20 KB range: padded to 10.00 KB (1), with every row met, then Download image (2).</figcaption>
+<figcaption>A 300 × 100 px signature with a 10 to 20 KB range: padded to 10.3 KB (1), with every row met, then Download image (2).</figcaption>
 </figure>
-<p><strong>What you see:</strong> <em>Ready to upload</em> with <em>Within the 10–20 KB range, at the exact size requested.</em>, and the table: <em>File size</em> 10–20 KB required, 10.00 KB (10,244 bytes) in the file; <em>Dimensions</em> 300 × 100 px, verified; <em>Format</em> JPEG. Select <em>Download image</em>.</p>
+<p><strong>What you see:</strong> <em>Ready to upload</em> with <em>Within the 10–20 KB range, at the exact size requested.</em>, and the table: <em>File size</em> 10–20 KB required, 10.3 KB (10,244 bytes) in the file; <em>Dimensions</em> 300 × 100 px, verified; <em>Format</em> JPEG. Select <em>Download image</em>.</p>
 </section>
 
 <section class="section prose">

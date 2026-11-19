@@ -373,6 +373,7 @@ body.resume-page .site-footer__base { max-width: var(--w-wide); }
 .field-label { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--c-text); line-height: 1.35; }
 .optional { font-weight: var(--fw-regular); color: var(--c-text-3); }
 .field-hint, .form-hint { font-size: var(--fs-sm); line-height: 1.5; color: var(--c-text-3); }
+.field-hint.is-warning { color: var(--c-warning); font-weight: var(--fw-medium); }
 .field-error { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-sm); font-weight: var(--fw-medium); line-height: 1.4; color: var(--c-danger); }
 .field-error::before { content: '!'; flex: none; display: grid; place-items: center; width: 16px; height: 16px; margin-top: 1px; border-radius: 50%; background: var(--c-danger); color: var(--c-surface); font-size: 11px; font-weight: 700; line-height: 1; }
 .field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
@@ -514,6 +515,8 @@ input[type='range']:disabled { opacity: .5; cursor: not-allowed; }
 .notice { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-3) var(--s-4); border-radius: var(--r-sm); background: var(--c-surface-2); color: var(--c-text); font-size: var(--fs-md); line-height: 1.5; box-shadow: inset 3px 0 0 var(--c-line-strong); }
 .notice > .fa-solid, .notice > .fa-regular { margin-top: 3px; flex: none; color: var(--c-text-3); }
 .notice__body { flex: 1; min-width: 0; }
+.notice__list { margin: var(--s-1) 0 0; padding-left: var(--s-5); }
+.notice__list > li + li { margin-top: var(--s-1); }
 .notice--error { background: var(--c-danger-soft); box-shadow: inset 3px 0 0 var(--c-danger); }
 .notice--error > .fa-solid { color: var(--c-danger); }
 .notice--warning { background: var(--c-warning-soft); box-shadow: inset 3px 0 0 var(--c-warning); }
@@ -779,6 +782,18 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .status-page { padding: var(--s-6) 0; }
 .status-page .actions { display: grid; gap: var(--s-2); max-width: 420px; margin: var(--s-6) 0; }
 .status-page .actions .btn { justify-content: flex-start; white-space: normal; text-align: left; }
+/* The offline page lists only the pages kept on this device (js/offline.js). */
+.status-page__note { margin-top: var(--s-5); color: var(--c-text-2); max-width: 62ch; }
+.status-page__note + .actions { margin-top: var(--s-3); }
+.status-page__saved { margin: 0 0 var(--s-6); max-width: 420px; }
+.status-page__title { font-size: var(--fs-md); font-weight: var(--fw-strong); color: var(--c-text); }
+.status-page__list { list-style: none; margin-top: var(--s-2); display: grid; gap: var(--s-1); }
+.status-page__list a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+.status-page p.muted a { text-decoration: underline; text-underline-offset: .2em; }
+/* With the buttons or the list hidden, the status line still stands apart from what follows (a
+   collapsed margin, so the spacing is unchanged when the buttons show). */
+.status-page__note ~ .status-page__saved { margin-top: var(--s-4); }
+.status-page__note ~ p.muted { margin-top: var(--s-5); }
 
 /* ================================================================== 12. TOOL WORKSPACE */
 /* One frame for every tool. data-state is empty | ready | done (set by components.js), data-busy
@@ -1297,6 +1312,10 @@ html:has(.rb-steps) { scroll-padding-top: calc(var(--h-header) + var(--h-lg) + v
   .menu__toggle[aria-expanded='true'] .fa-chevron-down { transform: rotate(180deg); }
   .menu__cat:not([data-open]) .menu__list { display: none; }
   .menu__list { padding: 0 0 var(--s-2) var(--s-2); }
+  /* A category with one tool: that tool is a row of the sheet, one tap away (no toggle). */
+  .menu__cat.menu__cat--single .menu__list { display: block; padding: 0; }
+  .menu__cat--single .menu__item { min-height: 52px; padding: var(--s-2) var(--s-1); }
+  .menu__cat--single .menu__name { font-size: var(--fs-lg); font-weight: var(--fw-medium); color: var(--c-text); }
   .menu, .menu[hidden] { position: static; display: block !important; width: auto; background: none; border: 0; box-shadow: none; animation: none; overflow: visible; max-height: none; }
   .menu__cols { grid-template-columns: minmax(0, 1fr); }
   .menu__group, .menu__group:last-child { padding: 0; background: none; border: 0 !important; }
@@ -1630,6 +1649,13 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
    while running, a verdict with the ZIP download when finished, and rows with result facts. */
 .ws--batch[data-state='empty'] #btnBatchStart { display: none; }
 .ws--batch .ws-stage { gap: var(--s-3); }
+/* The file list has its own area (.batch-files, after the rail in the markup): under the stage beside
+   the rail on desktops, and after the settings on narrower screens (below), so hundreds of rows never
+   push the settings out of reach. Empty, the workspace keeps the plain stage and rail. */
+.batch-files { grid-area: files; min-width: 0; padding: 0 var(--s-5) var(--s-5); background: var(--c-surface-2); border-bottom-left-radius: var(--r-md); }
+.ws--batch[data-state='empty'] .batch-files { display: none; }
+.ws--batch:not([data-state='empty']) { grid-template-rows: auto auto 1fr; grid-template-areas: 'head head' 'stage rail' 'files rail'; }
+.ws--batch:not([data-state='empty']) .ws-stage { padding-bottom: var(--s-3); border-bottom-left-radius: 0; }
 .batch-panel { padding: var(--s-4) var(--s-5); background: var(--c-surface); border: var(--bw) solid var(--c-line); border-radius: var(--r-md); }
 .batch-progress__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2) var(--s-3); flex-wrap: wrap; }
 .batch-progress__text { flex: 1 1 200px; font-size: var(--fs-md); font-weight: var(--fw-medium); color: var(--c-text); font-variant-numeric: tabular-nums; }
@@ -1655,7 +1681,14 @@ button.page-tile__body:focus-visible { outline: 2px solid var(--c-focus); outlin
 @media (min-width: 1000px) {
   .ws--batch[data-state='empty'] .dropzone { align-content: start; padding-top: var(--s-8); }
 }
+@media (max-width: 999px) {
+  .ws--batch:not([data-state='empty']) { grid-template-rows: auto; grid-template-areas: 'head' 'stage' 'side' 'files' 'action'; }
+  .ws--batch:not([data-state='empty']) .ws-stage { padding-bottom: var(--s-4); border-radius: 0; }
+  .batch-files { padding: var(--s-4); border-top: var(--bw) solid var(--c-line); border-radius: 0; }
+}
 @media (max-width: 639px) {
+  /* The compact drop zone is hidden on phones; with no message, progress or result the stage would be an empty strip. */
+  .ws--batch:not([data-state='empty']) .ws-stage:not(:has(> :not([hidden]):not(.hidden):not(.dropzone))) { display: none; }
   .batch-panel { padding: var(--s-3) var(--s-4); }
   .batch-progress__head .btn { width: 100%; }
 }

@@ -151,14 +151,15 @@
   });
   UI.sortable(els.list, { item: '.merge-row', handle: '.merge-row__handle', onMove: (from, to) => move(from, to, 'handle') });
 
+  /** { url } of a small picture of page 1, or { damaged: true } when pdf.js could not read the file. */
   async function firstPageThumb(bytes, password) {
-    if (!K.support().render) return null;
+    if (!K.support().render) return {};
     let js = null;
     try {
       js = await K.openJs(bytes, { password });
       const t = await K.thumbnail(js, 0, { width: 48 });
-      return t.url;
-    } catch (e) { return null; }
+      return { url: t.url };
+    } catch (e) { return { damaged: !!e && e.code === 'damaged' }; }
     finally { K.closeJs(js); }
   }
 
@@ -167,8 +168,17 @@
     if (totalBytes() + file.size > K.LIMITS.totalBytes) throw new K.PdfError('toolarge', `${file.name} would bring the total over ${Files.formatBytes(K.LIMITS.totalBytes)}. Merge these files first, then merge the result with the rest.`);
     if (totalPages() >= K.LIMITS.pages) throw new K.PdfError('toolarge', `The list already has ${K.grouped(totalPages())} pages, the most that can be merged into one file in a browser. Remove a file from the list to make room.`);
     if (info.kind === 'image') {
-      const tooLarge = await Kit.tooManyPixels(file);
-      if (tooLarge) throw new K.PdfError('unsupported', tooLarge);
+      // The same intake check as Image to PDF and Compress PDF (ApplyReadyImageOps.openImage): a
+      // picture over 50 MP, or whose size cannot be read, is refused from its header, and a truncated
+      // or damaged one is refused now, with the same words, rather than failing once Merge is pressed.
+      const Ops = window.ApplyReadyImageOps;
+      if (Ops && Ops.openImage) {
+        try { (await Ops.openImage(file, { name: file.name })).close(); }
+        catch (e) { throw new K.PdfError(e && e.code === 'toolarge' ? 'toolarge' : 'damaged', (e && e.message) || `${file.name} could not be opened.`); }
+      } else {
+        const tooLarge = await Kit.tooManyPixels(file);
+        if (tooLarge) throw new K.PdfError('unsupported', tooLarge);
+      }
       const it = { id: ++seq, file, kind: 'image', info, pages: 1, size: file.size, thumb: await Kit.thumbnail(file, 96) };
       items.push(it);
       return it;
@@ -179,7 +189,10 @@
     const first = opened.libDoc.getPage(0);
     const facts = K.pageFacts(first);
     const it = { id: ++seq, file, kind: 'pdf', info, pages: opened.pageCount, size: file.size, password: opened.password, encrypted: opened.encrypted, paper: opened.pageCount === 1 ? K.paperName(facts.width, facts.height) : `starts ${K.paperName(facts.width, facts.height)}` };
-    it.thumb = await firstPageThumb(opened.bytes, opened.password);
+    const thumb = await firstPageThumb(opened.bytes, opened.password);
+    it.thumb = thumb.url || null;
+    // A damaged file is still added (the other pages may be fine), and the person is told.
+    it.damage = { name: file.name, pageCount: opened.pageCount, unreadable: opened.unreadable || [], incomplete: opened.incomplete || [], previewError: thumb.damaged ? true : null };
     items.push(it);
     return it;
   }
@@ -200,15 +213,25 @@
       const problems = earlier.slice();
       let added = 0;
       for (let i = 0; i < files.length; i++) {
-        try { await addOne(files[i], infos[i]); added++; render(); }
-        catch (e) {
+        try {
+          const it = await addOne(files[i], infos[i]);
+          added++; render();
+          const damage = it.damage ? UI.damageNotice(it.damage) : '';
+          if (damage) problems.push(damage);
+        } catch (e) {
           problems.push(e && e.name === 'PdfError' ? e.message : `${files[i].name} could not be added. Check that it opens on your device.`);
           if (e && e.code === 'toolarge') break;
+          // The PDF library itself did not load: every other file would fail the same way.
+          if (e && e.code === 'unsupported' && e.detail === 'load') {
+            const rest = files.length - i - 1;
+            if (rest) problems.push(rest === 1 ? 'The other file could not be added either.' : `None of the other ${UI.plural(rest, 'file')} could be added either.`);
+            break;
+          }
         }
       }
       render();
       if (items.length) UI.keepFocus($('mergeDrop'), els.add);
-      if (problems.length) error.show(problems);
+      if (problems.length) error.show(problems.filter((m, k) => problems.indexOf(m) === k));
       if (added) Kit.announce(`${UI.plural(added, 'file')} added. ${UI.plural(items.length, 'file')} in the list.`);
     });
     return adding;
@@ -265,7 +288,8 @@
       els.statPages.textContent = String(expected);
       els.statFiles.textContent = String(order.length);
       els.statSize.textContent = Files.formatBytes(bytes.length);
-      els.resultText.textContent = `${UI.plural(expected, 'page')} in the order shown, checked after saving.`;
+      const damage = order.map(it => (it.damage ? UI.damageNote(it.damage) : '')).filter(Boolean).join(' ');
+      els.resultText.textContent = `${UI.plural(expected, 'page')} in the order shown, checked after saving.${damage ? ` ${damage}` : ''}`;
       els.result.classList.remove('hidden');
       if (window.ApplyReadyUI && window.ApplyReadyUI.reveal) window.ApplyReadyUI.reveal(els.result, els.download);
       Kit.announce(`Merged PDF ready: ${UI.plural(expected, 'page')}, ${Files.formatBytes(bytes.length)}.`);

@@ -12,7 +12,7 @@
   const doc = document;
   const app = doc.getElementById('compressApp');
   if (!app) return;
-  const K = window.ApplyReadyPdf, UI = window.ApplyReadyPdfUI, Files = window.ApplyReadyFiles, Kit = window.ApplyReadyFileKit;
+  const K = window.ApplyReadyPdf, UI = window.ApplyReadyPdfUI, Kit = window.ApplyReadyFileKit;
   const notify = (m, e) => { if (window.ApplyReadyUI && window.ApplyReadyUI.notify) window.ApplyReadyUI.notify(m, e); };
   const $ = id => doc.getElementById(id);
   const els = {
@@ -42,9 +42,9 @@
   $('compressCancel').setAttribute('data-cancel', '');
   const runner = UI.runner(box, { error, button: els.start, busyLabel: 'Compressing…', onState: busy => { els.replace.disabled = busy; els.remove.disabled = busy; } });
 
-  // Sizes compared with the limit stay in exact KB; the file's own size reads like the file list (KB or MB).
-  const fmtKB = bytes => (bytes / 1024).toFixed(1);
-  const sized = bytes => (bytes < 1024 * 1024 ? `${fmtKB(bytes)} KB` : Files.formatBytes(bytes));
+  // Every size here uses the site's one size format: 1 KB = 1,000 bytes, rounded up
+  // (ApplyReadyFiles.formatBytes), so a size never reads as under a limit it is over.
+  const sized = bytes => K.limitSize(bytes);
 
   function dropResult() {
     if (output) { urls.revoke(output); output = null; }
@@ -78,6 +78,13 @@
     try {
       let next;
       if (info.kind === 'image') {
+        // The same checks as the image tools: a picture over 50 megapixels is refused before it is
+        // decoded, and a truncated or damaged photo now rather than after Start (js/lib/image-ops.js).
+        const Ops = window.ApplyReadyImageOps;
+        if (Ops) {
+          try { (await Ops.openImage(file, { name: file.name })).close(); }
+          catch (e) { throw new K.PdfError(e && e.code === 'toolarge' ? 'toolarge' : 'damaged', e && e.message ? e.message : `${file.name} could not be read as an image.`); }
+        }
         next = { file, kind: 'image', info, pageCount: 1 };
       } else {
         if (!sup.render) throw new K.PdfError('unsupported', 'This browser cannot draw PDF pages, which the compressor needs. Update it, or use a recent Chrome, Edge, Firefox or Safari.');
@@ -94,6 +101,9 @@
       UI.keepFocus(els.zone, els.fileText);
       validateTarget();
       Kit.announce(`${file.name} is ready to compress.`);
+      // A PDF with some pages damaged opens (the rest may be fine); say which, as every PDF tool does.
+      const damage = next.kind === 'pdf' ? UI.damageNotice(next) : '';
+      if (damage) error.show(damage);
     } catch (e) {
       if (ticket !== opening) return;
       const message = e && e.name === 'PdfError' ? e.message : `${file.name} could not be opened. Check that it opens on your device, then choose it again.`;
@@ -141,26 +151,23 @@
   [els.dpi, els.grey].forEach(el => el.addEventListener('change', dropResult));
 
   function show(res) {
-    const { bytes, kept, fits, pageCount, minDpi, target, original } = res;
+    const { bytes, kept, pageCount, minDpi, target, original } = res;
     dropResult();
     output = urls.make(UI.pdfBlob(bytes));
     UI.setDownload(els.download, output, kept ? current.file.name : `${UI.stem(current.file.name)}-compressed.pdf`);
-    const met = bytes.length <= target;
+    const outcome = K.compressResult(bytes.length, res.kb, kept);
+    const met = outcome.met && bytes.length <= target && !(current.kind === 'pdf' && UI.damageNote(current));
     els.status.className = 'result-status' + (met ? '' : ' is-warning');
     els.status.textContent = '';
     const icon = doc.createElement('i');
     icon.className = met ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
     icon.setAttribute('aria-hidden', 'true');
     const text = doc.createElement('span');
-    const kb = target / 1024;
-    if (kept === 'fits') text.textContent = `Already under ${kb} KB, so your original file is kept unchanged. Upload it as it is.`;
-    else if (kept === 'larger') text.textContent = met
-      ? `Already as small as it gets: compressing would not make this file smaller, so your original (${fmtKB(bytes.length)} KB) is kept. It is under ${kb} KB.`
-      : `This file could not get under ${kb} KB, and compressing would not make it smaller, so your original (${fmtKB(bytes.length)} KB) is kept. Try a higher limit, or upload fewer pages.`;
-    else text.textContent = met ? `Under ${kb} KB. Ready to upload.` : `This file could not get under ${kb} KB. The smallest readable version is ${fmtKB(bytes.length)} KB. Try a higher limit, or upload fewer pages.`;
+    const damage = current.kind === 'pdf' ? UI.damageNote(current) : '';
+    text.textContent = damage ? `${outcome.text} ${damage}` : outcome.text;
     els.status.append(icon, text);
     els.orig.textContent = sized(original);
-    els.comp.textContent = `${fmtKB(bytes.length)} KB`;
+    els.comp.textContent = sized(bytes.length);
     els.reduction.textContent = kept ? 'None' : original > bytes.length ? `${Math.round((1 - bytes.length / original) * 100)}%` : 'None';
     els.pages.textContent = String(pageCount);
     els.dpiStat.textContent = kept ? 'Unchanged' : `${minDpi} DPI${minDpi < Number(els.dpi.value) ? ' (lowered to fit)' : ''}`;
@@ -173,7 +180,10 @@
 
   els.start.addEventListener('click', () => {
     if (!current || !validateTarget()) return;
-    const target = Math.floor(targetKB() * 1024);
+    // Some portals count 1 KB as 1,000 bytes and others as 1,024: aim under the smaller figure, so a
+    // "500 KB" result is accepted either way (ApplyReadyFiles.maxBytes, the rule every tool uses).
+    const kb = targetKB();
+    const target = window.ApplyReadyFiles.maxBytes(kb);
     const state = current;
     const dpi = Number(els.dpi.value);
     const grey = els.grey.checked;
@@ -181,7 +191,7 @@
       const original = state.file.size;
       if (state.kind === 'pdf' && original <= target) {
         progress(1, 'Already under the limit.');
-        return show({ bytes: state.bytes, kept: 'fits', fits: true, pageCount: state.pageCount, target, original });
+        return show({ bytes: state.bytes, kept: 'fits', fits: true, pageCount: state.pageCount, target, original, kb });
       }
       let res;
       if (state.kind === 'image') {
@@ -198,9 +208,9 @@
       const sizes = res.sizes ? res.sizes.map(s => ({ width: s.view[2] - s.view[0], height: s.view[3] - s.view[1] })) : null;
       await K.verify(res.bytes, { pages: state.pageCount, sizes });
       if (state.kind === 'pdf' && res.bytes.length >= original) {
-        return show({ bytes: state.bytes, kept: 'larger', fits: original <= target, pageCount: state.pageCount, target, original });
+        return show({ bytes: state.bytes, kept: 'larger', fits: original <= target, pageCount: state.pageCount, target, original, kb });
       }
-      return show({ bytes: res.bytes, kept: null, fits: res.fits, pageCount: res.pageCount, minDpi: res.minDpi, target, original });
+      return show({ bytes: res.bytes, kept: null, fits: res.fits, pageCount: res.pageCount, minDpi: res.minDpi, target, original, kb });
     });
   });
 

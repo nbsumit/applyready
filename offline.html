@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>You Are Offline | ApplyReady</title>
@@ -48,9 +48,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="/tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="/resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -107,9 +106,8 @@
                     <li><a class="menu__item" href="/convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="/tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="/workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -137,15 +135,21 @@
     <section class="status-page" aria-labelledby="offlineTitle">
       <header class="page-head">
         <h1 class="page-title" id="offlineTitle">You are offline</h1>
-        <p class="page-lede">This page is not saved on this device yet, so it needs a connection. ApplyReady runs in your browser, and after your first visit it keeps every tool and guide on this device, so the pages below should still open.</p>
+        <p class="page-lede">This page has not been opened on this device yet, so it needs a connection. The ApplyReady pages you opened before are kept on this device and still work without one.</p>
       </header>
-      <div class="actions">
-        <a href="/tools.html" class="btn btn-primary btn-lg"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i> Browse all tools</a>
+      <p class="status-page__note" id="offlineStatus" role="status" hidden></p>
+      <div class="actions" id="offlineActions">
+        <a href="/" class="btn btn-primary btn-lg"><i class="fa-solid fa-house" aria-hidden="true"></i> Go to the home page</a>
+        <a href="/tools.html" class="btn btn-lg"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i> Browse all tools</a>
         <a href="/image-resizer.html" class="btn btn-lg"><i class="fa-solid fa-crop-simple" aria-hidden="true"></i> Open the image resizer</a>
         <a href="/resume.html" class="btn btn-lg"><i class="fa-regular fa-file-lines" aria-hidden="true"></i> Open the resume builder</a>
         <a href="/guides/" class="btn btn-lg"><i class="fa-solid fa-book-open" aria-hidden="true"></i> Browse the guides</a>
       </div>
-      <p class="muted">Some PDF tools also need a PDF library that is saved the first time you use one of them online. When you are back online, reload this page.</p>
+      <section class="status-page__saved" id="offlineSavedBox" aria-labelledby="offlineSavedTitle" hidden>
+        <h2 class="status-page__title" id="offlineSavedTitle">Other pages kept on this device</h2>
+        <ul class="status-page__list" id="offlineSaved"></ul>
+      </section>
+      <p class="muted">To keep every tool and guide on this device, open <a href="/your-data.html#offline">Your data</a> while you are online and choose Save every tool for offline use. The PDF tools also need a PDF library, which is kept the first time you use one of them online, or when you save every tool. When you are back online, reload this page.</p>
     </section>
   </main>
 
@@ -222,5 +226,6 @@
 
   <script src="/js/components.js?v=20261118" defer></script>
   <script src="/js/site.js?v=20261118"></script>
+  <script src="/js/offline.js?v=20261118" defer></script>
 </body>
 </html>

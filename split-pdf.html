@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="applyready-tool" content="split-pdf">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -155,9 +155,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -214,9 +213,8 @@
                     <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -347,7 +345,7 @@
 
     <section class="section prose" aria-labelledby="howHeading">
       <h2 id="howHeading">How it works</h2>
-      <p>Add a PDF and choose how to split it. <strong>Extract pages</strong> puts the pages you choose into one new file, in the order you type them, so "5, 1-3" gives page 5 first. <strong>One PDF per range</strong> makes a file for each range. <strong>Every page</strong> makes one file per page, and <strong>Equal parts</strong> makes a new file every few pages. Select page thumbnails to fill in the page list, or type it; a mistake such as a page number past the end is explained under the field.</p>
+      <p>Add a PDF and choose how to split it. <strong>Extract pages</strong> puts the pages you choose into one new file, in the order you type them, so "5, 1-3" gives page 5 first; a page you type twice is included twice, and the summary under the button says so. <strong>One PDF per range</strong> makes a file for each range. <strong>Every page</strong> makes one file per page, and <strong>Equal parts</strong> makes a new file every few pages. Select page thumbnails to fill in the page list, or type it; a mistake such as a page number past the end is explained under the field.</p>
       <p>Pages are copied, not redrawn, so text stays sharp and selectable and each page keeps its size and rotation. Every file is opened again and its page count checked before it is offered. To put pages from different files together, use <a href="merge-pdf.html">Merge PDF</a>; to reorder, turn or delete pages in one file, use <a href="organize-pdf.html">Organise PDF pages</a>; and to save pages as pictures instead, use <a href="pdf-to-image.html">PDF to images</a>.</p>
       <h3>Limits</h3>
       <p>Files up to 100 MB, and up to 500 output files in one go. Fonts and images shared by many pages are copied into each new file, so the parts together can be larger than the original. Bookmarks and form fields are not kept in the new files.</p>

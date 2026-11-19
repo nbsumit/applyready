@@ -59,6 +59,57 @@ im.save(d + '/h.webp', quality=80); im.save(d + '/hl.webp', lossless=True)
   for (const f of ['h.png', 'h.gif', 'h.bmp', 'h.webp', 'hl.webp']) { const h = head(f); ok(h && h.width === 640 && h.height === 480, `${f}: header size ${JSON.stringify(h)}`); }
   ok(Ops.readHeader(new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0, 0, 4, 1, 2])) === null && Ops.readHeader(new Uint8Array(0)) === null, 'truncated or empty input reads as unknown, without throwing');
 
+  // SECU-1: the 50 MP check must not fail open. Sizes hidden where a simple reader stops (an AVIF's
+  // 'ispe', a GIF frame larger than its screen, a JPEG frame header after 720 KB of metadata) are read,
+  // and a picture whose size cannot be read is refused before it is decoded.
+  py(`
+import sys
+from PIL import Image
+d = sys.argv[1]
+Image.new('L', (8000, 8000), 200).save(d + '/frame.gif')
+b = bytearray(open(d + '/frame.gif', 'rb').read()); b[6:10] = bytes([100, 0, 100, 0])
+open(d + '/screen100.gif', 'wb').write(bytes(b))
+Image.new('RGB', (8000, 8000), (200, 10, 10)).save(d + '/big.jpg', quality=50)
+j = open(d + '/big.jpg', 'rb').read()
+app2 = b''.join(b'\\xff\\xe2' + (65535).to_bytes(2, 'big') + bytes(65533) for _ in range(11))
+open(d + '/padded.jpg', 'wb').write(j[:2] + app2 + j[2:])
+Image.new('RGB', (300, 200), (30, 140, 90)).save(d + '/prog.jpg', quality=85, progressive=True)
+p = open(d + '/prog.jpg', 'rb').read()
+a0 = 4 + int.from_bytes(p[4:6], 'big')
+open(d + '/pad0.jpg', 'wb').write(p[:a0] + bytes(4) + p[a0:])
+open(d + '/padstray.jpg', 'wb').write(j[:2] + app2 + bytes(40) + j[2:])
+`, tmp);
+  const box = (type, ...parts) => { const body = Buffer.concat(parts); const h = Buffer.alloc(8); h.writeUInt32BE(8 + body.length); h.write(type, 4, 'latin1'); return Buffer.concat([h, body]); };
+  const ispe = (w, h) => { const b = Buffer.alloc(12); b.writeUInt32BE(w, 4); b.writeUInt32BE(h, 8); return box('ispe', b); };
+  const avif = (...sizes) => Buffer.concat([box('ftyp', Buffer.from('avif\0\0\0\0avifmif1', 'latin1')), box('meta', Buffer.alloc(4), box('hdlr', Buffer.alloc(24)), box('iprp', box('ipco', ...sizes.map(([w, h]) => ispe(w, h)))))]);
+  const blobOf = buf => new Blob([buf]);
+  (async () => {
+    const big = await Ops.readHeaderFrom(blobOf(avif([512, 512], [16384, 16384])));
+    ok(big && big.width === 16384 && big.height === 16384 && big.format === 'avif', `AVIF: the largest ispe (a grid's full size) is read (${JSON.stringify(big)})`);
+    ok((await Ops.checkHeader(blobOf(avif([16384, 16384])), 'bomb.avif')).code === 'toolarge', 'AVIF of 268 MP: refused from its header');
+    const small = await Ops.checkHeader(blobOf(avif([2000, 1500])), 'ok.avif');
+    ok(small.code === '' && small.header.width === 2000, 'AVIF of 3 MP: allowed');
+    const gif = Ops.readHeader(new Uint8Array(fs.readFileSync(path.join(tmp, 'screen100.gif'))));
+    ok(gif && gif.width === 8000 && gif.height === 8000, `GIF: a frame larger than its 100 × 100 screen is what counts (${JSON.stringify(gif)})`);
+    const padded = fs.readFileSync(path.join(tmp, 'padded.jpg'));
+    ok(Ops.readHeader(new Uint8Array(padded.subarray(0, 512 * 1024))) === null, 'padded JPEG: the frame header is past the first 512 KB');
+    const pj = await Ops.checkHeader(blobOf(padded), 'padded.jpg');
+    ok(pj.code === 'toolarge' && pj.header.width === 8000, `padded JPEG: read on past 720 KB of metadata and refused (${JSON.stringify(pj.header)})`);
+    // Stray bytes between JPEG segments (zero padding after APP0): browsers skip to the next marker
+    // and decode the picture, so its size is read the same way, in the first window and past it.
+    const pad0 = fs.readFileSync(path.join(tmp, 'pad0.jpg'));
+    const p0 = Ops.readHeader(new Uint8Array(pad0));
+    ok(p0 && p0.width === 300 && p0.height === 200, `JPEG with 4 stray bytes after APP0: size read (${JSON.stringify(p0)})`);
+    ok((await Ops.checkHeader(blobOf(pad0), 'pad0.jpg')).code === '', 'JPEG with stray bytes after APP0 is accepted');
+    const ps = await Ops.checkHeader(blobOf(fs.readFileSync(path.join(tmp, 'padstray.jpg'))), 'padstray.jpg');
+    ok(ps.code === 'toolarge' && ps.header && ps.header.width === 8000, `stray bytes past the first 512 KB: read on and refused (${JSON.stringify(ps.header)})`);
+    const unknown = await Ops.checkHeader(blobOf(Buffer.from([0xFF, 0xD8, 0xFF, 0xDA, 0, 4, 1, 2, 3, 4])), 'odd.jpg');
+    ok(unknown.code === 'unknown' && /could not be opened safely: its pixel size could not be read/.test(unknown.message), 'a picture whose size cannot be read is refused, not decoded');
+    // COPY-5: a size just over the limit never reads as the limit itself.
+    ok(Ops.megapixels(8200, 6110) === '50.1' && Ops.megapixels(9000, 8000) === '72' && Ops.megapixels(20000, 20000) === '400', `megapixels rounded up to 0.1 (${Ops.megapixels(8200, 6110)})`);
+    ok(/is 50\.1 megapixels \(8200 × 6110 px\), more than the 50 MP/.test(Ops.tooManyPixelsMessage(8200, 6110, 'mp.jpg')), 'the 50 MP message says 50.1 for 50.1 MP');
+  })().catch(e => { console.error(e); process.exitCode = 1; });
+
   // The queue: cancel keeps finished results, retry runs the rest, removing frees a late result
   const Batch = require('../js/lib/batch.js');
   (async () => {
@@ -125,7 +176,10 @@ ex[0x8825] = gps
 stored.save(f'{d}/exif_gps.jpg', quality=92, exif=ex.tobytes())
 photo(1600, 1200, 201).save(f'{d}/dupe_a.jpg', quality=90)
 photo(1400, 1400, 202).save(f'{d}/dupe_b.jpg', quality=90)
-open(f'{d}/broken.jpg', 'wb').write(b'\\xff\\xd8\\xff\\xe0\\x00\\x10JFIF\\x00' + bytes(random.getrandbits(8) for _ in range(5000)))
+# A JPEG cut short: its header (and so its pixel size) reads fine, so it is listed, but it cannot be
+# decoded. (A JPEG whose header cannot be read at all is refused when it is added: SECU-1.)
+photo(800, 600, 203).save(f'{d}/whole.jpg', quality=90)
+whole = open(f'{d}/whole.jpg', 'rb').read(); open(f'{d}/broken.jpg', 'wb').write(whole[:len(whole) * 2 // 5])
 open(f'{d}/iphone.heic', 'wb').write(struct.pack('>I', 24) + b'ftypheic' + b'\\x00' * 4 + b'mif1heic' + b'\\x00' * 200)
 open(f'{d}/notes.txt', 'w').write('Not an image, just some notes.\\n' * 10)
 Image.new('L', (10000, 6000), 200).save(f'{d}/huge_60mp.png')
@@ -135,6 +189,23 @@ sig = Image.new('RGB', (1500, 500), (250, 250, 248)); dr = ImageDraw.Draw(sig)
 for k in range(12): dr.line([(150 + k * 90, 380 - (k % 3) * 80), (240 + k * 90, 140 + (k % 4) * 60)], fill=(10, 20, 90), width=9)
 sig.save(f'{d}/signature.jpg', quality=92)
 photo(2400, 1600, 400).convert('RGB').save(f'{d}/photo_as_png.png')
+# Small files for the naming, old-settings and phone-layout checks.
+for i in range(60):
+    Image.new('RGB', (64, 48), ((i * 37) % 256, (i * 91) % 256, (i * 53) % 256)).save(f'{d}/tiny_{i:02d}.jpg', quality=85)
+# Already small, no hidden details: a new copy would only be larger, so the compressor keeps them.
+im = Image.new('RGBA', (120, 90), (0, 0, 0, 0)); ImageDraw.Draw(im).ellipse([10, 10, 110, 80], fill=(200, 40, 40, 255)); im.save(f'{d}/small_alpha.png', optimize=True)
+random.seed(11)
+noisy = Image.effect_noise((96, 72), 90).convert('RGB')
+noisy.save(f'{d}/small_plain.jpg', quality=20)
+# The same small photo with EXIF and GPS: the original is not handed back, its details would go with it.
+ex = Image.Exif(); ex[0x010F] = 'TestCam'; ex[0x8825] = {1: 'N', 2: (28.0, 36.0, 50.0), 3: 'E', 4: (77.0, 12.0, 30.0)}
+noisy.save(f'{d}/small_exif.jpg', quality=20, exif=ex.tobytes())
+# An animated WebP (the copy is its first frame) and a PNG with only a text note: each note names its own reason.
+frames = [Image.new('RGB', (24, 24), c) for c in [(200, 0, 0), (0, 200, 0), (0, 0, 200)]]
+frames[0].save(f'{d}/anim.webp', save_all=True, append_images=frames[1:], duration=100, loop=0, lossless=True)
+from PIL import PngImagePlugin
+info = PngImagePlugin.PngInfo(); info.add_text('Software', 'Shot 1.0')
+Image.new('RGB', (40, 30), (30, 90, 160)).save(f'{d}/shot.png', optimize=True, pnginfo=info)
 `, FIX);
 const fix = f => path.join(FIX, f);
 const payload = (file, name, mimeType) => ({ name: name || path.basename(file), mimeType: mimeType || 'application/octet-stream', buffer: fs.readFileSync(file) });
@@ -171,7 +242,12 @@ const server = http.createServer((req, res) => {
     return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   }, [id, value]);
   const summary = page => page.evaluate(() => window.ApplyReadyBatchImage.summary());
-  const waitIdle = (page, timeout = 180000) => page.waitForFunction(() => { const s = window.ApplyReadyBatchImage.summary(); return !s.running && s.queued === 0 && s.processing === 0; }, null, { timeout, polling: 100 });
+  // Idle, then two animation frames: the page repaints on the next frame (refresh() uses
+  // requestAnimationFrame), so labels read straight after the state turns idle could still be the old ones.
+  const waitIdle = async (page, timeout = 180000) => {
+    await page.waitForFunction(() => { const s = window.ApplyReadyBatchImage.summary(); return !s.running && s.queued === 0 && s.processing === 0; }, null, { timeout, polling: 100 });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+  };
   const saveDownload = async (page, click, name) => {
     const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), click()]);
     const file = path.join(tmp, name || dl.suggestedFilename());
@@ -244,6 +320,10 @@ const server = http.createServer((req, res) => {
     const keptBefore = s.done;
     ok(await page.locator('.file-row[data-status="cancelled"]').count() === s.cancelled && /Cancelled/.test(await page.locator('.file-row[data-status="cancelled"]').first().textContent()), 'cancelled rows say so in words');
     ok(await page.locator('#btnBatchRetry').isVisible(), 'retry offered after cancel');
+    // The label names only what happened: "cancelled" when nothing failed (it said "failed and cancelled" before).
+    const retryLabel = (await page.locator('#btnBatchRetry').textContent()).trim();
+    const wantRetry = s.error ? `Retry ${s.error + s.cancelled} failed and cancelled images` : `Retry ${s.cancelled} cancelled image${s.cancelled === 1 ? '' : 's'}`;
+    ok(retryLabel === wantRetry, `retry label after cancel: "${retryLabel}" (expected "${wantRetry}")`);
     await page.click('#btnBatchRetry');
     await waitIdle(page);
     s = await summary(page);
@@ -251,6 +331,8 @@ const server = http.createServer((req, res) => {
     ok(s.done >= keptBefore, 'finished results were kept through cancel and retry');
     const broken = page.locator('.file-row', { hasText: 'broken.jpg' });
     ok(await broken.getAttribute('data-status') === 'error' && /could not be opened/.test(await broken.textContent()), 'corrupt file fails with a plain reason');
+    const retryAfter = (await page.locator('#btnBatchRetry').textContent()).trim();
+    ok(retryAfter === 'Retry 1 failed image', `one failure, nothing cancelled: "Retry 1 failed image" (got "${retryAfter}")`);
     const gap = await page.evaluate(() => window.__maxGap);
     ok(gap < 500, `the page stayed responsive while processing (longest main-thread gap ${Math.round(gap)} ms)`);
     ok(await page.evaluate(() => window.ApplyReadyBatchImage.usesWorkers()), 'processing ran in Web Workers');
@@ -362,15 +444,21 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     await page.setInputFiles('#batchDropInput', [fix('huge.jpg'), fix('empty.jpg')]);
     await page.waitForSelector('#batchError:not([hidden])');
     const t = (await page.locator('#batchError').textContent()).replace(/\s+/g, ' ');
-    ok(/huge\.jpg is 51 MB\. The limit for this tool is 50 MB/.test(t) && /empty\.jpg is empty/.test(t), `oversized and empty files refused: ${t}`);
+    ok(/huge\.jpg is 53\.48 MB\. The limit for this tool is 50 MB/.test(t) && /empty\.jpg is empty/.test(t), `oversized and empty files refused: ${t}`);
     ok(await page.locator('#batchList .file-row').count() === 0 && !(await page.locator('#btnBatchStart').isVisible()), 'nothing added, nothing to start');
-    await page.setInputFiles('#batchDropInput', [fix('photo_04.jpg'), fix('photo_00.jpg'), fix('photo_as_png.png'), fix('huge_60mp.png')]);
-    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 4);
+    await page.setInputFiles('#batchDropInput', [fix('photo_04.jpg'), fix('photo_00.jpg'), fix('photo_as_png.png')]);
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 3);
     ok(await page.locator('#batchError').isHidden(), 'a clean add clears the old message');
+    // A picture over 50 megapixels is refused when it is added, from its header, with the reason:
+    // it never waits in the list as "Waiting" only to fail after Start.
+    await page.setInputFiles('#batchDropInput', fix('huge_60mp.png'));
+    await page.waitForSelector('#batchError:not([hidden])');
+    const tooBig = (await page.locator('#batchError').textContent()).replace(/\s+/g, ' ');
+    ok(/One file was not added/.test(tooBig) && /huge_60mp\.png is 60 megapixels \(10000 × 6000 px\)/.test(tooBig), `60 MP image refused when added, before decoding: ${tooBig}`);
+    ok(await page.locator('#batchList .file-row').count() === 3 && await page.locator('#batchList .file-row', { hasText: 'huge_60mp.png' }).count() === 0, 'the 60 MP image is not in the list');
     await page.waitForFunction(() => [...document.querySelectorAll('#batchList .file-row')].filter(r => r.querySelector('.file-row__thumb img')).length >= 3, null, { timeout: 15000 });
-    ok(await page.locator('#batchList .file-row', { hasText: 'huge_60mp.png' }).locator('.file-row__thumb img').count() === 0, 'a 60-megapixel picture is not decoded just to draw its preview');
-    await page.waitForFunction(() => /Compress 4 images/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 }).catch(() => {});
-    ok(/Compress 4 images/.test(await page.locator('#btnBatchStart').textContent()), 'compressor wording');
+    await page.waitForFunction(() => /Compress 3 images/.test(document.getElementById('btnBatchStart').textContent), null, { timeout: 3000 }).catch(() => {});
+    ok(/Compress 3 images/.test(await page.locator('#btnBatchStart').textContent()), 'compressor wording');
     await page.click('#btnBatchStart');
     await waitIdle(page);
     const items = await page.evaluate(() => window.ApplyReadyBatchImage.items.map(i => ({ name: i.name, status: i.status, error: i.error, r: i.result && { w: i.result.width, h: i.result.height, b: i.result.bytes, mime: i.result.mime, notes: i.result.notes } })));
@@ -383,7 +471,7 @@ print(json.dumps({'exif': len(ex), 'gps': 0x8825 in ex, 'top': px.getpixel((175,
     ok(q04.w === 3000 || (q04.w >= 1200 && q04.notes.some(n => /pixel size was reduced/.test(n))), `pixel size reduced only as far as needed (${q04.w} px)`);
     ok(by('photo_04.jpg').r.notes.some(n => /Quality was lowered to \d+%/.test(n)) || by('photo_04.jpg').r.notes.some(n => /pixel size was reduced/.test(n)), 'notes say what was changed');
     ok(by('photo_as_png.png').r.mime === 'image/png' && by('photo_as_png.png').r.b <= 102400 && by('photo_as_png.png').r.w < 2400 && by('photo_as_png.png').r.notes.some(n => /pixel size was reduced/.test(n)), 'PNG kept as PNG: pixel size reduced and said so');
-    ok(by('huge_60mp.png').status === 'error' && /60 megapixels/.test(by('huge_60mp.png').error), `60 MP image refused before decoding: ${by('huge_60mp.png').error}`);
+    ok(!by('huge_60mp.png'), 'the refused 60 MP image was never processed');
     ok(by('photo_as_png.png').r.notes.some(n => /saving as JPEG keeps many more pixels/.test(n)), 'a PNG that had to shrink suggests JPEG');
     const zip = await saveDownload(page, () => page.click('#btnBatchZip'), 'compressed.zip');
     ok(zip.suggested === 'compressed-images.zip' && /No errors detected/.test(sh('unzip', ['-t', zip.file])), 'compressor ZIP name and integrity');
@@ -574,6 +662,163 @@ im = Image.open(sys.argv[1]); print(json.dumps({'fmt': im.format, 'size': im.siz
     });
     ok(prog2.workers && prog2.verified && prog2.seen.length >= 2 && prog2.cancelled === 'AbortError', `worker progress and cancel (${JSON.stringify(prog2)})`);
     await c3.close();
+  }
+
+  /* ---------- 3d2. Names that stay put, old-settings results in the ZIP, Windows device names,
+     sizes just over the limit, the compressor keeping smaller originals, and the phone layout */
+  {
+    const { context, page } = await open('batch-image.html');
+    const zipNames = file => sh('unzip', ['-Z1', file]).trim().split('\n').sort();
+    const zipEntry = (file, name) => { const out = fs.mkdtempSync(path.join(tmp, 'zx-')); sh('unzip', ['-q', '-o', file, '-d', out]); return fs.readFileSync(path.join(out, name)); };
+    const rowName = i => page.locator('#batchList .file-row').nth(i).locator('.file-row__result').textContent().then(t => (t.match(/^Result: (.+?) · /) || [])[1]);
+
+    // A file just over 50 MB is not described as "50 MB" beside a 50 MB limit.
+    const over = Buffer.alloc(50000001); over.set([0xFF, 0xD8, 0xFF, 0xE0]); // 1 MB = 1,000,000 bytes: the limit is 50,000,000
+    fs.writeFileSync(path.join(FIX, 'big51mb.jpg'), over);
+    await page.setInputFiles('#batchDropInput', [fix('big51mb.jpg')]);
+    await page.waitForSelector('#batchError:not([hidden])');
+    const overText = (await page.locator('#batchError').textContent()).replace(/\s+/g, ' ');
+    ok(/big51mb\.jpg is 50\.01 MB\. The limit for this tool is 50 MB/.test(overText), `a size just over the limit reads as over it: ${overText}`);
+    fs.rmSync(path.join(FIX, 'big51mb.jpg'));
+
+    // Three photos called photo.jpg, plus Windows device names with more than one dot.
+    await page.setInputFiles('#batchDropInput', [payload(fix('tiny_00.jpg'), 'photo.jpg'), payload(fix('tiny_01.jpg'), 'photo.jpg'), payload(fix('tiny_02.jpg'), 'photo.jpg'), payload(fix('tiny_03.jpg'), 'con.backup.jpg'), payload(fix('tiny_04.jpg'), 'NUL.tar.jpg')]);
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 5);
+    await page.click('#btnBatchStart');
+    await waitIdle(page);
+    ok(JSON.stringify(await Promise.all([0, 1, 2, 3, 4].map(rowName))) === JSON.stringify(['photo.jpg', 'photo (2).jpg', 'photo (3).jpg', 'image_con.backup.jpg', 'image_NUL.tar.jpg']), 'repeated names numbered in list order; device names with an extension chain are prefixed');
+    const single = await saveDownload(page, () => page.locator('#batchList .file-row').nth(2).locator('[data-action="download"]').click(), 'single-photo3.jpg');
+    ok(single.suggested === 'photo (3).jpg', `row 3 saved as photo (3).jpg (${single.suggested})`);
+    // Removing the first row does not renumber the others: the ZIP has the same name for the same file.
+    await page.locator('#batchList .file-row').first().locator('[data-action="remove"]').click();
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 4);
+    ok(await rowName(1) === 'photo (3).jpg', 'after removing row 1, the saved file keeps its name on screen');
+    let zip = await saveDownload(page, () => page.click('#btnBatchZip'), 'names-after-remove.zip');
+    ok(JSON.stringify(zipNames(zip.file)) === JSON.stringify(['image_NUL.tar.jpg', 'image_con.backup.jpg', 'photo (2).jpg', 'photo (3).jpg']), `ZIP names unchanged by the removal: ${zipNames(zip.file)}`);
+    ok(zipEntry(zip.file, 'photo (3).jpg').equals(fs.readFileSync(single.file)), 'photo (3).jpg in the ZIP is the same file that was saved on its own as photo (3).jpg');
+    ok(await page.evaluate(() => /ready: applyready-images\.zip/.test(document.getElementById('taskNotification').textContent) && !/downloaded/.test(document.getElementById('taskNotification').textContent)), 'the ZIP message says it is ready, visibly, without claiming the browser saved it');
+
+    // New settings: results made before are marked, and the ZIP says how many use the old settings.
+    await setValue(page, 'bQuality', '60');
+    ok(await page.locator('.file-row.is-stale').count() === 4, 'four results now use the old settings');
+    await page.setInputFiles('#batchDropInput', [fix('tiny_05.jpg')]);
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 5);
+    await page.click('#btnBatchStart');
+    await waitIdle(page);
+    await page.waitForFunction(() => /Download all 5 as ZIP \(4 with old settings\)/.test(document.getElementById('btnBatchZip').textContent), null, { timeout: 3000 }).catch(() => {});
+    ok(/Download all 5 as ZIP \(4 with old settings\)/.test(await page.locator('#btnBatchZip').textContent()), `the ZIP button counts the old-settings results (${(await page.locator('#btnBatchZip').textContent()).trim()})`);
+    let downloads = 0;
+    page.on('download', () => { downloads++; });
+    await page.click('#btnBatchZip');
+    await page.waitForSelector('.dialog--confirm');
+    const ask = (await page.locator('.dialog--confirm').innerText()).replace(/\s+/g, ' ');
+    ok(/4 of the 5 images were made before you changed the settings/.test(ask) && /Process again/.test(ask), `asked before mixing old and new settings: ${ask}`);
+    await page.click('.dialog--confirm [data-act="cancel"]');
+    await page.waitForTimeout(600);
+    ok(downloads === 0, 'Go back downloads nothing');
+    zip = await saveDownload(page, async () => { await page.click('#btnBatchZip'); await page.click('.dialog--confirm [data-act="ok"]'); }, 'mixed.zip');
+    ok(zipNames(zip.file).length === 5, 'Download anyway saves all five');
+    // Processing again with the same format keeps every name.
+    await page.click('#btnBatchRerun');
+    await waitIdle(page);
+    ok(JSON.stringify(await Promise.all([0, 1, 2, 3, 4].map(rowName))) === JSON.stringify(['photo (2).jpg', 'photo (3).jpg', 'image_con.backup.jpg', 'image_NUL.tar.jpg', 'tiny_05.jpg']), 'Process again keeps the names');
+    ok(!/old settings/.test(await page.locator('#btnBatchZip').textContent()), 'nothing is flagged once everything was processed again');
+    await context.close();
+  }
+  {
+    // The compressor never hands back a bigger file when the original already met the settings and
+    // has no hidden details; a photo with EXIF and GPS gets a clean copy and a note instead.
+    const { context, page } = await open('compress-image.html');
+    await page.setInputFiles('#batchDropInput', [fix('small_alpha.png'), fix('small_plain.jpg'), fix('small_exif.jpg'), fix('anim.webp'), fix('shot.png')]);
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 5);
+    await page.click('#btnBatchStart');
+    await waitIdle(page);
+    const res = await page.evaluate(() => Object.fromEntries(window.ApplyReadyBatchImage.items.map(i => [i.name, { kept: !!i.result.kept, bytes: i.result.bytes, notes: i.result.notes.join(' ') }])));
+    for (const n of ['small_alpha.png', 'small_plain.jpg']) {
+      const src = fs.statSync(fix(n)).size;
+      ok(res[n].bytes <= src, `${n}: the result is not larger than the original (${res[n].bytes} of ${src} bytes)`);
+    }
+    ok(res['small_plain.jpg'].kept && /original \([^)]+\) is kept as it is/.test(res['small_plain.jpg'].notes), `a small plain JPEG is kept as it was, and the row says so (${res['small_plain.jpg'].notes})`);
+    ok(!res['small_exif.jpg'].kept, 'the photo with EXIF and GPS is never handed back as it is');
+    if (res['small_exif.jpg'].bytes >= fs.statSync(fix('small_exif.jpg')).size) ok(/hidden details that this copy leaves out: photo data \(EXIF\), which can include the camera, date and location\./.test(res['small_exif.jpg'].notes), `a larger clean copy says why the smaller original was not used (${res['small_exif.jpg'].notes})`);
+    // The note names the real reason: an animation is not "camera or location data".
+    for (const n of ['anim.webp', 'shot.png']) ok(!res[n].kept && res[n].bytes >= fs.statSync(fix(n)).size, `${n}: a larger clean copy, not the original (${res[n].bytes} of ${fs.statSync(fix(n)).size} bytes)`);
+    ok(/is animated, and this copy is a still picture of its first frame\./.test(res['anim.webp'].notes) && /accepts animated pictures\./.test(res['anim.webp'].notes) && !/camera|location|hidden details/.test(res['anim.webp'].notes), `animated WebP: the note says the copy is its first frame (${res['anim.webp'].notes})`);
+    ok(/hidden details that this copy leaves out: text notes or comments, such as the program that made it\./.test(res['shot.png'].notes) && !/camera|location|animated/.test(res['shot.png'].notes), `PNG with a text note: the note names text notes, not camera data (${res['shot.png'].notes})`);
+    const zip = await saveDownload(page, () => page.click('#btnBatchZip'), 'compressed-small.zip');
+    const out = fs.mkdtempSync(path.join(tmp, 'small-'));
+    sh('unzip', ['-q', '-o', zip.file, '-d', out]);
+    ok(fs.readFileSync(path.join(out, 'small_plain.jpg')).equals(fs.readFileSync(fix('small_plain.jpg'))), 'the ZIP holds the kept original byte for byte');
+    const exifLeft = JSON.parse(py(`
+import sys, json
+from PIL import Image
+print(json.dumps(len(Image.open(sys.argv[1]).getexif())))
+`, path.join(out, 'small_exif.jpg')));
+    ok(exifLeft === 0, 'the copy of the EXIF photo in the ZIP has no EXIF');
+    ok(/already met the settings and (is|are) kept as/.test(await page.locator('#batchVerdictText').textContent()), 'the verdict says how many originals were kept');
+    // The title does not call a kept original "compressed".
+    const keptN = Object.values(res).filter(r => r.kept).length;
+    // TOOL-2: a new copy larger than its original is counted apart too, never as "compressed".
+    const largerN = Object.entries(res).filter(([n, r]) => !r.kept && r.bytes > fs.statSync(fix(n)).size).length;
+    const title = (await page.locator('#batchVerdictTitle').textContent()).trim();
+    const compressedN = 5 - keptN - largerN;
+    const keptPart = `${keptN}${compressedN > 0 ? '' : ` ${keptN === 1 ? 'image' : 'images'}`} kept as ${keptN === 1 ? 'it was' : 'they were'}`;
+    const expected = [compressedN > 0 ? `${compressedN} images compressed` : '', keptPart, largerN ? `${largerN} larger than ${largerN === 1 ? 'the original' : 'their originals'}` : ''].filter(Boolean).join(', ');
+    ok(keptN >= 1 && title === expected, `the verdict title counts kept originals and larger copies on their own (${title}; expected ${expected})`);
+    if (largerN) {
+      ok(/larger than the file (it|they) came from/.test(await page.locator('#batchVerdictText').textContent()) && new RegExp(`\\(${largerN} larger than (its|their) originals?\\)`).test(await page.locator('#btnBatchZip').textContent()), `the verdict and the ZIP button say how many copies are larger (${await page.locator('#btnBatchZip').textContent()})`);
+    }
+    await context.close();
+  }
+  {
+    // TOOL-3: the batch engine does not make a passport photo from a 1 × 1 px picture without a word.
+    const { context, page } = await open('batch-image.html');
+    const one = path.join(tmp, 'one-pixel.png');
+    py(`
+import sys
+from PIL import Image
+Image.new('RGB', (1, 1), (200, 150, 120)).save(sys.argv[1])
+`, one);
+    await page.setInputFiles('#batchDropInput', [one]);
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 1);
+    await setValue(page, 'bPreset', 'passport');
+    await page.click('#btnBatchStart');
+    await waitIdle(page);
+    const row = (await page.locator('#batchList .file-row').first().innerText()).replace(/\s+/g, ' ');
+    ok(/is only 1 × 1 px, too small to make a usable picture from/.test(row), `a 1 × 1 px picture is refused for a passport photo (${row})`);
+    await context.close();
+  }
+  {
+    // Phone: the settings come before the file list, so with many files they are still near the top.
+    const { context, page } = await open('batch-image.html', { viewport: { width: 360, height: 740 }, hasTouch: true, isMobile: true });
+    await page.setInputFiles('#batchDropInput', Array.from({ length: 60 }, (_, i) => fix(`tiny_${String(i).padStart(2, '0')}.jpg`)));
+    await page.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 60);
+    const at = () => page.evaluate(() => {
+      const y = s => { const r = document.querySelector(s).getBoundingClientRect(); return { top: r.top + scrollY, bottom: r.bottom + scrollY, left: r.left, h: r.height }; };
+      return { ws: y('#batchApp'), preset: y('#bPreset'), format: y('#bFormat'), list: y('#batchList'), result: y('#batchResult'), vh: innerHeight };
+    });
+    let m = await at();
+    ok(m.list.h > 3000 && m.preset.top < m.list.top && m.format.bottom < m.list.top, `phone: the settings come before a long list (${JSON.stringify(m)})`);
+    ok(m.preset.top - m.ws.top < m.vh, `phone: Preset is within one screen of the top of the tool (${Math.round(m.preset.top - m.ws.top)} px)`);
+    ok(await page.evaluate(() => getComputedStyle(document.querySelector('#batchApp .ws-stage')).display === 'none'), 'phone: no empty grey strip where the stage has nothing to show');
+    await page.click('#btnBatchStart');
+    await waitIdle(page);
+    await page.waitForTimeout(500);
+    m = await at();
+    ok(m.result.top < m.preset.top && m.preset.top < m.list.top, `phone: result, then settings, then the list (${JSON.stringify(m)})`);
+    ok(await noOverflow(page), 'phone: no sideways scrolling with the list after the settings');
+    await axe(page, 'batch results at 360 px with the list after the settings');
+    await context.close();
+    // Desktop: the list stays under the stage, beside the settings.
+    const { context: c2, page: p2 } = await open('batch-image.html');
+    await p2.setInputFiles('#batchDropInput', Array.from({ length: 6 }, (_, i) => fix(`tiny_${String(i).padStart(2, '0')}.jpg`)));
+    await p2.waitForFunction(() => document.querySelectorAll('#batchList .file-row').length === 6);
+    // The rows exist before the next repaint lays out the list and folds the drop zone: wait for it.
+    await p2.waitForFunction(() => document.getElementById('batchList').getBoundingClientRect().height > 0);
+    await p2.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    const d = await p2.evaluate(() => { const l = document.getElementById('batchList').getBoundingClientRect(), s = document.querySelector('.ws-side').getBoundingClientRect(), z = document.getElementById('batchDrop').getBoundingClientRect(); return { beside: l.right <= s.left, below: l.top >= z.bottom, overlap: l.top < s.bottom }; });
+    ok(d.beside && d.below && d.overlap, `desktop: the list is under the drop zone, beside the settings (${JSON.stringify(d)})`);
+    await c2.close();
   }
 
   /* ---------- 3e. Passport and signature resizer pages */

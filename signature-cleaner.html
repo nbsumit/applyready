@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="applyready-tool" content="signature-cleaner">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -124,7 +124,7 @@
             "name": "Why is the cleaned file still too large for the form?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 46.7 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for."
+              "text": "The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 44.1 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for."
             }
           },
           {
@@ -161,9 +161,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -220,9 +219,8 @@
                     <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -367,7 +365,7 @@
         </figure>
 
         <h3>A real before and after</h3>
-        <p>We ran the cleaner on the test signature in our <a href="img/samples/test-signature.jpg">sample images</a>: a 1600 × 900 px phone-style photo of blue ink on paper with a darker corner, 251.5 KB as a JPEG. With the default settings (paper whiteness 70, ink darkness 80, specks removed, original ink colour) the cleaned JPEG was still 1600 × 900 px and 46.7 KB. The same result saved as PNG was 112.7 KB, and as a transparent PNG 114.8 KB. None of these fits a 10 to 20 KB signature slot yet. Resized to 300 × 100 px in the resizer, the uncleaned photo came to 8.0 KB and the <a href="img/samples/test-signature-cleaned.jpg">cleaned version</a> to 6.3 KB, both at the resizer's top quality setting: plain white paper takes fewer bytes than grey, textured paper.</p>
+        <p>We ran the cleaner on the test signature in our <a href="img/samples/test-signature.jpg">sample images</a>: a 1600 × 900 px phone-style photo of blue ink on paper with a darker corner, 251.5 KB as a JPEG. With the default settings (paper whiteness 70, ink darkness 80, specks removed, original ink colour) the cleaned JPEG was still 1600 × 900 px and 44.1 KB. The same result saved as PNG was 151.7 KB, and as a transparent PNG 161.2 KB. None of these fits a 10 to 20 KB signature slot yet. Resized to 300 × 100 px in the resizer, the uncleaned photo came to 8.0 KB and the <a href="img/samples/test-signature-cleaned.jpg">cleaned version</a> to 6.4 KB, both at the resizer's top quality setting: plain white paper takes fewer bytes than grey, textured paper.</p>
 
         <h3>Common mistakes</h3>
         <ul>
@@ -420,7 +418,7 @@
         <details class="faq-item">
           <summary class="faq-question">Why is the cleaned file still too large for the form?</summary>
           <div class="faq-answer">
-            <p>The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 46.7 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for.</p>
+            <p>The cleaner keeps the full resolution of your photo. In our test, a 1600 × 900 px signature came out at 44.1 KB as JPEG. Use the resize button under the cleaned image to bring it to the pixel size and KB range your form asks for.</p>
           </div>
         </details>
 
@@ -540,6 +538,7 @@
   <script src="js/components.js?v=20261118" defer></script>
   <script src="js/site.js?v=20261118"></script>
   <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/signature-cleaner.js?v=20261118"></script>
 </body>
 </html>

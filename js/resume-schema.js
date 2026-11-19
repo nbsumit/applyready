@@ -15,6 +15,9 @@
   const CUSTOM_PREFIX = 'custom:';
   const MAX_CUSTOM_SECTIONS = 20;
   const MAX_REFERENCES = 20;
+  // Limits for one text box and one list. The editor stops input at these limits (js/resume.js),
+  // so everything it saves passes validate(); migrate() shortens anything longer instead of dropping it.
+  const MAX_TEXT = 50000;
   const MAX_ENTRIES = 150;
   // Fixed sections, in their default order. Custom sections join the order as "custom:<id>".
   const sections = ['summary', 'experience', 'education', 'projects', 'skills', 'certifications', 'achievements', 'volunteering', 'languages', 'publications', 'academic', 'references'];
@@ -42,8 +45,15 @@
   const TOP_LISTS = ['experience', 'education', 'projects', 'certifications', 'achievements', 'volunteering', 'languages'];
   const ACADEMIC_LISTS = ['teaching', 'presentations', 'grants'];
   const record = x => !!x && typeof x === 'object' && !Array.isArray(x);
-  const text = x => typeof x === 'string' && x.length <= 50000;
-  const fieldsValid = (obj, fields) => record(obj) && fields.every(key => obj[key] === undefined || text(obj[key]));
+  const textWithinLimit = x => typeof x === 'string' && x.length <= MAX_TEXT;
+  const anyText = x => typeof x === 'string';
+  // At most MAX_TEXT characters, without leaving half of a surrogate pair at the end.
+  const clip = x => {
+    if (typeof x !== 'string') return '';
+    if (x.length <= MAX_TEXT) return x;
+    const cut = x.slice(0, MAX_TEXT);
+    return /[\uD800-\uDBFF]$/.test(cut) ? cut.slice(0, -1) : cut;
+  };
   const isCustomKey = key => typeof key === 'string' && key.startsWith(CUSTOM_PREFIX) && ID_PATTERN.test(key.slice(CUSTOM_PREFIX.length));
   const customKey = id => CUSTOM_PREFIX + id;
   const versionOk = v => v === undefined || [1, 2, 3].includes(v);
@@ -70,7 +80,13 @@
     return normalizeSectionOrder(record(data) && record(data.design) ? data.design.sectionOrder : [], data);
   }
 
-  function validate(payload) {
+  /* True when `payload.data` is a resume this version can read. With { lenient: true } the length
+     and count limits are not checked: the library uses that to open a record saved by an earlier
+     release with text over the limits, which migrate() then shortens. */
+  function validate(payload, options) {
+    const lenient = !!(options && options.lenient);
+    const text = lenient ? anyText : textWithinLimit;
+    const fieldsValid = (obj, fields) => record(obj) && fields.every(key => obj[key] === undefined || text(obj[key]));
     if (!record(payload) || !record(payload.data)) return false;
     if (payload.app !== undefined && payload.app !== 'ApplyReady') return false;
     if (!versionOk(payload.version)) return false;
@@ -84,7 +100,7 @@
     if (d.design !== undefined && !record(d.design)) return false;
     if (d.sectionVisibility !== undefined && (!record(d.sectionVisibility) || !sections.every(key => d.sectionVisibility[key] === undefined || typeof d.sectionVisibility[key] === 'boolean'))) return false;
     if (d.design && d.design.sectionOrder !== undefined && (!Array.isArray(d.design.sectionOrder) || d.design.sectionOrder.length > 60 || !d.design.sectionOrder.every(key => sections.includes(key) || isCustomKey(key)))) return false;
-    const arrayValid = (array, keys, allowStrings, max) => Array.isArray(array) && array.length <= (max || MAX_ENTRIES) && array.every(item =>
+    const arrayValid = (array, keys, allowStrings, max) => Array.isArray(array) && (lenient || array.length <= (max || MAX_ENTRIES)) && array.every(item =>
       (allowStrings && text(item)) || (fieldsValid(item, keys) && (item.id === undefined || typeof item.id === 'string' || typeof item.id === 'number')));
     for (const key of TOP_LISTS) {
       if (d[key] !== undefined && !arrayValid(d[key], entries[key], ['achievements', 'languages'].includes(key))) return false;
@@ -99,7 +115,7 @@
     if (d.references !== undefined && !arrayValid(d.references, entries.references, false, MAX_REFERENCES)) return false;
     if (d.referencesOnRequest !== undefined && typeof d.referencesOnRequest !== 'boolean') return false;
     if (d.customSections !== undefined) {
-      if (!Array.isArray(d.customSections) || d.customSections.length > MAX_CUSTOM_SECTIONS) return false;
+      if (!Array.isArray(d.customSections) || (!lenient && d.customSections.length > MAX_CUSTOM_SECTIONS)) return false;
       for (const s of d.customSections) {
         if (!record(s) || !['title', 'text'].every(key => s[key] === undefined || text(s[key]))) return false;
         if (s.id !== undefined && typeof s.id !== 'string') return false;
@@ -116,7 +132,7 @@
     const design = record(src.design) ? src.design : {};
     const isV3 = src.schemaVersion === 3 || src.version === 3;
     const enumValue = (value, allowed, fallback) => allowed.includes(value) ? value : fallback;
-    const pickText = (obj, keys) => Object.fromEntries(keys.map(key => [key, text(obj && obj[key]) ? obj[key] : '']));
+    const pickText = (obj, keys) => Object.fromEntries(keys.map(key => [key, clip(obj && obj[key])]));
     let nextId = 0;
     const usedIds = new Set();
     function freshId(candidate) {
@@ -127,7 +143,7 @@
       return id;
     }
     function list(array, keys, stringField, max) {
-      return (Array.isArray(array) ? array : []).slice(0, max || MAX_ENTRIES).filter(item => record(item) || text(item)).map(item => {
+      return (Array.isArray(array) ? array : []).slice(0, max || MAX_ENTRIES).filter(item => record(item) || anyText(item)).map(item => {
         const obj = typeof item === 'string' ? { [stringField || 'title']: item } : item;
         return { id: freshId(obj.id), ...pickText(obj, keys) };
       });
@@ -142,10 +158,10 @@
     const acad = record(src.academic) ? src.academic : {};
     const customSections = (Array.isArray(src.customSections) ? src.customSections : []).slice(0, MAX_CUSTOM_SECTIONS).filter(record).map(s => ({
       id: freshId(s.id),
-      title: text(s.title) ? s.title.slice(0, 120) : '',
+      title: clip(s.title).slice(0, 120),
       mode: enumValue(s.mode, ['entries', 'text'], 'entries'),
       visible: typeof s.visible === 'boolean' ? s.visible : true,
-      text: text(s.text) ? s.text : '',
+      text: clip(s.text),
       entries: list(s.entries, entries.customEntries)
     }));
     const result = {
@@ -160,12 +176,12 @@
       },
       sectionVisibility: vis, personal: pickText(src.personal, personalFields), skills: pickText(src.skills, skillFields),
       skillLabels: Object.fromEntries(Object.entries(pickText(src.skillLabels, skillFields)).map(([key, value]) => [key, value.slice(0, 60)])),
-      summary: text(src.summary) ? src.summary : '',
-      summaryTitle: text(src.summaryTitle) && src.summaryTitle ? src.summaryTitle : 'Professional Summary',
-      experienceTitle: text(src.experienceTitle) && src.experienceTitle ? src.experienceTitle : 'Work Experience',
-      educationTitle: text(src.educationTitle) && src.educationTitle ? src.educationTitle : 'Education',
-      projectsTitle: text(src.projectsTitle) && src.projectsTitle ? src.projectsTitle : 'Projects',
-      skillsTitle: text(src.skillsTitle) && src.skillsTitle ? src.skillsTitle : 'Skills',
+      summary: clip(src.summary),
+      summaryTitle: clip(src.summaryTitle) || 'Professional Summary',
+      experienceTitle: clip(src.experienceTitle) || 'Work Experience',
+      educationTitle: clip(src.educationTitle) || 'Education',
+      projectsTitle: clip(src.projectsTitle) || 'Projects',
+      skillsTitle: clip(src.skillsTitle) || 'Skills',
       academic: {},
       publications: [],
       references: [],
@@ -214,6 +230,6 @@
   return {
     validate, migrate: migrateWithOrder, normalizeSectionOrder, sectionKeys, customKeysOf, isCustomKey, customKey, toLegacyCompatible,
     sections, legacySections: LEGACY_SECTIONS, templates, templateAliases, entries, CURRENT_VERSION, ID_PATTERN, CUSTOM_PREFIX,
-    MAX_CUSTOM_SECTIONS, MAX_REFERENCES
+    MAX_CUSTOM_SECTIONS, MAX_REFERENCES, MAX_TEXT, MAX_ENTRIES
   };
 });

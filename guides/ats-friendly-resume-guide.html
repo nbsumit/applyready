@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Will an ATS Read Your Resume Correctly? | ApplyReady</title>
@@ -120,9 +120,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="../resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -179,9 +178,8 @@
                     <li><a class="menu__item" href="../convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="../workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -230,7 +228,7 @@
 <section class="section prose">
 <h2>Four things that decide whether the text comes out right</h2>
 <h3>1. The file contains real text</h3>
-<p>A PDF can hold text or a picture of text. Software reads text directly; a picture needs character recognition, which can fail. Resumes exported from a word processor or from ApplyReady contain real text. A scanned or photographed printout does not. You can tell by trying to select a word in the PDF: if you cannot, it is an image. Our builder's sample resume, downloaded as PDF, is 12.2 KB because it is text; a scan of the same page would be many times larger.</p>
+<p>A PDF can hold text or a picture of text. Software reads text directly; a picture needs character recognition, which can fail. Resumes exported from a word processor or from ApplyReady contain real text. A scanned or photographed printout does not. You can tell by trying to select a word in the PDF: if you cannot, it is an image. Our builder's sample resume, downloaded as PDF, is 12.5 KB because it is text; a scan of the same page would be many times larger.</p>
 <h3>2. One column, top to bottom</h3>
 <p>Two-column layouts, sidebars and text boxes look tidy but can come out of a text extractor in the wrong order, with sidebar lines mixed into job descriptions. A single column keeps the reading order simple, and all 15 ApplyReady templates are single-column for this reason. Right-aligned dates can still come out as a separate block in some extractors, after the lines beside them; Plain (No Lines) puts every date on its own line for portals known to be strict.</p>
 <h3>3. Plain headings</h3>
@@ -258,9 +256,9 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Format</th><th>Use it when</th><th>Sample resume size</th></tr></thead>
 <tbody>
-<tr><td>PDF</td><td>Uploading to a portal or emailing a recruiter, unless told otherwise. The layout is the same on every device (<a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000474.shtml">Library of Congress on PDF</a>).</td><td>12.2 KB</td></tr>
-<tr><td>Word (.docx)</td><td>The employer or a consultancy asks for an editable copy</td><td>18.8 KB</td></tr>
-<tr><td>Plain text</td><td>Pasting into a portal's text boxes, or checking what software sees</td><td>3.1 KB</td></tr>
+<tr><td>PDF</td><td>Uploading to a portal or emailing a recruiter, unless told otherwise. The layout is the same on every device (<a href="https://www.loc.gov/preservation/digital/formats/fdd/fdd000474.shtml">Library of Congress on PDF</a>).</td><td>12.5 KB</td></tr>
+<tr><td>Word (.docx)</td><td>The employer or a consultancy asks for an editable copy</td><td>19.3 KB</td></tr>
+<tr><td>Plain text</td><td>Pasting into a portal's text boxes, or checking what software sees</td><td>3.2 KB</td></tr>
 </tbody>
 </table></div>
 <p>Sizes are from the builder's built-in sample resume, measured on 24 October 2026.</p>

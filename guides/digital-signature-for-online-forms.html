@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Signature Images for Online Forms | ApplyReady</title>
@@ -120,9 +120,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="../resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -179,9 +178,8 @@
                     <li><a class="menu__item" href="../convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="../tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="../workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -261,8 +259,8 @@
 <picture><source media="(max-width: 640px)" srcset="../img/guides/phone/signature-cleaner.webp" width="316" height="459"><img src="../img/guides/signature-cleaner.webp" width="832" height="292" alt="The ApplyReady signature cleaner with a phone photo of a signature on the left and the cleaned version, white paper and dark ink, on the right." loading="lazy" decoding="async"></picture>
 <figcaption>Our synthetic test signature before and after cleaning with the default settings.</figcaption>
 </figure>
-<p>Cleaning also makes the file smaller. Our 1600 × 900 px test photo came out of the cleaner as a 46.7 KB JPEG. Resized to 300 × 100 px it was 8.0 KB before cleaning and 6.3 KB after; at 709 × 236 px it needed quality 0.89 to fit 20 KB uncleaned, but fitted at 0.95 once cleaned (17.5 KB).</p>
-<p>Then open the cleaned file in the <a href="../signature-resizer.html">signature resizer</a>, check the size the form asks for, and crop close to the ink. If the form gives a size in centimetres, switch the unit to cm and enter the DPI it states; <a href="pixels-cm-inches-dpi-explained.html">pixels, cm, DPI and KB</a> explains the conversion. A small signature often comes out under a minimum: our 140 × 60 px version was 3.1 KB against a 10 KB minimum, and the resizer padded it without changing the picture. The <a href="../resize-image-to-20kb.html">resize to 20 KB</a> page covers the common signature limit in more detail, and the tutorial on <a href="how-to-resize-a-signature.html">making and resizing a signature image</a> lists every click with screenshots.</p>
+<p>Cleaning also makes the file smaller. Our 1600 × 900 px test photo came out of the cleaner as a 45.2 KB JPEG. Resized to 300 × 100 px it was 8.2 KB before cleaning and 6.6 KB after; at 709 × 236 px it needed quality 0.89 to fit 20 KB uncleaned, but fitted at 0.95 once cleaned (18.2 KB).</p>
+<p>Then open the cleaned file in the <a href="../signature-resizer.html">signature resizer</a>, check the size the form asks for, and crop close to the ink. If the form gives a size in centimetres, switch the unit to cm and enter the DPI it states; <a href="pixels-cm-inches-dpi-explained.html">pixels, cm, DPI and KB</a> explains the conversion. A small signature often comes out under a minimum: our 140 × 60 px version was 3.2 KB against a 10 KB minimum, and the resizer padded it without changing the picture. The <a href="../resize-image-to-20kb.html">resize to 20 KB</a> page covers the common signature limit in more detail, and the tutorial on <a href="how-to-resize-a-signature.html">making and resizing a signature image</a> lists every click with screenshots.</p>
 </section>
 
 <section class="section prose">

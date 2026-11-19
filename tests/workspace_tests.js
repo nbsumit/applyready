@@ -74,6 +74,20 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
   fs.writeFileSync(fx('tara-locked.pdf'), await locked.save());
   fs.writeFileSync(fx('notes.txt'), 'This is a plain text file, not a picture.\n');
   fs.writeFileSync(fx('broken.pdf'), fs.readFileSync(fx('noor-marks.pdf')).subarray(0, 300));
+  // INTE-2: PDFs that open but whose page content is missing (pages point at an object that is not there).
+  const contents = PDFLib.PDFName.of('Contents');
+  const part = await PDFLib.PDFDocument.create();
+  for (let i = 0; i < 3; i++) part.addPage([595.28, 841.89]).drawText(`Certificate page ${i + 1}`, { x: 60, y: 760, size: 22 });
+  part.getPage(1).node.set(contents, PDFLib.PDFRef.of(9999));
+  fs.writeFileSync(fx('part-damaged.pdf'), await part.save({ useObjectStreams: false }));
+  const gone = await PDFLib.PDFDocument.create();
+  for (let i = 0; i < 2; i++) gone.addPage([595.28, 841.89]).node.set(contents, PDFLib.PDFRef.of(9990 + i));
+  fs.writeFileSync(fx('all-damaged.pdf'), await gone.save({ useObjectStreams: false }));
+  // INTE-3 / INTE-4: a picture over 50 MP (from its header) and a JPEG cut short.
+  const big = Buffer.from(fs.readFileSync(fx('ishaan-photo.jpg')));
+  for (let i = 2; i < big.length - 9; i++) if (big[i] === 0xFF && big[i + 1] >= 0xC0 && big[i + 1] <= 0xC2) { big.writeUInt16BE(8000, i + 5); big.writeUInt16BE(9000, i + 7); break; } // height, then width
+  fs.writeFileSync(fx('huge-72mp.jpg'), big);
+  fs.writeFileSync(fx('cut-short.jpg'), fs.readFileSync(fx('ishaan-photo.jpg')).subarray(0, 2000));
 }
 
 (async () => {
@@ -195,6 +209,28 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     await row(page, 'broken.pdf').locator('[data-act="remove"]').click();
     await page.click('#wkErrorClose');
     ok(await page.locator('#wkErrors').isHidden() && (await state(page)).applicants[0].files === 5, 'errors dismissed and the damaged file removed');
+
+    // INTE-2: the same damage check as the PDF tools: a PDF none of whose pages can be read is refused,
+    // one with some pages damaged says which, and a result made from it says so too.
+    await page.setInputFiles('#wkDropInput', [fx('all-damaged.pdf'), fx('part-damaged.pdf')]);
+    await page.waitForFunction(() => /all-damaged\.pdf is damaged: the content of all 2 pages is missing or broken/.test(document.getElementById('wkFiles').innerText) && /part-damaged\.pdf is damaged: the content of page 2 is missing or broken/.test(document.getElementById('wkFiles').innerText), null, { timeout: 20000 });
+    ok(await row(page, 'all-damaged.pdf').locator('[data-act^="run:"]').count() === 0, 'a PDF with no readable page offers no actions');
+    await row(page, 'part-damaged.pdf').locator('[data-act="run:pdf"]').click();
+    await page.waitForFunction(() => /Page 2 of part-damaged\.pdf could not be read, so it is blank here too/.test(document.getElementById('wkResults').innerText), null, { timeout: 30000 });
+    ok(true, 'a result made from a partly damaged PDF says which page is blank');
+    await page.locator('#wkResults .wk-result', { hasText: 'part-damaged' }).locator('[data-act="remove-result"]').click();
+    await row(page, 'all-damaged.pdf').locator('[data-act="remove"]').click();
+    await row(page, 'part-damaged.pdf').locator('[data-act="remove"]').click();
+    // INTE-3 / INTE-4: a picture over 50 MP is refused when it is added, from its header, and a JPEG cut
+    // short is listed with the same message as Image to PDF and Merge PDF, with no actions.
+    await page.setInputFiles('#wkDropInput', [fx('huge-72mp.jpg'), fx('cut-short.jpg')]);
+    await page.waitForFunction(() => /huge-72mp\.jpg is 72 megapixels \(9000 × 8000 px\), more than the 50 MP that can be opened safely/.test(document.getElementById('wkErrors').innerText), null, { timeout: 20000 });
+    ok(await page.locator('#wkFiles .wk-file', { has: page.locator('.file-row__name', { hasText: 'huge-72mp.jpg' }) }).count() === 0, 'a picture over 50 MP is not added to the list');
+    await page.waitForFunction(() => /cut-short\.jpg could not be opened\. It may be damaged or only partly downloaded/.test(document.getElementById('wkFiles').innerText), null, { timeout: 20000 });
+    ok(await row(page, 'cut-short.jpg').locator('[data-act^="run:"]').count() === 0, 'a JPEG cut short offers no actions');
+    await row(page, 'cut-short.jpg').locator('[data-act="remove"]').click();
+    await page.click('#wkErrorClose');
+    ok((await state(page)).applicants[0].files === 5, 'the refused files are gone again');
 
     // Photo, signature and three scans combined into one PDF under 500 KB
     await row(page, 'ishaan-photo.jpg').locator('[data-act="run:photo"]').click();
@@ -470,6 +506,74 @@ p.save(${JSON.stringify(fx('noor-photo.png'))})
     await page.waitForFunction(() => document.querySelectorAll('#wkResults .wk-result').length === 1, null, { timeout: 60000 });
     const slashZip = await download(page, () => page.click('#wkZip'));
     ok(slashZip.name === `Ravi-S-O-Ramesh-${today()}.zip`, `a slash in the name keeps the whole name in the ZIP name (${slashZip.name})`);
+    ok(errors.length === 0, `no page errors: ${errors.join(' | ')}`);
+    await context.close();
+  }
+
+  /* ================================================================== names in downloads and live regions, Finish, the file limit */
+  {
+    const context = await newContext();
+    const page = await context.newPage();
+    watch(page);
+    await page.goto(origin + '/workspace.html');
+    const liveText = () => page.evaluate(() => Array.from(document.querySelectorAll('[aria-live]')).map(n => n.textContent).join(' | '));
+    await page.click('#wkStartBtn');
+    await page.setInputFiles('#wkDropInput', [fx('ishaan-photo.jpg'), fx('tara-locked.pdf')]);
+    await page.waitForFunction(() => document.querySelectorAll('#wkFiles .file-row__thumb img').length === 1 && /password protected/.test(document.getElementById('wkFiles').innerText));
+
+    // A failure is shown with the file name, but the hidden announcement leaves the name out.
+    await row(page, 'tara-locked.pdf').locator('[data-act="run:pdf"]').click();
+    await page.waitForSelector('.pdf-password');
+    await page.click('.pdf-password [data-act="cancel"]');
+    await page.waitForFunction(() => /did not work/.test(document.getElementById('wkFiles').innerText));
+    await page.waitForTimeout(200);
+    ok(/tara-locked\.pdf was not opened because no password was given/.test(await row(page, 'tara-locked.pdf').innerText()), 'the row shows the reason with the file name');
+    const said = await liveText();
+    ok(/did not work: the file was not opened because no password was given/.test(said) && !/tara-locked/.test(said), `the announcement says why without the file name (${said})`);
+
+    // Single downloads start with the applicant's label, and follow the name as it is typed.
+    await row(page, 'ishaan-photo.jpg').locator('[data-act="run:photo"]').click();
+    await waitState(page, s => s.applicants[0].results === 1 && s.applicants[0].running === 0);
+    const first = await download(page, () => resultRow(page, 'ishaan-photo-photo.jpg').locator('[data-act="download"]').click());
+    ok(first.name === 'Applicant-1_ishaan-photo-photo.jpg', `an unnamed applicant’s download starts with their number (${first.name})`);
+    await page.fill('#wkName', 'Asha S/O Test');
+    const link = resultRow(page, 'ishaan-photo-photo.jpg').locator('[data-act="download"]');
+    ok(await link.getAttribute('download') === 'Asha-S-O-Test_ishaan-photo-photo.jpg' && /saved as Asha-S-O-Test_ishaan-photo-photo\.jpg/.test(await link.getAttribute('aria-label')), 'typing the name updates the download name at once');
+    const named = await download(page, () => link.click());
+    ok(named.name === 'Asha-S-O-Test_ishaan-photo-photo.jpg', `a named applicant’s download carries the name, slash and all (${named.name})`);
+
+    // Everything is marked downloaded, but the page cannot know a file was saved: Finish still checks, lightly.
+    await page.waitForFunction(() => /All 1 result downloaded|1 of 1 result downloaded/.test(document.getElementById('wkTally').innerText) || document.querySelectorAll('.wk-result__status[data-downloaded="true"]').length === 1);
+    await page.click('#wkFinish');
+    const dialog = page.locator('.dialog--confirm');
+    await dialog.waitFor();
+    const askText = (await dialog.innerText()).replace(/\s+/g, ' ');
+    ok(/The result was downloaded\. Check that it is in the Downloads folder or already uploaded/.test(askText), `Finish asks for a quick check even when all is downloaded (${askText})`);
+    ok(await dialog.locator('[data-act="ok"]').evaluate(b => b.classList.contains('btn-primary') && !b.classList.contains('btn-danger-solid')) && await page.evaluate(() => document.activeElement.dataset.act) === 'ok', 'a light confirmation with Finish focused, so Enter finishes');
+    await page.keyboard.press('Escape');
+    ok((await state(page)).applicants.length === 1, 'Escape keeps the applicant');
+    await page.click('#wkFinish');
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.ApplyReadyWorkspace.state.applicants.length === 0);
+    await page.waitForTimeout(300);
+    const after = await liveText();
+    ok(!/tara|ishaan|Asha/i.test(after) && !/tara|ishaan|Asha/i.test(await pageDump(page)), `nothing of the finished applicant is left, live regions included (${after})`);
+
+    // A second applicant with the same files gets different download names.
+    await page.click('#wkNoneNew');
+    await page.setInputFiles('#wkDropInput', [fx('ishaan-photo.jpg')]);
+    await page.waitForFunction(() => document.querySelectorAll('#wkFiles .file-row__thumb img').length === 1);
+    await row(page, 'ishaan-photo.jpg').locator('[data-act="run:photo"]').click();
+    await waitState(page, s => s.applicants[0].results === 1 && s.applicants[0].running === 0);
+    const second = await download(page, () => resultRow(page, 'ishaan-photo-photo.jpg').locator('[data-act="download"]').click());
+    ok(second.name === 'Applicant-2_ishaan-photo-photo.jpg' && second.name !== first.name, `the next applicant’s file has its own name (${second.name})`);
+
+    // More files than there is room for: one message with the real count.
+    const many = Array.from({ length: 52 }, (_, i) => ({ name: `sign-${String(i + 1).padStart(2, '0')}.png`, mimeType: 'image/png', buffer: fs.readFileSync(fx('ishaan-sign.png')) }));
+    await page.setInputFiles('#wkDropInput', many);
+    await page.waitForFunction(() => document.getElementById('wkFileCount').textContent.trim() === '50', null, { timeout: 30000 });
+    const capErrors = await page.locator('#wkErrorList li').allInnerTexts();
+    ok(capErrors.length === 1 && /Only 49 more files could be added: an applicant can have up to 50 files\. The other 3 were left out\./.test(capErrors[0]), `one accurate message for the file limit (${JSON.stringify(capErrors)})`);
     ok(errors.length === 0, `no page errors: ${errors.join(' | ')}`);
     await context.close();
   }

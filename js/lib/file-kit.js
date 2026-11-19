@@ -6,14 +6,18 @@
 
    ApplyReadyFileKit.dropzone(root, options) -> { open(), reset() }
      root       element containing [data-dropzone], input[type=file] and a [data-browse] button
-     options    { accept: ['image'] | ['pdf'] | ..., multiple, limitBytes, maxFiles,
+     options    { accept: ['image'] | ['pdf'] | ..., multiple, limitBytes,
+                  maxFiles: a number, or (context) => the room left, for a tool whose list already
+                  holds files; tooMany(room, offered, context) => the message when more are offered,
                   onFiles(files, infos, context), onReject(messages, context), paste: true,
                   validate: false to accept any file unchecked (infos are then null),
+                  checkPixels: true to also refuse images over 50 MP, or whose pixel size cannot
+                  be read, from their header (tooManyPixels),
                   context: () => value, read when files arrive and passed back after checking,
                   so a tool can deliver them where they were dropped (applicant workspaces) }
    ApplyReadyFileKit.thumbnail(file, size) -> Promise<objectURL|null>   small JPEG preview; null when
                   the browser cannot decode it or the image is too large to decode safely
-   ApplyReadyFileKit.tooManyPixels(file) -> Promise<message|''>          refuses images over 50 MP
+   ApplyReadyFileKit.tooManyPixels(file) -> Promise<message|''>          refuses images over 50 MP or of unknown size
    ApplyReadyFileKit.downloadZip(entries, name, { button, signal })      ZIP with progress
    ApplyReadyFileKit.guardUnload(() => boolean)                          warn before losing results
    ApplyReadyFileKit.announce(message)                                   polite screen-reader update
@@ -59,9 +63,12 @@
       const context = typeof opts.context === 'function' ? opts.context() : undefined;
       if (!opts.multiple) files = files.slice(0, 1);
       const messages = [];
-      if (files.length > opts.maxFiles) {
-        messages.push(`Only the first ${opts.maxFiles} files were added. Process these, then add the rest.`);
-        files = files.slice(0, opts.maxFiles);
+      // The room is read when the files arrive, so a list that already holds files gets one message
+      // with the real count, not "the first 50" from here and a different number from the tool.
+      const room = Math.max(0, typeof opts.maxFiles === 'function' ? opts.maxFiles(context) : opts.maxFiles);
+      if (files.length > room) {
+        messages.push(typeof opts.tooMany === 'function' ? opts.tooMany(room, files.length, context) : `Only the first ${room} files were added. Process these, then add the rest.`);
+        files = files.slice(0, room);
       }
       // Tools that report on any file, even an empty or unknown one (the file checker), take them unvalidated.
       if (opts.validate === false) {
@@ -70,8 +77,15 @@
         return;
       }
       const results = await Promise.all(files.map(f => Files().validate(f, opts.accept, opts.limitBytes).then(r => ({ file: f, r }))));
-      const good = results.filter(x => x.r.ok);
+      let good = results.filter(x => x.r.ok);
       results.filter(x => !x.r.ok).forEach(x => messages.push(x.r.error));
+      // A picture over the pixel limit is refused now, with the other files that cannot be used,
+      // rather than waiting in a list only to fail once the work starts.
+      if (opts.checkPixels) {
+        const big = await Promise.all(good.map(x => (x.r.info && x.r.info.kind === 'image' ? tooManyPixels(x.file) : '')));
+        big.forEach(m => { if (m) messages.push(m); });
+        good = good.filter((x, i) => !big[i]);
+      }
       if (messages.length && opts.onReject) opts.onReject(messages, context);
       if (good.length && opts.onFiles) opts.onFiles(good.map(x => x.file), good.map(x => x.r.info), context);
     }
@@ -105,26 +119,15 @@
   }
 
   /**
-   * The pixel size an image declares in its header, read from its first bytes without decoding it
-   * ({ width, height } or null when it cannot be read).
-   */
-  async function imageHeader(file) {
-    const Ops = root.ApplyReadyImageOps;
-    if (!Ops || !file || !file.slice) return null;
-    try { return Ops.readHeader(new Uint8Array(await file.slice(0, 512 * 1024).arrayBuffer())); }
-    catch (e) { return null; }
-  }
-
-  /**
-   * A message when an image declares more pixels than the tools decode safely (the same 50 MP limit
-   * as the image tools), otherwise ''. A small file can declare a huge size, and decoding it, even
-   * for a preview, can take gigabytes of memory and close the tab on a phone.
+   * A message when an image cannot be decoded safely, otherwise '': it declares more pixels than the
+   * tools decode (the same 50 MP limit as the image tools), or its pixel size cannot be read from its
+   * header at all. A small file can declare a huge size, and decoding it, even for a preview, can take
+   * gigabytes of memory and close the tab on a phone (ApplyReadyImageOps.checkHeader).
    */
   async function tooManyPixels(file) {
     const Ops = root.ApplyReadyImageOps;
-    const h = await imageHeader(file);
-    if (!h || !Ops || h.width * h.height <= Ops.MAX_PIXELS) return '';
-    return `${file.name || 'This image'} is ${Math.round(h.width * h.height / 1e6)} megapixels (${h.width} × ${h.height} px), more than the ${Ops.MAX_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`;
+    if (!Ops || !file || !file.slice) return '';
+    return (await Ops.checkHeader(file, file.name || 'This image')).message;
   }
 
   /**
@@ -177,7 +180,11 @@
         onProgress: (done, total) => { if (opts.button) opts.button.textContent = `Preparing ZIP… ${done} of ${total}`; }
       });
       Files().download(zip, name);
-      announce(`ZIP file with ${entries.length} file${entries.length === 1 ? '' : 's'} downloaded.`);
+      // The page hands the file to the browser but cannot see whether it was saved: a browser can
+      // block or ask about a download (several in a row, for example). So the message says the ZIP
+      // is ready, visibly as well as for screen readers, and what to do if nothing arrives.
+      const ready = `ZIP file with ${entries.length} file${entries.length === 1 ? '' : 's'} ready: ${Files().safeFileName(name, 'download')}. If no download starts, allow downloads for this site in your browser and try again.`;
+      if (ui().notify) ui().notify(ready); else announce(ready);
       return true;
     } catch (e) {
       if (ui().notify) ui().notify(e && e.name === 'AbortError' ? 'ZIP cancelled.' : (e && e.message) || 'The ZIP file could not be created.', true);
@@ -197,7 +204,10 @@
     });
   }
 
+  // An empty message clears the region (applicant workspaces do this when a person is finished, so
+  // nothing about them stays in the page); a newer message replaces one still waiting to be written.
   let liveNode = null;
+  let liveTimer = 0;
   function announce(message) {
     if (!liveNode) {
       liveNode = document.createElement('div');
@@ -205,8 +215,9 @@
       liveNode.setAttribute('aria-live', 'polite');
       document.body.appendChild(liveNode);
     }
+    clearTimeout(liveTimer);
     liveNode.textContent = '';
-    setTimeout(() => { liveNode.textContent = message; }, 40);
+    if (message) liveTimer = setTimeout(() => { liveNode.textContent = message; }, 40);
   }
 
   root.ApplyReadyFileKit = { dropzone, thumbnail, tooManyPixels, downloadZip, guardUnload, announce, setButtonBusy };

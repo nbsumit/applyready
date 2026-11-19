@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="applyready-tool" content="image-to-pdf">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -132,7 +132,7 @@
             "name": "The PDF is larger than the portal allows. What now?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Choose Compact quality and create the PDF again, or run it through the PDF compressor with the portal's limit. In our test, a two-page PDF went from 227.5 KB at Balanced to 136.3 KB at Compact, and to 77.3 KB with the compressor set to 100 KB."
+              "text": "Choose Compact quality and create the PDF again, or run it through the PDF compressor with the portal's limit. In our test, a two-page PDF went from 233.0 KB at Balanced to 139.6 KB at Compact, and to 79.2 KB with the compressor set to 100 KB."
             }
           }
         ]
@@ -161,9 +161,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -220,9 +219,8 @@
                     <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -370,21 +368,21 @@
         </figure>
 
         <h3>Real output sizes</h3>
-        <p>We combined the two images in our <a href="img/samples/test-portrait.jpg">sample set</a>, a 1200 × 1600 px photo (428.9 KB) and a 1600 × 900 px photo of a signature (251.5 KB), into a two-page A4 PDF with small margins. The quality setting decides the size:</p>
+        <p>We combined the two images in our <a href="img/samples/test-portrait.jpg">sample set</a>, a 1200 × 1600 px photo (439.2 KB) and a 1600 × 900 px photo of a signature (257.6 KB), into a two-page A4 PDF with small margins. The quality setting decides the size:</p>
         <div class="table-wrap"><table>
           <thead><tr><th>Quality setting</th><th>PDF size (2 pages)</th></tr></thead>
           <tbody>
-            <tr><td>High, for clear text scans</td><td>618.4 KB</td></tr>
-            <tr><td>Balanced, for most forms</td><td>227.5 KB</td></tr>
-            <tr><td>Compact, for a smaller file</td><td>136.3 KB</td></tr>
+            <tr><td>High, for clear text scans</td><td>633.3 KB</td></tr>
+            <tr><td>Balanced, for most forms</td><td>233.0 KB</td></tr>
+            <tr><td>Compact, for a smaller file</td><td>139.6 KB</td></tr>
           </tbody>
         </table></div>
-        <p>When a portal's limit is lower still, run the finished PDF through the <a href="compress-pdf.html">PDF compressor</a>: the Compact file above came down from 136.3 KB to 77.3 KB with a 100 KB target. Measure your own files; a page full of small print needs more bytes than our test images.</p>
+        <p>When a portal's limit is lower still, run the finished PDF through the <a href="compress-pdf.html">PDF compressor</a>: the Compact file above came down from 139.6 KB to 79.2 KB with a 100 KB target. Measure your own files; a page full of small print needs more bytes than our test images.</p>
 
         <h3>Common mistakes</h3>
         <ul>
           <li><strong>Pages in the wrong order.</strong> The PDF follows the list exactly. Check the page numbers before you create it, not after uploading.</li>
-          <li><strong>Choosing High quality by default.</strong> It nearly tripled the size in our test (618.4 KB against 227.5 KB). Use it only when small text is hard to read at Balanced.</li>
+          <li><strong>Choosing High quality by default.</strong> It nearly tripled the size in our test (633.3 KB against 233.0 KB). Use it only when small text is hard to read at Balanced.</li>
           <li><strong>Mixing a photo of a page with a screenshot of it.</strong> Screenshots carry phone status bars and odd proportions. Photograph or scan the paper itself.</li>
           <li><strong>Uploading without opening the PDF.</strong> Open it once on your phone or computer and scroll through every page.</li>
         </ul>
@@ -441,7 +439,7 @@
         <details class="faq-item">
           <summary class="faq-question">The PDF is larger than the portal allows. What now?</summary>
           <div class="faq-answer">
-            <p>Choose Compact quality and create the PDF again, or run it through the PDF compressor with the portal's limit. In our test, a two-page PDF went from 227.5 KB at Balanced to 136.3 KB at Compact, and to 77.3 KB with the compressor set to 100 KB.</p>
+            <p>Choose Compact quality and create the PDF again, or run it through the PDF compressor with the portal's limit. In our test, a two-page PDF went from 233.0 KB at Balanced to 139.6 KB at Compact, and to 79.2 KB with the compressor set to 100 KB.</p>
           </div>
         </details>
       </section>
@@ -553,6 +551,8 @@
 
   <script src="js/components.js?v=20261118" defer></script>
   <script src="js/site.js?v=20261118"></script>
+  <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/image-to-pdf.js?v=20261118"></script>
 </body>
 </html>

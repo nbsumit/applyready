@@ -92,6 +92,7 @@ Everything stays on the device. Nothing below is ever sent anywhere.
 | `localStorage` | `applyready_recent_off` | `1` when the visitor turned recent tools off | Your data page |
 | IndexedDB `applyready` v1 | `resumes` (keyPath `id`, index `updatedAt`) | saved resumes, see below | resume builder |
 | IndexedDB `applyready` v1 | `meta` (keyPath `key`) | small app records, e.g. `{ key: 'lastResumeId', value }`, `{ key: 'resumeSaving', value: 'off' }` | resume builder |
+| `localStorage` | `applyready_resume_unsaved:<id>` | `{ id, name, createdAt, baseUpdatedAt, savedAt, json }`: unsaved changes of one resume, copied on each edit (resumes up to 200,000 characters) and when the page is hidden or closed; removed when the save completes, otherwise written back on the next visit (a separate copy if the resume changed meanwhile). Not written while saving is off | resume builder (`js/resume-library-ui.js`) |
 | `localStorage` | `applyready_resume_draft`, `applyready_draft_enabled` | a draft from releases before the resume library; no longer written | moved into the library by the resume builder (saving on); listed, downloadable and deletable on Your data |
 | Cache Storage | `applyready-files`, `applyready-vendor-<hash>` | the site's own pages and code for offline use: the pages this browser opened, or the whole site when the visitor asks | `sw.js` |
 
@@ -212,7 +213,9 @@ unknown `app`, or with a newer version than the code understands are refused wit
 
 ## 5. Offline
 
-`sw.js` does not download the site uninvited. On install it caches `/offline.html` only. Pages and
+`sw.js` does not download the site uninvited. On install it caches `/offline.html` and the few files
+that page needs which a visited page may not have loaded (`OFFLINE_SHELL`: `js/offline.js` and the two
+icon fonts, about 15 KB). The offline page shows only the pages that are kept. Pages and
 files are cached as this browser fetches them; the first page, loaded before the service worker took
 over, posts the list of files it loaded and the service worker copies them from the HTTP cache. The
 full list of the site's files (`STATIC_ASSETS`, written by `scripts/build-sw.js` with a content hash
@@ -220,14 +223,21 @@ per file) is downloaded only when the visitor selects "Save every tool for offli
 Every file is stored once, under its path plus its content hash (`/js/site.js?sw=1a2b3c4d`), whatever
 query string the page used, so a release keeps unchanged files and refetches only the changed files
 the browser had (skipped under Save-Data). Vendored libraries are cached on first use in a separate
-cache that survives releases until a vendored file changes. Pages are network-first; assets are
+cache that survives releases until a vendored file changes; the ones the PDF tools need (`VENDOR_ASSETS`)
+are also saved by "Save every tool for offline use", and a release that changes them refetches the ones
+the browser had. Pages are network-first; assets are
 stale-while-revalidate.
 
 ## 6. Security boundaries
 
-- CSP meta on every page: `default-src 'self'; script-src 'self'; connect-src 'self' blob: data:;
+- CSP meta on every page: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' blob: data:;
   worker-src 'self' blob:; frame-src 'none'; object-src 'none'` and related directives. No inline
   scripts, no `eval`. GitHub Pages cannot send headers, so `frame-ancestors` and HSTS are not set.
+- A `<meta>` policy covers only its page: a worker started from a file URL would take its policy from
+  that file's response headers, which GitHub Pages leaves empty. So the pdf.js worker and the image
+  worker are started from one-line `blob:` scripts that load the real files from this origin, and a
+  `blob:` worker takes the policy of the page that starts it (`connect-src 'self'` applies inside it).
+  `'wasm-unsafe-eval'` is there only so the pdf.js worker can compile its WebAssembly image decoders.
 - No third-party requests. Tool pages link out only to the source repository and the donation page;
   guides also link to reference sites (MDN, government portals) as ordinary links the visitor chooses
   to follow.

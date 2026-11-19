@@ -12,7 +12,7 @@
 })(typeof self !== 'undefined' ? self : this, function (SCHEMA) {
   'use strict';
   const ID_PATTERN = /^[A-Za-z0-9_-]{1,80}$/;
-  const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+  const MAX_IMPORT_BYTES = 5 * 1000 * 1000; // 5 MB, counted as the site counts sizes (js/lib/files.js)
   const MAX_NAME = 120;
   const MAX_IMPORT_RESUMES = 200;
   const DEFAULT_NAME = 'Untitled resume';
@@ -57,9 +57,13 @@
 
   /* Check a stored record before it reaches the interface. A usable record comes back migrated;
      anything else comes back as damaged, with a safe label, so the list can offer Export raw and
-     Delete instead of failing. */
+     Delete instead of failing. Earlier releases could save a box with more than 50,000 characters
+     or a list with more than 150 entries. Such a record still opens, shortened to the limits, and
+     is marked `trimmed` so the interface can say so and offer the stored original. */
   function inspect(raw) {
-    const ok = record(raw) && typeof raw.id === 'string' && ID_PATTERN.test(raw.id) && record(raw.data) && SCHEMA.validate({ data: raw.data });
+    const shaped = record(raw) && typeof raw.id === 'string' && ID_PATTERN.test(raw.id) && record(raw.data);
+    const strict = shaped && SCHEMA.validate({ data: raw.data });
+    const ok = strict || (shaped && SCHEMA.validate({ data: raw.data }, { lenient: true }));
     const name = record(raw) ? cleanName(raw.name) : '';
     if (!ok) {
       let reason = 'The saved data is not a resume this version can read.';
@@ -69,10 +73,9 @@
       return { ok: false, name: name || 'Unnamed resume', reason, updatedAt: record(raw) ? time(raw.updatedAt) : 0, raw };
     }
     const data = SCHEMA.migrate(raw.data);
-    return {
-      ok: true,
-      record: { id: raw.id, name: name || suggestName(data), createdAt: time(raw.createdAt) || time(raw.updatedAt), updatedAt: time(raw.updatedAt) || time(raw.createdAt), schemaVersion: SCHEMA.CURRENT_VERSION, data }
-    };
+    const rec = { id: raw.id, name: name || suggestName(data), createdAt: time(raw.createdAt) || time(raw.updatedAt), updatedAt: time(raw.updatedAt) || time(raw.createdAt), schemaVersion: SCHEMA.CURRENT_VERSION, data };
+    if (!strict) rec.trimmed = true;
+    return { ok: true, record: rec };
   }
 
   const byRecent = (a, b) => (b.updatedAt || 0) - (a.updatedAt || 0);
@@ -114,10 +117,16 @@
 
   const NEWER = 'This backup was made by a newer version of ApplyReady. Reload the page to get the latest version, then import it again.';
   const NOT_RESUME = 'This file is not an ApplyReady resume backup, or it is damaged. Your saved resumes are unchanged.';
+  const RAW_UNREADABLE = 'This file is a raw copy of a saved resume that could not be read. Its text can be copied from the file, but it cannot be imported as a resume. Your saved resumes are unchanged.';
 
-  /* Read a backup file's text. Returns { kind, resumes: [{ name, createdAt, updatedAt, data }], skipped }
-     with migrated data, or throws ImportError with a message that can be shown as it is. Accepts the
-     library format, the single-resume format of versions 1 to 3, and the old browser draft. */
+  /* Read a backup file's text. Returns { kind, resumes: [{ name, createdAt, updatedAt, data }], skipped,
+     overLimit, trimmed } with migrated data, or throws ImportError with a message that can be shown as
+     it is. Accepts the library format, the single-resume format of versions 1 to 3, and the old browser
+     draft. A resume with a box over 50,000 characters or a list over 150 entries (saved by an earlier
+     release, or the stored original of such a resume) is imported shortened to the limits, as the same
+     data opens from storage (inspect), and counted in `trimmed`. A raw copy of a stored record (kind
+     'damaged-resume-record', from Download the original or Export raw) is imported the same way when
+     its resume data can be read, and refused with a message that says what the file is when not. */
   function parseBackup(textValue, size) {
     const bytes = typeof size === 'number' ? size : (typeof textValue === 'string' ? textValue.length : 0);
     if (bytes > MAX_IMPORT_BYTES) throw new ImportError('This file is larger than 5 MB, which is far more than any resume backup. Choose the .json file that ApplyReady saved.');
@@ -132,25 +141,37 @@
       if (typeof payload.version !== 'number' || payload.version > LIBRARY_VERSION) throw new ImportError(payload.version > LIBRARY_VERSION ? NEWER : NOT_RESUME);
       if (!Array.isArray(payload.resumes)) throw new ImportError(NOT_RESUME);
       const resumes = [];
-      let skipped = 0;
+      let skipped = 0, trimmed = 0;
       payload.resumes.slice(0, MAX_IMPORT_RESUMES).forEach(item => {
-        if (record(item) && record(item.data) && SCHEMA.validate({ data: item.data })) {
+        const strict = record(item) && record(item.data) && SCHEMA.validate({ data: item.data });
+        if (strict || (record(item) && record(item.data) && SCHEMA.validate({ data: item.data }, { lenient: true }))) {
           const data = SCHEMA.migrate(item.data);
+          if (!strict) trimmed++;
           resumes.push({ name: cleanName(item.name) || suggestName(data), createdAt: time(item.createdAt), updatedAt: time(item.updatedAt), data });
         } else skipped++;
       });
       // Resumes beyond the limit are counted apart from damaged ones, so the message can say which.
       const overLimit = Math.max(0, payload.resumes.length - MAX_IMPORT_RESUMES);
       if (!resumes.length) throw new ImportError(payload.resumes.length ? 'None of the resumes in this file could be read. The file may be damaged.' : 'This backup contains no resumes.');
-      return { kind: 'library', resumes, skipped, overLimit };
+      return { kind: 'library', resumes, skipped, overLimit, trimmed };
+    }
+    if (payload.kind === 'damaged-resume-record') {
+      const raw = payload.record;
+      const data = record(raw) && record(raw.data) ? raw.data : null;
+      if (data && typeof data.schemaVersion === 'number' && data.schemaVersion > SCHEMA.CURRENT_VERSION) throw new ImportError(NEWER);
+      const strict = !!data && SCHEMA.validate({ data });
+      if (!strict && !(data && SCHEMA.validate({ data }, { lenient: true }))) throw new ImportError(RAW_UNREADABLE);
+      const migrated = SCHEMA.migrate(data);
+      return { kind: 'single', resumes: [{ name: cleanName(raw.name) || suggestName(migrated), createdAt: time(raw.createdAt), updatedAt: time(raw.updatedAt), data: migrated }], skipped: 0, overLimit: 0, trimmed: strict ? 0 : 1 };
     }
     if (payload.kind !== undefined) throw new ImportError(NOT_RESUME);
     if (typeof payload.version === 'number' && payload.version > SCHEMA.CURRENT_VERSION) throw new ImportError(NEWER);
     const inner = record(payload.data) ? payload.data : null;
     if (inner && typeof inner.schemaVersion === 'number' && inner.schemaVersion > SCHEMA.CURRENT_VERSION) throw new ImportError(NEWER);
-    if (!SCHEMA.validate(payload)) throw new ImportError(NOT_RESUME);
+    const strict = SCHEMA.validate(payload);
+    if (!strict && !SCHEMA.validate(payload, { lenient: true })) throw new ImportError(NOT_RESUME);
     const data = SCHEMA.migrate(payload);
-    return { kind: 'single', resumes: [{ name: cleanName(payload.name) || suggestName(data), createdAt: time(payload.createdAt), updatedAt: time(payload.updatedAt), data }], skipped: 0, overLimit: 0 };
+    return { kind: 'single', resumes: [{ name: cleanName(payload.name) || suggestName(data), createdAt: time(payload.createdAt), updatedAt: time(payload.updatedAt), data }], skipped: 0, overLimit: 0, trimmed: strict ? 0 : 1 };
   }
 
   // The resume saved in this browser by releases before the library (localStorage), if any.

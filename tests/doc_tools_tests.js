@@ -207,7 +207,10 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     fs.writeFileSync(path.join(tmp, 'huge.jpg'), big);
     await page.setInputFiles('#fcDropInput', path.join(tmp, 'huge.jpg'));
     await page.waitForFunction(() => document.querySelector('.fc-item[data-status="done"]'), null, { timeout: 30000 });
-    ok(/larger than the 50 MB/.test(await card('huge.jpg').innerText()) && /51\.0 MB|52,224\.0 KB/.test(await card('huge.jpg').innerText()), 'file over the inspection limit: type and size only, explained');
+    ok(/larger than the 50 MB/.test(await card('huge.jpg').innerText()) && /53\.48 MB|53,477\.4 KB/.test(await card('huge.jpg').innerText()), 'file over the inspection limit: type and size only, explained');
+    // PF-9: the headline gives the size as every other tool does (Files.formatBytes), not always in KB.
+    const bigSub = await card('huge.jpg').locator('.fc-card__sub').innerText();
+    ok(bigSub.includes('53.48 MB') && !/53,477\.4 KB/.test(bigSub), `file checker: a file over 1 MB is headed in MB, as in every tool (${bigSub})`);
     await page.click('#fcClear');
 
     // Names that disguise the extension, program extensions, and a picture too large to open safely
@@ -369,8 +372,9 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await page.locator('.dialog [data-act="ok"]').click();
     await page.waitForFunction(() => /Caf\u00E9 letter/.test(document.getElementById('ttpText').value));
     ok(true, 'UTF-16 text file (Notepad "Unicode") opens');
-    await page.setInputFiles('#ttpDropInput', { name: 'big.txt', mimeType: 'text/plain', buffer: Buffer.alloc(6 * 1024 * 1024, 97) });
-    ok(/up to 5 MB/.test(await page.locator('#ttpError').innerText()), 'text file over 5 MB refused');
+    // 5.2 MB as the site counts sizes (1 MB = 1,000,000 bytes), though under 5 x 1,024 x 1,024 bytes (PF-8).
+    await page.setInputFiles('#ttpDropInput', { name: 'big.txt', mimeType: 'text/plain', buffer: Buffer.alloc(5200000, 97) });
+    ok(/big\.txt is 5\.2 MB\. Text files up to 5 MB/.test(await page.locator('#ttpError').innerText()), `text file of 5.2 MB refused as over 5 MB (${await page.locator('#ttpError').innerText()})`);
     await page.setInputFiles('#ttpDropInput', { name: 'photo.txt', mimeType: 'text/plain', buffer: fs.readFileSync(path.join(tmp, 'gps.jpg')) });
     await page.waitForFunction(() => /not plain text/.test(document.getElementById('ttpError').textContent));
     ok(/JPEG image, not plain text/.test(await page.locator('#ttpError').innerText()), 'a JPEG named .txt is refused');
@@ -490,8 +494,9 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
       await page.waitForFunction(() => !document.getElementById('ydResumeError').hidden);
       ok(re.test(await page.locator('#ydResumeError').innerText()), `import refused: ${name}`);
     }
-    await page.setInputFiles('#ydImportInput', { name: 'huge.json', mimeType: 'application/json', buffer: Buffer.alloc(5 * 1024 * 1024 + 1, 32) });
-    ok(/up to 5 MB/.test(await page.locator('#ydResumeError').innerText()), 'import refused: over 5 MB');
+    // 5.2 MB as the site counts sizes (1 MB = 1,000,000 bytes), though under 5 x 1,024 x 1,024 bytes.
+    await page.setInputFiles('#ydImportInput', { name: 'huge.json', mimeType: 'application/json', buffer: Buffer.alloc(5200000, 32) });
+    ok(/huge\.json is 5\.2 MB\. Backups up to 5 MB/.test(await page.locator('#ydResumeError').innerText()), 'import refused: 5.2 MB is over 5 MB');
     await page.setInputFiles('#ydImportInput', { name: 'single.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(single)) });
     await page.waitForFunction(() => /Added 1 resume /.test(document.getElementById('ydImportResult').textContent));
     ok(await page.locator('#ydResumeCount').innerText() === '6 resumes, 1 damaged, 1 earlier draft', 'single-resume backup (version 2) imports');
@@ -548,19 +553,25 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     await page.evaluate(() => window.ApplyReadyStore.remove('meta', 'resumeSaving'));
 
     // Delete everything, with the offline copy and service worker in place
-    await page.evaluate(async ({ data }) => { await window.ApplyReadyStore.put('resumes', { id: 'r_again', name: 'Again', createdAt: 1, updatedAt: 2, schemaVersion: 3, data }); localStorage.setItem('applyready_theme', 'light'); localStorage.setItem('applyready_recent_tools', '["resume"]'); }, { data });
+    await page.evaluate(async ({ data }) => { await window.ApplyReadyStore.put('resumes', { id: 'r_again', name: 'Again', createdAt: 1, updatedAt: 2, schemaVersion: 3, data }); localStorage.setItem('applyready_theme', 'light'); localStorage.setItem('applyready_recent_tools', '["resume"]');
+      // A copy of unsaved changes left by a browser that closed mid-save (the resume builder's UNSAVED_PREFIX).
+      localStorage.setItem('applyready_resume_unsaved:r_left', JSON.stringify({ id: 'r_left', name: 'Ravi Kumar', createdAt: 1, baseUpdatedAt: 0, savedAt: Date.now(), json: JSON.stringify(data) })); }, { data });
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => caches.keys().then(k => k.some(n => n.startsWith('applyready-'))), null, { timeout: 30000 });
     await page.waitForTimeout(1500);
     await page.reload();
     await page.waitForFunction(() => /resume/.test(document.getElementById('ydResumeCount').textContent) && !/Checking/.test(document.getElementById('ydOfflineSize').textContent));
     ok(/files?, /.test(await page.locator('#ydOfflineSize').innerText()), 'offline copy size shown');
+    // RESU-2 / SECU-3 / COPY-7: the leftover copy is listed with the resumes, not hidden or called a setting.
+    ok(/unsaved changes of 1 resume/.test(await page.locator('#ydResumeCount').innerText()) && /Unsaved changes: Ravi Kumar/.test(await page.locator('#ydResumeList').innerText()) && await page.locator('#ydDeleteResumes').isVisible(), `your data: unsaved changes are listed with the resumes (${await page.locator('#ydResumeCount').innerText()})`);
     await page.click('#ydDeleteAll');
-    ok(/1 saved resume/.test(await page.locator('.dialog').innerText()), 'delete everything: the confirmation says what will go');
+    const confirmText = await page.locator('.dialog').innerText();
+    ok(/1 saved resume/.test(confirmText) && /the unsaved changes of 1 resume/.test(confirmText) && /2 settings/.test(confirmText), `delete everything: the confirmation says what will go, unsaved changes with the resumes (${confirmText.replace(/\s+/g, ' ')})`);
     await page.click('.dialog [data-act="ok"]');
     await page.locator('#ydDone').waitFor({ state: 'visible' });
     const summary = await page.locator('#ydDoneText').innerText();
     ok(/1 saved resume and the resume database/.test(summary) && /setting/.test(summary) && /offline copy/.test(summary) && /offline service/.test(summary), `delete everything: final confirmation lists what was removed (${summary})`);
+    ok(/the unsaved changes of 1 resume/.test(summary) && !/unsaved:r/.test(summary), 'delete everything: the unsaved changes are named in plain words, not as a setting');
     const left = await page.evaluate(async () => ({
       dbs: indexedDB.databases ? (await indexedDB.databases()).map(d => d.name) : null,
       keys: Object.keys(localStorage).filter(k => k.startsWith('applyready')),

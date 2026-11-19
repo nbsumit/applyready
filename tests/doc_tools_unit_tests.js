@@ -65,6 +65,24 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     assert.throws(() => Inspect.stripMetadata(cut, 'jpg'), /incomplete|damaged/);
     checks++;
 
+    // Stray bytes between segments (zero padding after APP0): browsers skip them to the next marker,
+    // so the file is read, not called damaged, and the copies made from it leave the stray bytes out.
+    {
+      const app0 = 4 + base.readUInt16BE(4);
+      const padded = new Uint8Array(Buffer.concat([base.subarray(0, app0), Buffer.alloc(4), base.subarray(app0)]));
+      const rp = Inspect.parseJpeg(padded);
+      ok(rp.width === plain.width && rp.height === plain.height && !rp.damaged, `JPEG with stray bytes between segments parses (${rp.reason || 'not damaged'})`);
+      const sp = Inspect.stripMetadata(new Uint8Array(F.jpegWithSegments(Buffer.from(padded), [F.commentSegment('note')])), 'jpg');
+      ok(sp.bytes.length === base.length && !Inspect.parseJpeg(sp.bytes).damaged, 'cleaning a JPEG with stray bytes leaves them out');
+      const Kit = require('../js/lib/pdf-kit.js');
+      const kc = Kit.jpegWithoutMetadata(padded);
+      ok(kc && kc.length === base.length && Kit.jpegOrientation(padded) === 1, 'pdf-kit copies a JPEG with stray bytes without them');
+      const Files = require('../js/lib/files.js');
+      ok(Array.isArray(Files.hiddenParts(padded)), 'hidden details of a JPEG with stray bytes are read');
+      const junk = new Uint8Array(Buffer.concat([base.subarray(0, app0), Buffer.alloc(70000), base.subarray(app0)]));
+      ok(Inspect.parseJpeg(junk).damaged && Kit.jpegWithoutMetadata(junk) === null && Files.hiddenParts(junk) === null, 'more than 64 KB of stray bytes is still damaged');
+    }
+
     // JFIF density
     const jfif = Inspect.parseJpeg(sample('test-signature.jpg'));
     ok(jfif.width > 0, 'second sample JPEG parses');
@@ -121,12 +139,21 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
   {
     const r = await Inspect.inspect(sample('test-portrait.jpg'), { name: 'p.jpg' });
     const kb = r.size.kb;
-    const pass = Inspect.checkRequirements(r, { formats: ['jpg', 'png'], minKB: Math.floor(kb) - 1, maxKB: Math.ceil(kb) + 1, width: r.image.width, height: r.image.height, pixelMode: 'exact' });
+    // A minimum is met at minKB x 1,024 bytes and a maximum at maxKB x 1,000 bytes (the site-wide rule).
+    const pass = Inspect.checkRequirements(r, { formats: ['jpg', 'png'], minKB: Math.floor(r.size.bytes / 1024) - 1, maxKB: Math.ceil(kb) + 1, width: r.image.width, height: r.image.height, pixelMode: 'exact' });
     ok(pass.pass && pass.rows.length === 3 && pass.rows.every(x => x.pass), 'requirement met: format, size and exact pixels');
     const fail = Inspect.checkRequirements(r, { maxKB: 50, width: r.image.width + 1, pixelMode: 'min', maxPages: 1 });
     ok(!fail.pass && fail.rows.find(x => x.id === 'size').pass === false && fail.rows.find(x => x.id === 'pixels').pass === false && fail.rows.find(x => x.id === 'pages').pass === true, 'requirement failed: size and minimum pixels; an image counts as one page');
     ok(Inspect.checkRequirements(r, {}).rows.length === 0, 'no requirement, no rows');
-    ok(Inspect.sizes(245760).kbText === '240.0 KB' && Inspect.sizes(245760).text === '245,760 bytes' && Inspect.sizes(1048576).mbText === '1.00 MB', 'sizes in bytes, KB (1,024) and MB');
+    // INTE-1: one rule for 'under N KB' across the site. A maximum is met however a portal counts a KB
+    // (at most N x 1,000 bytes); a minimum too (at least N x 1,024 bytes).
+    const sized = n => ({ size: Inspect.sizes(n), real: { label: 'PDF document' } });
+    const sizeRow = (n, q) => Inspect.checkRequirements(sized(n), q).rows.find(x => x.id === 'size');
+    ok(sizeRow(500000, { maxKB: 500 }).pass === true && sizeRow(500001, { maxKB: 500 }).pass === false && sizeRow(505000, { maxKB: 500 }).pass === false, 'size: a 500 KB maximum is met at 500,000 bytes, not at 500,001 or 505,000');
+    ok(sizeRow(505000, { maxKB: 500 }).actual === '505 KB' && sizeRow(505000, { maxKB: 500 }).bytes === '505,000 bytes', 'size: a 505,000-byte file reads 505 KB, as in every other tool');
+    ok(sizeRow(20479, { minKB: 20, maxKB: 50 }).pass === false && sizeRow(20480, { minKB: 20, maxKB: 50 }).pass === true, 'size: a 20 KB minimum is met at 20,480 bytes');
+    ok(sizeRow(49000, { minKB: 49, maxKB: 50 }).pass === true, 'size: a 49 to 50 KB range still has room (the minimum counts 1,000 bytes when 1,024 would leave none)');
+    ok(Inspect.sizes(245760).kbText === '245.8 KB' && Inspect.sizes(245760).text === '245,760 bytes' && Inspect.sizes(1000000).mbText === '1.00 MB' && Inspect.sizes(505000).kbText === '505 KB' && Inspect.sizes(505001).kbText === '505.1 KB' && Inspect.sizes(1048576).mbText === '1.05 MB', 'sizes in bytes, KB (1,000, rounded up) and MB, the same as every other tool');
   }
 
   // ------------------------------------------------------------------ PDF
@@ -252,6 +279,73 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     ok(cut.pdf.truncated && cut.warnings.some(w => w.level !== 'info' && /incomplete/.test(w.text)), 'cut-off PDF: called incomplete (pdf-lib may still recover its pages)');
   }
 
+  // A PDF whose page list is fine but whose pages' content is missing or garbled is damaged (its
+  // pages show blank); sound files, blank pages and permissions-only encrypted files are not flagged.
+  {
+    const make = async encrypt => {
+      const d = await PDFLib.PDFDocument.create();
+      const font = await d.embedFont(PDFLib.StandardFonts.Helvetica);
+      for (let i = 0; i < 3; i++) d.addPage([300, 400]).drawText(`Page ${i + 1}`, { x: 40, y: 300, size: 20, font });
+      d.addPage([300, 400]); // blank by design: no content at all
+      if (encrypt) d.encrypt(encrypt);
+      return d;
+    };
+    const sound = await Inspect.inspect(await (await make()).save(), { name: 'sound.pdf', PDFLib });
+    ok(!sound.damaged && !sound.pdf.unreadablePages, 'sound PDF with a blank page: not flagged as damaged');
+    const perm = await Inspect.inspect(await (await make({ userPassword: '', ownerPassword: 'o' })).save(), { name: 'perm.pdf', PDFLib });
+    ok(!perm.pdf.unreadablePages, 'permissions-only encrypted PDF: its encrypted content is not mistaken for damage');
+    const d = await PDFLib.PDFDocument.load(await (await make()).save({ useObjectStreams: false }));
+    const contents = PDFLib.PDFName.of('Contents');
+    const garbled = d.context.lookup(d.getPage(1).node.get(contents));
+    const first = garbled instanceof PDFLib.PDFArray ? d.context.lookup(garbled.get(garbled.size() - 1)) : garbled;
+    first.contents.fill(0x41); // still Flate-labelled, no longer Flate data
+    d.getPage(2).node.set(contents, PDFLib.PDFRef.of(9999));
+    const bad = await Inspect.inspect(await d.save({ useObjectStreams: false }), { name: 'bad.pdf', PDFLib });
+    ok(bad.damaged && bad.pdf.unreadablePages.join() === '2,3' && bad.warnings.some(w => w.level === 'error' && /pages 2-3 is missing or broken/.test(w.text)), `damaged page content: pages named, reported as an error (${bad.pdf.unreadablePages}; ${bad.warnings.map(w => w.text).join(' | ')})`);
+    const Kit = require('../js/lib/pdf-kit.js');
+    ok((await Kit.unreadablePages(await Kit.openLib(await d.save()))).join() === '1,2', 'the PDF tools find the same damaged pages (0-based)');
+
+    // A Flate stream with only its end cut off still shows most of the page in PDF readers (pdf.js,
+    // poppler), so the page is partly damaged, not unreadable: a warning, not "shows blank".
+    const zlib = require('zlib');
+    let ops = '';
+    for (let i = 0; i < 60; i++) ops += `BT /F1 12 Tf 50 ${800 - i * 12} Td (Line ${i} of the page) Tj ET\n`;
+    const full = zlib.deflateSync(Buffer.from(ops));
+    const onePage = async data => {
+      const doc = await PDFLib.PDFDocument.create();
+      const f = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+      const pg = doc.addPage([595, 842]);
+      pg.node.set(contents, doc.context.register(PDFLib.PDFRawStream.of(doc.context.obj({ Filter: 'FlateDecode', Length: data.length }), new Uint8Array(data))));
+      pg.node.set(PDFLib.PDFName.of('Resources'), doc.context.obj({ Font: { F1: f.ref } }));
+      return doc.save();
+    };
+    const cutBytes = await onePage(full.subarray(0, full.length - 10));
+    const cutReport = await Inspect.inspect(cutBytes, { name: 'cut-stream.pdf', PDFLib });
+    ok(!cutReport.damaged && !cutReport.pdf.unreadablePages && cutReport.pdf.incompletePages.join() === '1'
+      && cutReport.warnings.some(w => w.level === 'warning' && /partly damaged: some of the content of its page is cut off or broken\. PDF readers still show the rest/.test(w.text))
+      && !cutReport.warnings.some(w => w.level === 'error' || /blank/.test(w.text)), `file checker: a page whose content stream lost its last bytes is partly damaged, not blank (${cutReport.warnings.map(w => `${w.level}: ${w.text}`).join(' | ')})`);
+    const cutDamage = await Kit.pageDamage(await Kit.openLib(cutBytes));
+    ok(cutDamage.unreadable.length === 0 && cutDamage.incomplete.join() === '0', `PDF tools: the same page is partly damaged, not unreadable (${JSON.stringify(cutDamage)})`);
+    const noChecksum = await Kit.pageDamage(await Kit.openLib(await onePage(full.subarray(0, full.length - 4))));
+    ok(!noChecksum.unreadable.length && !noChecksum.incomplete.length, 'PDF tools: a stream missing only its checksum is sound');
+    const raw = await Kit.pageDamage(await Kit.openLib(await onePage(zlib.deflateRawSync(Buffer.from(ops)))));
+    const headerOnly = await Kit.pageDamage(await Kit.openLib(await onePage(full.subarray(0, 2))));
+    ok(raw.unreadable.join() === '0' && headerOnly.unreadable.join() === '0', 'PDF tools: Flate data that gives nothing at all (no zlib header, or only a header) is still unreadable');
+    // TOOL-2 (PDF): an empty Flate stream (0 bytes) or an empty /Contents array is a blank page by
+    // design, like a page with no /Contents; poppler and pdf.js read both without an error.
+    const emptyFlate = await onePage(new Uint8Array(0));
+    const emptyArray = await (async () => {
+      const doc = await PDFLib.PDFDocument.create();
+      doc.addPage([300, 400]).node.set(contents, doc.context.obj([]));
+      return doc.save();
+    })();
+    for (const [label, bytes] of [['empty Flate stream', emptyFlate], ['empty /Contents array', emptyArray]]) {
+      const tools = await Kit.pageDamage(await Kit.openLib(bytes));
+      const report = await Inspect.inspect(bytes, { name: 'blank.pdf', PDFLib });
+      ok(!tools.unreadable.length && !tools.incomplete.length && !report.damaged && !report.pdf.unreadablePages && !report.pdf.incompletePages, `${label}: a blank page, not damaged (${JSON.stringify(tools)})`);
+    }
+  }
+
   // ------------------------------------------------------------------ names that hide what a file is
   {
     const jpeg = new Uint8Array(F.jpegWithSegments(Buffer.from(sample('test-portrait.jpg')), [F.exifSegment(F.phoneExif({ orientation: 1 }))]));
@@ -323,14 +417,14 @@ const has = cmd => { try { execFileSync('which', [cmd], { stdio: 'ignore' }); re
     const started = Date.now();
     let refused = null;
     try { await Kit.merge([{ doc: small }, { doc: bombDoc }]); } catch (e) { refused = e; }
-    ok(refused && refused.code === 'toolarge' && /2,00,001 pages\. Up to 2,000 pages/.test(refused.message) && Date.now() - started < 2000, `merge refuses more than ${Kit.LIMITS.pages} pages at once, quickly (${refused && refused.message}, ${Date.now() - started} ms)`);
+    ok(refused && refused.code === 'toolarge' && /200,001 pages\. Up to 2,000 pages/.test(refused.message) && Date.now() - started < 2000, `merge refuses more than ${Kit.LIMITS.pages} pages at once, quickly (${refused && refused.message}, ${Date.now() - started} ms)`);
     let extractRefused = null;
     try { await Kit.extract(bombDoc, Array.from({ length: Kit.LIMITS.pages + 1 }, () => 0)); } catch (e) { extractRefused = e; }
     ok(extractRefused && extractRefused.code === 'toolarge', 'extract refuses more than the page limit');
     const fine = await Kit.merge([{ doc: small }, { doc: small }]);
     ok(fine.getPageCount() === 2, 'merging within the limit still works');
     // Page-limit advice: Split PDF is suggested only for a file it can open itself.
-    ok(Kit.grouped(2000) === '2,000' && Kit.grouped(200000) === '2,00,000', `page counts are grouped like the rest of the site (${Kit.grouped(2000)}, ${Kit.grouped(200000)})`);
+    ok(Kit.grouped(2000) === '2,000' && Kit.grouped(200000) === '200,000' && Kit.grouped(505000) === '505,000', `page counts and bytes are grouped like the rest of the site (${Kit.grouped(2000)}, ${Kit.grouped(200000)})`);
     ok(/with Split PDF first, then compress each part/.test(Kit.splitFirst(400, 'compress each part')), 'a file Split PDF can open is sent to Split PDF');
     const tooLong = Kit.splitFirst(Kit.LIMITS.pages + 1, 'use this tool on each part');
     ok(!/with Split PDF first/.test(tooLong) && /Split PDF also works on up to 2,000 pages/.test(tooLong) && /desktop PDF program/.test(tooLong), `a file Split PDF would refuse is not sent there (${tooLong})`);

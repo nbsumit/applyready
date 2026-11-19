@@ -60,6 +60,9 @@ for (const [q, id] of [['mrege pdf', 'merge-pdf'], ['resise image', 'image-resiz
   ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
 }
 ok(search('merg')[0] === 'merge-pdf', 'search: a word still being typed matches as a prefix');
+// Four-letter typos with a letter missing or two letters swapped are still read as the tool's word
+// (skipping all four-letter corrections once made "mrge" and "splt" find nothing).
+for (const [q, id] of [['mrge', 'merge-pdf'], ['splt', 'split-pdf'], ['mrge pdf', 'merge-pdf'], ['splt pdf', 'split-pdf'], ['sgin', 'signature-resizer']]) ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
 
 // Broad words put the everyday tool near the top, and closer names first.
 ok(search('photo')[0] === 'image-resizer' && search('image')[0] === 'image-resizer', `search: "photo" and "image" list the image resizer first (${search('photo')})`);
@@ -70,6 +73,30 @@ ok(search('cv')[0] === 'resume' && search('resume')[0] === 'resume', 'search: "c
 
 // KB limits: the preset page first, and the directory can map it to its parent card.
 for (const [q, id] of [['50kb', 'resize-50kb'], ['50 kb', 'resize-50kb'], ['20 kb', 'resize-20kb'], ['photo under 50 kb', 'resize-50kb'], ['10kb', 'resize-kb']]) ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
+// A size limit typed with the file type is a search for the tool that makes files smaller, not for
+// the most popular tool of that type ("pdf 300kb" once opened Merge PDF on Enter).
+for (const [q, id] of [['pdf 300kb', 'compress-pdf'], ['pdf 2 mb', 'compress-pdf'], ['200kb pdf', 'compress-pdf'], ['pdf 100 kb', 'compress-pdf'], ['pdf under 1.5mb', 'compress-pdf'],
+  ['signature 10kb', 'signature-resizer'], ['signature 15 kb', 'signature-resizer']]) ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
+for (const q of ['photo 30kb', 'photo 40 kb', 'image 75kb']) ok(['image-resizer', 'compress-image', 'resize-kb'].includes(search(q)[0]), `search: "${q}" offers a tool that reaches a KB limit first (got ${search(q)})`);
+ok(search('photo under 50 kb')[0] === 'resize-50kb', 'search: a size that has its own page still finds that page first');
+// The size's own page wins over a tool that only mentions the size in a keyword (Signature resizer has
+// "signature 20kb", and once came first for "image 20kb", so Enter opened the signature tool).
+for (const q of ['image 20kb', 'photo 20kb', 'resize photo 20kb', 'image 20 kb', 'photo under 20kb']) ok(search(q)[0] === 'resize-20kb', `search: "${q}" finds Resize image to 20 KB first (got ${search(q)})`);
+ok(search('signature 20kb')[0] === 'signature-resizer', `search: "signature 20kb" still finds the signature tool first (got ${search('signature 20kb')})`);
+// Common Hinglish words, and a few words typed in Devanagari.
+for (const [q, id] of [['pdf chota karna', 'compress-pdf'], ['pdf ko chota', 'compress-pdf'], ['pdf size kam karna', 'compress-pdf'], ['pdf jodna', 'merge-pdf'], ['pdf milana', 'merge-pdf'],
+  ['photo chhota karna', 'compress-image'], ['पीडीएफ छोटा', 'compress-pdf'], ['फोटो', 'image-resizer']]) ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
+ok(!search('pdf jodna').includes('resume') && search('pdf jodna').length <= 6, `search: "pdf jodna" offers the merging tools, not every PDF tool (${search('pdf jodna')})`);
+// Words applicants type for things the site does, and no confident wrong guess for things it does not.
+for (const [q, id] of [['thumb impression', 'signature-resizer'], ['left thumb', 'signature-resizer'], ['backup', 'page:your-data'], ['offline', 'page:your-data'], ['clear history', 'page:your-data']]) ok(search(q)[0] === id, `search: "${q}" finds ${id} first (got ${search(q)})`);
+ok(search('backup').includes('guide:how-to-back-up-and-restore-resumes'), 'search: "backup" also offers the backup guide');
+for (const q of ['marksheet', 'aadhaar']) ok(['image-to-pdf', 'compress-pdf'].includes(search(q)[0]), `search: "${q}" offers a PDF tool (${search(q)})`);
+for (const q of ['dark mode', 'mode']) ok(!search(q).includes('organize-pdf'), `search: "${q}" is not corrected to "move" (${search(q)})`);
+// RESU-9: "mark sheet" (the site's own spelling) is a marksheet, and the theme switch is not a tool.
+for (const q of ['mark sheet', 'marks card', 'mark list', 'compress mark sheet']) ok(['image-to-pdf', 'compress-pdf'].includes(search(q)[0]) && !search(q).includes('passport-photo-print'), `search: "${q}" offers a PDF tool, not the print sheet (${search(q)})`);
+for (const q of ['light mode', 'night mode', 'dark theme', 'dark mode', 'theme']) ok(search(q).length === 0, `search: "${q}" finds no tool (${search(q)})`);
+// The home row and the empty search dialog do not suggest that use is measured.
+ok(/id="homePopularTitle">Common tasks</.test(read('index.html')) && !/Popular tools|Most used/.test(read('index.html') + read('js/search.js')), 'home and search: the hand-picked list is not called "most used" or "popular"');
 const index = sandbox.APPLYREADY_TOOL_INDEX.items;
 for (const t of TOOLS.filter(t => t.presetOf)) ok(index.find(i => i.id === t.id).presetOf === t.presetOf, `index: ${t.id} names its parent tool`);
 
@@ -88,7 +115,7 @@ const listed = CATEGORIES.filter(c => toolsIn(c.id).length);
 // Same category order everywhere.
 const order = (html, re) => [...html.matchAll(re)].map(m => m[1]);
 const ids = listed.map(c => c.id).join();
-ok(order(header, /aria-controls="menuList-([a-z]+)"/g).join() === ids, `menu: categories in registry order (${order(header, /aria-controls="menuList-([a-z]+)"/g)})`);
+ok(order(header, /<ul class="menu__list" id="menuList-([a-z]+)"/g).join() === ids, `menu: categories in registry order (${order(header, /<ul class="menu__list" id="menuList-([a-z]+)"/g)})`);
 ok(order(home, /<li class="cat-card" id="home-([a-z]+)"/g).join() === ids, 'home: categories in registry order');
 ok(order(dir, /<section class="dir-section" id="([a-z]+)"/g).join() === ids, 'directory: categories in registry order');
 
@@ -124,6 +151,15 @@ ok((footer.match(/<h2/g) || []).length === 1 && footer.includes('<h2 class="sr-o
 ok(/<li class="site-nav__resume">/.test(header), 'menu: the top-level Resume builder link is marked so the phone sheet can hide it');
 ok(/<div class="menu__cat" data-open>\s*<p class="menu__title"><a href="tools\.html#pdf">/.test(header), 'menu: on a PDF tool the PDF category starts open in the phone sheet');
 ok(!/data-open/.test(between(home, '<header class="site-header"', '</header>')), 'menu: on the home page every category starts closed');
+// A category with one tool is a direct link in the phone sheet, not a toggle that reveals one link.
+for (const c of listed) {
+  const single = toolsIn(c.id).length === 1;
+  ok(header.includes(`aria-controls="menuList-${c.id}"`) === !single, `menu: ${c.name} ${single ? 'has no toggle (one tool)' : 'opens with a toggle'}`);
+  if (single) ok(new RegExp(`<div class="menu__cat menu__cat--single">\\s*<p class="menu__title"><a href="tools\\.html#${c.id}">`).test(header), `menu: ${c.name} is marked as a single-tool category`);
+}
+ok(/\.menu__cat\.menu__cat--single \.menu__list \{ display: block;/.test(read('css/app.css')), 'menu: the phone sheet shows a single-tool category’s link without a tap');
+// On the resume builder no category starts open (Resume has no toggle).
+ok(!/data-open/.test(between(read('resume.html'), '<header class="site-header"', '</header>')), 'menu: on the resume builder no category is forced open');
 // DOM order of the header: brand, then the sheet (search first), then the header buttons.
 ok(header.indexOf('id="navSearch"') < header.indexOf('id="toolsMenuButton"') && header.indexOf('id="toolsMenuButton"') < header.indexOf('id="searchOpen"'), 'menu: the sheet starts with Search tools');
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="applyready-tool" content="resize-kb">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -117,7 +117,7 @@
             "name": "Is 100 KB the same as 100,000 bytes?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Not necessarily. With 1 KB counted as 1,024 bytes, 100 KB is 102,400 bytes. The result shows the exact byte count."
+              "text": "Not quite: portals count 1 KB as either 1,000 or 1,024 bytes, so a 100 KB limit is 100,000 or 102,400 bytes. This tool keeps a 100 KB maximum at 100,000 bytes or less, so the file fits either way, and the result shows the exact byte count."
             }
           },
           {
@@ -154,9 +154,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -213,9 +212,8 @@
                     <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -347,6 +345,10 @@
               <a id="btnDownload" class="btn btn-primary btn-lg" download="ApplyReady_Image.jpg"><i class="fa-solid fa-download" aria-hidden="true"></i> Download image</a>
               <button type="button" id="btnCropAgain" class="btn btn-lg">Adjust again</button>
             </div>
+          </div>
+          <div id="resultWarning" class="notice notice--warning hidden">
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            <span class="notice__body" id="resultWarningText"></span>
           </div>
           <div class="ws-result__body">
             <div class="ws-result__view">
@@ -502,24 +504,24 @@
 
       <section class="section prose" id="10kb" aria-labelledby="kb10Heading">
         <h2 id="kb10Heading">10 KB: small signatures, and the minimum many forms set</h2>
-        <p>Ten kilobytes (10,240 bytes) appears on application forms more often as a <strong>minimum</strong> than as a maximum: a signature field that accepts 10 to 20 KB, or a photo field that accepts 10 to 200 KB, rejects anything lighter than 10 KB. As a maximum, it is usually reserved for a small signature scan, for example a form that asks for a signature of 4.5 × 2 cm at 200 DPI under 10 KB.</p>
+        <p>Ten kilobytes appears on application forms more often as a <strong>minimum</strong> than as a maximum: a signature field that accepts 10 to 20 KB, or a photo field that accepts 10 to 200 KB, rejects anything lighter than 10 KB. As a maximum, it is usually reserved for a small signature scan, for example a form that asks for a signature of 4.5 × 2 cm at 200 DPI under 10 KB.</p>
         <div class="table-wrap"><table>
           <thead><tr><th>Image</th><th>Output pixels</th><th>Size at quality 0.95</th><th>Under 10 KB</th><th>Quality used</th></tr></thead>
           <tbody>
-            <tr><td>Signature</td><td>300 × 100</td><td>8.0 KB</td><td>8.0 KB</td><td>0.95</td></tr>
-            <tr><td>Signature</td><td>354 × 157</td><td>11.3 KB</td><td>9.1 KB</td><td>0.93</td></tr>
-            <tr><td>Signature, cleaned first</td><td>354 × 157</td><td>7.6 KB</td><td>7.6 KB</td><td>0.95</td></tr>
-            <tr><td>Portrait</td><td>200 × 230</td><td>9.1 KB</td><td>9.1 KB</td><td>0.95</td></tr>
-            <tr><td>Portrait</td><td>350 × 450</td><td>26.5 KB</td><td>9.7 KB</td><td>0.83</td></tr>
-            <tr><td>Portrait</td><td>600 × 800</td><td>94.7 KB</td><td>10.0 KB</td><td>0.53</td></tr>
+            <tr><td>Signature</td><td>300 × 100</td><td>8.2 KB</td><td>8.2 KB</td><td>0.95</td></tr>
+            <tr><td>Signature</td><td>354 × 157</td><td>11.6 KB</td><td>9.4 KB</td><td>0.93</td></tr>
+            <tr><td>Signature, cleaned first</td><td>354 × 157</td><td>8.1 KB</td><td>8.1 KB</td><td>0.95</td></tr>
+            <tr><td>Portrait</td><td>200 × 230</td><td>9.4 KB</td><td>9.4 KB</td><td>0.95</td></tr>
+            <tr><td>Portrait</td><td>350 × 450</td><td>27.2 KB</td><td>10.0 KB</td><td>0.83</td></tr>
+            <tr><td>Portrait</td><td>600 × 800</td><td>97.0 KB</td><td>10.0 KB</td><td>0.52</td></tr>
           </tbody>
         </table></div>
-        <p>354 × 157 px is what 4.5 × 2 cm works out to at 200 DPI. At that size our signature photo needed slight compression, while the same signature run through the <a href="signature-cleaner.html">signature cleaner</a> first fitted at full quality. A photo under 10 KB is only practical at small pixel sizes: at 600 × 800 px the quality had to drop to 0.53. If a form gives 10 KB as a minimum and your file is lighter, enter 10 in <em>Minimum (KB)</em> and the tool pads the JPEG to reach it.</p>
+        <p>354 × 157 px is what 4.5 × 2 cm works out to at 200 DPI. At that size our signature photo needed slight compression, while the same signature run through the <a href="signature-cleaner.html">signature cleaner</a> first fitted at full quality. A photo under 10 KB is only practical at small pixel sizes: at 600 × 800 px the quality had to drop to 0.52. If a form gives 10 KB as a minimum and your file is lighter, enter 10 in <em>Minimum (KB)</em> and the tool pads the JPEG to reach it.</p>
       </section>
 
       <section class="section prose" id="100kb" aria-labelledby="kb100Heading">
         <h2 id="kb100Heading">100 KB: declarations, longer signatures and larger photos</h2>
-        <p>One hundred kilobytes (102,400 bytes) is the ceiling for uploads that carry more ink or more pixels than a normal signature. The rows below are illustrative examples of the kind of rule you will see.</p>
+        <p>One hundred kilobytes is the ceiling for uploads that carry more ink or more pixels than a normal signature. The rows below are illustrative examples of the kind of rule you will see.</p>
         <div class="table-wrap"><table>
           <thead><tr><th>Upload</th><th>Typical rule</th><th>What to enter in the tool</th></tr></thead>
           <tbody>
@@ -531,28 +533,28 @@
         <div class="table-wrap"><table>
           <thead><tr><th>Image</th><th>Output pixels</th><th>Size at quality 0.95</th><th>Under 100 KB</th><th>Quality used</th></tr></thead>
           <tbody>
-            <tr><td>Signature</td><td>800 × 400</td><td>55.6 KB</td><td>55.6 KB</td><td>0.95</td></tr>
-            <tr><td>Signature</td><td>1600 × 800</td><td>243.0 KB</td><td>96.2 KB</td><td>0.85</td></tr>
-            <tr><td>Portrait</td><td>800 × 1000</td><td>194.5 KB</td><td>92.5 KB</td><td>0.89</td></tr>
-            <tr><td>Portrait</td><td>1000 × 1000</td><td>242.6 KB</td><td>98.9 KB</td><td>0.86</td></tr>
-            <tr><td>Portrait</td><td>1200 × 1600</td><td>443.9 KB</td><td>97.9 KB</td><td>0.73</td></tr>
+            <tr><td>Signature</td><td>800 × 400</td><td>57.0 KB</td><td>57.0 KB</td><td>0.95</td></tr>
+            <tr><td>Signature</td><td>1600 × 800</td><td>254.4 KB</td><td>97.1 KB</td><td>0.83</td></tr>
+            <tr><td>Portrait</td><td>800 × 1000</td><td>199.3 KB</td><td>94.6 KB</td><td>0.89</td></tr>
+            <tr><td>Portrait</td><td>1000 × 1000</td><td>248.5 KB</td><td>93.2 KB</td><td>0.85</td></tr>
+            <tr><td>Portrait</td><td>1200 × 1600</td><td>464.1 KB</td><td>98.4 KB</td><td>0.72</td></tr>
           </tbody>
         </table></div>
-        <p>At 800 × 400 px, our signature photo came to 55.6 KB at full quality: inside a 50 to 100 KB window with no compression. A full page of handwriting has more ink than our test signature, so a real declaration may need slight compression, which 100 KB leaves room for. For declarations, write on plain white paper in black ink and crop close to the text before resizing.</p>
+        <p>At 800 × 400 px, our signature photo came to 57.0 KB at full quality: inside a 50 to 100 KB window with no compression. A full page of handwriting has more ink than our test signature, so a real declaration may need slight compression, which 100 KB leaves room for. For declarations, write on plain white paper in black ink and crop close to the text before resizing.</p>
       </section>
 
       <section class="section prose" id="200kb" aria-labelledby="kb200Heading">
         <h2 id="kb200Heading">200 KB: high-resolution photos and ID images</h2>
-        <p>Two hundred kilobytes (204,800 bytes) is generous for a photo. It lets a portal ask for a large, sharp image while still keeping uploads small. A form might use a limit like this for the applicant's photo or for a JPEG of an ID card, sometimes as a range such as 20 to 200 KB, and sometimes without any pixel size.</p>
+        <p>Two hundred kilobytes is generous for a photo. It lets a portal ask for a large, sharp image while still keeping uploads small. A form might use a limit like this for the applicant's photo or for a JPEG of an ID card, sometimes as a range such as 20 to 200 KB, and sometimes without any pixel size.</p>
         <div class="table-wrap"><table>
           <thead><tr><th>Image</th><th>Output pixels</th><th>Size at quality 0.95</th><th>Under 200 KB</th><th>Quality used</th></tr></thead>
           <tbody>
-            <tr><td>Portrait</td><td>350 × 350</td><td>21.6 KB</td><td>21.6 KB</td><td>0.95</td></tr>
-            <tr><td>Portrait</td><td>1000 × 1000</td><td>242.6 KB</td><td>182.5 KB</td><td>0.93</td></tr>
-            <tr><td>Portrait</td><td>1200 × 1600</td><td>443.9 KB</td><td>195.0 KB</td><td>0.86</td></tr>
+            <tr><td>Portrait</td><td>350 × 350</td><td>22.1 KB</td><td>22.1 KB</td><td>0.95</td></tr>
+            <tr><td>Portrait</td><td>1000 × 1000</td><td>248.5 KB</td><td>186.9 KB</td><td>0.93</td></tr>
+            <tr><td>Portrait</td><td>1200 × 1600</td><td>464.1 KB</td><td>187.4 KB</td><td>0.85</td></tr>
           </tbody>
         </table></div>
-        <p>With 200 KB to spend, even the full 1200 × 1600 photo kept a quality of 0.86. The risk at this limit is the other way round: a small 350 × 350 px photo was 21.6 KB, so check the form's minimum as well as its maximum.</p>
+        <p>With 200 KB to spend, even the full 1200 × 1600 photo kept a quality of 0.85. The risk at this limit is the other way round: a small 350 × 350 px photo was 22.1 KB, so check the form's minimum as well as its maximum.</p>
       </section>
 
       <section class="section prose" aria-labelledby="kbFixHeading">
@@ -560,7 +562,7 @@
         <ul>
           <li><strong>Below the minimum:</strong> enter the form's minimum in <em>Minimum (KB)</em>; do not enlarge the image to gain bytes.</li>
           <li><strong>Wrong dimensions:</strong> the result table reads the pixel size from the finished file. If the form gives centimetres, read <a href="guides/pixels-cm-inches-dpi-explained.html">pixels, centimetres and DPI</a>.</li>
-          <li><strong>Over the limit by a few bytes:</strong> with 1 KB counted as 1,024 bytes, 100 KB is 102,400 bytes. Set the maximum 1 KB lower if unsure how a portal counts.</li>
+          <li><strong>Too large for the portal:</strong> compare the exact byte count in the result with the form's limit. A maximum here is kept at 1,000 bytes per KB or less (100 KB is at most 100,000 bytes), which fits whether the portal counts 1 KB as 1,000 or 1,024 bytes.</li>
           <li><strong>The photo looks soft:</strong> the pixel size is too large for the limit; see <a href="guides/how-to-reduce-photo-to-50kb-without-blur.html">getting a photo under a KB limit without blur</a>.</li>
           <li><strong>Anything else:</strong> match the portal's message in <a href="guides/fix-common-photo-upload-errors.html">upload errors and their fixes</a>.</li>
         </ul>
@@ -594,7 +596,7 @@
         <details class="faq-item">
           <summary class="faq-question">Is 100 KB the same as 100,000 bytes?</summary>
           <div class="faq-answer">
-            <p>Not necessarily. With 1 KB counted as 1,024 bytes, 100 KB is 102,400 bytes. The result shows the exact byte count.</p>
+            <p>Not quite: portals count 1 KB as either 1,000 or 1,024 bytes, so a 100 KB limit is 100,000 or 102,400 bytes. This tool keeps a 100 KB maximum at 100,000 bytes or less, so the file fits either way, and the result shows the exact byte count.</p>
           </div>
         </details>
 
@@ -687,6 +689,7 @@
   <script src="js/vendor/cropper.min.js"></script>
   <script src="js/presets.js?v=20261118"></script>
   <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/resizer.js?v=20261118"></script>
 </body>
 </html>

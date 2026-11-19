@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <meta name="applyready-tool" content="passport-print">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -161,9 +161,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -220,9 +219,8 @@
                     <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -326,7 +324,7 @@
           </div>
           <div class="field">
             <label for="photoCountSelect" class="field-label">Copies</label>
-            <select id="photoCountSelect">
+            <select id="photoCountSelect" aria-describedby="photoCountSelectHint">
               <option value="auto" selected>As many as fit</option>
               <option value="4">4 photos</option>
               <option value="6">6 photos</option>
@@ -334,6 +332,7 @@
               <option value="12">12 photos</option>
               <option value="16">16 photos</option>
             </select>
+            <p class="field-hint" id="photoCountSelectHint" aria-live="polite">How many fit depends on the paper and photo size.</p>
           </div>
           <div class="field">
             <label for="gapSelect" class="field-label">Space between photos</label>
@@ -376,12 +375,12 @@
         </figure>
 
         <h3>What the sheets look like in practice</h3>
-        <p>We made sheets from the test portrait in our <a href="img/samples/test-portrait.jpg">sample images</a> (1200 × 1600 px, 428.9 KB) with the 3.5 × 4.5 cm size and standard spacing:</p>
+        <p>We made sheets from the test portrait in our <a href="img/samples/test-portrait.jpg">sample images</a> (1200 × 1600 px, 439.2 KB) with the 3.5 × 4.5 cm size and standard spacing:</p>
         <div class="table-wrap"><table>
           <thead><tr><th>Paper</th><th>Copies</th><th>Sheet in pixels (300 DPI)</th><th>JPEG size</th><th>PDF size</th></tr></thead>
           <tbody>
-            <tr><td>4 × 6 inch</td><td>6</td><td>1200 × 1800</td><td>312.9 KB</td><td>313.6 KB</td></tr>
-            <tr><td>5 × 7 inch</td><td>9</td><td>1500 × 2100</td><td>461.4 KB</td><td>462.1 KB</td></tr>
+            <tr><td>4 × 6 inch</td><td>6</td><td>1200 × 1800</td><td>320.5 KB</td><td>321.2 KB</td></tr>
+            <tr><td>5 × 7 inch</td><td>9</td><td>1500 × 2100</td><td>472.5 KB</td><td>473.2 KB</td></tr>
             <tr><td>A4</td><td>30</td><td>2480 × 3508</td><td>1.47 MB</td><td>1.47 MB</td></tr>
           </tbody>
         </table></div>
@@ -559,6 +558,7 @@
   <script src="js/components.js?v=20261118" defer></script>
   <script src="js/site.js?v=20261118"></script>
   <script src="js/lib/files.js?v=20261118"></script>
+  <script src="js/lib/image-ops.js?v=20261118"></script>
   <script src="js/passport-photo-print.js?v=20261118"></script>
 </body>
 </html>

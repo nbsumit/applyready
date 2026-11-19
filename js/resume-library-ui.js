@@ -25,6 +25,14 @@
   const LEGACY_DRAFT = 'applyready_resume_draft';
   const LEGACY_FLAG = 'applyready_draft_enabled';
   const CHANNEL = 'applyready-resumes';
+  /* Unsaved changes of one resume, copied synchronously to localStorage when the page is hidden or
+     closed. The IndexedDB write that follows is asynchronous, and quitting the whole browser can end
+     it before it commits; the next visit then finishes that save (recoverUnsaved). The copy is removed
+     as soon as the save completes, nothing is copied while saving is off (in any open tab: the setting
+     is shared between tabs), and every copy is removed when saving is turned off, when the builder
+     opens with saving off, and by Delete all. */
+  const UNSAVED_PREFIX = 'applyready_resume_unsaved:';
+  const limitText = () => `${Number(SCHEMA.MAX_TEXT).toLocaleString('en')} characters`;
   const tabId = LIB ? LIB.newId() : String(Math.random());
 
   const state = {
@@ -38,6 +46,8 @@
     persistent: true,
     phase: 'loading',
     error: '',
+    errorKind: '',        // 'size' when the editor holds more than a resume can store
+    trimmed: false,       // the open resume was shortened on opening; its stored original is untouched
     timer: null,
     writing: null,
     again: false,
@@ -113,7 +123,7 @@
       case 'off': return 'Not saved: saving is off on this device';
       case 'memory': return 'Not saved: this browser is not keeping data for this site';
       case 'conflict': return state.conflict && state.conflict.kind === 'deleted' ? 'Not saved: deleted in another tab' : 'Saving paused: changed in another tab';
-      case 'error': return 'Not saved: storage failed';
+      case 'error': return state.errorKind === 'size' ? 'Not saved: too long to store' : 'Not saved: storage failed';
       default: return '';
     }
   }
@@ -171,10 +181,16 @@
     } else if (!state.persistent) {
       html = `<p><strong>This browser is not keeping data for ApplyReady</strong> (for example in a private window, or when site data is blocked). Your work is lost when you close this tab. Download a backup file to keep a copy.</p>
         <div class="rb-notice__actions">${backup}</div>`;
+    } else if (state.phase === 'error' && state.errorKind === 'size') {
+      html = `<p><strong>Your latest changes are not saved yet.</strong> ${esc(state.error)}</p>`;
+      tone = 'error';
     } else if (state.phase === 'error') {
       html = `<p><strong>Your latest changes could not be saved on this device.</strong> ${esc(state.error)} Download a backup file now so you do not lose them.</p>
         <div class="rb-notice__actions"><button type="button" class="btn btn-sm btn-primary" data-notice="retry">Try saving again</button>${backup}</div>`;
       tone = 'error';
+    } else if (state.trimmed) {
+      html = `<p><strong>Part of this resume was too long to open in full.</strong> An earlier version of ApplyReady saved it with a box over ${limitText()} or a list over ${SCHEMA.MAX_ENTRIES} entries, so the extra text is not shown here. The full original stays saved on this device until you change this resume.</p>
+        <div class="rb-notice__actions"><button type="button" class="btn btn-sm btn-primary" data-notice="original"><i class="fa-solid fa-file-export" aria-hidden="true"></i> Download the original</button></div>`;
     } else if (state.notFound) {
       html = `<p>${esc(state.notFound)}</p><div class="rb-notice__actions"><button type="button" class="btn btn-sm btn-ghost" data-notice="dismiss">Dismiss</button></div>`;
       tone = 'info';
@@ -198,6 +214,10 @@
     // An untouched new resume is not written: opening the builder must not fill the list with blanks.
     if (!state.stored && state.editor.isEmpty()) { refreshStatus(); return; }
     setPhase(state.persistent ? 'pending' : 'memory');
+    // Copy the change at once as well: a browser that is quit hard, crashes or is killed fires no
+    // pagehide, so a copy made only then would miss the last edit. Very large resumes skip this
+    // per-edit copy to keep typing fast; they still get the copy on pagehide.
+    if (!state.switching) stashUnsaved({ maxChars: STASH_EVERY_EDIT_MAX });
     state.timer = setTimeout(() => { flush(); }, SAVE_DELAY);
   }
 
@@ -217,6 +237,122 @@
     STORE.requestPersistence();
   }
 
+  /* Copy the open resume's unsaved changes to localStorage at once (see UNSAVED_PREFIX). Called on
+     every edit (resumes up to STASH_EVERY_EDIT_MAX characters) and when the page is hidden or closed,
+     just before the asynchronous save starts. */
+  const STASH_EVERY_EDIT_MAX = 200000;
+  function stashUnsaved(options) {
+    const cur = state.current;
+    if (!state.loaded || !cur || !canWrite() || !state.persistent || !hasUnsaved()) return;
+    if (!state.stored && state.editor.isEmpty()) return;
+    const json = editorJSON();
+    if (options && options.maxChars && json.length > options.maxChars) return;
+    if (!SCHEMA.validate({ data: JSON.parse(json) })) return;
+    try {
+      localStorage.setItem(UNSAVED_PREFIX + cur.id, JSON.stringify({ id: cur.id, name: cur.name, createdAt: cur.createdAt, baseUpdatedAt: state.stored ? state.baseUpdatedAt : 0, savedAt: Date.now(), json }));
+    } catch (e) { /* storage full or blocked: the IndexedDB save still runs */ }
+  }
+  // Remove the copy once the save it stands for has completed (or, without `json`, in any case).
+  function clearUnsaved(id, json) {
+    try {
+      const key = UNSAVED_PREFIX + id;
+      const text = localStorage.getItem(key);
+      if (text === null) return;
+      // A newer copy (made while this save was running) stays for the next save to clear.
+      let stash = null;
+      try { stash = JSON.parse(text); } catch (e) { stash = null; }
+      if (json === undefined || !stash || stash.json === json) localStorage.removeItem(key);
+    } catch (e) { /* nothing to clear */ }
+  }
+
+  /* Finish saves that the browser cut short (see stashUnsaved). A copy whose resume was not saved
+     since it was made is written back; one whose resume changed elsewhere in the meantime is kept as
+     a separate resume, so neither version is lost. A copy that matches what is stored (the save did
+     complete, only its clean-up was cut short, as after a reload) is removed at once. A copy that
+     differs and is only seconds old may belong to a tab that is still saving it, so when another
+     builder tab is open it is left for later: with { young: 'skip' } it is not touched (the builder
+     opens at once, and looks again in the background, recoverLater); with { young: 'wait' } (no other
+     tab open, or the later look) it is handled whatever its age. Nothing waits before the builder opens.
+     Returns { written: [{ id, updatedAt }], waiting: ms until the youngest skipped copy is 3 s old }. */
+  async function recoverUnsaved(options) {
+    const young = (options && options.young) || 'wait';
+    let keys = [];
+    try { keys = unsavedKeys(); } catch (e) { return { written: [], waiting: 0 }; }
+    const written = [];
+    let waiting = 0;
+    for (const key of keys) {
+      let stash = null;
+      try { stash = JSON.parse(localStorage.getItem(key)); } catch (e) { stash = null; }
+      let data = null;
+      try { data = stash && typeof stash.json === 'string' ? JSON.parse(stash.json) : null; } catch (e) { data = null; }
+      const usable = stash && typeof stash.id === 'string' && LIB.ID_PATTERN.test(stash.id) && data && SCHEMA.validate({ data });
+      try {
+        if (usable) {
+          const existing = await STORE.get('resumes', stash.id);
+          const same = existing && JSON.stringify(existing.data) === stash.json;
+          const age = typeof stash.savedAt === 'number' ? Date.now() - stash.savedAt : Infinity;
+          if (!same && young === 'skip' && age >= 0 && age < 3000) { waiting = Math.max(waiting, 3000 - age); continue; }
+          const now = Math.max(Date.now(), (existing && existing.updatedAt || 0) + 1);
+          if (same) { /* the save did complete */ }
+          else if (existing && (existing.updatedAt || 0) <= (stash.baseUpdatedAt || 0)) {
+            await STORE.put('resumes', Object.assign({}, existing, { data, updatedAt: now, schemaVersion: SCHEMA.CURRENT_VERSION }));
+            written.push({ id: stash.id, updatedAt: now });
+          } else if (!existing && !stash.baseUpdatedAt) {
+            await STORE.put('resumes', LIB.createRecord(data, { id: stash.id, name: stash.name, createdAt: stash.createdAt, updatedAt: now }));
+            written.push({ id: stash.id, updatedAt: now });
+          } else if (existing) {
+            const rec = LIB.createRecord(data, { name: `${LIB.cleanName(stash.name) || LIB.suggestName(data)} (unsaved changes)`, updatedAt: now });
+            await STORE.put('resumes', rec);
+            written.push({ id: rec.id, updatedAt: now });
+          }
+          // A resume deleted after the copy was made stays deleted.
+        }
+        localStorage.removeItem(key);
+      } catch (e) { /* keep the copy and try again on the next visit */ }
+    }
+    return { written, waiting };
+  }
+
+  /* Each open builder tab holds a Web Lock named after it, so a tab that is starting can see whether
+     any other builder tab is open (and so may still be saving a copy it just made). With none open,
+     every copy is a leftover and is finished at once. Returns the number of other tabs, or -1 when the
+     browser cannot tell. */
+  const LOCK_PREFIX = 'applyready-resume-builder:';
+  function holdTabLock() {
+    try { if (navigator.locks && navigator.locks.request) navigator.locks.request(LOCK_PREFIX + tabId, () => new Promise(() => {})).catch(() => {}); } catch (e) { /* not supported */ }
+  }
+  async function otherBuilderTabs() {
+    try {
+      if (!navigator.locks || !navigator.locks.query) return -1;
+      const { held = [], pending = [] } = await navigator.locks.query();
+      return held.concat(pending).filter(l => l.name && l.name.startsWith(LOCK_PREFIX) && l.name !== LOCK_PREFIX + tabId).length;
+    } catch (e) { return -1; }
+  }
+
+  // The keys of every leftover copy (see UNSAVED_PREFIX). May throw when storage is blocked.
+  function unsavedKeys() {
+    return Object.keys(localStorage).filter(key => key.startsWith(UNSAVED_PREFIX));
+  }
+  // Remove every leftover copy: saving was turned off on this device, or everything was deleted.
+  function dropAllUnsaved() {
+    try { unsavedKeys().forEach(key => localStorage.removeItem(key)); } catch (e) { /* nothing to remove */ }
+  }
+
+  /* Look at young copies again once the tab that may own them has had time to finish its save. A
+     resume written back here is announced like a save from another tab: the open one is reloaded when
+     nothing on screen is unsaved, otherwise the person chooses (onRemote). */
+  function recoverLater(ms) {
+    setTimeout(async () => {
+      if (!state.savingOn || !state.persistent) return;
+      const { written } = await recoverUnsaved({ young: 'wait' });
+      written.forEach(saved => {
+        post(Object.assign({ type: 'saved' }, saved));
+        onRemote(Object.assign({ type: 'saved', from: 'recovery' }, saved));
+      });
+      if (written.length && state.dialogOpen) { await loadList(); renderList(); }
+    }, ms + 50);
+  }
+
   /* Write the open resume now. Resolves true when the stored copy matches the editor. */
   function flush(force) {
     clearTimeout(state.timer);
@@ -226,6 +362,15 @@
     const json = editorJSON();
     if (json === state.lastSavedJSON && state.stored) { refreshStatus(); return Promise.resolve(true); }
     if (!force && !state.stored && state.editor.isEmpty()) { refreshStatus(); return Promise.resolve(false); }
+    // Never store what cannot be opened again: the library refuses a record over the limits.
+    if (!SCHEMA.validate({ data: JSON.parse(json) })) {
+      const first = state.errorKind !== 'size' || state.phase !== 'error';
+      state.errorKind = 'size';
+      state.error = `One box can hold up to ${limitText()} and one list up to ${SCHEMA.MAX_ENTRIES} entries, and something here is longer. Shorten it and saving starts again.`;
+      setPhase('error');
+      if (first) notify('Your latest changes are not saved: something is longer than a resume can hold.', true);
+      return Promise.resolve(false);
+    }
     if (state.persistent) setPhase('saving');
     state.writing = (async () => {
       try {
@@ -233,6 +378,8 @@
         let name = cur.name;
         if (state.stored) {
           const existing = await STORE.get('resumes', cur.id);
+          // A conflict is settled on screen (keep, copy or reload), not by the copy for the next visit.
+          if (!existing || (existing.updatedAt || 0) > state.baseUpdatedAt) clearUnsaved(cur.id);
           if (!existing) { state.conflict = { kind: 'deleted' }; refreshStatus(); notify('This resume was deleted in another tab. Your changes here are not saved.', true); return false; }
           if ((existing.updatedAt || 0) > state.baseUpdatedAt) { state.conflict = { kind: 'changed', updatedAt: existing.updatedAt }; refreshStatus(); notify('This resume was changed in another tab. Saving is paused until you choose which version to keep.', true); return false; }
           // A rename made in another tab wins unless this tab renamed it as well.
@@ -248,7 +395,10 @@
         state.stored = true;
         state.lastSavedJSON = json;
         state.error = '';
+        state.errorKind = '';
+        state.trimmed = false;
         state.phase = 'saved';
+        clearUnsaved(cur.id, json);
         await setMeta('lastResumeId', cur.id);
         post({ type: 'saved', id: cur.id, updatedAt: now });
         updateUrl();
@@ -258,6 +408,7 @@
         if (state.dialogOpen) { await loadList(); renderList(); }
         return true;
       } catch (e) {
+        state.errorKind = '';
         state.error = /quota/i.test(String(e && (e.name || e.message))) ? 'The browser says its storage for this site is full.' : 'The browser refused to store it.';
         setPhase('error');
         notify('Your changes could not be saved on this device. Download a backup file to keep them.', true);
@@ -274,13 +425,18 @@
   function useResume(rec, options) {
     const o = options || {};
     clearTimeout(state.timer);
-    state.editor.setResume(rec.data);
+    // setResume() reports a change while state.current is still the previous resume: no copy of the
+    // new content may be made under the previous resume's id (see scheduleSave).
+    state.switching = true;
+    try { state.editor.setResume(rec.data); } finally { state.switching = false; }
     state.current = { id: rec.id, name: rec.name, nameBase: rec.name, createdAt: rec.createdAt, updatedAt: rec.updatedAt };
     state.stored = !!o.stored;
     state.baseUpdatedAt = o.stored ? rec.updatedAt : 0;
     state.lastSavedJSON = o.stored ? editorJSON() : '';
     state.conflict = null;
     state.notFound = '';
+    state.trimmed = !!(o.stored && rec.trimmed);
+    if (state.errorKind === 'size') { state.errorKind = ''; state.error = ''; if (state.phase === 'error') state.phase = 'saved'; }
     if (o.stored) { if (state.savingOn) setMeta('lastResumeId', rec.id); updateUrl(); }
     else if (o.unsavedBaseline) state.lastSavedJSON = editorJSON();
     // setResume() redraws and reports a change before the baseline above is known; drop that save.
@@ -296,9 +452,11 @@
   // Before replacing the open resume, save it; when saving is off, ask before dropping changes.
   async function leaveCurrent(actionLabel) {
     if (!state.current) return true;
-    if (canWrite()) { await flush(); return true; }
+    if (canWrite() && ((await flush()) || !hasUnsaved() || state.editor.isEmpty())) return true;
     if (hasUnsaved() && !state.editor.isEmpty()) {
-      const why = state.conflict ? 'The latest changes to the resume on screen are not saved, because it was changed in another tab.' : 'Saving is off, so the changes to the resume on screen are lost.';
+      let why = 'Saving is off, so the changes to the resume on screen are lost.';
+      if (state.conflict) why = 'The latest changes to the resume on screen are not saved, because it was changed in another tab.';
+      else if (state.savingOn) why = 'The latest changes to the resume on screen could not be saved, so they are lost.';
       return askConfirm({ title: 'Leave this resume without saving?', message: `${why} Download a backup first if you need them.`, confirmLabel: actionLabel || 'Continue', danger: true });
     }
     return true;
@@ -310,13 +468,17 @@
     try { state.channel.postMessage(Object.assign({ from: tabId }, message)); } catch (e) { /* closed channel */ }
   }
   async function onRemote(msg) {
-    if (!msg || typeof msg !== 'object' || msg.from === tabId || typeof msg.id !== 'string') return;
+    if (!msg || typeof msg !== 'object' || msg.from === tabId) return;
+    // Saving turned on or off in another tab applies here at once, so this tab does not keep saving
+    // (or copying unsaved changes) on a device where saving was just turned off.
+    if (msg.type === 'saving' && typeof msg.on === 'boolean') { applySaving(msg.on, true); return; }
+    if (typeof msg.id !== 'string') return;
     if (state.dialogOpen) { await loadList(); renderList(); }
     if (!state.current || msg.id !== state.current.id) return;
     if (msg.type === 'saved' && typeof msg.updatedAt === 'number' && msg.updatedAt > state.baseUpdatedAt) {
       clearTimeout(state.timer);
       // Nothing here is unsaved, so taking the newer version loses nothing: no question to answer.
-      if (!state.conflict && !state.writing && !hasUnsaved() && (await reloadQuietly())) return;
+      if (!state.conflict && !state.writing && !hasUnsaved() && (await reloadQuietly(msg.from === 'recovery'))) return;
       state.conflict = { kind: 'changed', updatedAt: msg.updatedAt };
       refreshStatus();
       notify('This resume was just changed in another tab. Choose which version to keep before you continue.', true);
@@ -333,7 +495,7 @@
   }
 
   // Show the stored version of the open resume, keeping keyboard focus on the same field.
-  async function reloadQuietly() {
+  async function reloadQuietly(recovered) {
     const cur = state.current;
     let raw = null;
     try { raw = await STORE.get('resumes', cur.id); } catch (e) { raw = null; }
@@ -343,7 +505,7 @@
     useResume(result.record, { stored: true });
     const again = focusedId && $(focusedId);
     if (again && typeof again.focus === 'function') again.focus({ preventScroll: true });
-    notify('This resume now shows the changes saved in another tab.');
+    notify(recovered ? 'This resume now shows the last changes you made before the page closed.' : 'This resume now shows the changes saved in another tab.');
     return true;
   }
 
@@ -384,11 +546,25 @@
   }
   function currentAsRecord() {
     const cur = state.current;
-    return { id: cur.id, name: cur.name === LIB.DEFAULT_NAME ? LIB.suggestName(state.editor.getData()) : cur.name, createdAt: cur.createdAt, updatedAt: cur.updatedAt || Date.now(), data: state.editor.getData() };
+    return { id: cur.id, name: cur.name === LIB.DEFAULT_NAME ? LIB.suggestName(state.editor.getData()) : cur.name, createdAt: cur.createdAt, updatedAt: cur.updatedAt || Date.now(), data: state.editor.getData(), trimmed: state.trimmed };
   }
+  const TRIMMED_NOTE = 'Text that was over the limits is shortened in it; open the resume and use Download the original for the full text.';
   function exportOne(rec) {
     downloadJSON(LIB.fileName(rec.name, 'resume_backup.json'), LIB.singleBackup(rec));
-    notify(`Backup of “${rec.name}” downloaded. Keep the file somewhere safe; import it to restore the resume.`);
+    notify(`Backup of “${rec.name}” downloaded. Keep the file somewhere safe; import it to restore the resume.${rec.trimmed ? ` ${TRIMMED_NOTE}` : ''}`);
+  }
+  // The stored record exactly as it is, for a damaged entry or the original of a shortened resume.
+  function downloadRaw(name, suffix, reason, raw) {
+    downloadJSON(LIB.fileName(name, suffix), { app: 'ApplyReady', kind: 'damaged-resume-record', exportedAt: new Date().toISOString(), reason, record: raw });
+  }
+  async function exportOriginal() {
+    const cur = state.current;
+    if (!cur || !state.trimmed) return;
+    let raw = null;
+    try { raw = await STORE.get('resumes', cur.id); } catch (e) { raw = null; }
+    if (!raw) { notify('The original could not be read from this browser.', true); return; }
+    downloadRaw(cur.name, 'original_resume_raw.json', `Over the limits: a box can hold ${limitText()} and a list ${SCHEMA.MAX_ENTRIES} entries.`, raw);
+    notify('The original was downloaded exactly as it is saved. Its full text can be copied from the file. Importing the file opens the resume shortened to fit again.');
   }
   async function exportCurrent() {
     if (!state.current) return;
@@ -470,6 +646,7 @@
     }
     if (result.skipped) message += ` ${result.skipped} could not be read and ${plural(result.skipped, 'was', 'were')} skipped.`;
     if (result.overLimit) message += ` One import holds at most ${LIB.MAX_IMPORT_RESUMES} resumes, so the last ${result.overLimit} in the file ${plural(result.overLimit, 'was', 'were')} not imported.`;
+    if (result.trimmed) message += ` ${result.trimmed === 1 ? (result.resumes.length === 1 ? 'It had' : 'One had') : `${result.trimmed} had`} text over the limits (a box over ${Number(SCHEMA.MAX_TEXT).toLocaleString('en')} characters or a list over ${SCHEMA.MAX_ENTRIES} entries), so ${result.trimmed === 1 ? 'it was' : 'they were'} shortened to fit; the file you imported is unchanged.`;
     notify(message, saved < created.length && state.savingOn);
     if (state.dialogOpen) closeDialog(false);
     showContactDetails();
@@ -613,6 +790,8 @@
     if (!ok) return;
     try { await STORE.clear('resumes'); } catch (e) { notify('The saved resumes could not be deleted. Try again.', true); return; }
     try { await STORE.remove('meta', 'lastResumeId'); } catch (e) { /* nothing left to point at either way */ }
+    // Leftover copies of unsaved changes go too, or "Nothing is left in this browser" would not be true.
+    dropAllUnsaved();
     entries.forEach(id => post({ type: 'deleted', id }));
     await loadList();
     if (state.current && state.stored) useResume(newRecordFor(state.editor.blank(), LIB.DEFAULT_NAME), { stored: false, unsavedBaseline: true });
@@ -626,7 +805,7 @@
   function exportRaw(index) {
     const entry = state.damaged[index];
     if (!entry) return;
-    downloadJSON(LIB.fileName(entry.name, 'damaged_resume_raw.json'), { app: 'ApplyReady', kind: 'damaged-resume-record', exportedAt: new Date().toISOString(), reason: entry.reason, record: entry.raw });
+    downloadRaw(entry.name, 'damaged_resume_raw.json', entry.reason, entry.raw);
     notify('The damaged entry was downloaded as it is stored. It cannot be imported as a resume, but its text can be copied from the file.');
   }
 
@@ -635,21 +814,40 @@
     await loadList();
     if (!state.records.length) { notify('There are no saved resumes to export yet.', true); return; }
     downloadJSON(LIB.fileName('ApplyReady', `resumes_backup_${new Date().toISOString().slice(0, 10)}.json`), LIB.libraryBackup(state.records));
-    notify(`Backup of ${state.records.length} ${state.records.length === 1 ? 'resume' : 'resumes'} downloaded.`);
+    // Say what the file leaves out, so a backup is never mistaken for a complete copy.
+    const damaged = state.damaged.length;
+    const trimmed = state.records.filter(r => r.trimmed).length;
+    let message = `Backup of ${state.records.length} ${state.records.length === 1 ? 'resume' : 'resumes'} downloaded.`;
+    if (damaged) message += ` ${damaged === 1 ? '1 damaged entry is' : `${damaged} damaged entries are`} not in it; use Export raw for ${damaged === 1 ? 'it' : 'them'}.`;
+    if (trimmed) message += ` ${trimmed === 1 ? '1 resume has' : `${trimmed} resumes have`} text over the limits, shortened in the backup; open ${trimmed === 1 ? 'it' : 'each one'} and use Download the original for the full text.`;
+    notify(message, !!damaged);
   });
 
   async function setSaving(on) {
     if (on === state.savingOn) return;
-    state.savingOn = on;
     if (on) {
       try { await STORE.remove('meta', 'resumeSaving'); } catch (e) { /* ignore */ }
-      notify('Saving on this device is on. Your resume saves as you type.');
+    } else {
+      await setMeta('resumeSaving', 'off');
+    }
+    // Every other open builder tab follows at once (onRemote), so none keeps saving or copying
+    // unsaved changes after saving was turned off here.
+    post({ type: 'saving', on });
+    await applySaving(on, false);
+  }
+  // remote: the change was made in another tab (which already stored the setting).
+  async function applySaving(on, remote) {
+    if (on === state.savingOn) return;
+    state.savingOn = on;
+    const where = remote ? ' (changed in another tab)' : '';
+    if (on) {
+      notify(`Saving on this device is on${where}. Your resume saves as you type.`);
       scheduleSave();
     } else {
       clearTimeout(state.timer);
-      await setMeta('resumeSaving', 'off');
+      dropAllUnsaved();
       await loadList();
-      notify('Saving on this device is off. Nothing new is stored in this browser.');
+      notify(`Saving on this device is off${where}. Nothing new is stored in this browser.`);
     }
     syncSwitches();
     refreshStatus();
@@ -892,6 +1090,7 @@
       else if (act === 'saving-on') setSaving(true);
       else if (act === 'retry') { state.phase = 'saved'; flush(true); }
       else if (act === 'dismiss') { state.notFound = ''; refreshStatus(); }
+      else if (act === 'original') exportOriginal();
       else if (act === 'library') openDialog();
       else resolveConflict(act);
     });
@@ -899,8 +1098,8 @@
     const panel = $('formPanel');
     if (panel) panel.addEventListener('input', e => { if (e.target.id !== 'jobDescriptionInput') scheduleSave(); });
     state.editor.onChange(() => { if (state.loaded) scheduleSave(); });
-    doc.addEventListener('visibilitychange', () => { if (doc.visibilityState === 'hidden') flush(); });
-    window.addEventListener('pagehide', () => { flush(); });
+    doc.addEventListener('visibilitychange', () => { if (doc.visibilityState === 'hidden') { stashUnsaved(); flush(); } });
+    window.addEventListener('pagehide', () => { stashUnsaved(); flush(); });
     window.addEventListener('beforeunload', e => {
       if (!state.loaded || state.editor.isEmpty()) return;
       // Without lasting storage everything on screen is lost on close, saved in memory or not.
@@ -930,6 +1129,7 @@
       return;
     }
     wire();
+    holdTabLock();
     state.editor.openSampleAsNew = () => createNew('sample', true);
     renderStatus();
     let status = { persistent: false };
@@ -937,7 +1137,19 @@
     state.persistent = !!status.persistent;
     state.savingOn = (await getMeta('resumeSaving')) !== 'off';
     syncSwitches();
-    if (state.persistent && state.savingOn) await migrateLegacyDraft();
+    let waiting = 0;
+    if (state.persistent && state.savingOn) {
+      await migrateLegacyDraft();
+      // Other open tabs (and My resumes there) hear about a save finished here. A copy only seconds
+      // old is looked at again in the background, so the builder opens at once (recoverLater).
+      const recovered = await recoverUnsaved({ young: (await otherBuilderTabs()) === 0 ? 'wait' : 'skip' });
+      recovered.written.forEach(saved => post(Object.assign({ type: 'saved' }, saved)));
+      waiting = recovered.waiting;
+    } else if (!state.savingOn) {
+      // Saving is off on this device (a shared computer): a copy left by a tab that had not heard of
+      // it yet is removed, never written back (privacy page, applyready_resume_unsaved:).
+      dropAllUnsaved();
+    }
     await loadList();
 
     const params = new URLSearchParams(location.search);
@@ -974,6 +1186,7 @@
     if (layout) layout.removeAttribute('aria-busy');
     scheduleSave();
     refreshStatus();
+    if (waiting) recoverLater(waiting);
     // Say at once what a screen reader user would otherwise only find in the notice.
     if (!state.persistent) notify('This browser is not keeping data for ApplyReady, so your work is lost when you close this tab. Download a backup file to keep a copy.', true);
     else if (linkProblem) notify(linkProblem);

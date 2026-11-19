@@ -20,10 +20,13 @@
 })(typeof self !== 'undefined' ? self : this, function (root, isNode) {
   'use strict';
 
-  const MB = 1024 * 1024;
+  // Sizes, size limits and number grouping follow the one rule in js/lib/files.js (1 KB = 1,000 bytes).
+  const Files = isNode ? require('./files.js') : root.ApplyReadyFiles;
+  const MB = 1024 * 1024; // internal memory budgets
+  const MAX_JPEG_STRAY = 64 * 1024; // stray bytes skipped between JPEG segments (as js/lib/image-ops.js)
   const LIMITS = {
-    fileBytes: 100 * MB,      // one PDF
-    totalBytes: 500 * MB,     // all files in one job (merge)
+    fileBytes: 100 * Files.MB, // one PDF (100 MB, counted as the site counts sizes)
+    totalBytes: 500 * Files.MB, // all files in one job (merge)
     maxFiles: 50,             // files in one merge
     // Pages in one job that copies or changes pages (merge, split, page numbers, watermark). A small
     // crafted file can claim hundreds of thousands of pages, and copying them would freeze the tab.
@@ -38,7 +41,7 @@
   };
 
   // Numbers in messages are grouped the way the rest of the site writes them (2,000 pages).
-  const grouped = n => Number(n).toLocaleString('en-IN');
+  const grouped = n => Files.grouped(n);
   /**
    * What to tell someone whose PDF has more pages than a tool takes. Splitting it first helps only
    * when Split PDF can open the file; past LIMITS.pages it cannot either, so say that plainly instead
@@ -88,13 +91,21 @@
     return { ok: !missing.length, render, missing: modules ? missing : missing.concat('JavaScript modules') };
   }
 
+  /* A part of the PDF tool did not load. Offline, that is because the PDF library is not kept on this
+     device yet (it is kept once a PDF tool was used online, or with "Save every tool" on Your data),
+     not because of the browser or the file. */
+  const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+  const OFFLINE_LOAD = 'This device is offline, and the PDF library this tool needs is not kept on it yet. Connect to the internet and reload the page. To use the PDF tools offline later, open Your data and save every tool for offline use.';
+  const loadFailed = () => (offline() ? OFFLINE_LOAD : 'A part of the PDF tool could not load. Check your connection and reload the page.');
+
   function injectScript(src, type) {
     return new Promise((resolve, reject) => {
       const el = document.createElement('script');
       if (type) el.type = type;
       el.src = src;
       el.onload = () => resolve();
-      el.onerror = () => reject(new PdfError('unsupported', 'A part of the PDF tool could not load. Check your connection and reload the page.'));
+      // detail 'load': the library itself is missing, so every file would fail the same way.
+      el.onerror = () => { el.remove(); reject(new PdfError('unsupported', loadFailed(), 'load')); };
       document.head.appendChild(el);
     });
   }
@@ -130,13 +141,45 @@
         root.addEventListener('applyready:pdfjs', onReady);
         // A browser that cannot parse pdf.js reports the module as failed, or never runs it.
         const timer = setTimeout(() => done(reject, new PdfError('unsupported', 'The PDF reader took too long to start. Reload the page and try again; if it keeps happening, update your browser.')), 30000);
-        injectScript(asset('js/lib/pdf-kit-boot.js'), 'module').catch(() => done(reject, new PdfError('unsupported', 'The PDF reader could not load in this browser. Update it, or use a recent Chrome, Edge, Firefox or Safari.')));
+        injectScript(asset('js/lib/pdf-kit-boot.js'), 'module').catch(() => done(reject, new PdfError('unsupported', offline() ? OFFLINE_LOAD : 'The PDF reader could not load in this browser. Update it, or use a recent Chrome, Edge, Firefox or Safari.')));
       }).then(lib => {
-        lib.GlobalWorkerOptions.workerSrc = asset('js/vendor/pdfjs/pdf.worker.min.mjs');
+        lib.GlobalWorkerOptions.workerSrc = workerSource();
         return lib;
       }).catch(e => { jsPromise = null; throw e; });
     }
     return jsPromise;
+  }
+
+  /* The pdf.js worker reads untrusted files, so it must run under the site's Content-Security-Policy.
+     GitHub Pages cannot send a policy header, and the policy in each page's <meta> tag covers only
+     that page: a worker started from its file's URL takes its policy from that file's response
+     headers, so it would run with none and could send data to any website. A worker started from a
+     blob: URL takes the policy of the page that starts it instead (worker-src allows blob:), so pdf.js
+     is given a one-line blob: module that imports the real worker file from this site. */
+  let workerUrl = null;
+  function workerSource() {
+    if (!workerUrl) {
+      const src = `import ${JSON.stringify(asset('js/vendor/pdfjs/pdf.worker.min.mjs'))};`;
+      workerUrl = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+    }
+    return workerUrl;
+  }
+
+  /* One pdf.js worker for the whole page, shared by every open document. Left to itself, pdf.js
+     starts a new worker for each document; the browser does not give back all of a stopped worker's
+     memory, so a tab that opened dozens of PDFs kept growing by several MB per file even after every
+     worker was stopped. Each document is still freed on its own: closeJs destroys its loading task,
+     which leaves a worker it did not start running. A worker that failed or was stopped is replaced
+     on the next open. */
+  let sharedWorker = null;
+  function pdfWorker(lib) {
+    if (!sharedWorker || sharedWorker.destroyed) sharedWorker = new lib.PDFWorker({ name: 'applyready-pdf' });
+    return sharedWorker;
+  }
+  function dropWorker() {
+    if (!sharedWorker) return;
+    try { sharedWorker.destroy(); } catch (e) { /* already stopped */ }
+    sharedWorker = null;
   }
 
   /* ------------------------------------------------------------------ Reading */
@@ -214,6 +257,92 @@
     }
   }
 
+  /**
+   * Whether a Flate stream that pdf-lib could not decode completely still gives some content.
+   * pdf-lib's decoder throws on any error and keeps nothing; pdf.js, like other readers, keeps what
+   * came before the error, so a stream with only its last bytes cut off still shows most of the page.
+   * The browser's own decompressor hands over what it decoded before it fails. Resolves true (some
+   * content), false (none at all), or null when this browser cannot tell.
+   */
+  async function inflatesPartly(bytes) {
+    const DS = (root && root.DecompressionStream) || (typeof globalThis !== 'undefined' ? globalThis.DecompressionStream : undefined);
+    if (typeof DS !== 'function') return null;
+    let reader = null;
+    try {
+      const ds = new DS('deflate');
+      const writer = ds.writable.getWriter();
+      reader = ds.readable.getReader();
+      writer.write(bytes).catch(() => { /* reported by the reader */ });
+      writer.close().catch(() => { /* reported by the reader */ });
+      for (;;) {
+        const step = await reader.read();
+        if (step.done) return false;
+        if (step.value && step.value.length) return true;
+      }
+    } catch (e) {
+      return false;
+    } finally {
+      if (reader) reader.cancel().catch(() => { /* already finished */ });
+    }
+  }
+
+  /**
+   * Shared by the PDF tools and the File checker (ApplyReadyInspect.unreadablePdfPages in
+   * js/lib/inspect.js holds the same rules). Returns { unreadable, incomplete }, 0-based indexes.
+   * unreadable: pages none of whose content can be read (the /Contents names an object that is
+   * missing or not a stream, or Flate data that gives nothing at all), which come out blank.
+   * incomplete: pages with some content broken, for example a stream with its end cut off, where
+   * readers still show the part before the damage. A page with no /Contents, an empty /Contents array
+   * or an empty content stream is blank by design and is not reported. Flate streams are checked up
+   * to a total of 16 MB.
+   */
+  async function damagedPages(P, doc, partly) {
+    const ctx = doc.context;
+    const CONTENTS = P.PDFName.of('Contents'), FILTER = P.PDFName.of('Filter'), FLATE = P.PDFName.of('FlateDecode');
+    let budget = 16 * MB;
+    const known = new Map();
+    // 'ok', 'partial' (broken, but some content comes out) or 'bad' (nothing comes out).
+    const state = async obj => {
+      if (!(obj instanceof P.PDFStream)) return 'bad';
+      if (known.has(obj)) return known.get(obj);
+      let result = 'ok';
+      if (obj instanceof P.PDFRawStream && budget > 0 && typeof P.decodePDFRawStream === 'function') {
+        const f = obj.dict.lookup(FILTER);
+        const flate = f === FLATE || (f instanceof P.PDFArray && f.size() > 0 && f.asArray().every(x => ctx.lookup(x) === FLATE));
+        // An empty stream (0 bytes) is a blank page by design, like a page with no /Contents.
+        if (flate && obj.contents.length) {
+          budget -= obj.contents.length;
+          try { P.decodePDFRawStream(obj).decode(); }
+          catch (e) { result = (await partly(obj.contents)) === false ? 'bad' : 'partial'; }
+        }
+      }
+      known.set(obj, result);
+      return result;
+    };
+    const unreadable = [], incomplete = [];
+    const pages = doc.getPages();
+    for (let i = 0; i < pages.length; i++) {
+      const ref = pages[i].node.get(CONTENTS);
+      if (ref === undefined) continue;
+      const c = ctx.lookup(ref);
+      const parts = c instanceof P.PDFArray ? c.asArray().map(x => ctx.lookup(x)) : [c];
+      const states = [];
+      for (const part of parts) states.push(await state(part));
+      if (!states.length) continue; // /Contents [] is a blank page by design too
+      if (states.every(x => x === 'bad')) unreadable.push(i);
+      else if (states.some(x => x !== 'ok')) incomplete.push(i);
+    }
+    return { unreadable, incomplete };
+  }
+
+  /** Damaged pages of a document opened with openLib: { unreadable, incomplete } (see damagedPages). */
+  function pageDamage(doc) {
+    const P = isNode ? require('../vendor/pdf-lib.min.js') : root.PDFLib; // loaded: `doc` came from it
+    return damagedPages(P, doc, inflatesPartly);
+  }
+  /** Pages (0-based) none of whose content can be read, so they come out blank. */
+  async function unreadablePages(doc) { return (await pageDamage(doc)).unreadable; }
+
   function dropEncryption(P, doc) {
     const ctx = doc.context;
     const refs = new Set();
@@ -247,6 +376,7 @@
     const label = o.name || 'This PDF';
     const task = lib.getDocument({
       data: bytes.slice(),
+      worker: pdfWorker(lib),
       password: o.password || undefined,
       wasmUrl: asset('js/vendor/pdfjs/wasm/'),
       iccUrl: asset('js/vendor/pdfjs/iccs/'),
@@ -254,20 +384,47 @@
       cMapUrl: asset('js/vendor/pdfjs/cmaps/'),
       cMapPacked: true,
       enableXfa: false,
-      stopAtErrors: false
+      stopAtErrors: false,
+      // pdf.js can hand JPEG pictures to the browser's ImageDecoder (WebCodecs). In Chrome the memory
+      // that path takes is not given back when the document is closed: every drawn page with a photo
+      // or scan kept about 2 MB until the tab closed. pdf.js's own JPEG decoder frees it.
+      isImageDecoderSupported: false
     });
     try {
       return await task.promise;
     } catch (e) {
+      // A document that did not open is still held by the worker: free it (the shared worker keeps running).
+      task.destroy().catch(() => { /* already stopped */ });
       if (e && e.name === 'PasswordException') {
         if (e.code === 2) throw new PdfError('password', 'That password is not right. Check it and try again; passwords are case sensitive.');
         throw new PdfError('encrypted', `${label} is protected with a password.`);
+      }
+      // The worker itself could not start (offline before it was saved, or blocked): not the file's fault.
+      const msg = String(e && e.message);
+      if (/fake worker|worker was destroyed|worker failed/i.test(msg)) {
+        // A worker that never started is replaced on the next open, once the connection is back.
+        // (Not one that was only told to drop this document: other open files still use it.)
+        if (/fake worker|worker failed/i.test(msg)) dropWorker();
+        throw new PdfError('unsupported', loadFailed(), e && e.message);
       }
       throw new PdfError('damaged', `${label} ${DAMAGED}`, e && e.message);
     }
   }
 
-  async function closeJs(doc) { if (doc && doc.destroy) { try { await doc.destroy(); } catch (e) { /* already closed */ } } }
+  /**
+   * Close a pdf.js document: its copy of the file and its parsed pages are freed in the shared
+   * worker, which keeps running for the next file. pdf.js closes a document through the loading task
+   * that opened it (PDFDocumentProxy has no destroy() of its own), so without this every opened PDF
+   * would stay in the worker's memory until the tab closes.
+   */
+  async function closeJs(doc) {
+    if (!doc) return;
+    try {
+      const task = doc.loadingTask;
+      if (task && typeof task.destroy === 'function') await task.destroy();
+      else if (typeof doc.destroy === 'function') await doc.destroy();
+    } catch (e) { /* already closed */ }
+  }
 
   /* ------------------------------------------------------------------ Saving and checking */
   async function save(doc) {
@@ -387,6 +544,77 @@
 
   /* ------------------------------------------------------------------ Structure operations */
   const tooManyPages = n => `That is ${grouped(n)} pages. Up to ${grouped(LIMITS.pages)} pages can be put together at a time in a browser; use fewer pages.`;
+
+  /*
+   * Copying pages without the pages that were left out.
+   * pdf-lib's copyPages copies everything a page refers to. A link on a page (/Dest, or a GoTo
+   * action's /D) and an annotation's /P name another page, so that whole page, its text and images
+   * included, would be copied too, as a page object outside the page list: a page deleted in Organise
+   * or left out in Split could be recovered from the downloaded file, and in Merge internal links
+   * would point at hidden copies instead of the real pages. So before copying, every page of the
+   * source is mapped: a kept page to its copy in the new file, any other page to `dead`, a reference
+   * that is never written. unlinkDropped() then removes what still points at `dead`.
+   */
+  function copier(P, out, src) {
+    const c = P.PDFObjectCopier.for(src.context, out.context);
+    // pdf-lib keeps what it has copied in this map; if that ever changes, copying cannot be steered.
+    if (!(c.traversedObjects instanceof Map)) throw new PdfError('unsupported', 'The PDF library is not the expected version, so pages cannot be copied safely. Reload the page.');
+    return c;
+  }
+
+  /** Copy pages `indexes` (0-based, repeats allowed) of `src` into `out`. Returns the new PDFPage objects, not yet added. */
+  async function copyInto(P, out, src, indexes, dead) {
+    await src.flush();
+    const c = copier(P, out, src);
+    const seen = c.traversedObjects;
+    const srcPages = src.getPages();
+    const refs = indexes.map(i => {
+      const ref = out.context.nextRef();
+      if (!seen.has(srcPages[i].ref)) seen.set(srcPages[i].ref, ref); // links to this page lead to its first copy
+      return ref;
+    });
+    for (const page of srcPages) if (!seen.has(page.ref)) seen.set(page.ref, dead);
+    return indexes.map((idx, k) => {
+      const node = c.copy(srcPages[idx].node);
+      out.context.assign(refs[k], node);
+      return P.PDFPage.of(node, refs[k], out);
+    });
+  }
+
+  /**
+   * Clear every reference to a page that was not copied: a link on a kept page that leads to one is
+   * removed (it would lead nowhere), and any other reference (an annotation's /P, an article bead's
+   * page) is dropped, so the saved file has no references to objects it does not contain.
+   */
+  function unlinkDropped(P, out, dead) {
+    const isDead = v => v instanceof P.PDFRef && v.objectNumber === dead.objectNumber && v.generationNumber === dead.generationNumber;
+    const DEST = P.PDFName.of('Dest'), A = P.PDFName.of('A'), D = P.PDFName.of('D'), ANNOTS = P.PDFName.of('Annots');
+    const deadDest = d => d instanceof P.PDFArray && d.size() > 0 && isDead(d.get(0));
+    for (const page of out.getPages()) {
+      const annots = page.node.lookup(ANNOTS);
+      if (!(annots instanceof P.PDFArray)) continue;
+      for (let i = annots.size() - 1; i >= 0; i--) {
+        const entry = annots.get(i);
+        const a = out.context.lookup(entry);
+        if (!(a instanceof P.PDFDict)) continue;
+        const action = a.lookup(A);
+        if (deadDest(a.lookup(DEST)) || (action instanceof P.PDFDict && deadDest(action.lookup(D)))) {
+          annots.remove(i);
+          if (entry instanceof P.PDFRef) out.context.delete(entry);
+        }
+      }
+    }
+    const sweep = obj => {
+      if (obj instanceof P.PDFDict) {
+        for (const [key, value] of obj.entries()) { if (isDead(value)) obj.delete(key); else sweep(value); }
+      } else if (obj instanceof P.PDFArray) {
+        for (let i = 0; i < obj.size(); i++) { const value = obj.get(i); if (isDead(value)) obj.set(i, P.PDFNull); else sweep(value); }
+      } else if (obj instanceof P.PDFStream) {
+        sweep(obj.dict);
+      }
+    };
+    for (const [, obj] of out.context.enumerateIndirectObjects()) sweep(obj);
+  }
   /**
    * A new document from parts [{ doc, indexes? } | { image }] in order. Page sizes, rotation and
    * content are kept. Throws PdfError toolarge over LIMITS.pages in all.
@@ -396,12 +624,13 @@
     const total = parts.reduce((n, part) => n + (part.doc ? (part.indexes ? part.indexes.length : part.doc.getPageCount()) : 1), 0);
     if (total > LIMITS.pages) throw new PdfError('toolarge', tooManyPages(total));
     const out = await P.PDFDocument.create();
+    const dead = out.context.nextRef();
     for (let i = 0; i < parts.length; i++) {
       throwIfAborted(signal);
       const part = parts[i];
       if (part.doc) {
         const idx = part.indexes || part.doc.getPageIndices();
-        const pages = await out.copyPages(part.doc, idx);
+        const pages = await copyInto(P, out, part.doc, idx, dead);
         pages.forEach(p => out.addPage(p));
       } else if (part.image) {
         await addImagePage(out, part.image);
@@ -409,6 +638,7 @@
       if (onProgress) onProgress(i + 1, parts.length);
       await tick();
     }
+    unlinkDropped(P, out, dead);
     return out;
   }
 
@@ -417,8 +647,10 @@
     const P = await lib();
     if (indexes.length > LIMITS.pages) throw new PdfError('toolarge', tooManyPages(indexes.length));
     const out = await P.PDFDocument.create();
-    const pages = await out.copyPages(doc, indexes);
+    const dead = out.context.nextRef();
+    const pages = await copyInto(P, out, doc, indexes, dead);
     pages.forEach(p => out.addPage(p));
+    unlinkDropped(P, out, dead);
     return out;
   }
 
@@ -429,6 +661,7 @@
   async function assemble(items, onProgress, signal) {
     const P = await lib();
     const out = await P.PDFDocument.create();
+    const dead = out.context.nextRef();
     // Copy each source document's pages in one call, then add them in the chosen order.
     const bySource = new Map();
     items.forEach((it, i) => { if (!bySource.has(it.doc)) bySource.set(it.doc, []); bySource.get(it.doc).push(i); });
@@ -436,7 +669,7 @@
     let done = 0;
     for (const [doc, positions] of bySource) {
       throwIfAborted(signal);
-      const pages = await out.copyPages(doc, positions.map(i => items[i].index));
+      const pages = await copyInto(P, out, doc, positions.map(i => items[i].index), dead);
       positions.forEach((pos, k) => { copied[pos] = pages[k]; });
       done += positions.length;
       if (onProgress) onProgress(done, items.length);
@@ -447,6 +680,7 @@
       if (turn) page.setRotation(P.degrees(norm((page.getRotation().angle || 0) + turn)));
       out.addPage(page);
     });
+    unlinkDropped(P, out, dead);
     return out;
   }
 
@@ -462,6 +696,28 @@
       case 270: return { x: box.x + vy, y: box.y + h - vx, angle: 270 };
       default: return { x: box.x + vx, y: box.y + vy, angle: 0 };
     }
+  }
+
+  /**
+   * Give a page its own resource dictionaries before text is drawn on it. Many programs (LibreOffice,
+   * ReportLab) let every page share one /Resources or /Font dictionary. pdf-lib adds the stamp's font
+   * (and, for see-through text, a graphics state) to the page's dictionary under a new name each time,
+   * so on a shared dictionary every page would gain every other page's entry, and the dictionary is
+   * then written out in full on each page: the file would grow with the square of the page count
+   * (a 300-page file became 11 times larger). Shallow copies keep the original fonts and images shared.
+   */
+  function ownResources(P, page) {
+    const node = page.node;
+    const ctx = node.context;
+    const R = P.PDFName.of('Resources');
+    const shared = ctx.lookupMaybe(node.getInheritableAttribute(R), P.PDFDict);
+    const mine = shared ? shared.clone() : ctx.obj({});
+    for (const name of ['Font', 'ExtGState', 'XObject']) {
+      const key = P.PDFName.of(name);
+      const sub = ctx.lookupMaybe(mine.get(key), P.PDFDict);
+      if (sub) mine.set(key, sub.clone());
+    }
+    node.set(R, mine);
   }
 
   const COLORS = { black: [0, 0, 0], grey: [0.42, 0.42, 0.4], blue: [0.13, 0.2, 0.62], red: [0.72, 0.1, 0.1] };
@@ -512,6 +768,7 @@
       const vx = horiz === 'left' ? margin : horiz === 'right' ? facts.width - margin - tw : (facts.width - tw) / 2;
       const vy = vert === 'top' ? facts.height - margin - cap : margin;
       const at = toPageSpace(facts, vx, vy);
+      ownResources(P, pages[i]);
       pages[i].drawText(label, { x: at.x, y: at.y, size: o.size, font, color, rotate: P.degrees(at.angle) });
       if (onProgress && i % 20 === 0) { onProgress(i + 1, pages.length); await tick(); }
     }
@@ -522,7 +779,9 @@
   /**
    * Stamp a text watermark on every page (changed in place).
    * opts: { text, size, opacity (0-1), angle (degrees, counter-clockwise as seen), color,
-   *         layout: 'center' | 'top' | 'bottom' | 'tiled', pages (0-based subset) }
+   *         layout: 'center' | 'top' | 'bottom' | 'tiled', pages (0-based subset),
+   *         report (optional object, filled with { fitted: pages where the text was made smaller, smallest: size used }) }
+   * The text is made smaller where it would not fit on a page, so that every word typed stays visible.
    */
   async function addWatermark(doc, options, onProgress, signal) {
     const P = await lib();
@@ -535,38 +794,57 @@
     const color = await rgbOf(o.color);
     const pages = doc.getPages();
     const only = o.pages ? new Set(o.pages) : null;
-    const tw = font.widthOfTextAtSize(text, o.size);
-    const cap = font.heightAtSize(o.size, { descender: false });
     const rad = o.angle * Math.PI / 180;
     const cos = Math.cos(rad), sin = Math.sin(rad);
-    // Start of the baseline so that the text's centre lands on (cx, cy) after rotation.
-    const startFor = (cx, cy) => ({ x: cx - (tw / 2) * cos + (cap / 2) * sin, y: cy - (tw / 2) * sin - (cap / 2) * cos });
+    // One see-through graphics state for the whole file, named once on each page. pdf-lib would add a
+    // new one to the page for every stamp drawn with an opacity (up to 400 on a tiled page).
+    const see = o.opacity < 1 ? doc.context.register(doc.context.obj({ Type: 'ExtGState', ca: o.opacity })) : null;
+    let fitted = 0, smallest = o.size, overflow = 0;
     for (let i = 0; i < pages.length; i++) {
       if (only && !only.has(i)) continue;
       throwIfAborted(signal);
       const facts = pageFacts(pages[i]);
       const W = facts.width, H = facts.height;
+      // The stamp's box after turning, at the chosen size: it must fit inside the page with a margin.
+      const pad = Math.max(24, H * 0.05);
+      const w0 = font.widthOfTextAtSize(text, o.size), c0 = font.heightAtSize(o.size, { descender: false });
+      const boxW = w0 * Math.abs(cos) + c0 * Math.abs(sin), boxH = w0 * Math.abs(sin) + c0 * Math.abs(cos);
+      const room = Math.min(1, (W * 0.9) / boxW, Math.min(H * 0.9, H - 2 * pad) / boxH);
+      const size = room < 1 ? Math.max(4, Math.floor(o.size * room * 10) / 10) : o.size;
+      if (size < o.size) { fitted++; smallest = Math.min(smallest, size); }
+      // Even the 4 pt floor can be too big on a tiny page with a long text: then part of it is off the
+      // page, and the report says so instead of claiming it fits.
+      if (room < 1 && o.size * room < 4) overflow++;
+      const tw = font.widthOfTextAtSize(text, size);
+      const cap = font.heightAtSize(size, { descender: false });
+      // Start of the baseline so that the text's centre lands on (cx, cy) after rotation.
+      const startFor = (cx, cy) => ({ x: cx - (tw / 2) * cos + (cap / 2) * sin, y: cy - (tw / 2) * sin - (cap / 2) * cos });
       const centres = [];
       if (o.layout === 'tiled') {
-        const stepX = Math.max(tw * Math.abs(cos) + cap * Math.abs(sin), 40) + o.size * 1.6;
-        const stepY = Math.max(tw * Math.abs(sin) + cap * Math.abs(cos), 40) + o.size * 1.6;
+        const stepX = Math.max(tw * Math.abs(cos) + cap * Math.abs(sin), 40) + size * 1.6;
+        const stepY = Math.max(tw * Math.abs(sin) + cap * Math.abs(cos), 40) + size * 1.6;
         let row = 0;
         for (let y = stepY / 2; y < H + stepY / 2 && centres.length < 400; y += stepY, row++) {
           for (let x = (row % 2 ? stepX : stepX / 2); x < W + stepX / 2 && centres.length < 400; x += stepX) centres.push([x, y]);
         }
       } else {
         const ext = (tw * Math.abs(sin) + cap * Math.abs(cos)) / 2;
-        const pad = Math.max(24, H * 0.05);
         const cy = o.layout === 'top' ? H - pad - ext : o.layout === 'bottom' ? pad + ext : H / 2;
         centres.push([W / 2, cy]);
       }
+      const page = pages[i];
+      ownResources(P, page);
+      page.setFont(font); // named once on this page, not once per stamp
+      if (see) page.pushOperators(P.pushGraphicsState(), P.setGraphicsState(page.node.newExtGState('GS', see)));
       for (const [cx, cy] of centres) {
         const s = startFor(cx, cy);
         const at = toPageSpace(facts, s.x, s.y);
-        pages[i].drawText(text, { x: at.x, y: at.y, size: o.size, font, color, opacity: o.opacity, rotate: P.degrees(o.angle + at.angle) });
+        page.drawText(text, { x: at.x, y: at.y, size, color, rotate: P.degrees(o.angle + at.angle) });
       }
+      if (see) page.pushOperators(P.popGraphicsState());
       if (onProgress && i % 10 === 0) { onProgress(i + 1, pages.length); await tick(); }
     }
+    if (o.report) { o.report.fitted = fitted; o.report.smallest = smallest; o.report.overflow = overflow; }
     if (onProgress) onProgress(pages.length, pages.length);
     return doc;
   }
@@ -578,10 +856,12 @@
   function jpegOrientation(bytes) {
     const b = bytes;
     if (b[0] !== 0xFF || b[1] !== 0xD8) return 1;
-    let p = 2;
+    let p = 2, stray = 0;
     while (p + 4 < b.length) {
-      if (b[p] !== 0xFF) return 1;
+      // Stray bytes between segments are skipped to the next marker, as browsers do (FF00 is not a marker).
+      if (b[p] !== 0xFF || b[p + 1] === 0x00) { if (++stray > MAX_JPEG_STRAY) return 1; p++; continue; }
       const marker = b[p + 1];
+      if (marker === 0xFF) { p++; continue; }
       const len = (b[p + 2] << 8) | b[p + 3];
       if (marker === 0xDA || marker === 0xD9) return 1;
       if (marker === 0xE1 && b[p + 4] === 0x45 && b[p + 5] === 0x78 && b[p + 6] === 0x69 && b[p + 7] === 0x66) {
@@ -618,10 +898,12 @@
     if (!b || b[0] !== 0xFF || b[1] !== 0xD8) return null;
     const ascii = (at, s) => { for (let k = 0; k < s.length; k++) if (b[at + k] !== s.charCodeAt(k)) return false; return true; };
     const parts = [b.subarray(0, 2)];
-    let p = 2, guard = 0, total = 2;
+    let p = 2, guard = 0, total = 2, stray = 0;
     const keep = (from, to) => { parts.push(b.subarray(from, to)); total += to - from; };
     while (p < b.length) {
-      if (++guard > 100000 || b[p] !== 0xFF) return null;
+      // Stray bytes between segments are skipped to the next marker (and left out), as browsers do.
+      if (b[p] !== 0xFF || b[p + 1] === 0x00) { if (++stray > MAX_JPEG_STRAY) return null; p++; continue; }
+      if (++guard > 100000) return null;
       const m = b[p + 1];
       if (m === undefined) return null;
       if (m === 0xFF) { p++; continue; }
@@ -687,10 +969,13 @@
   async function prepareImage(file, info) {
     const bytes = await readBytes(file);
     const kind = info && info.ext;
-    // A small file can declare a huge picture; decoding it would take gigabytes of memory.
+    // A small file can declare a huge picture; decoding it would take gigabytes of memory. A picture
+    // whose size cannot be read from its header is refused too (ApplyReadyImageOps.checkHeader).
     const Ops = root.ApplyReadyImageOps;
-    const header = Ops ? Ops.readHeader(bytes.subarray(0, 512 * 1024)) : null;
-    if (header && header.width * header.height > Ops.MAX_PIXELS) throw new PdfError('toolarge', `${file.name} is ${Math.round(header.width * header.height / 1e6)} megapixels (${header.width} × ${header.height} px), more than the ${Ops.MAX_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`);
+    if (Ops) {
+      const checked = await Ops.checkHeader(new Blob([bytes]), file.name);
+      if (checked.message) throw new PdfError(checked.code === 'toolarge' ? 'toolarge' : 'damaged', checked.message);
+    }
     if (kind === 'png') return { bytes, type: 'png' };
     if (kind === 'jpg' && jpegOrientation(bytes) === 1) {
       const clean = jpegWithoutMetadata(bytes);
@@ -782,15 +1067,29 @@
   }
 
   /* ------------------------------------------------------------------ Text */
+  // Control characters never belong in extracted text. pdf.js writes U+0000 for a glyph it cannot map
+  // (for example the Hindi vowel sign ि in some fonts); in a copied or downloaded text it can break
+  // pasting into forms. Tab and line breaks are kept.
+  const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+
   /**
    * Join pdf.js text items into lines. Items on a new baseline start a new line, a large vertical
-   * gap leaves a blank line (a new paragraph), and a horizontal gap becomes a space.
+   * gap leaves a blank line (a new paragraph), and a horizontal gap becomes a space. Control
+   * characters are left out; info (optional) gets { dropped: how many }.
    */
-  function joinTextItems(items) {
+  function joinTextItems(items, info) {
     let out = '';
+    let dropped = 0;
     let lastY = null, lastEnd = null, lastH = 0, broke = true;
-    for (const it of items || []) {
-      if (!it || typeof it.str !== 'string') continue;
+    for (const raw of items || []) {
+      if (!raw || typeof raw.str !== 'string') continue;
+      let it = raw;
+      if (CONTROL.test(raw.str)) {
+        const str = raw.str.replace(CONTROL, '');
+        dropped += raw.str.length - str.length;
+        it = Object.assign({}, raw, { str });
+      }
+      CONTROL.lastIndex = 0;
       const tr = it.transform || [1, 0, 0, 1, 0, 0];
       const x = tr[4], y = tr[5];
       const h = Math.abs(it.height || tr[3] || 10) || 10;
@@ -811,14 +1110,15 @@
       lastEnd = x + (it.width || 0);
       if (it.hasEOL) { out += '\n'; broke = true; }
     }
+    if (info) info.dropped = (info.dropped || 0) + dropped;
     return out.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
   }
 
-  async function pageText(jsDoc, index) {
+  async function pageText(jsDoc, index, info) {
     const page = await jsDoc.getPage(index + 1);
     try {
       const content = await page.getTextContent();
-      return joinTextItems(content.items);
+      return joinTextItems(content.items, info);
     } finally { page.cleanup(); }
   }
 
@@ -963,13 +1263,40 @@
     return { bytes, pageCount: 1, fits: bytes.length <= o.targetBytes, allPagesFit: enc.fits, minDpi: Math.round(enc.dpi) };
   }
 
+  /* A size limit typed in KB is met when the file is at most kb x 1,000 bytes (Files.maxBytes), the
+     smaller of the two ways portals count a KB, so it is accepted either way. Sizes use the site's one
+     size format (Files.formatBytes: 1 KB = 1,000 bytes, rounded up), so a size can never read as under
+     a limit it is over, and the same file shows the same size in every tool. */
+  const limitKB = bytes => (Math.ceil(bytes / 100) / 10).toFixed(1);
+  const limitSize = bytes => Files.formatBytes(bytes);
+
+  /**
+   * The result line of Compress PDF. bytes: the size offered; kb: the limit; kept: '' (compressed),
+   * 'fits' (already under the limit) or 'larger' (compressing would not make it smaller).
+   * Returns { met, text }.
+   */
+  function compressResult(bytes, kb, kept) {
+    const met = bytes <= Files.maxBytes(kb);
+    const exact = `${grouped(bytes)} bytes, under ${kb} KB whether a KB is counted as 1,000 or 1,024 bytes`;
+    const size = `${limitSize(bytes)}, ${grouped(bytes)} bytes`;
+    // Over kb x 1,000 bytes but not over kb x 1,024: some portals take it, some do not.
+    const either = !met && bytes <= kb * 1024 ? ` A portal that counts 1 KB as 1,024 bytes would accept it (up to ${grouped(kb * 1024)} bytes); one that counts 1,000 bytes would not.` : '';
+    let text;
+    if (kept === 'fits') text = `Already under ${kb} KB (${exact}), so your original file is kept unchanged. Upload it as it is.`;
+    else if (kept === 'larger') text = met
+      ? `Already as small as it gets: compressing would not make this file smaller, so your original (${exact}) is kept.`
+      : `This file could not get under ${kb} KB, and compressing would not make it smaller, so your original (${size}) is kept.${either} Try a higher limit, or upload fewer pages.`;
+    else text = met ? `Under ${kb} KB (${exact}). Ready to upload.` : `This file could not get under ${kb} KB. The smallest readable version is ${size}.${either} Try a higher limit, or upload fewer pages.`;
+    return { met, text };
+  }
+
   /* ------------------------------------------------------------------ Names */
   const pad = (n, total) => String(n).padStart(Math.max(2, String(total).length), '0');
 
   return {
-    LIMITS, PdfError, MB, grouped, splitFirst, compressAdvice,
+    LIMITS, PdfError, MB, grouped, splitFirst, compressAdvice, limitKB, limitSize, compressResult,
     support, lib, pdfjs, asset,
-    readBytes, hasHeader, precheck, inspect, openLib, openJs, closeJs, save, verify,
+    readBytes, hasHeader, precheck, inspect, openLib, openJs, closeJs, save, verify, unreadablePages, pageDamage, inflatesPartly,
     pageFacts, paperName, parseRanges, formatRanges, winAnsiProblems, pageNumberLabel,
     merge, extract, assemble, addPageNumbers, addWatermark, addImagePage, prepareImage, jpegOrientation, jpegWithoutMetadata,
     renderPage, thumbnail, jsPageSize, releaseCanvas, canvasBlob, joinTextItems, pageText,

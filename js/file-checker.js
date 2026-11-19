@@ -125,8 +125,18 @@
       const img = report.image;
       report.tooLarge = true;
       report.canStrip = false;
-      report.warnings.unshift({ level: 'warning', text: `This image is ${Math.round(img.width * img.height / 1e6)} megapixels (${group(img.width)} × ${group(img.height)} px), too large to open safely in a browser, so it was not previewed or tested. Many phones and upload forms cannot open a picture this large; make it smaller before you upload it.` });
+      const mp = window.ApplyReadyImageOps && window.ApplyReadyImageOps.megapixels ? window.ApplyReadyImageOps.megapixels(img.width, img.height) : String(Math.ceil(img.width * img.height / 1e5) / 10);
+      report.warnings.unshift({ level: 'warning', text: `This image is ${mp} megapixels (${group(img.width)} × ${group(img.height)} px), too large to open safely in a browser, so it was not previewed or tested. Many phones and upload forms cannot open a picture this large; make it smaller before you upload it.` });
     } else if (report.real.kind === 'image' && report.deep && report.image) {
+      // The same header check as every image tool: a GIF frame larger than its screen, or a picture
+      // whose size cannot be read, is not decoded either (Kit.tooManyPixels).
+      const unsafe = Kit.tooManyPixels ? await Kit.tooManyPixels(file) : '';
+      if (unsafe) {
+        report.tooLarge = true;
+        report.canStrip = false;
+        report.warnings.unshift({ level: 'warning', text: `${unsafe} It was not previewed or tested.` });
+        return { report, thumb, cleaned: null, cleanError: '' };
+      }
       // Decoding a small preview is also the test that the browser can open the picture at all.
       thumb = await Kit.thumbnail(file, 96);
       report.decodes = !!thumb;
@@ -180,7 +190,9 @@
       row('Real type', r.real.label, nameNote, r.extensionAgrees === false ? 'fc-risk' : ''),
       row('Name ends in', r.extension ? '.' + r.extension : 'No extension'),
       row('Your browser reports', r.browserType || 'No type', r.browserTypeAgrees === false ? 'Does not match the contents' : ''),
-      row('Size', r.size.kbText, `${r.size.text} · ${r.size.mbText}`)
+      // The size as every tool shows it (Files.formatBytes), then the exact bytes and the KB and MB
+      // a portal's limit may be written in.
+      row('Size', Files.formatBytes(r.size.bytes), `${r.size.text} · ${r.size.kbText} · ${r.size.mbText}`)
     ]);
   }
 
@@ -276,12 +288,12 @@
   function cleanHTML(item, r, res) {
     const c = res.cleaned;
     if (c) {
-      const removed = c.removed.map(x => `${x.what} (${x.bytes < 1024 ? Inspect.group(x.bytes) + " bytes" : Inspect.sizes(x.bytes).kbText})`).join(', ');
+      const removed = c.removed.map(x => `${x.what} (${x.bytes < 1000 ? Inspect.group(x.bytes) + " bytes" : Inspect.sizes(x.bytes).kbText})`).join(', ');
       return `<div class="fc-clean fc-clean--done">
         <div class="verdict"><i class="fa-solid fa-check" aria-hidden="true"></i><div>
           <h4 class="fc-clean__title">Metadata removed</h4>
           <p class="fc-clean__text">Removed: ${esc(removed)}.${c.orientation ? ' The orientation setting was kept so the photo still appears upright.' : ''}</p>
-          <p class="fc-clean__text">Checked again: no metadata left, ${esc(group(c.check.image.width))} × ${esc(group(c.check.image.height))} px as before, ${esc(c.pixels)}. New size ${esc(Inspect.sizes(c.size).kbText)} (was ${esc(r.size.kbText)}).</p>
+          <p class="fc-clean__text">Checked again: no metadata left, ${esc(group(c.check.image.width))} × ${esc(group(c.check.image.height))} px as before, ${esc(c.pixels)}. New size ${esc(Files.formatBytes(c.size))} (was ${esc(Files.formatBytes(r.size.bytes))}).</p>
         </div></div>
         <button type="button" class="btn btn-primary" data-action="download"><i class="fa-solid fa-download" aria-hidden="true"></i> Download cleaned copy</button>
       </div>`;
@@ -306,7 +318,7 @@
   }
 
   function subtitle(r) {
-    const parts = [r.real.label, r.size.kbText];
+    const parts = [r.real.label, Files.formatBytes(r.size.bytes)];
     if (r.image && r.image.width) parts.push(`${group(r.image.width)} × ${group(r.image.height)} px`);
     if (r.pdf && r.pdf.pages) parts.push(`${group(r.pdf.pages)} page${r.pdf.pages === 1 ? '' : 's'}`);
     return parts.join(' · ');
@@ -337,7 +349,7 @@
       li.innerHTML = `<article class="fc-card" aria-labelledby="${nameId}">
         <header class="fc-card__head">
           <span class="file-row__thumb" aria-hidden="true"><i class="fa-solid fa-file"></i></span>
-          <div class="fc-card__title"><h3 class="fc-card__name" id="${nameId}">${esc(item.name)}</h3><p class="fc-card__sub">${esc(Inspect.sizes(item.size).kbText)}</p></div>
+          <div class="fc-card__title"><h3 class="fc-card__name" id="${nameId}">${esc(item.name)}</h3><p class="fc-card__sub">${esc(Files.formatBytes(item.size))}</p></div>
           <span class="file-status"><i class="fa-solid ${status[0]}" aria-hidden="true"></i> ${status[1]}</span>
           ${removeBtn}
         </header>

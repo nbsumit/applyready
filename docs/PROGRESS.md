@@ -3,11 +3,19 @@
 Plan: [`ROADMAP.md`](ROADMAP.md). This file records what is done, how it was verified and what remains.
 It is updated at the end of each phase.
 
-## Current state (18 Nov 2026)
+## Current state (19 Nov 2026)
 
-All nine phases of the roadmap are implemented, reviewed and merged on the development branch. Nothing
-has been deployed: publishing is an owner decision (see "Owner actions" below). Known limitations are
-listed at the end of this file.
+All nine phases of the roadmap are implemented and reviewed. The work was merged into `main` as pull
+request #16 (commit 92f7ef0) and is what https://applyready.in serves from GitHub Pages. The GitHub
+Actions workflow (`.github/workflows/quality.yml`) runs on every pull request to `main` and every push
+to it.
+
+An independent audit of the live site followed the release and verified 61 defects. They were fixed
+in five packages (resume, image, PDF, batch and cafe, site), each checked by a separate verifier, and
+merged at commit c86b919. A second review of the merged fixes found 33 further issues (mostly where one
+package's fix had not reached the same code in another tool); those were fixed on `fix/post-merge`.
+The user-visible changes are in the public changelog (changelog.html, "fixes after an independent
+review"). Remaining owner actions and known limitations are listed at the end of this file.
 
 ## Phase 9: final review by persona, and fixes (complete, 18 Nov 2026)
 
@@ -63,8 +71,9 @@ covering its own buttons) was fixed before merging. Highlights:
   applicant workspaces 137, tutorials followed in the real tools 208, smoke 20. All pass.
 - Tutorial screenshots were retaken from the merged interface (35 desktop and 35 phone captures) and
   checked by eye.
-- Not run here: the Firefox suites (`npm run test:firefox`, no Firefox in this environment), Safari
-  (no WebKit test), and the GitHub Actions workflow itself (nothing has been pushed to a pull request).
+- Not run here: the Firefox suites (`npm run test:firefox`, no Firefox in this environment) and Safari
+  (no WebKit test). The GitHub Actions workflow was not run before this record was written; it now runs
+  on pull requests to `main` and on `main` itself.
 
 Page weight, first visit with no cache, measured in Chromium at 360 px on a throttled "slow 4G" link
 (1.6 Mbps, 150 ms latency). The test server did not compress, so the times are pessimistic; GitHub
@@ -107,6 +116,24 @@ visit, the service worker serves every file it has seen from this device.
   save switch.
 - **A resume draft from a release before the resume library** is listed on Your data, where it can be
   downloaded or deleted, but it is not deleted automatically when saving is switched off.
+- **Kilobytes:** every tool counts 1 KB as 1,000 bytes and keeps a maximum at N x 1,000 bytes (a
+  minimum at N x 1,024), so a result meets a limit however the portal counts. Measured figures in the
+  guides that were not re-measured were converted from the older 1,024-byte KB (x 1.024, rounded up).
+- **Hindi text from PDFs (PDF-04):** pdf.js maps the vowel sign ि to U+0000. The control character is
+  removed and counted, and PDF to text warns about Indian scripts, but the vowel sign is not recovered.
+- **Blocked downloads (BAT-09):** a page cannot detect a download the browser blocked; the ZIP message
+  says what to do if nothing arrives.
+- **Chinese, Japanese and Korean PDFs offline:** the pdf.js character maps (1.7 MB) are not part of
+  "Save every tool", so such text needs a connection the first time it is read or drawn; Your data and
+  Privacy say so. Without them the text is left out with no word in the tool or its result: pdf.js
+  reports the missing character map only inside its worker, so detecting it would mean replacing its
+  file loader (INTE-5, kept as a known limitation).
+- **Search (NAV-05, partly done):** everyday words and common misspellings are covered by a synonym list
+  and one-letter typo correction; words outside it can still give a weak match.
+- **Donation link (LIVE-03, declined):** the one Razorpay link appears in the footer and on About,
+  Philosophy and Contribute by design.
+- **File checker and GIF frames:** a GIF whose frame is larger than its logical screen is refused for
+  preview, but the facts table still shows the screen size.
 - **Browsers:** tested automatically in Chromium only in this environment; Firefox suites exist but were
   not run here, and Safari/iOS has not been tested.
 
@@ -206,7 +233,8 @@ resume builder 873 → 602 KB, home 256 KB, image resizer 387 KB.
   Smoke-tested in Node (ZIP verified with `unzip -t`, CRC-32 check value) and in Chromium under the site CSP
   (pdf.js render and text, pdf-lib write, worker resize, padding, conversion and cancellation).
 - Vendored `@cantoo/pdf-lib` 2.11.1 (MIT) and pdf.js 6.5.438 legacy build (Apache-2.0).
-- Icon subset build (`scripts/build-icons.py`): 156 KB of icon fonts reduced to 5 KB.
+- Icon subset build (`scripts/build-icons.py`): 156 KB of icon fonts reduced to 5 KB at the time. The
+  subset grows with the icons the site uses; at release (92f7ef0) the two fonts were 12.4 KB together.
 
 ## Owner actions (need someone with account access)
 
@@ -220,5 +248,5 @@ resume builder 873 → 602 KB, home 256 KB, image resizer 387 KB.
 3. **AdSense account** (from the 15 Nov audit): remove applyready.in from the AdSense dashboard.
 4. **Logo.** The header and social card still use the personal "nb" mark. A designed ApplyReady mark is
    an identity decision for the owner; replace `favicon/` and the header logo when one exists.
-5. **Publishing.** All of this is on the development branch. Review it, let the GitHub Actions workflow
-   run on a pull request, test on a real iPhone/Safari, then merge to `main` to publish on GitHub Pages.
+5. **Publishing: done.** Merged into `main` as pull request #16 (commit 92f7ef0) and published on GitHub
+   Pages. Still worth doing: a test on a real iPhone with Safari, which no automated suite here covers.

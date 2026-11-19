@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- shell:csp:start -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' blob: data:; media-src 'self' blob: data:; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- shell:csp:end -->
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Privacy Policy: Files Stay on Your Device | ApplyReady</title>
@@ -62,9 +62,8 @@
             <div class="menu" id="toolsMenu" hidden>
               <div class="menu__cols menu__cols--3">
               <div class="menu__group">
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#resume">Resume</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-resume">Resume <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-resume">
                     <li><a class="menu__item" href="resume.html"><i class="fa-solid fa-file-lines menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Resume builder</span><span class="menu__desc">Write a resume, save it on this device, download PDF or Word</span></span></a></li>
                   </ul>
@@ -121,9 +120,8 @@
                     <li><a class="menu__item" href="convert-image.html"><i class="fa-solid fa-arrows-rotate menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Image converter</span><span class="menu__desc">Convert between JPG, PNG and WebP</span></span></a></li>
                   </ul>
                 </div>
-                <div class="menu__cat">
+                <div class="menu__cat menu__cat--single">
                   <p class="menu__title"><a href="tools.html#cafe">Cyber cafe tools</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="false" aria-controls="menuList-cafe">Cyber cafe tools <span class="menu__count">1<span class="sr-only"> tool</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
                   <ul class="menu__list" id="menuList-cafe">
                     <li><a class="menu__item" href="workspace.html"><i class="fa-solid fa-users menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">Applicant workspaces</span><span class="menu__desc">A separate, temporary space for each applicant’s files</span></span></a></li>
                   </ul>
@@ -182,6 +180,7 @@
             <tbody>
               <tr><td>Saved resumes (their text, template and settings, names and dates)</td><td>IndexedDB database <code>applyready</code></td><td>So your resumes are there when you return. Saving can be turned off in the resume builder for shared computers.</td></tr>
               <tr><td>The last resume you opened, whether saving is on, and whether the browser has been asked to keep the data</td><td>IndexedDB database <code>applyready</code></td><td>To reopen the right resume and respect your choice.</td></tr>
+              <tr><td>Unsaved changes of a resume: the whole resume as last typed, from an edit until it is saved (a second or so), and when you leave or hide the page</td><td>local storage key <code>applyready_resume_unsaved:</code> followed by the resume's id</td><td>So an edit made just before you close the whole browser is not lost. It is removed as soon as the save finishes; if the browser closed first, it stays until your next visit to the resume builder, which saves it (or removes it if saving is off). Not written while saving is off, and removed in every open tab when you turn saving off. The Your data page lists it with your resumes, with Download and Delete.</td></tr>
               <tr><td>Theme (light or dark), only if you choose one</td><td>local storage key <code>applyready_theme</code></td><td>So the next page opens in the same theme.</td></tr>
               <tr><td>Recently used tools: tool names only, never files or what you typed</td><td>local storage key <code>applyready_recent_tools</code></td><td>To show them in search and on the home page. Can be turned off.</td></tr>
               <tr><td>Whether you turned recently used tools off (the value <code>1</code>)</td><td>local storage key <code>applyready_recent_off</code></td><td>So the choice is kept. Only written if you turn the list off on the Your data page.</td></tr>
@@ -209,11 +208,11 @@
         <p>ApplyReady sets no cookies. ApplyReady shows no advertisements and loads no advertising or tracking scripts. Every page loads its scripts, styles, fonts and images from applyready.in only, and carries a Content Security Policy that stops the browser from loading code from, or sending data to, any other site.</p>
 
         <h2 id="network">7. Network requests and hosting</h2>
-        <p>Your browser requests ApplyReady's own pages and files from its host, GitHub Pages, like any website. GitHub may log standard connection details (such as IP address, browser type and the time of the request) for security and reliability; see GitHub's privacy statement. These requests never contain your files or anything you type. After a page has loaded, the tools work without a connection.</p>
+        <p>Your browser requests ApplyReady's own pages and files from its host, GitHub Pages, like any website. GitHub may log standard connection details (such as IP address, browser type and the time of the request) for security and reliability; see GitHub's privacy statement. These requests never contain your files or anything you type. Once a page has loaded, most tools work without a connection. The PDF tools also need their PDF library. Its main part is kept on this device once you have used a PDF tool online; the extra parts only some PDFs need (fonts, image decoders, character maps) are kept the first time a PDF needs them. Save every tool on the Your data page keeps all of it in advance except the character maps for Chinese, Japanese and Korean text, so such text needs a connection the first time it is read or drawn.</p>
         <p><strong>No analytics:</strong> ApplyReady does not use Google Analytics or any other analytics service, tracking pixels, session recording or error-reporting services. Even when a tool fails, nothing is reported to us.</p>
 
         <h2 id="third-parties">8. Third parties</h2>
-        <p>The site loads nothing from third parties. Two links lead elsewhere, and only if you choose to follow them: the source code on GitHub, and the optional donation page hosted by Razorpay. If you contribute through Razorpay, Razorpay processes your payment details under its own terms and privacy policy; ApplyReady receives only what Razorpay shares with the page owner for a payment. Links to job or application portals in guides are governed by those sites' own policies.</p>
+        <p>The site loads nothing from third parties: every page, style, script, font and image comes from applyready.in. Some pages link to other websites, and those open only if you follow the link: the source code on GitHub, the optional donation page hosted by Razorpay, and the official and reference pages that guides and help pages cite, such as government portals and browser documentation. If you contribute through Razorpay, Razorpay processes your payment details under its own terms and privacy policy; ApplyReady receives only what Razorpay shares with the page owner for a payment. A site you open through a link is governed by its own privacy policy.</p>
 
         <h2 id="children">9. Children</h2>
         <p>ApplyReady collects no personal information from anyone, including children.</p>
