@@ -367,6 +367,21 @@ const server = http.createServer((req, res) => {
         ok(result.violations.length === 0, `${scheme} ${label}: ${result.violations.map(v => v.id + ' ' + v.nodes[0].target.join(' ')).join('; ')}`);
       };
       for (const file of pages) { await page.goto(`${origin}/${file}`); await setTheme(); await scan(file); }
+      // Guide charts scroll sideways inside their frame on a phone: the frame then takes keyboard
+      // focus, named by the chart, and passes axe; on a desktop, where it fits, it is not a tab stop.
+      const chartGuides = pages.filter(f => f.startsWith('guides/') && /<figure class="shot">\s*<svg/.test(fs.readFileSync(path.join(root, f), 'utf8')));
+      ok(chartGuides.length >= 8, `guides with charts found (${chartGuides.length})`);
+      for (const file of chartGuides) {
+        await page.setViewportSize({ width: 360, height: 740 });
+        await page.goto(`${origin}/${file}`); await setTheme();
+        const frame = await page.evaluate(() => { const f = [...document.querySelectorAll('.shot')].find(x => x.querySelector(':scope > svg')); return { scrolls: f.scrollWidth > f.clientWidth, tab: f.tabIndex, name: f.getAttribute('aria-labelledby'), title: f.querySelector('svg > title') && f.querySelector('svg > title').id }; });
+        ok(frame.scrolls && frame.tab === 0 && frame.name && frame.name === frame.title, `${scheme} ${file} @360: the scrolling chart frame takes focus and is named by its chart (${JSON.stringify(frame)})`);
+        const result = await new AxeBuilder({ page }).include('main').withTags(rules).analyze();
+        ok(result.violations.length === 0, `${scheme} ${file} @360: ${result.violations.map(v => v.id + ' ' + v.nodes[0].target.join(' ')).join('; ')}`);
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await page.waitForTimeout(250);
+        ok(await page.evaluate(() => [...document.querySelectorAll('.shot')].every(f => !f.hasAttribute('tabindex'))), `${scheme} ${file} @1280: a chart that fits is not a tab stop`);
+      }
       const image = async () => Buffer.from(await page.evaluate(() => {
         const c = document.createElement('canvas'); c.width = 900; c.height = 1100; const x = c.getContext('2d');
         const g = x.createLinearGradient(0, 0, 900, 1100); g.addColorStop(0, '#456'); g.addColorStop(1, '#dba');
@@ -753,13 +768,16 @@ const server = http.createServer((req, res) => {
     await page.locator('.site-header .brand').focus();
     await page.keyboard.press('Shift+Tab');
     ok(await page.evaluate(() => document.activeElement.id) === 'navMenuToggle', 'phone menu: Shift+Tab from the first item in the header goes round to the menu button');
-    // Categories open and close; Resume builder is listed once.
-    const resume = page.locator('.menu__toggle[aria-controls="menuList-resume"]');
-    await resume.click();
-    ok(await resume.getAttribute('aria-expanded') === 'true' && await page.locator('#menuList-resume a').isVisible(), 'phone menu: a category opens to show its tools');
+    // Categories open and close. A category with one tool has no toggle: Resume builder is a row of
+    // the sheet, one tap after opening the menu (it once took three), and is listed once.
+    ok(await page.locator('.menu__toggle[aria-controls="menuList-resume"], .menu__toggle[aria-controls="menuList-cafe"]').count() === 0, 'phone menu: no toggle for a category with a single tool');
+    ok(await page.locator('#menuList-resume a').isVisible() && await page.locator('#menuList-cafe a').isVisible(), 'phone menu: Resume builder and Applicant workspaces are shown directly');
     ok(await page.locator('#siteNav a:visible', { hasText: 'Resume builder' }).count() === 1, 'phone menu: Resume builder is listed once');
-    await resume.click();
-    ok(await page.locator('#menuList-resume').isHidden(), 'phone menu: and closes again');
+    const images = page.locator('.menu__toggle[aria-controls="menuList-image"]');
+    await images.click();
+    ok(await images.getAttribute('aria-expanded') === 'true' && await page.locator('#menuList-image a').first().isVisible(), 'phone menu: a category opens to show its tools');
+    await images.click();
+    ok(await page.locator('#menuList-image').isHidden(), 'phone menu: and closes again');
     await page.keyboard.press('Escape');
     ok(await toggle.getAttribute('aria-expanded') === 'false' && await page.evaluate(() => document.activeElement.id) === 'navMenuToggle', 'phone menu: Escape closes it and returns focus to the menu button');
     // Search from the sheet: the sheet closes, the dialog opens, and closing it returns to the menu button.

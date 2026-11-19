@@ -60,15 +60,18 @@ const MENU_COLUMNS = [
 
 // On a desktop each category is a heading over its tools. In the phone menu sheet each category is
 // a button that shows or hides its tools, so the sheet starts as one short list; the category of
-// the page being viewed starts open.
+// the page being viewed starts open. A category with a single tool (Resume, Cyber cafe) shows that
+// tool as a plain link instead: a button that only reveals one link costs a tap for nothing.
 function menuGroup(cat, page, rel, openCat) {
   const tools = toolsIn(cat.id);
   if (!tools.length) return '';
   const cur = p => (isCurrent(p, page) ? ' aria-current="page"' : '');
-  const open = cat.id === openCat;
-  return `                <div class="menu__cat"${open ? ' data-open' : ''}>
-                  <p class="menu__title"><a href="${rel('tools.html')}#${cat.id}">${esc(cat.name)}</a></p>
-                  <button type="button" class="menu__toggle" aria-expanded="${open}" aria-controls="menuList-${cat.id}">${esc(cat.name)} <span class="menu__count">${tools.length}<span class="sr-only"> ${tools.length === 1 ? 'tool' : 'tools'}</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+  const single = tools.length === 1;
+  const open = !single && cat.id === openCat;
+  const toggle = single ? '' : `
+                  <button type="button" class="menu__toggle" aria-expanded="${open}" aria-controls="menuList-${cat.id}">${esc(cat.name)} <span class="menu__count">${tools.length}<span class="sr-only"> tools</span></span><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>`;
+  return `                <div class="menu__cat${single ? ' menu__cat--single' : ''}"${open ? ' data-open' : ''}>
+                  <p class="menu__title"><a href="${rel('tools.html')}#${cat.id}">${esc(cat.name)}</a></p>${toggle}
                   <ul class="menu__list" id="menuList-${cat.id}">
 ${tools.map(t => `                    <li><a class="menu__item" href="${rel(t.path)}"${cur(t.path)}><i class="fa-solid fa-${t.icon} menu__icon" aria-hidden="true"></i><span class="menu__text"><span class="menu__name">${esc(t.name)}</span><span class="menu__desc">${esc(t.summary)}</span></span></a></li>`).join('\n')}
                   </ul>

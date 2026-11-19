@@ -780,6 +780,18 @@ a.guide-card:hover strong { color: var(--c-accent); text-decoration: underline; 
 .status-page { padding: var(--s-6) 0; }
 .status-page .actions { display: grid; gap: var(--s-2); max-width: 420px; margin: var(--s-6) 0; }
 .status-page .actions .btn { justify-content: flex-start; white-space: normal; text-align: left; }
+/* The offline page lists only the pages kept on this device (js/offline.js). */
+.status-page__note { margin-top: var(--s-5); color: var(--c-text-2); max-width: 62ch; }
+.status-page__note + .actions { margin-top: var(--s-3); }
+.status-page__saved { margin: 0 0 var(--s-6); max-width: 420px; }
+.status-page__title { font-size: var(--fs-md); font-weight: var(--fw-strong); color: var(--c-text); }
+.status-page__list { list-style: none; margin-top: var(--s-2); display: grid; gap: var(--s-1); }
+.status-page__list a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: .2em; text-decoration-thickness: 1px; }
+.status-page p.muted a { text-decoration: underline; text-underline-offset: .2em; }
+/* With the buttons or the list hidden, the status line still stands apart from what follows (a
+   collapsed margin, so the spacing is unchanged when the buttons show). */
+.status-page__note ~ .status-page__saved { margin-top: var(--s-4); }
+.status-page__note ~ p.muted { margin-top: var(--s-5); }
 
 /* ================================================================== 12. TOOL WORKSPACE */
 /* One frame for every tool. data-state is empty | ready | done (set by components.js), data-busy
@@ -1298,6 +1310,10 @@ html:has(.rb-steps) { scroll-padding-top: calc(var(--h-header) + var(--h-lg) + v
   .menu__toggle[aria-expanded='true'] .fa-chevron-down { transform: rotate(180deg); }
   .menu__cat:not([data-open]) .menu__list { display: none; }
   .menu__list { padding: 0 0 var(--s-2) var(--s-2); }
+  /* A category with one tool: that tool is a row of the sheet, one tap away (no toggle). */
+  .menu__cat.menu__cat--single .menu__list { display: block; padding: 0; }
+  .menu__cat--single .menu__item { min-height: 52px; padding: var(--s-2) var(--s-1); }
+  .menu__cat--single .menu__name { font-size: var(--fs-lg); font-weight: var(--fw-medium); color: var(--c-text); }
   .menu, .menu[hidden] { position: static; display: block !important; width: auto; background: none; border: 0; box-shadow: none; animation: none; overflow: visible; max-height: none; }
   .menu__cols { grid-template-columns: minmax(0, 1fr); }
   .menu__group, .menu__group:last-child { padding: 0; background: none; border: 0 !important; }

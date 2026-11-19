@@ -213,7 +213,9 @@ unknown `app`, or with a newer version than the code understands are refused wit
 
 ## 5. Offline
 
-`sw.js` does not download the site uninvited. On install it caches `/offline.html` only. Pages and
+`sw.js` does not download the site uninvited. On install it caches `/offline.html` and the few files
+that page needs which a visited page may not have loaded (`OFFLINE_SHELL`: `js/offline.js` and the two
+icon fonts, about 15 KB). The offline page shows only the pages that are kept. Pages and
 files are cached as this browser fetches them; the first page, loaded before the service worker took
 over, posts the list of files it loaded and the service worker copies them from the HTTP cache. The
 full list of the site's files (`STATIC_ASSETS`, written by `scripts/build-sw.js` with a content hash
@@ -221,7 +223,9 @@ per file) is downloaded only when the visitor selects "Save every tool for offli
 Every file is stored once, under its path plus its content hash (`/js/site.js?sw=1a2b3c4d`), whatever
 query string the page used, so a release keeps unchanged files and refetches only the changed files
 the browser had (skipped under Save-Data). Vendored libraries are cached on first use in a separate
-cache that survives releases until a vendored file changes. Pages are network-first; assets are
+cache that survives releases until a vendored file changes; the ones the PDF tools need (`VENDOR_ASSETS`)
+are also saved by "Save every tool for offline use", and a release that changes them refetches the ones
+the browser had. Pages are network-first; assets are
 stale-while-revalidate.
 
 ## 6. Security boundaries
