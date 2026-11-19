@@ -146,6 +146,17 @@
       if (n.js) {
         try { out.jsDoc = await K.openJs(bytes, { password, name }); }
         catch (e) {
+          if (!n.lib && e.code === 'damaged') {
+            // A tool that only draws or reads cannot go on without pdf.js. When pdf-lib can read the
+            // file and finds no page content at all, say so as every other tool does (usable).
+            try {
+              const libDoc = await K.openLib(bytes, { password, name });
+              const damage = await K.pageDamage(libDoc);
+              const count = libDoc.getPageCount();
+              if (count && damage.unreadable.length === count) { out.pageCount = count; out.unreadable = damage.unreadable; out.libDoc = libDoc; return out; }
+            } catch (e2) { /* pdf-lib cannot read it either: pdf.js's message stands */ }
+            throw e;
+          }
           if (!n.lib || e.code === 'unsupported') throw e;
           // pdf-lib opened it but pdf.js could not read it: the file is damaged. The tool can still
           // try, without previews, and says what that means (damageNotice, damageNote).

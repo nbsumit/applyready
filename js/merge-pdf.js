@@ -222,7 +222,11 @@
           problems.push(e && e.name === 'PdfError' ? e.message : `${files[i].name} could not be added. Check that it opens on your device.`);
           if (e && e.code === 'toolarge') break;
           // The PDF library itself did not load: every other file would fail the same way.
-          if (e && e.code === 'unsupported' && e.detail === 'load') { if (files.length - i > 1) problems.push(`None of the other ${UI.plural(files.length - i - 1, 'file')} could be added either.`); break; }
+          if (e && e.code === 'unsupported' && e.detail === 'load') {
+            const rest = files.length - i - 1;
+            if (rest) problems.push(rest === 1 ? 'The other file could not be added either.' : `None of the other ${UI.plural(rest, 'file')} could be added either.`);
+            break;
+          }
         }
       }
       render();
