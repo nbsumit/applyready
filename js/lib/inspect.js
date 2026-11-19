@@ -97,7 +97,7 @@
    */
   function sizes(n) {
     const up = (v, d) => (Math.ceil(v * 10 ** d - 1e-9) / 10 ** d).toFixed(d);
-    return { bytes: n, kb: n / KB, mb: n / SITE_MB, text: `${group(n)} bytes`, kbText: `${group(up(n / KB, 1).replace(/\.0$/, ''))} KB`, mbText: `${up(n / SITE_MB, n < 0.1 * SITE_MB ? 3 : n < 10 * SITE_MB ? 2 : 1)} MB` };
+    return { bytes: n, kb: n / KB, mb: n / SITE_MB, text: `${group(n)} bytes`, kbText: `${group(up(n / KB, 1).replace(/\.0$/, ''))} KB`, mbText: `${up(n / SITE_MB, n < 0.1 * SITE_MB ? 3 : 2)} MB` };
   }
 
   /* ------------------------------------------------------------------ TIFF / EXIF */

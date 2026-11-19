@@ -207,7 +207,7 @@ print('|'.join([str(a.size == b.size), str(a.mode == b.mode), str(a.tobytes() ==
     fs.writeFileSync(path.join(tmp, 'huge.jpg'), big);
     await page.setInputFiles('#fcDropInput', path.join(tmp, 'huge.jpg'));
     await page.waitForFunction(() => document.querySelector('.fc-item[data-status="done"]'), null, { timeout: 30000 });
-    ok(/larger than the 50 MB/.test(await card('huge.jpg').innerText()) && /51\.0 MB|52,224\.0 KB/.test(await card('huge.jpg').innerText()), 'file over the inspection limit: type and size only, explained');
+    ok(/larger than the 50 MB/.test(await card('huge.jpg').innerText()) && /53\.48 MB|53,477\.4 KB/.test(await card('huge.jpg').innerText()), 'file over the inspection limit: type and size only, explained');
     await page.click('#fcClear');
 
     // Names that disguise the extension, program extensions, and a picture too large to open safely

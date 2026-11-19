@@ -127,7 +127,7 @@
 
   function unsavedRows() {
     return unsaved.map((u, i) => {
-      const when = u.savedAt ? `, typed ${fmtDate(u.savedAt)}` : '';
+      const when = u.savedAt ? ` (${fmtDate(u.savedAt)})` : '';
       const what = savingOff
         ? `Changes typed just before the page closed${when}, not saved. Saving is off on this device, so the resume builder removes them when it opens.`
         : `Changes typed just before the page closed${when}, not saved yet. The resume builder saves them the next time it opens.`;

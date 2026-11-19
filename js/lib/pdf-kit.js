@@ -292,7 +292,8 @@
    * missing or not a stream, or Flate data that gives nothing at all), which come out blank.
    * incomplete: pages with some content broken, for example a stream with its end cut off, where
    * readers still show the part before the damage. A page with no /Contents, an empty /Contents array
-   * or an empty content stream is blank by design and is not reported. Flate streams are checked up to a total of 16 MB.
+   * or an empty content stream is blank by design and is not reported. Flate streams are checked up
+   * to a total of 16 MB.
    */
   async function damagedPages(P, doc, partly) {
     const ctx = doc.context;
