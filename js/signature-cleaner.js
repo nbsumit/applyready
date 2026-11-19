@@ -161,7 +161,7 @@
     const Ops = window.ApplyReadyImageOps;
     let opened;
     try {
-      opened = Ops ? await Ops.openImage(file, { name: file.name }) : await openWithImg(file);
+      opened = Ops ? await Ops.openImage(file, { name: file.name, minSide: Ops.MIN_SIDE }) : await openWithImg(file);
     } catch (e) {
       if (token === loadToken) notifyError((e && e.message) || 'That image could not be read. Choose a JPG, PNG or WebP photo that opens on your device, then try again.');
       return;

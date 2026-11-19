@@ -219,7 +219,7 @@
   // The pixel size of an image after a full decode (the decoded copy is freed at once).
   async function measure(file, Ops) {
     if (Ops) {
-      const opened = await Ops.openImage(file, { name: file.name });
+      const opened = await Ops.openImage(file, { name: file.name, minSide: Ops.MIN_SIDE });
       const size = { width: opened.width, height: opened.height };
       opened.close();
       return size;

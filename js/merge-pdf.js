@@ -168,8 +168,17 @@
     if (totalBytes() + file.size > K.LIMITS.totalBytes) throw new K.PdfError('toolarge', `${file.name} would bring the total over ${Files.formatBytes(K.LIMITS.totalBytes)}. Merge these files first, then merge the result with the rest.`);
     if (totalPages() >= K.LIMITS.pages) throw new K.PdfError('toolarge', `The list already has ${K.grouped(totalPages())} pages, the most that can be merged into one file in a browser. Remove a file from the list to make room.`);
     if (info.kind === 'image') {
-      const tooLarge = await Kit.tooManyPixels(file);
-      if (tooLarge) throw new K.PdfError('unsupported', tooLarge);
+      // The same intake check as Image to PDF and Compress PDF (ApplyReadyImageOps.openImage): a
+      // picture over 50 MP, or whose size cannot be read, is refused from its header, and a truncated
+      // or damaged one is refused now, with the same words, rather than failing once Merge is pressed.
+      const Ops = window.ApplyReadyImageOps;
+      if (Ops && Ops.openImage) {
+        try { (await Ops.openImage(file, { name: file.name })).close(); }
+        catch (e) { throw new K.PdfError(e && e.code === 'toolarge' ? 'toolarge' : 'damaged', (e && e.message) || `${file.name} could not be opened.`); }
+      } else {
+        const tooLarge = await Kit.tooManyPixels(file);
+        if (tooLarge) throw new K.PdfError('unsupported', tooLarge);
+      }
       const it = { id: ++seq, file, kind: 'image', info, pages: 1, size: file.size, thumb: await Kit.thumbnail(file, 96) };
       items.push(it);
       return it;

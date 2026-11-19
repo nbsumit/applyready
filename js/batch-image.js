@@ -546,8 +546,7 @@
       item.meta.label = info.label ? info.label.replace(/ image$/, '') : '';
       item.meta.downloaded = false;
       createRow(item);
-      item.file.slice(0, 512 * 1024).arrayBuffer().then(buf => {
-        const header = Ops.readHeader(new Uint8Array(buf));
+      Ops.readHeaderFrom(item.file).then(header => {
         if (header) { item.meta.dims = header; updateRow(item); }
       }).catch(() => { /* size shown once processed */ });
     });

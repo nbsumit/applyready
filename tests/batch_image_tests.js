@@ -59,6 +59,44 @@ im.save(d + '/h.webp', quality=80); im.save(d + '/hl.webp', lossless=True)
   for (const f of ['h.png', 'h.gif', 'h.bmp', 'h.webp', 'hl.webp']) { const h = head(f); ok(h && h.width === 640 && h.height === 480, `${f}: header size ${JSON.stringify(h)}`); }
   ok(Ops.readHeader(new Uint8Array([0xFF, 0xD8, 0xFF, 0xE0, 0, 4, 1, 2])) === null && Ops.readHeader(new Uint8Array(0)) === null, 'truncated or empty input reads as unknown, without throwing');
 
+  // SECU-1: the 50 MP check must not fail open. Sizes hidden where a simple reader stops (an AVIF's
+  // 'ispe', a GIF frame larger than its screen, a JPEG frame header after 720 KB of metadata) are read,
+  // and a picture whose size cannot be read is refused before it is decoded.
+  py(`
+import sys
+from PIL import Image
+d = sys.argv[1]
+Image.new('L', (8000, 8000), 200).save(d + '/frame.gif')
+b = bytearray(open(d + '/frame.gif', 'rb').read()); b[6:10] = bytes([100, 0, 100, 0])
+open(d + '/screen100.gif', 'wb').write(bytes(b))
+Image.new('RGB', (8000, 8000), (200, 10, 10)).save(d + '/big.jpg', quality=50)
+j = open(d + '/big.jpg', 'rb').read()
+app2 = b''.join(b'\\xff\\xe2' + (65535).to_bytes(2, 'big') + bytes(65533) for _ in range(11))
+open(d + '/padded.jpg', 'wb').write(j[:2] + app2 + j[2:])
+`, tmp);
+  const box = (type, ...parts) => { const body = Buffer.concat(parts); const h = Buffer.alloc(8); h.writeUInt32BE(8 + body.length); h.write(type, 4, 'latin1'); return Buffer.concat([h, body]); };
+  const ispe = (w, h) => { const b = Buffer.alloc(12); b.writeUInt32BE(w, 4); b.writeUInt32BE(h, 8); return box('ispe', b); };
+  const avif = (...sizes) => Buffer.concat([box('ftyp', Buffer.from('avif\0\0\0\0avifmif1', 'latin1')), box('meta', Buffer.alloc(4), box('hdlr', Buffer.alloc(24)), box('iprp', box('ipco', ...sizes.map(([w, h]) => ispe(w, h)))))]);
+  const blobOf = buf => new Blob([buf]);
+  (async () => {
+    const big = await Ops.readHeaderFrom(blobOf(avif([512, 512], [16384, 16384])));
+    ok(big && big.width === 16384 && big.height === 16384 && big.format === 'avif', `AVIF: the largest ispe (a grid's full size) is read (${JSON.stringify(big)})`);
+    ok((await Ops.checkHeader(blobOf(avif([16384, 16384])), 'bomb.avif')).code === 'toolarge', 'AVIF of 268 MP: refused from its header');
+    const small = await Ops.checkHeader(blobOf(avif([2000, 1500])), 'ok.avif');
+    ok(small.code === '' && small.header.width === 2000, 'AVIF of 3 MP: allowed');
+    const gif = Ops.readHeader(new Uint8Array(fs.readFileSync(path.join(tmp, 'screen100.gif'))));
+    ok(gif && gif.width === 8000 && gif.height === 8000, `GIF: a frame larger than its 100 × 100 screen is what counts (${JSON.stringify(gif)})`);
+    const padded = fs.readFileSync(path.join(tmp, 'padded.jpg'));
+    ok(Ops.readHeader(new Uint8Array(padded.subarray(0, 512 * 1024))) === null, 'padded JPEG: the frame header is past the first 512 KB');
+    const pj = await Ops.checkHeader(blobOf(padded), 'padded.jpg');
+    ok(pj.code === 'toolarge' && pj.header.width === 8000, `padded JPEG: read on past 720 KB of metadata and refused (${JSON.stringify(pj.header)})`);
+    const unknown = await Ops.checkHeader(blobOf(Buffer.from([0xFF, 0xD8, 0xFF, 0xDA, 0, 4, 1, 2, 3, 4])), 'odd.jpg');
+    ok(unknown.code === 'unknown' && /could not be opened safely: its pixel size could not be read/.test(unknown.message), 'a picture whose size cannot be read is refused, not decoded');
+    // COPY-5: a size just over the limit never reads as the limit itself.
+    ok(Ops.megapixels(8200, 6110) === '50.1' && Ops.megapixels(9000, 8000) === '72' && Ops.megapixels(20000, 20000) === '400', `megapixels rounded up to 0.1 (${Ops.megapixels(8200, 6110)})`);
+    ok(/is 50\.1 megapixels \(8200 × 6110 px\), more than the 50 MP/.test(Ops.tooManyPixelsMessage(8200, 6110, 'mp.jpg')), 'the 50 MP message says 50.1 for 50.1 MP');
+  })().catch(e => { console.error(e); process.exitCode = 1; });
+
   // The queue: cancel keeps finished results, retry runs the rest, removing frees a late result
   const Batch = require('../js/lib/batch.js');
   (async () => {

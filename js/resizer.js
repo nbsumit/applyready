@@ -1334,7 +1334,7 @@
         // Also checked from the header before decoding (above); this covers a browser without it.
         const totalPixels = testImg.naturalWidth * testImg.naturalHeight;
         if (totalPixels > MAX_SOURCE_PIXELS) {
-          showProcessError(`${file.name || 'This image'} is ${Math.round(totalPixels / 1e6)} megapixels (${testImg.naturalWidth} × ${testImg.naturalHeight} px), more than the ${MAX_SOURCE_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`);
+          showProcessError(`${file.name || 'This image'} is ${Math.ceil(totalPixels / 1e5) / 10} megapixels (${testImg.naturalWidth} × ${testImg.naturalHeight} px), more than the ${MAX_SOURCE_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`);
           return;
         }
         if (Math.min(testImg.naturalWidth, testImg.naturalHeight) < MIN_SOURCE_SIDE) {

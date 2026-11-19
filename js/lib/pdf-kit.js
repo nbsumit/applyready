@@ -953,10 +953,13 @@
   async function prepareImage(file, info) {
     const bytes = await readBytes(file);
     const kind = info && info.ext;
-    // A small file can declare a huge picture; decoding it would take gigabytes of memory.
+    // A small file can declare a huge picture; decoding it would take gigabytes of memory. A picture
+    // whose size cannot be read from its header is refused too (ApplyReadyImageOps.checkHeader).
     const Ops = root.ApplyReadyImageOps;
-    const header = Ops ? Ops.readHeader(bytes.subarray(0, 512 * 1024)) : null;
-    if (header && header.width * header.height > Ops.MAX_PIXELS) throw new PdfError('toolarge', `${file.name} is ${Math.round(header.width * header.height / 1e6)} megapixels (${header.width} × ${header.height} px), more than the ${Ops.MAX_PIXELS / 1e6} MP that can be opened safely in a browser. Resize it on the phone or computer first.`);
+    if (Ops) {
+      const checked = await Ops.checkHeader(new Blob([bytes]), file.name);
+      if (checked.message) throw new PdfError(checked.code === 'toolarge' ? 'toolarge' : 'damaged', checked.message);
+    }
     if (kind === 'png') return { bytes, type: 'png' };
     if (kind === 'jpg' && jpegOrientation(bytes) === 1) {
       const clean = jpegWithoutMetadata(bytes);

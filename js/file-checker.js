@@ -125,8 +125,18 @@
       const img = report.image;
       report.tooLarge = true;
       report.canStrip = false;
-      report.warnings.unshift({ level: 'warning', text: `This image is ${Math.round(img.width * img.height / 1e6)} megapixels (${group(img.width)} × ${group(img.height)} px), too large to open safely in a browser, so it was not previewed or tested. Many phones and upload forms cannot open a picture this large; make it smaller before you upload it.` });
+      const mp = window.ApplyReadyImageOps && window.ApplyReadyImageOps.megapixels ? window.ApplyReadyImageOps.megapixels(img.width, img.height) : String(Math.ceil(img.width * img.height / 1e5) / 10);
+      report.warnings.unshift({ level: 'warning', text: `This image is ${mp} megapixels (${group(img.width)} × ${group(img.height)} px), too large to open safely in a browser, so it was not previewed or tested. Many phones and upload forms cannot open a picture this large; make it smaller before you upload it.` });
     } else if (report.real.kind === 'image' && report.deep && report.image) {
+      // The same header check as every image tool: a GIF frame larger than its screen, or a picture
+      // whose size cannot be read, is not decoded either (Kit.tooManyPixels).
+      const unsafe = Kit.tooManyPixels ? await Kit.tooManyPixels(file) : '';
+      if (unsafe) {
+        report.tooLarge = true;
+        report.canStrip = false;
+        report.warnings.unshift({ level: 'warning', text: `${unsafe} It was not previewed or tested.` });
+        return { report, thumb, cleaned: null, cleanError: '' };
+      }
       // Decoding a small preview is also the test that the browser can open the picture at all.
       thumb = await Kit.thumbnail(file, 96);
       report.decodes = !!thumb;
