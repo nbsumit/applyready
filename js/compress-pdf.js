@@ -101,6 +101,9 @@
       UI.keepFocus(els.zone, els.fileText);
       validateTarget();
       Kit.announce(`${file.name} is ready to compress.`);
+      // A PDF with some pages damaged opens (the rest may be fine); say which, as every PDF tool does.
+      const damage = next.kind === 'pdf' ? UI.damageNotice(next) : '';
+      if (damage) error.show(damage);
     } catch (e) {
       if (ticket !== opening) return;
       const message = e && e.name === 'PdfError' ? e.message : `${file.name} could not be opened. Check that it opens on your device, then choose it again.`;
@@ -153,17 +156,18 @@
     output = urls.make(UI.pdfBlob(bytes));
     UI.setDownload(els.download, output, kept ? current.file.name : `${UI.stem(current.file.name)}-compressed.pdf`);
     const outcome = K.compressResult(bytes.length, res.kb, kept);
-    const met = outcome.met && bytes.length <= target;
+    const met = outcome.met && bytes.length <= target && !(current.kind === 'pdf' && UI.damageNote(current));
     els.status.className = 'result-status' + (met ? '' : ' is-warning');
     els.status.textContent = '';
     const icon = doc.createElement('i');
     icon.className = met ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
     icon.setAttribute('aria-hidden', 'true');
     const text = doc.createElement('span');
-    text.textContent = outcome.text;
+    const damage = current.kind === 'pdf' ? UI.damageNote(current) : '';
+    text.textContent = damage ? `${outcome.text} ${damage}` : outcome.text;
     els.status.append(icon, text);
     els.orig.textContent = sized(original);
-    els.comp.textContent = `${K.limitKB(bytes.length)} KB`;
+    els.comp.textContent = sized(bytes.length);
     els.reduction.textContent = kept ? 'None' : original > bytes.length ? `${Math.round((1 - bytes.length / original) * 100)}%` : 'None';
     els.pages.textContent = String(pageCount);
     els.dpiStat.textContent = kept ? 'Unchanged' : `${minDpi} DPI${minDpi < Number(els.dpi.value) ? ' (lowered to fit)' : ''}`;

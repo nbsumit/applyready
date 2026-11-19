@@ -120,6 +120,8 @@
         let text = '', failed = false;
         try { text = await K.pageText(state.jsDoc, list[k], info); }
         catch (e) { failed = true; }
+        // A page whose content is damaged (openPdf's check) is not a scan: say it could not be read.
+        if (!text && ((state.unreadable || []).includes(list[k]) || (state.incomplete || []).includes(list[k]))) failed = true;
         out.push({ index: list[k], text, failed });
         if (k % 10 === 9) await K.tick();
       }

@@ -1142,6 +1142,40 @@ const server = http.createServer((req, res) => {
       ok(/Pages 2-3 of broken-pages\.pdf could not be read/.test(await page.locator('#mergeResultText').innerText()), 'merge: the result says which pages are blank');
       await context.close();
     }
+    // TOOL-1 (PDF): the tools that only read or draw (PDF to text, PDF to image) and Compress PDF make
+    // the same damage check, and PDF to text does not call damaged pages scans.
+    {
+      const { context, page } = await open('pdf-to-text.html');
+      await page.setInputFiles('#textDropInput', path.join(tmp, 'all-broken.pdf'));
+      await page.waitForFunction(() => /all-broken/.test(document.getElementById('textError').textContent), null, { timeout: 20000 });
+      ok(/all-broken\.pdf is damaged: the content of all 2 pages is missing or broken/.test(await errorText(page, '#textError')), `pdf to text: a PDF with no readable page is refused (${await errorText(page, '#textError')})`);
+      await page.setInputFiles('#textDropInput', path.join(tmp, 'broken-pages.pdf'));
+      await waitShown(page, '#textResult');
+      const notes = await page.locator('#textEmptyBody').innerText();
+      ok(/Pages 2-3 could not be read; the PDF may be damaged there/.test(notes) && !/2-3[^.]*scanned/.test(notes), `pdf to text: damaged pages are named as damaged, not as scans (${notes})`);
+      await context.close();
+    }
+    {
+      const { context, page } = await open('pdf-to-image.html');
+      await page.setInputFiles('#imgDropInput', path.join(tmp, 'broken-pages.pdf'));
+      await page.waitForFunction(() => /broken-pages\.pdf is damaged/.test(document.getElementById('imgError').textContent), null, { timeout: 20000 });
+      ok(true, 'pdf to image: a PDF with broken pages is reported as damaged when it opens');
+      await page.click('#imgRun');
+      await waitShown(page, '#imgResult');
+      ok(/Pages 2-3 of broken-pages\.pdf could not be read, so they are blank here too/.test(await page.locator('#imgResultText').innerText()), 'pdf to image: the result says which pages are blank');
+      await context.close();
+    }
+    {
+      const { context, page } = await open('compress-pdf.html');
+      await page.setInputFiles('#compressFileInput', path.join(tmp, 'broken-pages.pdf'));
+      await page.waitForFunction(() => /broken-pages\.pdf is damaged/.test(document.getElementById('compressError').textContent), null, { timeout: 20000 });
+      ok(true, 'compress: a PDF with broken pages is reported as damaged when it opens');
+      await page.fill('#targetKbInput', '500');
+      await page.click('#btnStartCompress');
+      await waitShown(page, '#compressResultArea');
+      ok(/Pages 2-3 of broken-pages\.pdf could not be read, so they are blank here too/.test(await page.locator('#compressStatus').innerText()), 'compress: the result says which pages are blank');
+      await context.close();
+    }
     {
       const { context, page } = await open('file-checker.html');
       await page.locator('input[type=file]').first().setInputFiles(path.join(tmp, 'broken-pages.pdf'));
