@@ -188,6 +188,16 @@ function mixedPdf(jpeg) {
     return withList.concat(document.querySelector('.status-page > p.muted').getBoundingClientRect().top - box('offlineStatus').bottom);
   });
   ok(gaps.every(g => g >= 16), `offline page: with the buttons hidden, the status line stands apart from the list and the note (${gaps})`);
+  // RESU-7: Merge PDF was opened but never used, so its PDF library is not kept: the offline page says
+  // it needs a connection the first time, and the tool itself says why it cannot work offline.
+  off = await offlinePage('/compress-image.html');
+  const mergeItem = await page.evaluate(() => { const a = document.querySelector('#offlineSaved a[href="/merge-pdf.html"]'); return a ? a.parentElement.textContent : ''; });
+  ok(/opens, but needs a connection the first time it works on a file/.test(mergeItem) && /PDF tool marked below opens, but cannot work on files until the PDF library is kept/.test(off.status), `offline page: a PDF tool without its library is marked (${mergeItem} | ${off.status})`);
+  ok(!/needs a connection/.test(await page.evaluate(() => { const a = document.querySelector('#offlineSaved a[href="/resize-image-to-50kb.html"]'); return a ? a.parentElement.textContent : ''; })), 'offline page: an image tool is not marked');
+  await page.goto(origin + '/merge-pdf.html');
+  await page.setInputFiles('#mergeDropInput', { name: 'mixed.pdf', mimeType: 'application/pdf', buffer: mixedPdf(sample('test-portrait.jpg')) });
+  await page.waitForFunction(() => /offline/.test(document.getElementById('mergeError').textContent), null, { timeout: 20000 });
+  ok(/This device is offline, and the PDF library this tool needs is not kept on it yet/.test(await page.locator('#mergeError').innerText()), `merge offline: the message says the PDF library is not kept yet (${await page.locator('#mergeError').innerText()})`);
   await context.setOffline(false);
   keys = await cachedPaths();
   ok(keys.every(u => !/[?&]v=/.test(u)) && new Set(keys.map(u => new URL(u).pathname)).size === keys.length, 'still one entry per file after browsing');

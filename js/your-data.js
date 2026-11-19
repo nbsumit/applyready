@@ -470,7 +470,7 @@
     btn.hidden = all;
     note.hidden = false;
     note.textContent = all
-      ? 'Every tool and guide is saved for offline use.'
+      ? 'Every tool and guide is saved for offline use. One exception: the character maps for PDFs whose text is in Chinese, Japanese or Korean are not saved (they are large), so such text in a PDF needs a connection the first time it is read or drawn.'
       : `${info.saved} of the site’s ${info.files} files are saved. Saving every tool and guide downloads up to about ${Files.formatBytes(info.transfer)} and keeps about ${Files.formatBytes(info.bytes)} on this device.`;
   }
   let savingSite = false;
@@ -491,7 +491,7 @@
     progress.hidden = true;
     await renderOffline();
     await renderStorage();
-    if (result && result.failed === 0) done('Every tool and guide is saved for offline use on this device.');
+    if (result && result.failed === 0) done('Every tool and guide is saved for offline use on this device. One exception: the character maps for PDFs whose text is in Chinese, Japanese or Korean are not saved (they are large), so such text in a PDF needs a connection the first time it is read or drawn.');
     else if (result && result.failed > 0) done(`${result.saved} of ${result.files} files are saved for offline use; ${plural(result.failed, 'file')} could not be downloaded. Check your connection and select Save every tool for offline use again.`);
     else done('The files could not be saved for offline use. Check your connection, reload the page and try again.');
   });

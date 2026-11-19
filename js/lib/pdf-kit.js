@@ -90,6 +90,13 @@
     return { ok: !missing.length, render, missing: modules ? missing : missing.concat('JavaScript modules') };
   }
 
+  /* A part of the PDF tool did not load. Offline, that is because the PDF library is not kept on this
+     device yet (it is kept once a PDF tool was used online, or with "Save every tool" on Your data),
+     not because of the browser or the file. */
+  const offline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+  const OFFLINE_LOAD = 'This device is offline, and the PDF library this tool needs is not kept on it yet. Connect to the internet and reload the page. To use the PDF tools offline later, open Your data and save every tool for offline use.';
+  const loadFailed = () => (offline() ? OFFLINE_LOAD : 'A part of the PDF tool could not load. Check your connection and reload the page.');
+
   function injectScript(src, type) {
     return new Promise((resolve, reject) => {
       const el = document.createElement('script');
@@ -97,7 +104,7 @@
       el.src = src;
       el.onload = () => resolve();
       // detail 'load': the library itself is missing, so every file would fail the same way.
-      el.onerror = () => { el.remove(); reject(new PdfError('unsupported', 'A part of the PDF tool could not load. Check your connection and reload the page.', 'load')); };
+      el.onerror = () => { el.remove(); reject(new PdfError('unsupported', loadFailed(), 'load')); };
       document.head.appendChild(el);
     });
   }
@@ -133,7 +140,7 @@
         root.addEventListener('applyready:pdfjs', onReady);
         // A browser that cannot parse pdf.js reports the module as failed, or never runs it.
         const timer = setTimeout(() => done(reject, new PdfError('unsupported', 'The PDF reader took too long to start. Reload the page and try again; if it keeps happening, update your browser.')), 30000);
-        injectScript(asset('js/lib/pdf-kit-boot.js'), 'module').catch(() => done(reject, new PdfError('unsupported', 'The PDF reader could not load in this browser. Update it, or use a recent Chrome, Edge, Firefox or Safari.')));
+        injectScript(asset('js/lib/pdf-kit-boot.js'), 'module').catch(() => done(reject, new PdfError('unsupported', offline() ? OFFLINE_LOAD : 'The PDF reader could not load in this browser. Update it, or use a recent Chrome, Edge, Firefox or Safari.')));
       }).then(lib => {
         lib.GlobalWorkerOptions.workerSrc = workerSource();
         return lib;
@@ -396,7 +403,7 @@
         // A worker that never started is replaced on the next open, once the connection is back.
         // (Not one that was only told to drop this document: other open files still use it.)
         if (/fake worker|worker failed/i.test(msg)) dropWorker();
-        throw new PdfError('unsupported', 'A part of the PDF tool could not load. Check your connection and reload the page.', e && e.message);
+        throw new PdfError('unsupported', loadFailed(), e && e.message);
       }
       throw new PdfError('damaged', `${label} ${DAMAGED}`, e && e.message);
     }
