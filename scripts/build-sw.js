@@ -48,7 +48,7 @@ function assets() {
     ...pages,
     ...ls('css', /\.css$/), ...ls('css/vendor', /\.css$/), ...ls('css/webfonts', /\.woff2$/), ...ls('assets/fonts', /\.woff2$/).filter(f => !/devanagari/.test(f)),
     ...ls('js', /\.js$/), ...ls('js/lib', /\.js$/), ...ls('js/workers', /\.js$/), 'js/vendor/cropper.min.js',
-    ...ls('favicon', /\.(png|ico|webmanifest)$/), ...ls('img/guides', /\.webp$/), ...ls('img/samples', /\.jpg$/)
+    ...ls('favicon', /\.(png|ico|svg|webmanifest)$/), ...ls('img/brand', /\.svg$/), ...ls('img/guides', /\.webp$/), ...ls('img/samples', /\.jpg$/)
   ];
 }
 

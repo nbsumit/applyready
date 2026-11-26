@@ -45,7 +45,7 @@ for (const f of guides) {
     const src = attr(tag, 'src') || '';
     if (/^(https?:|data:)/.test(src)) { ok(false, `${f}: images come from this site (${src.slice(0, 40)})`); continue; }
     const target = path.posix.normalize(path.posix.join('guides', src));
-    if (target.startsWith('favicon/')) continue; // the brand mark in the shared header and footer
+    if (target.startsWith('img/brand/')) { ok(fs.existsSync(path.join(root, target)), `${f}: brand logo ${src} exists`); continue; } // the logo in the shared header and footer
     ok(fs.existsSync(path.join(root, target)), `${f}: image ${src} exists`);
     ok(/^\d+$/.test(attr(tag, 'width') || '') && /^\d+$/.test(attr(tag, 'height') || ''), `${f}: ${src} has width and height`);
     ok((attr(tag, 'alt') || '').length >= 20, `${f}: ${src} has descriptive alt text`);

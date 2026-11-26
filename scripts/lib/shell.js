@@ -8,7 +8,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { CATEGORIES, TOOLS, liveTools, toolsIn } = require('./tools');
 
-const ASSET_VERSION = '20261118';
+const ASSET_VERSION = '20261126';
 const ROOT = path.resolve(__dirname, '..', '..');
 
 const DONATE_URL = 'https://pages.razorpay.com/support-applyready';
@@ -78,6 +78,12 @@ ${tools.map(t => `                    <li><a class="menu__item" href="${rel(t.pa
                 </div>`;
 }
 
+// The ApplyReady wordmark (img/brand/, from the logo kit): black on the light theme, white on the
+// dark one. Both images carry alt="" because the link around them is named "ApplyReady home".
+function brandLogo(prefix, indent) {
+  return ['black', 'white'].map(c => `${indent}<img class="brand__logo brand__logo--${c}" src="${prefix}img/brand/applyready-logo-${c}.svg" alt="" width="305" height="40">`).join('\n');
+}
+
 function headerHTML(page) {
   const prefix = prefixFor(page);
   const rel = p => href(p, prefix);
@@ -98,8 +104,7 @@ function headerHTML(page) {
   <header class="site-header" id="siteHeader">
     <div class="site-header__inner">
       <a class="brand" href="${rel('')}" aria-label="ApplyReady home">
-        <img class="brand__mark" src="${prefix}favicon/android-chrome-192x192.png" alt="" width="28" height="28">
-        <span class="brand__name">ApplyReady</span>
+${brandLogo(prefix, '        ')}
       </a>
       <nav class="site-nav" id="siteNav" aria-label="Main">
         <ul class="site-nav__list">
@@ -149,7 +154,9 @@ ${c.links.map(([label, p]) => `          <li><a href="${rel(p)}">${esc(label)}</
     <div class="site-footer__inner">
       <h2 class="sr-only">Site links</h2>
       <div class="site-footer__brand">
-        <a class="brand" href="${rel('')}"><img class="brand__mark" src="${prefix}favicon/android-chrome-192x192.png" alt="" width="28" height="28"><span class="brand__name">ApplyReady</span></a>
+        <a class="brand" href="${rel('')}" aria-label="ApplyReady home">
+${brandLogo(prefix, '          ')}
+        </a>
         <p>${esc(TAGLINE)}</p>
         <p class="site-footer__motto">Free. Open source. Forever.</p>
       </div>

@@ -229,9 +229,14 @@ code, kbd { font-family: var(--font-mono); font-size: .9em; padding: 1px 5px; bo
 /* ================================================================== 3. SITE HEADER */
 .site-header { position: sticky; top: 0; z-index: var(--z-header); background: var(--c-surface); border-bottom: var(--bw) solid var(--c-line); }
 .site-header__inner { max-width: calc(var(--w-app) + 2 * var(--gutter)); height: var(--h-header); margin: 0 auto; padding: 0 var(--gutter); display: flex; align-items: center; gap: var(--s-6); }
-.brand { display: inline-flex; align-items: center; min-height: var(--h-md); gap: 10px; color: var(--c-text); font-weight: var(--fw-strong); font-size: var(--fs-lg); letter-spacing: -.01em; flex-shrink: 0; }
+.brand { display: inline-flex; align-items: center; min-height: var(--h-md); flex-shrink: 0; }
 .brand:hover { text-decoration: none; }
-.brand__mark { width: 26px; height: 26px; border-radius: var(--r-sm); display: block; }
+/* The wordmark: 26 px A at 40 px tall (the logo kit's 1x), smaller on phones so the header buttons fit. */
+.brand__logo { display: block; width: auto; height: 32px; }
+.brand__logo--white, [data-theme='dark'] .brand__logo--black { display: none; }
+[data-theme='dark'] .brand__logo--white { display: block; }
+@media (max-width: 639px) { .site-header .brand__logo { height: 24px; } }
+@media (max-width: 359px) { .site-header .brand__logo { height: 20px; } }
 .site-nav { display: flex; flex: 1; min-width: 0; align-items: center; }
 .site-nav__list { display: flex; align-items: center; gap: var(--s-1); list-style: none; flex: 1; }
 .site-nav__link { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 var(--s-3); border-radius: var(--r-sm); font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--c-text-2); transition: background-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease); }
@@ -317,7 +322,7 @@ body.resume-page .site-footer__base { max-width: var(--w-wide); }
 /* ================================================================== 4. SITE FOOTER */
 .site-footer { margin-top: auto; border-top: var(--bw) solid var(--c-line); color: var(--c-text-3); font-size: var(--fs-label); background: var(--c-surface); }
 .site-footer__inner { max-width: calc(var(--w-app) + 2 * var(--gutter)); margin: 0 auto; padding: var(--s-7) var(--gutter) var(--s-6); display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr)); gap: var(--s-6); }
-.site-footer__brand .brand { font-size: var(--fs-md); }
+.site-footer__brand .brand__logo { height: 26px; }
 .site-footer__brand p { margin-top: var(--s-3); max-width: 34ch; line-height: 1.6; }
 .site-footer__title { font-size: var(--fs-label); font-weight: var(--fw-strong); color: var(--c-text); margin-bottom: var(--s-2); }
 .site-footer__list { list-style: none; }

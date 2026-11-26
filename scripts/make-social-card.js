@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
 
 const root = path.resolve(__dirname, '..');
 const OUT = path.join(root, 'assets/social-card.png');
-const MIME = { '.css': 'text/css', '.woff2': 'font/woff2', '.png': 'image/png', '.html': 'text/html' };
+const MIME = { '.css': 'text/css', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png', '.html': 'text/html' };
 
 const tile = (icon, name, text) => `<div class="tile"><span class="tile__icon"><i class="fa-solid fa-${icon}" aria-hidden="true"></i></span><span><strong>${name}</strong><span>${text}</span></span></div>`;
 
@@ -26,8 +26,8 @@ const CARD = `<!DOCTYPE html>
   html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: var(--c-bg); }
   .card { box-sizing: border-box; width: 1200px; height: 630px; padding: 56px 64px; display: flex; flex-direction: column; font-family: Inter, sans-serif; color: var(--c-text); }
   .top { display: flex; align-items: center; justify-content: space-between; }
-  .brand { display: flex; align-items: center; gap: 16px; font-size: 32px; font-weight: 700; letter-spacing: -0.02em; }
-  .brand img { width: 52px; height: 52px; border-radius: 12px; }
+  .brand { display: flex; align-items: center; }
+  .brand img { display: block; width: auto; height: 48px; }
   .site { font-size: 22px; color: var(--c-text-3); }
   h1 { margin: 48px 0 0; font-size: 72px; line-height: 1.05; letter-spacing: -0.035em; font-weight: 750; }
   h1 em { font-style: normal; color: var(--c-accent); }
@@ -40,7 +40,7 @@ const CARD = `<!DOCTYPE html>
   .tile span span { display: block; margin-top: 2px; font-size: 18px; color: var(--c-text-3); }
 </style></head>
 <body><div class="card">
-  <div class="top"><div class="brand"><img src="/favicon/android-chrome-192x192.png" alt="">ApplyReady</div><div class="site">applyready.in</div></div>
+  <div class="top"><div class="brand"><img src="/img/brand/applyready-logo-black.svg" alt="ApplyReady"></div><div class="site">applyready.in</div></div>
   <h1>Free tools for <em>job applications</em></h1>
   <p class="lede">Everything runs in your browser. Your files are never uploaded.<br>No sign-up, no ads, open source.</p>
   <div class="tiles">
